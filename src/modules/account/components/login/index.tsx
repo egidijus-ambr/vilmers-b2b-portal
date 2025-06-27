@@ -13,50 +13,73 @@ const Login = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(login, null)
 
   return (
-    <div
-      className="max-w-sm w-full flex flex-col items-center"
-      data-testid="login-page"
-    >
-      <h1 className="text-large-semi uppercase mb-6">Welcome back</h1>
-      <p className="text-center text-base-regular text-ui-fg-base mb-8">
-        Sign in to access an enhanced shopping experience.
-      </p>
-      <form className="w-full" action={formAction}>
-        <div className="flex flex-col w-full gap-y-2">
-          <Input
-            label="Email"
+    <div className="w-full" data-testid="login-page">
+      <h1 className="text-2xl text-gray-900 mb-8">Login to your account</h1>
+
+      <form className="space-y-6" action={formAction}>
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Email
+          </label>
+          <input
+            id="email"
             name="email"
             type="email"
-            title="Enter a valid email address."
             autoComplete="email"
             required
+            placeholder="Email address"
+            className="w-full px-3 py-2 border border-gray-300  shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             data-testid="email-input"
           />
-          <Input
-            label="Password"
+        </div>
+
+        <div>
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Password
+          </label>
+          <input
+            id="password"
             name="password"
             type="password"
             autoComplete="current-password"
             required
+            placeholder="Password"
+            className="w-full px-3 py-2 border border-gray-300 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             data-testid="password-input"
           />
         </div>
+
+        <div className="flex items-start gap-3">
+          <input
+            id="remember-me"
+            name="remember-me"
+            type="checkbox"
+            className="mt-1 h-5 w-5 text-gray-800 focus:ring-blue-500 border-gray-300 "
+          />
+          <label
+            htmlFor="remember-me"
+            className="font-medium text-gray-900 cursor-pointer leading-none !text-sm !transform-none pt-1"
+          >
+            Remember me
+          </label>
+        </div>
+
         <ErrorMessage error={message} data-testid="login-error-message" />
-        <SubmitButton data-testid="sign-in-button" className="w-full mt-6">
-          Sign in
-        </SubmitButton>
-      </form>
-      <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Not a member?{" "}
+
         <button
-          onClick={() => setCurrentView(LOGIN_VIEW.REGISTER)}
-          className="underline"
-          data-testid="register-button"
+          type="submit"
+          data-testid="sign-in-button"
+          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-3xl shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
         >
-          Join us
+          Login
         </button>
-        .
-      </span>
+      </form>
     </div>
   )
 }

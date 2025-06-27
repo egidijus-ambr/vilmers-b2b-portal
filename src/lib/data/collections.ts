@@ -23,6 +23,9 @@ export const retrieveCollection = async (id: string) => {
 export const listCollections = async (
   queryParams: Record<string, string> = {}
 ): Promise<{ collections: HttpTypes.StoreCollection[]; count: number }> => {
+  // TODO: Remove this check once the backend supports collections
+  return { collections: [], count: 0 }
+
   const next = {
     ...(await getCacheOptions("collections")),
   }

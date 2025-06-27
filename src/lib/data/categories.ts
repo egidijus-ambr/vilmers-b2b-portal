@@ -3,6 +3,9 @@ import { HttpTypes } from "@medusajs/types"
 import { getCacheOptions } from "./cookies"
 
 export const listCategories = async (query?: Record<string, any>) => {
+  // TODO: Remove this check once the backend supports categories
+  return []
+
   const next = {
     ...(await getCacheOptions("categories")),
   }

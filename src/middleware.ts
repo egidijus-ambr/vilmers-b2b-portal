@@ -24,24 +24,47 @@ async function getRegionMap(cacheId: string) {
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
     // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
-    const { regions } = await fetch(`${BACKEND_URL}/store/regions`, {
-      headers: {
-        "x-publishable-api-key": PUBLISHABLE_API_KEY!,
-      },
-      next: {
-        revalidate: 3600,
-        tags: [`regions-${cacheId}`],
-      },
-      cache: "force-cache",
-    }).then(async (response) => {
-      const json = await response.json()
+    // const { regions } = await fetch(`${BACKEND_URL}/store/regions`, {
+    //   headers: {
+    //     "x-publishable-api-key": PUBLISHABLE_API_KEY!,
+    //   },
+    //   next: {
+    //     revalidate: 3600,
+    //     tags: [`regions-${cacheId}`],
+    //   },
+    //   cache: "force-cache",
+    // }).then(async (response) => {
+    //   const json = await response.json()
 
-      if (!response.ok) {
-        throw new Error(json.message)
-      }
+    //   if (!response.ok) {
+    //     throw new Error(json.message)
+    //   }
 
-      return json
-    })
+    //   return json
+    // })
+
+    const regions = [
+      {
+        id: "string",
+        name: "string",
+        currency_code: "eur",
+        automatic_taxes: true,
+        countries: [
+          {
+            id: "string",
+            iso_2: "lt",
+            iso_3: "ltu",
+            num_code: 840,
+            name: "string",
+            display_name: "string",
+          },
+        ],
+        payment_providers: [{ id: "string", is_enabled: true }],
+        metadata: {},
+        created_at: "2019-08-24T14:15:22Z",
+        updated_at: "2019-08-24T14:15:22Z",
+      },
+    ]
 
     if (!regions?.length) {
       throw new Error(
@@ -50,8 +73,8 @@ async function getRegionMap(cacheId: string) {
     }
 
     // Create a map of country codes to regions.
-    regions.forEach((region: HttpTypes.StoreRegion) => {
-      region.countries?.forEach((c) => {
+    regions.forEach((region: any) => {
+      region.countries?.forEach((c: any) => {
         regionMapCache.regionMap.set(c.iso_2 ?? "", region)
       })
     })
