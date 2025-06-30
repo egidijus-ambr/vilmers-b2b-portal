@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 }
 
 export default async function Profile() {
-  const customer = await retrieveCustomer()
-  const regions = await listRegions()
+  const customer = await retrieveCustomer().catch(() => null)
+  // const regions = await listRegions()
 
-  if (!customer || !regions) {
-    notFound()
-  }
+  // if (!customer || !regions) {
+  //   notFound()
+  // }
 
   return (
     <div className="w-full" data-testid="profile-page-wrapper">
@@ -34,15 +34,15 @@ export default async function Profile() {
         </p>
       </div>
       <div className="flex flex-col gap-y-8 w-full">
-        <ProfileName customer={customer} />
+        {/* <ProfileName customer={customer} />
         <Divider />
         <ProfileEmail customer={customer} />
         <Divider />
         <ProfilePhone customer={customer} />
-        <Divider />
+        <Divider /> */}
         {/* <ProfilePassword customer={customer} />
         <Divider /> */}
-        <ProfileBillingAddress customer={customer} regions={regions} />
+        {/* <ProfileBillingAddress customer={customer} regions={regions} /> */}
       </div>
     </div>
   )

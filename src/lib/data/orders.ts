@@ -42,22 +42,24 @@ export const listOrders = async (
     ...(await getCacheOptions("orders")),
   }
 
-  return sdk.client
-    .fetch<HttpTypes.StoreOrderListResponse>(`/store/orders`, {
-      method: "GET",
-      query: {
-        limit,
-        offset,
-        order: "-created_at",
-        fields: "*items,+items.metadata,*items.variant,*items.product",
-        ...filters,
-      },
-      headers,
-      next,
-      cache: "force-cache",
-    })
-    .then(({ orders }) => orders)
-    .catch((err) => medusaError(err))
+  return []
+
+  // return sdk.client
+  //   .fetch<HttpTypes.StoreOrderListResponse>(`/store/orders`, {
+  //     method: "GET",
+  //     query: {
+  //       limit,
+  //       offset,
+  //       order: "-created_at",
+  //       fields: "*items,+items.metadata,*items.variant,*items.product",
+  //       ...filters,
+  //     },
+  //     headers,
+  //     next,
+  //     cache: "force-cache",
+  //   })
+  //   .then(({ orders }) => orders)
+  //   .catch((err) => medusaError(err))
 }
 
 export const createTransferRequest = async (

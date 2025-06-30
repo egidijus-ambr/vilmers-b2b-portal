@@ -15,38 +15,45 @@ import {
   setAuthToken,
 } from "./cookies"
 
-export const retrieveCustomer =
-  async (): Promise<HttpTypes.StoreCustomer | null> => {
-    const authHeaders = await getAuthHeaders()
+export const retrieveCustomer = async (): Promise<
+  (HttpTypes.StoreCustomer & { full_name?: string }) | null
+> => {
+  const authHeaders = await getAuthHeaders()
 
-    if (!authHeaders) return null
+  if (!authHeaders || !("authorization" in authHeaders)) return null
 
-    try {
-      console.log("Retrieving customer with auth headers:", authHeaders)
-      const customer = await sdk.customer.getMe()
-      console.log("Retrieved customer:", customer)
+  try {
+    console.log("Retrieving customer with auth headers:", authHeaders)
 
-      if (!customer) return null
+    // Set the auth headers on the SDK client before making the request
+    sdk.setAuthHeaders(authHeaders)
 
-      // Map Customer to StoreCustomer
-      const storeCustomer: HttpTypes.StoreCustomer = {
-        id: customer.id,
-        created_at: customer.created_at,
-        updated_at: customer.updated_at,
-        email: customer.email,
-        full_name: customer.full_name,
-        default_billing_address_id: null,
-        default_shipping_address_id: null,
-        company_name: null,
-        addresses: [],
-      }
+    const customer = await sdk.customer.getMe()
+    console.log("Retrieved customer:", customer)
 
-      return storeCustomer
-    } catch (error) {
-      console.error("Error retrieving customer:", error)
-      return null
+    if (!customer) return null
+
+    // Map Customer to StoreCustomer with full_name extension
+    const storeCustomer: HttpTypes.StoreCustomer & { full_name?: string } = {
+      id: customer.id,
+      created_at: customer.created_at,
+      updated_at: customer.updated_at,
+      email: customer.email,
+      first_name: customer.full_name || null,
+      last_name: null,
+      full_name: customer.full_name,
+      default_billing_address_id: null,
+      default_shipping_address_id: null,
+      company_name: null,
+      addresses: [],
     }
+
+    return storeCustomer
+  } catch (error) {
+    console.error("Error retrieving customer:", error)
+    return null
   }
+}
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   // const headers = {

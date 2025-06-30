@@ -1,14 +1,17 @@
 import { Suspense } from "react"
 
 import { listRegions } from "@lib/data/regions"
+import { retrieveCustomer } from "@lib/data/customer"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartButton from "@modules/layout/components/cart-button"
 import SideMenu from "@modules/layout/components/side-menu"
+import AccountDropdown from "@modules/layout/components/account-dropdown"
 import { CompactLanguageSwitcher } from "@lib/i18n"
 
 export default async function Nav() {
   // const regions = await listRegions().then((regions: StoreRegion[]) => regions)
+  const customer = await retrieveCustomer()
 
   //console.log("Regions:", regions)
 
@@ -17,6 +20,7 @@ export default async function Nav() {
       <header className="relative h-[72px] mx-auto border-b duration-200 bg-white border-ui-border-base">
         <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
           <div className="flex-1 basis-0 h-full flex items-center">
+            <CompactLanguageSwitcher />
             <div className="h-full">{/* <SideMenu regions={regions} /> */}</div>
           </div>
 
@@ -32,16 +36,10 @@ export default async function Nav() {
 
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
             <div className="hidden small:flex items-center gap-x-6 h-full">
-              <LocalizedClientLink
-                className="hover:text-ui-fg-base"
-                href="/account"
-                data-testid="nav-account-link"
-              >
-                Account
-              </LocalizedClientLink>
+              <AccountDropdown customer={customer} />
             </div>
-            <CompactLanguageSwitcher />
-            <Suspense
+
+            {/* <Suspense
               fallback={
                 <LocalizedClientLink
                   className="hover:text-ui-fg-base flex gap-2"
@@ -53,7 +51,7 @@ export default async function Nav() {
               }
             >
               <CartButton />
-            </Suspense>
+            </Suspense> */}
           </div>
         </nav>
       </header>

@@ -10,14 +10,29 @@ export const listRegions = async () => {
     ...(await getCacheOptions("regions")),
   }
 
-  return sdk.client
-    .fetch<{ regions: HttpTypes.StoreRegion[] }>(`/store/regions`, {
-      method: "GET",
-      next,
-      cache: "force-cache",
-    })
-    .then(({ regions }) => regions)
-    .catch(medusaError)
+  const regions = [
+    {
+      id: "string",
+      name: "string",
+      currency_code: "eur",
+      automatic_taxes: true,
+      countries: [
+        {
+          id: "string",
+          iso_2: "lt",
+          iso_3: "ltu",
+          num_code: 840,
+          name: "string",
+          display_name: "string",
+        },
+      ],
+      payment_providers: [{ id: "string", is_enabled: true }],
+      metadata: {},
+      created_at: "2019-08-24T14:15:22Z",
+      updated_at: "2019-08-24T14:15:22Z",
+    },
+  ]
+  return regions
 }
 
 export const retrieveRegion = async (id: string) => {
