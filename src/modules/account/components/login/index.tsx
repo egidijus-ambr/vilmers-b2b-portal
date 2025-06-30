@@ -3,7 +3,8 @@ import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
-import { useActionState } from "react"
+import { use, useActionState } from "react"
+import { useTranslation } from "react-i18next"
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
@@ -11,10 +12,11 @@ type Props = {
 
 const Login = ({ setCurrentView }: Props) => {
   const [message, formAction] = useActionState(login, null)
+  const { t } = useTranslation()
 
   return (
     <div className="w-full" data-testid="login-page">
-      <h1 className="text-2xl text-gray-900 mb-8">Login to your account</h1>
+      <h1 className="text-2xl text-gray-900 mb-8">{t("loginToYourAccount")}</h1>
 
       <form className="space-y-6" action={formAction}>
         <div>
