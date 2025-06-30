@@ -1,4 +1,7 @@
+"use client"
+
 import React from "react"
+import { usePathname } from "next/navigation"
 
 import UnderlineLink from "@modules/common/components/interactive-link"
 import OutlineButton from "@modules/common/components/outline-button"
@@ -15,8 +18,14 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   customer,
   children,
 }) => {
+  const pathname = usePathname()
+
   // Check if this is the login page (when customer is null)
   const isLoginPage = !customer
+
+  // Check if we're on the main account page (should hide AccountNav)
+  const isMainAccountPage = pathname.endsWith("/account")
+  const showAccountNav = customer && !isMainAccountPage
 
   if (isLoginPage) {
     return (
@@ -55,23 +64,25 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   // Default layout for logged-in users (dashboard)
   return (
     <div
-      className="flex-1 small:py-12 min-h-screen bg-cover bg-center bg-no-repeat relative"
+      className="min-h-screen px-10 pt-10 bg-gold-10  pb-20 relative"
       data-testid="account-page"
-      style={{ backgroundImage: "url(/images/image.png)" }}
     >
-      {/* Optional overlay for better readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-
       {/* Content container */}
-      <div className="relative z-10 flex-1 content-container h-full max-w-5xl mx-auto flex flex-col">
-        <div className="grid grid-cols-1 small:grid-cols-[240px_1fr] py-12">
-          <div className="bg-white bg-opacity-95 rounded-lg shadow-lg p-4 h-fit">
-            {customer && <AccountNav customer={customer} />}
-          </div>
-          <div className="flex-1 ml-0 small:ml-4">
-            <div className="bg-white bg-opacity-95 rounded-lg shadow-lg p-8">
-              {children}
+      <div className="flex-1 max-w-[1440px] mx-auto flex flex-col">
+        <div
+          className={`grid ${
+            showAccountNav
+              ? "grid-cols-1 small:grid-cols-[240px_1fr] gap-4"
+              : "grid-cols-1"
+          }`}
+        >
+          {showAccountNav && (
+            <div className="bg-white rounded-lg shadow-lg p-4 h-fit">
+              <AccountNav customer={customer} />
             </div>
+          )}
+          <div className={`flex-1 ${showAccountNav ? "" : ""}`}>
+            <div className=" p-8">{children}</div>
           </div>
         </div>
       </div>

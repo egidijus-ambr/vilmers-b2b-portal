@@ -4,62 +4,36 @@ import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
+import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 
 export const retrieveOrder = async (id: string) => {
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
-
-  const next = {
-    ...(await getCacheOptions("orders")),
-  }
-
-  return sdk.client
-    .fetch<HttpTypes.StoreOrderResponse>(`/store/orders/${id}`, {
-      method: "GET",
-      query: {
-        fields:
-          "*payment_collections.payments,*items,*items.metadata,*items.variant,*items.product",
-      },
-      headers,
-      next,
-      cache: "force-cache",
-    })
-    .then(({ order }) => order)
-    .catch((err) => medusaError(err))
+  // TODO: Implement with GraphQL when single order query is available
+  // For now, return null to avoid breaking the app
+  console.log("retrieveOrder not yet implemented with GraphQL")
+  return null
 }
 
 export const listOrders = async (
   limit: number = 10,
   offset: number = 0,
   filters?: Record<string, any>
-) => {
-  const headers = {
-    ...(await getAuthHeaders()),
+): Promise<Order[]> => {
+  try {
+    // Use the furnisystems SDK to get customer orders via GraphQL
+    const orders = await sdk.customer.getCustomerOrders()
+
+    // set order display_id
+    orders.forEach((order) => {
+      order.display_id = order.order_external_code || order.order_code
+    })
+
+    console.log("Retrieved orders:", orders)
+
+    return orders
+  } catch (error) {
+    console.error("Error fetching orders:", error)
+    return []
   }
-
-  const next = {
-    ...(await getCacheOptions("orders")),
-  }
-
-  return []
-
-  // return sdk.client
-  //   .fetch<HttpTypes.StoreOrderListResponse>(`/store/orders`, {
-  //     method: "GET",
-  //     query: {
-  //       limit,
-  //       offset,
-  //       order: "-created_at",
-  //       fields: "*items,+items.metadata,*items.variant,*items.product",
-  //       ...filters,
-  //     },
-  //     headers,
-  //     next,
-  //     cache: "force-cache",
-  //   })
-  //   .then(({ orders }) => orders)
-  //   .catch((err) => medusaError(err))
 }
 
 export const createTransferRequest = async (
@@ -74,41 +48,19 @@ export const createTransferRequest = async (
   error: string | null
   order: HttpTypes.StoreOrder | null
 }> => {
-  const id = formData.get("order_id") as string
-
-  if (!id) {
-    return { success: false, error: "Order ID is required", order: null }
-  }
-
-  const headers = await getAuthHeaders()
-
-  return await sdk.store.order
-    .requestTransfer(
-      id,
-      {},
-      {
-        fields: "id, email",
-      },
-      headers
-    )
-    .then(({ order }) => ({ success: true, error: null, order }))
-    .catch((err) => ({ success: false, error: err.message, order: null }))
+  // TODO: Implement with GraphQL when transfer request mutation is available
+  console.log("createTransferRequest not yet implemented with GraphQL")
+  return { success: false, error: "Not implemented", order: null }
 }
 
 export const acceptTransferRequest = async (id: string, token: string) => {
-  const headers = await getAuthHeaders()
-
-  return await sdk.store.order
-    .acceptTransfer(id, { token }, {}, headers)
-    .then(({ order }) => ({ success: true, error: null, order }))
-    .catch((err) => ({ success: false, error: err.message, order: null }))
+  // TODO: Implement with GraphQL when transfer accept mutation is available
+  console.log("acceptTransferRequest not yet implemented with GraphQL")
+  return { success: false, error: "Not implemented", order: null }
 }
 
 export const declineTransferRequest = async (id: string, token: string) => {
-  const headers = await getAuthHeaders()
-
-  return await sdk.store.order
-    .declineTransfer(id, { token }, {}, headers)
-    .then(({ order }) => ({ success: true, error: null, order }))
-    .catch((err) => ({ success: false, error: err.message, order: null }))
+  // TODO: Implement with GraphQL when transfer decline mutation is available
+  console.log("declineTransferRequest not yet implemented with GraphQL")
+  return { success: false, error: "Not implemented", order: null }
 }

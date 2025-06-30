@@ -22,6 +22,43 @@ module.exports = {
       },
       colors: {
         primary: "#222D37",
+        // Figma Design System Colors
+        "dark-blue": "#222D37",
+        "dark-blue-70": "#646C73",
+        gold: "#9A8555",
+        "gold-10": "#F5F3EE",
+        "gold-20": "#EBE7DD",
+        "gold-30": "#E1DACC",
+        line: "#D3D5D7",
+        beige: "#DFD6C7",
+        "beige-20": "#F9F7F4",
+        white: "#FFFFFF",
+        sale: "#E07E5A",
+        divider: "rgba(34, 45, 55, 0.1)", // #222D37 · 10%
+        "image-overlay": "rgba(0, 0, 0, 0.4)", // #000000 · 40%
+        "beige-80": "#E5DED2",
+        "white-20": "rgba(255, 255, 255, 0.2)", // #FFFFFF · 20%
+        "white-80": "rgba(255, 255, 255, 0.8)", // #FFFFFF · 80%
+        "beige-10": "#FCFBF9",
+        "gray-inactive": "#F4F4F5",
+        // Status Colors
+        "status-completed": "#A8C014",
+        "status-awaiting-payment": "#E07E5A",
+        "status-pending": "#D5C3B8",
+        "status-shipping": "#879BB9",
+        "status-canceled": "#DCDFEA",
+        "status-paid": "#B58575",
+        "status-delivered": "#C0BCC1",
+        // Legacy colors (keeping for backward compatibility)
+        "beige-20-legacy": "#f0ede8",
+        "line-legacy": "#e2e8f0",
+        "status-completed-legacy": "#dcfce7",
+        "status-awaiting-payment-legacy": "#fef3c7",
+        "status-pending-legacy": "#dbeafe",
+        "status-shipping-legacy": "#e0e7ff",
+        "status-canceled-legacy": "#fee2e2",
+        "status-paid-legacy": "#d1fae5",
+        "status-delivered-legacy": "#ecfdf5",
         grey: {
           0: "#FFFFFF",
           5: "#F9FAFB",

@@ -87,3 +87,20 @@ export const removeCartId = async () => {
     maxAge: -1,
   })
 }
+
+export const removeCacheId = async () => {
+  const cookies = await nextCookies()
+  cookies.set("_medusa_cache_id", "", {
+    maxAge: -1,
+  })
+}
+
+export const setCacheId = async (cacheId: string) => {
+  const cookies = await nextCookies()
+  cookies.set("_medusa_cache_id", cacheId, {
+    maxAge: 60 * 60 * 24 * 7,
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  })
+}

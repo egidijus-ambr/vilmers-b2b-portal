@@ -2,6 +2,25 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* #3b1e2a; */
+
+:root {
+  --gold-10: #f5f3ee;
+  --gold-20: #ebe7dc;
+  --beige-20: #f0ede8;
+  --dark-blue: #3b1e2a;
+  --dark-blue-70: rgba(30, 41, 59, 0.7);
+  --white: #ffffff;
+  --line: #e2e8f0;
+  --status-completed: #dcfce7;
+  --status-awaiting-payment: #fef3c7;
+  --status-pending: #dbeafe;
+  --status-shipping: #e0e7ff;
+  --status-canceled: #fee2e2;
+  --status-paid: #d1fae5;
+  --status-delivered: #ecfdf5;
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {

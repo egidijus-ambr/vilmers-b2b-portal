@@ -35,6 +35,10 @@ export class ApolloGraphQLClient {
     this.authHeaders = headers
   }
 
+  clearAuthHeaders() {
+    this.authHeaders = {}
+  }
+
   private createApolloClient(): ApolloClient<any> {
     // HTTP Link with proper fetch configuration matching the curl request
     const httpLink = createHttpLink({

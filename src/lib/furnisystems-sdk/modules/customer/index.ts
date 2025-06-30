@@ -3,6 +3,7 @@ import { GraphQLClient } from "../../client"
 import { GraphQLRequestConfig } from "../../client/types"
 import {
   Customer,
+  Order,
   CreateCustomerInput,
   UpdateCustomerInput,
   CreateAddressInput,
@@ -27,6 +28,25 @@ const GET_ME_QUERY = gql`
       b2b_company_name
       account_code
       price_listId
+    }
+  }
+`
+
+const GET_CUSTOMER_ORDERS_QUERY = gql`
+  query GetCustomerOrders {
+    getCustomerOrders {
+      id
+      createdAt
+      order_status
+      total_price
+      order_code
+      order_number
+      invoice_code
+      order_type
+      _count {
+        order_items
+      }
+      order_external_code
     }
   }
 `
@@ -124,6 +144,66 @@ export class CustomerModule {
     } catch (error) {
       console.error("Error fetching customer:", error)
       return null
+    }
+  }
+
+  async getCustomerOrders(distinct?: string[]): Promise<Order[]> {
+    try {
+      const response = await this.client.query<{
+        getCustomerOrders: {
+          id: string
+          createdAt: string
+          order_status: string
+          total_price: number
+          order_code: string
+          order_number: string
+          invoice_code?: string
+          order_type?: string
+          _count: {
+            order_items: number
+          }
+          order_external_code?: string
+        }[]
+      }>(GET_CUSTOMER_ORDERS_QUERY, {
+        variables: distinct ? { distinct } : undefined,
+      })
+
+      const ordersData = response.getCustomerOrders
+
+      if (!ordersData) {
+        return []
+      }
+
+      // Map the response to the Order interface
+      const orders: Order[] = ordersData.map((orderData) => ({
+        id: orderData.order_external_code || orderData.id, // Use order_external_code as primary id
+        created_at: orderData.createdAt,
+        updated_at: orderData.createdAt, // Use createdAt as fallback for updated_at
+        order_status: orderData.order_status,
+        total_price: orderData.total_price,
+        order_code: orderData.order_code,
+        order_number: orderData.order_number,
+        invoice_code: orderData.invoice_code,
+        order_type: orderData.order_type,
+        order_external_code: orderData.order_external_code,
+        order_items_count: orderData._count.order_items,
+      }))
+
+      return orders
+    } catch (error) {
+      console.error("Error fetching customer orders:", error)
+      throw error
+    }
+  }
+
+  async logout(): Promise<void> {
+    try {
+      // Clear auth headers from the client
+      this.client.setAuthHeaders({})
+      console.log("Customer logged out successfully")
+    } catch (error) {
+      console.error("Error during logout:", error)
+      throw error
     }
   }
 

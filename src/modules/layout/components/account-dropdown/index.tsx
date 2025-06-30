@@ -2,14 +2,12 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { ArrowRightOnRectangle } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
+import Image from "next/image"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
-import User from "@modules/common/icons/user"
-import Package from "@modules/common/icons/package"
 import { signout } from "@lib/data/customer"
 
 interface AccountDropdownProps {
@@ -59,7 +57,7 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        className="flex items-center gap-x-1 hover:text-ui-fg-base"
+        className="flex items-center gap-x-1 hover:text-ui-fg-base  text-Dark-blue text-base font-medium font-['Montserrat']"
         onClick={() => setIsOpen(!isOpen)}
         data-testid="account-dropdown-trigger"
       >
@@ -81,8 +79,13 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
               onClick={() => setIsOpen(false)}
               data-testid="dropdown-dashboard-link"
             >
-              <User size={16} />
-              <span>Dashboard</span>
+              <Image
+                src="/images/profile-icon.svg"
+                alt="Profile"
+                width={16}
+                height={16}
+              />
+              <span>Overview</span>
             </LocalizedClientLink>
 
             <LocalizedClientLink
@@ -91,7 +94,12 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
               onClick={() => setIsOpen(false)}
               data-testid="dropdown-profile-link"
             >
-              <User size={16} />
+              <Image
+                src="/images/profile-icon.svg"
+                alt="Profile"
+                width={16}
+                height={16}
+              />
               <span>Profile</span>
             </LocalizedClientLink>
 
@@ -101,7 +109,12 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
               onClick={() => setIsOpen(false)}
               data-testid="dropdown-orders-link"
             >
-              <Package size={16} />
+              <Image
+                src="/images/orders-icon.svg"
+                alt="Orders"
+                width={16}
+                height={16}
+              />
               <span>Orders</span>
             </LocalizedClientLink>
 
@@ -113,7 +126,12 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
               onClick={handleLogout}
               data-testid="dropdown-logout-button"
             >
-              <ArrowRightOnRectangle />
+              <Image
+                src="/images/logout-icon.svg"
+                alt="Logout"
+                width={16}
+                height={16}
+              />
               <span>Logout</span>
             </button>
           </div>

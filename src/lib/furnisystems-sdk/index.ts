@@ -26,6 +26,11 @@ export class FurnisystemsSDK {
     this.client.setAuthHeaders(headers)
   }
 
+  // Clear authentication headers
+  clearAuthHeaders() {
+    this.client.clearAuthHeaders()
+  }
+
   // Get the underlying Apollo Client for advanced usage
   getApolloClient() {
     return this.client.getClient()

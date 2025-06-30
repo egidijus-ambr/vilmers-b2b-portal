@@ -10,11 +10,19 @@ export interface Customer extends BaseEntity {
 }
 
 export interface Order extends BaseEntity {
-  display_id: string
-  status: string
-  total: number
-  currency_code: string
-  items: OrderItem[]
+  display_id?: string
+  status?: string
+  order_status: string
+  total?: number
+  total_price: number
+  currency_code?: string
+  order_code: string
+  order_number: string
+  invoice_code?: string
+  order_type?: string
+  order_external_code?: string
+  order_items_count?: number
+  items?: OrderItem[]
   shipping_address?: Address
   billing_address?: Address
 }

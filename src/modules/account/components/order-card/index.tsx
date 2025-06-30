@@ -5,9 +5,10 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
+import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 
 type OrderCardProps = {
-  order: HttpTypes.StoreOrder
+  order: Order
 }
 
 const OrderCard = ({ order }: OrderCardProps) => {
@@ -33,10 +34,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
           {new Date(order.created_at).toDateString()}
         </span>
         <span className="px-2" data-testid="order-amount">
-          {convertToLocale({
-            amount: order.total,
-            currency_code: order.currency_code,
-          })}
+          ${order.total_price.toFixed(2)}
         </span>
         <span className="pl-2">{`${numberOfLines} ${
           numberOfLines > 1 ? "items" : "item"
@@ -50,7 +48,10 @@ const OrderCard = ({ order }: OrderCardProps) => {
               className="flex flex-col gap-y-2"
               data-testid="order-item"
             >
-              <Thumbnail thumbnail={i.thumbnail} images={[]} size="full" />
+              {/* TODO: Add thumbnail when available in OrderItem type */}
+              <div className="w-full h-20 bg-gray-200 rounded flex items-center justify-center">
+                <span className="text-gray-500 text-sm">No Image</span>
+              </div>
               <div className="flex items-center text-small-regular text-ui-fg-base">
                 <span
                   className="text-ui-fg-base font-semibold"

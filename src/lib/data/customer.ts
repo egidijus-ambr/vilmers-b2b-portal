@@ -12,7 +12,9 @@ import {
   getCartId,
   removeAuthToken,
   removeCartId,
+  removeCacheId,
   setAuthToken,
+  setCacheId,
 } from "./cookies"
 
 export const retrieveCustomer = async (): Promise<
@@ -21,6 +23,8 @@ export const retrieveCustomer = async (): Promise<
   const authHeaders = await getAuthHeaders()
 
   if (!authHeaders || !("authorization" in authHeaders)) return null
+
+  const cacheOptions = await getCacheOptions("customers")
 
   try {
     console.log("Retrieving customer with auth headers:", authHeaders)
@@ -128,6 +132,13 @@ export async function login(_currentState: unknown, formData: FormData) {
     console.log("Login result:", result)
 
     await setAuthToken(result.token)
+
+    // Generate a new cache ID for this user session
+    const newCacheId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`
+    await setCacheId(newCacheId)
+
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
   } catch (error: any) {
@@ -147,14 +158,50 @@ export async function login(_currentState: unknown, formData: FormData) {
 }
 
 export async function signout(countryCode: string) {
-  // await sdk.auth.logout()
-  // await removeAuthToken()
-  // const customerCacheTag = await getCacheTag("customers")
-  // revalidateTag(customerCacheTag)
-  // await removeCartId()
-  // const cartCacheTag = await getCacheTag("carts")
-  // revalidateTag(cartCacheTag)
-  // redirect(`/${countryCode}/account`)
+  try {
+    // Get cache tags before removing cache ID
+    const customerCacheTag = await getCacheTag("customers")
+    const cartCacheTag = await getCacheTag("carts")
+
+    // Logout from the SDK
+    await sdk.customer.logout()
+
+    // Clear auth headers from the SDK client
+    sdk.clearAuthHeaders()
+
+    // Clear Apollo cache to remove any cached data
+    sdk.clearCache()
+
+    // Remove auth token from cookies
+    await removeAuthToken()
+
+    // Remove cart ID from cookies
+    await removeCartId()
+
+    // Remove cache ID from cookies to invalidate all cached data
+    await removeCacheId()
+
+    // Revalidate customer cache
+    if (customerCacheTag) {
+      revalidateTag(customerCacheTag)
+    }
+
+    // Revalidate cart cache
+    if (cartCacheTag) {
+      revalidateTag(cartCacheTag)
+    }
+
+    // Also revalidate generic tags to ensure complete cache invalidation
+    revalidateTag("customers")
+    revalidateTag("carts")
+
+    console.log("User logged out successfully")
+  } catch (error) {
+    console.error("Error during logout:", error)
+  }
+
+  // Redirect to account page (login page)
+  redirect(`/${countryCode}/account`)
 }
 
 export async function transferCart() {
