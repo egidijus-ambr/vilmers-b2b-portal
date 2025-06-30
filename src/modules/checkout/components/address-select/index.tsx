@@ -79,7 +79,7 @@ const AddressSelect = ({
                     />
                     <div className="flex flex-col">
                       <span className="text-left text-base-semi">
-                        {address.first_name} {address.last_name}
+                        {address.full_name}
                       </span>
                       {address.company && (
                         <span className="text-small-regular text-ui-fg-base">

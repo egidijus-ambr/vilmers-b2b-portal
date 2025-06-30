@@ -13,10 +13,10 @@ export default async function Footer() {
 
   return (
     <footer className="bg-primary w-full">
-      <div className="content-container flex flex-col w-full">
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-center justify-between py-24 px-12">
+      <div className="content-container flex flex-col w-full px-10">
+        <div className="flex flex-col gap-y-6 xsmall:flex-row items-center justify-between py-24  ">
           <div className="flex items-center gap-2">
-            <Text className="text-white text-xl">
+            <Text className="text-white text-2xl">
               How we can help?{" "}
               <a href="/contact" className="underline hover:no-underline">
                 Contact us.
@@ -222,7 +222,7 @@ export default async function Footer() {
             </div>
           </div> */}
         </div>
-        <div className="flex w-full mb-16 justify-between text-ui-fg-muted">
+        <div className="flex w-full mb-4 justify-between text-ui-fg-muted">
           <Text className="txt-compact-small">
             © {new Date().getFullYear()} Vilmers. All rights reserved.
           </Text>

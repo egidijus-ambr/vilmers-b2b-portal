@@ -73,9 +73,7 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
 
     return (
       <div className="flex flex-col font-semibold" data-testid="current-info">
-        <span>
-          {billingAddress.first_name} {billingAddress.last_name}
-        </span>
+        <span>{billingAddress.full_name}</span>
         <span>{billingAddress.company}</span>
         <span>
           {billingAddress.address_1}
@@ -104,17 +102,10 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
           <div className="grid grid-cols-2 gap-x-2">
             <Input
               label="First name"
-              name="first_name"
-              defaultValue={billingAddress?.first_name || undefined}
+              name="full_name"
+              defaultValue={billingAddress?.full_name || undefined}
               required
               data-testid="billing-first-name-input"
-            />
-            <Input
-              label="Last name"
-              name="last_name"
-              defaultValue={billingAddress?.last_name || undefined}
-              required
-              data-testid="billing-last-name-input"
             />
           </div>
           <Input

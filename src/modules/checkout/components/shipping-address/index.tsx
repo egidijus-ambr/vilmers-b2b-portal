@@ -19,8 +19,7 @@ const ShippingAddress = ({
   onChange: () => void
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({
-    "shipping_address.first_name": cart?.shipping_address?.first_name || "",
-    "shipping_address.last_name": cart?.shipping_address?.last_name || "",
+    "shipping_address.full_name": cart?.shipping_address?.full_name || "",
     "shipping_address.address_1": cart?.shipping_address?.address_1 || "",
     "shipping_address.company": cart?.shipping_address?.company || "",
     "shipping_address.postal_code": cart?.shipping_address?.postal_code || "",
@@ -52,8 +51,7 @@ const ShippingAddress = ({
     address &&
       setFormData((prevState: Record<string, any>) => ({
         ...prevState,
-        "shipping_address.first_name": address?.first_name || "",
-        "shipping_address.last_name": address?.last_name || "",
+        "shipping_address.full_name": address?.full_name || "",
         "shipping_address.address_1": address?.address_1 || "",
         "shipping_address.company": address?.company || "",
         "shipping_address.postal_code": address?.postal_code || "",
@@ -97,7 +95,7 @@ const ShippingAddress = ({
       {customer && (addressesInRegion?.length || 0) > 0 && (
         <Container className="mb-6 flex flex-col gap-y-4 p-5">
           <p className="text-small-regular">
-            {`Hi ${customer.first_name}, do you want to use one of your saved addresses?`}
+            {`Hi ${customer.full_name}, do you want to use one of your saved addresses?`}
           </p>
           <AddressSelect
             addresses={customer.addresses}
@@ -113,21 +111,12 @@ const ShippingAddress = ({
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="First name"
-          name="shipping_address.first_name"
+          name="shipping_address.full_name"
           autoComplete="given-name"
-          value={formData["shipping_address.first_name"]}
+          value={formData["shipping_address.full_name"]}
           onChange={handleChange}
           required
           data-testid="shipping-first-name-input"
-        />
-        <Input
-          label="Last name"
-          name="shipping_address.last_name"
-          autoComplete="family-name"
-          value={formData["shipping_address.last_name"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-last-name-input"
         />
         <Input
           label="Address"

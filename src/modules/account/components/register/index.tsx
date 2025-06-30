@@ -31,17 +31,10 @@ const Register = ({ setCurrentView }: Props) => {
         <div className="flex flex-col w-full gap-y-2">
           <Input
             label="First name"
-            name="first_name"
+            name="full_name"
             required
             autoComplete="given-name"
             data-testid="first-name-input"
-          />
-          <Input
-            label="Last name"
-            name="last_name"
-            required
-            autoComplete="family-name"
-            data-testid="last-name-input"
           />
           <Input
             label="Email"

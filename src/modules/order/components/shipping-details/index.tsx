@@ -23,8 +23,7 @@ const ShippingDetails = ({ order }: ShippingDetailsProps) => {
             Shipping Address
           </Text>
           <Text className="txt-medium text-ui-fg-subtle">
-            {order.shipping_address?.first_name}{" "}
-            {order.shipping_address?.last_name}
+            {order.shipping_address?.full_name}
           </Text>
           <Text className="txt-medium text-ui-fg-subtle">
             {order.shipping_address?.address_1}{" "}

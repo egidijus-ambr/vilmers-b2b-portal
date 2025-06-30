@@ -60,7 +60,7 @@ const Login = ({ setCurrentView }: Props) => {
             id="remember-me"
             name="remember-me"
             type="checkbox"
-            className="mt-1 h-5 w-5 text-gray-800 focus:ring-blue-500 border-gray-300 "
+            className="mt-1 h-5 w-5 text-gray-800 focus:ring-blue-500 border-gray-00 "
           />
           <label
             htmlFor="remember-me"

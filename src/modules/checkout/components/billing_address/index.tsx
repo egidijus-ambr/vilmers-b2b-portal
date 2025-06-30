@@ -5,8 +5,7 @@ import CountrySelect from "../country-select"
 
 const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
   const [formData, setFormData] = useState<any>({
-    "billing_address.first_name": cart?.billing_address?.first_name || "",
-    "billing_address.last_name": cart?.billing_address?.last_name || "",
+    "billing_address.full_name": cart?.billing_address?.full_name || "",
     "billing_address.address_1": cart?.billing_address?.address_1 || "",
     "billing_address.company": cart?.billing_address?.company || "",
     "billing_address.postal_code": cart?.billing_address?.postal_code || "",
@@ -32,21 +31,12 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="First name"
-          name="billing_address.first_name"
+          name="billing_address.full_name"
           autoComplete="given-name"
-          value={formData["billing_address.first_name"]}
+          value={formData["billing_address.full_name"]}
           onChange={handleChange}
           required
           data-testid="billing-first-name-input"
-        />
-        <Input
-          label="Last name"
-          name="billing_address.last_name"
-          autoComplete="family-name"
-          value={formData["billing_address.last_name"]}
-          onChange={handleChange}
-          required
-          data-testid="billing-last-name-input"
         />
         <Input
           label="Address"

@@ -15,8 +15,8 @@ const Overview = ({ customer, orders }: OverviewProps) => {
     <div data-testid="overview-page-wrapper">
       <div className="hidden small:block">
         <div className="text-xl-semi flex justify-between items-center mb-4">
-          <span data-testid="welcome-message" data-value={customer?.first_name}>
-            Hello {customer?.first_name}
+          <span data-testid="welcome-message" data-value={customer?.full_name}>
+            {customer?.full_name}
           </span>
           <span className="text-small-regular text-ui-fg-base">
             Signed in as:{" "}
@@ -146,7 +146,7 @@ const getProfileCompletion = (customer: HttpTypes.StoreCustomer | null) => {
     count++
   }
 
-  if (customer.first_name && customer.last_name) {
+  if (customer.full_name) {
     count++
   }
 
