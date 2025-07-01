@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"
 import { Suspense } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import AccountDropdown from "@modules/layout/components/account-dropdown"
-import { CompactLanguageSwitcher } from "@lib/i18n"
+import { CompactLanguageSwitcher, supportedLanguages } from "@lib/i18n"
 import { t } from "i18next"
 
 interface NavProps {
@@ -15,7 +15,11 @@ export default function Nav({ customer }: NavProps) {
   const pathname = usePathname()
 
   // Check if we're on the home page
-  const isHomePage = pathname === "/" || Boolean(pathname.match(/^\/[a-z]{2}$/)) // matches "/" or "/us", "/en", etc.
+  const pathSegments = pathname.split("/").filter(Boolean)
+  const isHomePage =
+    pathname === "/" ||
+    (pathSegments.length === 1 &&
+      supportedLanguages.includes(pathSegments[0] as any))
 
   return (
     <div

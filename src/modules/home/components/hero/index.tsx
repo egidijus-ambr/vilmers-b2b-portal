@@ -20,7 +20,7 @@ const Hero = () => {
         <span>
           <Heading
             level="h1"
-            className="text-6xl font-medium  text-white font-normal drop-shadow-lg leading-[72px]"
+            className="text-6xl font-medium  text-white font-normal drop-shadow-lg "
           >
             Comfort and quality
           </Heading>
@@ -34,12 +34,7 @@ const Hero = () => {
         <a
           href="https://github.com/medusajs/nextjs-starter-medusa"
           target="_blank"
-        >
-          {/* <Button variant="secondary">
-            View on GitHub
-            <Github />
-          </Button> */}
-        </a>
+        ></a>
       </div>
     </div>
   )
