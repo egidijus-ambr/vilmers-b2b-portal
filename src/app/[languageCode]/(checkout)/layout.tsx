@@ -4,7 +4,7 @@ import MedusaCTA from "@modules/layout/components/medusa-cta"
 
 interface CheckoutLayoutProps {
   children: React.ReactNode
-  params: { countryCode: string }
+  params: { languageCode: string }
 }
 
 export default function CheckoutLayout({

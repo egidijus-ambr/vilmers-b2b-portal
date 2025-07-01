@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 interface PageLayoutProps {
   children: React.ReactNode
-  params: { countryCode: string }
+  params: { languageCode: string }
 }
 
 export default async function PageLayout({
@@ -34,7 +34,7 @@ export default async function PageLayout({
   }
 
   // Extract language from URL parameter
-  const language = params.countryCode as SupportedLanguage
+  const language = params.languageCode as SupportedLanguage
   const validLanguage = supportedLanguages.includes(language) ? language : "lt"
 
   return (

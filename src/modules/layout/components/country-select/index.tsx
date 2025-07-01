@@ -32,8 +32,8 @@ const CountrySelect = ({ toggleState, regions }: CountrySelectProps) => {
     | undefined
   >(undefined)
 
-  const { countryCode } = useParams()
-  const currentPath = usePathname().split(`/${countryCode}`)[1]
+  const { languageCode } = useParams()
+  const currentPath = usePathname().split(`/${languageCode}`)[1]
 
   const { state, close } = toggleState
 
@@ -51,11 +51,11 @@ const CountrySelect = ({ toggleState, regions }: CountrySelectProps) => {
   }, [regions])
 
   useEffect(() => {
-    if (countryCode) {
-      const option = options?.find((o) => o?.country === countryCode)
+    if (languageCode) {
+      const option = options?.find((o) => o?.country === languageCode)
       setCurrent(option)
     }
-  }, [options, countryCode])
+  }, [options, languageCode])
 
   const handleChange = (option: CountryOption) => {
     updateRegion(option.country, currentPath)
@@ -68,8 +68,8 @@ const CountrySelect = ({ toggleState, regions }: CountrySelectProps) => {
         as="span"
         onChange={handleChange}
         defaultValue={
-          countryCode
-            ? options?.find((o) => o?.country === countryCode)
+          languageCode
+            ? options?.find((o) => o?.country === languageCode)
             : undefined
         }
       >

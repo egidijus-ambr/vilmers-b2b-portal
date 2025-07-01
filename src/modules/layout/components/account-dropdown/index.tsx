@@ -21,10 +21,10 @@ const AccountDropdown = ({
 }: AccountDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const { countryCode } = useParams() as { countryCode: string }
+  const { languageCode } = useParams() as { languageCode: string }
 
   const handleLogout = async () => {
-    await signout(countryCode)
+    await signout(languageCode)
   }
 
   // Close dropdown when clicking outside

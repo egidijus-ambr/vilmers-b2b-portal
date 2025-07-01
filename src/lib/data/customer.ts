@@ -16,6 +16,7 @@ import {
   setAuthToken,
   setCacheId,
 } from "./cookies"
+import { getCountryCodeFromLanguage } from "@lib/util/language-mapping"
 
 export const retrieveCustomer = async (): Promise<
   (HttpTypes.StoreCustomer & { full_name?: string; managers?: any[] }) | null
@@ -166,7 +167,7 @@ export async function login(_currentState: unknown, formData: FormData) {
   redirect("/lt/account")
 }
 
-export async function signout(countryCode: string) {
+export async function signout(languageCode: string) {
   try {
     // Get cache tags before removing cache ID
     const customerCacheTag = await getCacheTag("customers")
@@ -213,7 +214,7 @@ export async function signout(countryCode: string) {
   }
 
   // Redirect to account page (login page)
-  redirect(`/${countryCode}/account`)
+  redirect(`/${languageCode}/account`)
 }
 
 export async function transferCart() {

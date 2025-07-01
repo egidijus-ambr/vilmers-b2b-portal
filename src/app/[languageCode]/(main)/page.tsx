@@ -4,6 +4,7 @@ import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
+import { getCountryCodeFromLanguage } from "@lib/util/language-mapping"
 
 export const metadata: Metadata = {
   title: "Vilmers",
@@ -11,12 +12,13 @@ export const metadata: Metadata = {
 }
 
 export default async function Home(props: {
-  params: Promise<{ countryCode: string }>
+  params: Promise<{ languageCode: string }>
 }) {
   const params = await props.params
 
-  const { countryCode } = params
+  const { languageCode } = params
 
+  const countryCode = getCountryCodeFromLanguage(languageCode)
   const region = await getRegion(countryCode)
 
   const { collections } = await listCollections({
