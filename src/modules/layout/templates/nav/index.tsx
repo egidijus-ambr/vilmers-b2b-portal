@@ -5,6 +5,7 @@ import { Suspense } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import AccountDropdown from "@modules/layout/components/account-dropdown"
 import { CompactLanguageSwitcher } from "@lib/i18n"
+import { t } from "i18next"
 
 interface NavProps {
   customer: any
@@ -69,7 +70,7 @@ export default function Nav({ customer }: NavProps) {
                   }`}
                   data-testid="nav-login-link"
                 >
-                  Login
+                  {t("log-in")}
                 </LocalizedClientLink>
               )}
             </div>
