@@ -8,7 +8,7 @@ export const supportedLanguages: readonly SupportedLanguage[] = [
   "de",
   "lt",
 ] as const
-export const defaultLanguage: SupportedLanguage = "en"
+export const defaultLanguage: SupportedLanguage = "lt"
 
 // Provider and hooks
 export {
@@ -21,7 +21,6 @@ export {
 // Server-side utilities
 export { getServerTranslations, getServerTranslation } from "./server-config"
 export {
-  ServerTranslation,
   getServerLanguage,
   getServerT,
   preloadTranslations,
@@ -33,6 +32,10 @@ export {
   CompactLanguageSwitcher,
 } from "./components/language-switcher"
 export { TranslationDemo } from "./components/translation-demo"
+export {
+  ServerTranslation,
+  createServerT,
+} from "./components/server-translation"
 
 // Utility functions
 export const getLanguageFromPath = (

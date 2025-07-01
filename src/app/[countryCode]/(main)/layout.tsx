@@ -8,12 +8,21 @@ import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
+import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
 }
 
-export default async function PageLayout(props: { children: React.ReactNode }) {
+interface PageLayoutProps {
+  children: React.ReactNode
+  params: { countryCode: string }
+}
+
+export default async function PageLayout({
+  children,
+  params,
+}: PageLayoutProps) {
   const customer = await retrieveCustomer()
   const cart = await retrieveCart()
   let shippingOptions: StoreCartShippingOption[] = []
@@ -23,6 +32,10 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
     shippingOptions = shipping_options
   }
+
+  // Extract language from URL parameter
+  const language = params.countryCode as SupportedLanguage
+  const validLanguage = supportedLanguages.includes(language) ? language : "lt"
 
   return (
     <>
@@ -38,8 +51,8 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
           shippingOptions={shippingOptions}
         />
       )}
-      {props.children}
-      <Footer />
+      {children}
+      <Footer language={validLanguage} />
     </>
   )
 }

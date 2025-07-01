@@ -5,12 +5,17 @@ import { Text, clx } from "@medusajs/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
 import { getServerT } from "@lib/i18n/server-translations"
+import { SupportedLanguage } from "@lib/i18n"
 
-export default async function Footer() {
+interface FooterProps {
+  language: SupportedLanguage
+}
+
+export default async function Footer({ language }: FooterProps) {
   const { collections } = await listCollections({
     fields: "*products",
   })
-  const t = await getServerT("common")
+  const t = await getServerT("common", language)
   const productCategories = await listCategories()
 
   return (

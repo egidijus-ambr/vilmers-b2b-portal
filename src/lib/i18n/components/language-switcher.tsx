@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { clx } from "@medusajs/ui"
+import { useRouter, usePathname } from "next/navigation"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import { useTranslations } from "../provider"
 import { supportedLanguages, SupportedLanguage } from "../index"
@@ -31,12 +32,20 @@ export function LanguageSwitcher({
   className = "",
   variant = "dropdown",
 }: LanguageSwitcherProps) {
-  const { language, changeLanguage, isLoading } = useTranslations()
+  const { language, isLoading } = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
 
-  const handleLanguageChange = async (newLanguage: SupportedLanguage) => {
+  const handleLanguageChange = (newLanguage: SupportedLanguage) => {
     if (newLanguage !== language) {
-      await changeLanguage(newLanguage)
+      // Extract the current path without the language prefix
+      const pathSegments = pathname.split("/")
+      const currentPath = pathSegments.slice(2).join("/") // Remove empty string and language code
+
+      // Navigate to the new language URL
+      const newPath = `/${newLanguage}${currentPath ? `/${currentPath}` : ""}`
+      router.push(newPath)
       setIsOpen(false)
     }
   }
@@ -155,12 +164,20 @@ export function CompactLanguageSwitcher({
 }: {
   className?: string
 }) {
-  const { language, changeLanguage, isLoading } = useTranslations()
+  const { language, isLoading } = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
 
-  const handleLanguageChange = async (newLanguage: SupportedLanguage) => {
+  const handleLanguageChange = (newLanguage: SupportedLanguage) => {
     if (newLanguage !== language) {
-      await changeLanguage(newLanguage)
+      // Extract the current path without the language prefix
+      const pathSegments = pathname.split("/")
+      const currentPath = pathSegments.slice(2).join("/") // Remove empty string and language code
+
+      // Navigate to the new language URL
+      const newPath = `/${newLanguage}${currentPath ? `/${currentPath}` : ""}`
+      router.push(newPath)
       setIsOpen(false)
     }
   }

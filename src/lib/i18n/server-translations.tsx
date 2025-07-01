@@ -10,6 +10,7 @@ interface ServerTranslationProps {
   translationKey: string
   namespace?: string
   fallback?: string
+  language?: SupportedLanguage
   children?: React.ReactNode
 }
 
@@ -17,10 +18,11 @@ export async function ServerTranslation({
   translationKey,
   namespace = "common",
   fallback,
+  language,
 }: ServerTranslationProps) {
-  const language = await getServerLanguage()
+  const lang = language || defaultLanguage
   const translation = await getServerTranslation(
-    language,
+    lang,
     translationKey,
     namespace
   )
@@ -36,9 +38,12 @@ export async function getServerLanguage(): Promise<SupportedLanguage> {
 }
 
 // Server-side translation function for use in server components
-export async function getServerT(namespace: string = "common") {
-  const language = await getServerLanguage()
-  const translations = await getServerTranslations(language, [namespace])
+export async function getServerT(
+  namespace: string = "common",
+  language?: SupportedLanguage
+) {
+  const lang = language || defaultLanguage
+  const translations = await getServerTranslations(lang, [namespace])
 
   return (key: string, fallback?: string) => {
     const fullKey = namespace === "common" ? key : `${namespace}:${key}`

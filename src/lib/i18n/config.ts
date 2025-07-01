@@ -5,26 +5,15 @@ import resourcesToBackend from "i18next-resources-to-backend"
 import Backend from "i18next-locize-backend"
 
 // Define supported languages
-export const supportedLanguages = ["en", "fr", "de"] as const
+export const supportedLanguages = ["en", "fr", "de", "lt"] as const
 export type SupportedLanguage = (typeof supportedLanguages)[number]
 
 // Default language
-export const defaultLanguage: SupportedLanguage = "en"
-
-// Language detection options
-const detectionOptions = {
-  order: ["path", "cookie", "localStorage", "navigator", "htmlTag"],
-  caches: ["localStorage", "cookie"],
-  excludeCacheFor: ["cimode"],
-  cookieMinutes: 60 * 24 * 30, // 30 days
-  cookieDomain:
-    typeof window !== "undefined" ? window.location.hostname : undefined,
-}
+export const defaultLanguage: SupportedLanguage = "lt"
 
 // Initialize i18next
 i18n
   .use(Backend)
-  .use(LanguageDetector)
   .use(initReactI18next)
   // .use(
   //   resourcesToBackend((language: string, namespace: string) => {
@@ -38,7 +27,14 @@ i18n
     defaultNS: "common",
     ns: ["common", "navigation", "product", "cart", "checkout", "account"],
 
-    detection: detectionOptions,
+    // Disable automatic language detection - we handle it manually via URL
+    lng: defaultLanguage,
+
+    // Disable all automatic detection to prevent hydration mismatches
+    detection: {
+      order: [],
+      caches: [],
+    },
 
     interpolation: {
       escapeValue: false, // React already escapes values

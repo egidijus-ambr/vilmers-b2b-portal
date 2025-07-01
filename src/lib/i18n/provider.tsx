@@ -8,8 +8,14 @@ import React, {
   Suspense,
 } from "react"
 import { useTranslation, I18nextProvider } from "react-i18next"
+import { usePathname } from "next/navigation"
 import i18n from "./client-config"
-import { SupportedLanguage, supportedLanguages, defaultLanguage } from "./index"
+import {
+  SupportedLanguage,
+  supportedLanguages,
+  defaultLanguage,
+  getLanguageFromPath,
+} from "./index"
 
 interface I18nContextType {
   language: SupportedLanguage
@@ -30,45 +36,23 @@ function TranslationLoadingFallback() {
 
 interface I18nProviderProps {
   children: React.ReactNode
-  initialLanguage?: SupportedLanguage
 }
 
-export function I18nProvider({ children, initialLanguage }: I18nProviderProps) {
-  const [language, setLanguage] = useState<SupportedLanguage>(
-    initialLanguage || defaultLanguage
-  )
+export function I18nProvider({ children }: I18nProviderProps) {
+  const pathname = usePathname()
+
+  // Initialize language from URL immediately to prevent hydration mismatch
+  const initialLanguage = getLanguageFromPath(pathname) || defaultLanguage
+  const [language, setLanguage] = useState<SupportedLanguage>(initialLanguage)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const initializeI18n = async () => {
-      try {
-        // Wait a bit for i18n to complete its initialization and language detection
-        await new Promise((resolve) => setTimeout(resolve, 100))
-
-        // Get the current language from i18n (which may have been auto-detected)
-        const currentLanguage = i18n.language as SupportedLanguage
-
-        // If i18n has detected a different language, sync our state
-        if (
-          currentLanguage &&
-          supportedLanguages.includes(currentLanguage) &&
-          currentLanguage !== language
-        ) {
-          setLanguage(currentLanguage)
-        } else {
-          // Otherwise, set the language we have
-          await i18n.changeLanguage(language)
-        }
-
-        setIsLoading(false)
-      } catch (error) {
-        console.error("Failed to initialize i18n:", error)
-        setIsLoading(false)
-      }
-    }
-
-    initializeI18n()
-  }, [])
+  // Initialize i18n synchronously to prevent hydration mismatch
+  React.useLayoutEffect(() => {
+    // Change language synchronously
+    i18n.changeLanguage(initialLanguage)
+    setLanguage(initialLanguage)
+    setIsLoading(false)
+  }, [initialLanguage])
 
   // Listen for language changes from i18n
   useEffect(() => {
