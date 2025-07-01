@@ -1,41 +1,57 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
+import { useTranslations } from "@lib/i18n"
+import { getStoreLoginLink } from "@lib/data/customer"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
-import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
+import {
+  Order,
+  CustomerManager,
+} from "@lib/furnisystems-sdk/modules/customer/types"
 
 type OverviewProps = {
-  customer: HttpTypes.StoreCustomer | null
+  customer: (HttpTypes.StoreCustomer & { managers?: CustomerManager[] }) | null
   orders: Order[] | null
 }
 
 const Overview = ({ customer, orders }: OverviewProps) => {
+  const { t } = useTranslations("account")
+
+  const handlePlaceOrder = async () => {
+    try {
+      // Call the server action to get the store login link
+      const storeUrl = await getStoreLoginLink()
+      // Open the store URL in a new tab
+      window.open(storeUrl, "_blank")
+    } catch (error) {
+      console.error("Error getting store login link:", error)
+      // Fallback: open store URL without token
+      window.open(process.env.NEXT_PUBLIC_BASE_URL, "_blank")
+    }
+  }
+
   const actionCards = [
     {
-      title: "Place an order",
-      description:
-        "Easily manage, track, and resolve disputes or requests with streamlined tools and updates.",
-      onClick: () => console.log("Place order clicked"),
+      title: t("place-an-order.title"),
+      description: t("place-an-order.description"),
+      onClick: handlePlaceOrder,
     },
     {
-      title: "Claims",
-      description:
-        "Easily manage, track, and resolve disputes or requests with streamlined tools and updates.",
+      title: t("claims.title"),
+      description: t("claims.description"),
       onClick: () => console.log("Claims clicked"),
     },
+    // {
+    //   title: t("settings.title"),
+    //   description: t("settings.description"),
+    //   onClick: () => console.log("Settings clicked"),
+    // },
     {
-      title: "Settings",
-      description:
-        "Easily manage, track, and resolve disputes or requests with streamlined tools and updates.",
-      onClick: () => console.log("Settings clicked"),
-    },
-    {
-      title: "Explosion rules",
-      description:
-        "Easily manage, track, and resolve disputes or requests with streamlined tools and updates.",
-      onClick: () => console.log("Explosion rules clicked"),
+      title: t("exposition-rules.title"),
+      description: t("exposition-rules.description"),
+      onClick: () => window.open("/Exposition rules.pdf", "_blank"),
     },
   ]
 
@@ -66,18 +82,23 @@ const Overview = ({ customer, orders }: OverviewProps) => {
               title={card.title}
               description={card.description}
               onClick={card.onClick}
+              buttonText={t("check")}
             />
           ))}
         </div>
 
         {/* Manager Profile Card - Takes 1 column */}
         <div className="col-span-1 w-full h-fit">
-          <ManagerProfileCard
-            name="John Doe"
-            email="johndoe@mail.com"
-            phone="+380 63 566 6767"
-            languages={["UA", "LT"]}
-          />
+          {customer?.managers && customer.managers.length > 0 ? (
+            <ManagerProfileCard
+              manager={customer.managers[0].manager}
+              languages={["UA", "LT"]}
+            />
+          ) : (
+            <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">
+              <p className="text-gray-500">{t("no-manager-assigned")}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -87,7 +108,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           <OrdersTable orders={orders} />
         ) : (
           <div className="bg-white rounded-lg p-8 text-center">
-            <p className="text-gray-500">No orders found</p>
+            <p className="text-gray-500">{t("no-orders-found")}</p>
           </div>
         )}
       </div>

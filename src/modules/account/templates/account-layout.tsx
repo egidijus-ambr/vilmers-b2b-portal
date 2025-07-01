@@ -8,6 +8,7 @@ import OutlineButton from "@modules/common/components/outline-button"
 
 import AccountNav from "../components/account-nav"
 import { HttpTypes } from "@medusajs/types"
+import { t } from "i18next"
 
 interface AccountLayoutProps {
   customer: HttpTypes.StoreCustomer | null
@@ -43,11 +44,10 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
             {/* Left side - Text content */}
             <div className="hidden lg:block flex-1 max-w-2xl">
               <h1 className="w-full max-w-[670px] font-medium text-[28px] lg:text-[40px] leading-[40px] lg:leading-[56px] text-white mb-8">
-                The best design reflects your personality—imagine it before you
-                buy.
+                {t("login-welcome-main-text")}
               </h1>
               <div>
-                <OutlineButton showArrow>Become a partner</OutlineButton>
+                {/* <OutlineButton showArrow>Become a partner</OutlineButton> */}
               </div>
             </div>
 

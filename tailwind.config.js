@@ -50,15 +50,6 @@ module.exports = {
         "status-paid": "#B58575",
         "status-delivered": "#C0BCC1",
         // Legacy colors (keeping for backward compatibility)
-        "beige-20-legacy": "#f0ede8",
-        "line-legacy": "#e2e8f0",
-        "status-completed-legacy": "#dcfce7",
-        "status-awaiting-payment-legacy": "#fef3c7",
-        "status-pending-legacy": "#dbeafe",
-        "status-shipping-legacy": "#e0e7ff",
-        "status-canceled-legacy": "#fee2e2",
-        "status-paid-legacy": "#d1fae5",
-        "status-delivered-legacy": "#ecfdf5",
         grey: {
           0: "#FFFFFF",
           5: "#F9FAFB",

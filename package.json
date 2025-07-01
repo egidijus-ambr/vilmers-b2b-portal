@@ -27,6 +27,7 @@
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-locize-backend": "^7.0.4",
     "i18next-resources-to-backend": "^1.2.1",
+    "libphonenumber-js": "^1.12.9",
     "lodash": "^4.17.21",
     "next": "^15.3.1",
     "pg": "^8.11.3",

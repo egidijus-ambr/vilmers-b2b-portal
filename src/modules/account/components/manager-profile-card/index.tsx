@@ -1,11 +1,11 @@
+import { t } from "i18next"
 import React from "react"
+import { Manager } from "../../../../lib/furnisystems-sdk/modules/customer/types"
+import { formatPhoneForDisplay, formatToE164 } from "../../../../lib/util/phone"
 
 interface ManagerProfileCardProps {
-  name: string
-  email: string
-  phone: string
+  manager: Manager
   languages?: string[]
-  imageUrl?: string
 }
 
 // Flag components for languages
@@ -27,12 +27,18 @@ const LithuanianFlag = () => (
 )
 
 const ManagerProfileCard = ({
-  name,
-  email,
-  phone,
+  manager,
   languages = ["UA", "LT"],
-  imageUrl,
 }: ManagerProfileCardProps) => {
+  const fullName = `${manager.name} ${manager.surname}`
+  const imageUrl = manager.image?.src || manager.image?.src_md
+  console.log("Manager Profile Card Rendered", {
+    manager,
+    imageUrl,
+    hasImage: !!manager.image,
+  })
+
+  const phone = manager.default_phone_number || ""
   const renderFlag = (lang: string) => {
     switch (lang) {
       case "UA":
@@ -60,14 +66,14 @@ const ManagerProfileCard = ({
           {imageUrl ? (
             <img
               src={imageUrl}
-              alt={name}
+              alt={fullName}
               className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-lg font-medium">
-              {name
+              {fullName
                 .split(" ")
-                .map((n) => n[0])
+                .map((n: string) => n[0])
                 .join("")}
             </div>
           )}
@@ -76,32 +82,32 @@ const ManagerProfileCard = ({
       <div className="w-96 left-6 top-[226px] absolute inline-flex flex-col justify-start items-start gap-10">
         <div className="self-stretch flex flex-col justify-center items-center gap-2">
           <div className="self-stretch text-center justify-start text-dark-blue-70 text-sm font-normal font-sans uppercase leading-snug tracking-[2.80px]">
-            Manager
+            {t("manager")}
           </div>
           <div className="self-stretch text-center justify-start text-dark-blue text-xl font-medium font-sans leading-9">
-            {name}
+            {fullName}
           </div>
         </div>
         <div className="self-stretch flex flex-col justify-start items-start gap-6">
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="text-justify justify-start text-dark-blue-70 text-base font-normal font-sans leading-normal">
-              Email
+              {t("email")}
             </div>
             <div className="justify-start text-dark-blue text-base font-medium font-sans uppercase leading-normal">
-              {email}
+              {manager.email}
             </div>
           </div>
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="text-justify justify-start text-dark-blue-70 text-base font-normal font-sans leading-normal">
-              Phone
+              {t("phone")}
             </div>
             <div className="justify-start text-dark-blue text-base font-medium font-sans leading-normal">
-              {phone}
+              {formatPhoneForDisplay(phone)}
             </div>
           </div>
           <div className="self-stretch inline-flex justify-between items-start">
             <div className="text-justify justify-start text-dark-blue-70 text-base font-normal font-sans leading-normal">
-              Languages
+              {t("languages", { count: languages.length })}
             </div>
             <div className="flex justify-start items-start gap-2">
               {languages.map((lang, index) => (

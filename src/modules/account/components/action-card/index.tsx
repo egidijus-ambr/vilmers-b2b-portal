@@ -27,14 +27,14 @@ const ActionCard = ({
             {description}
           </p>
         </div>
-        <div className="w-20 inline-flex justify-between items-center">
-          <span className="justify-start text-slate-800 text-base font-medium font-['Montserrat'] leading-normal">
-            {buttonText}
-          </span>
+        <div className="inline-flex justify-between items-center">
           <button
             onClick={onClick}
-            className="w-6 h-6 relative hover:opacity-70 transition-opacity"
+            className="inline-flex items-center hover:opacity-70 transition-opacity"
           >
+            <span className="pr-2 text-slate-800 text-base font-medium font-['Montserrat'] leading-normal">
+              {buttonText}
+            </span>
             <svg
               width="24"
               height="11"

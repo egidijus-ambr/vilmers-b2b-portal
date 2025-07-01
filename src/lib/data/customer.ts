@@ -18,7 +18,7 @@ import {
 } from "./cookies"
 
 export const retrieveCustomer = async (): Promise<
-  (HttpTypes.StoreCustomer & { full_name?: string }) | null
+  (HttpTypes.StoreCustomer & { full_name?: string; managers?: any[] }) | null
 > => {
   const authHeaders = await getAuthHeaders()
 
@@ -40,8 +40,11 @@ export const retrieveCustomer = async (): Promise<
       return null
     }
 
-    // Map Customer to StoreCustomer with full_name extension
-    const storeCustomer: HttpTypes.StoreCustomer & { full_name?: string } = {
+    // Map Customer to StoreCustomer with full_name and managers extension
+    const storeCustomer: HttpTypes.StoreCustomer & {
+      full_name?: string
+      managers?: any[]
+    } = {
       id: customer.id,
       created_at: customer.created_at,
       updated_at: customer.updated_at,
@@ -53,6 +56,7 @@ export const retrieveCustomer = async (): Promise<
       default_shipping_address_id: null,
       company_name: null,
       addresses: [],
+      managers: customer.managers || [],
     }
 
     return storeCustomer
@@ -258,6 +262,27 @@ export const addCustomerAddress = async (
   //   .catch((err) => {
   //     return { success: false, error: err.toString() }
   //   })
+}
+
+export const getStoreLoginLink = async (): Promise<string> => {
+  const authHeaders = await getAuthHeaders()
+
+  if (!authHeaders || !("authorization" in authHeaders)) {
+    throw new Error("Not authenticated")
+  }
+
+  try {
+    // Set the auth headers on the SDK client before making the request
+    sdk.setAuthHeaders(authHeaders)
+
+    // Call the SDK method to get the store login link
+    const storeUrl = await sdk.customer.getStoreLoginLink()
+
+    return storeUrl
+  } catch (error) {
+    console.error("Error getting store login link:", error)
+    throw error
+  }
 }
 
 export const deleteCustomerAddress = async (

@@ -3,7 +3,7 @@ export type SupportedLanguage = "en" | "es" | "fr" | "de" | "lt"
 
 export const supportedLanguages: readonly SupportedLanguage[] = [
   "en",
-  "es",
+  // "es",
   "fr",
   "de",
   "lt",

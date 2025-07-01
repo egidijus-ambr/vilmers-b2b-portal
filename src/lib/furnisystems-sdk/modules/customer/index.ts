@@ -19,6 +19,12 @@ const LOGIN_MUTATION = gql`
   }
 `
 
+const LOGIN_TO_STORE_WITH_TOKEN_MUTATION = gql`
+  mutation LoginToStoreWithToken {
+    loginToStoreWithToken
+  }
+`
+
 const GET_ME_QUERY = gql`
   query GetMe {
     getMe {
@@ -28,6 +34,22 @@ const GET_ME_QUERY = gql`
       b2b_company_name
       account_code
       price_listId
+      fabric_palettes {
+        id
+      }
+      managers {
+        id
+        manager {
+          name
+          surname
+          email
+          default_phone_number
+          image {
+            src_md
+            src
+          }
+        }
+      }
     }
   }
 `
@@ -121,6 +143,22 @@ export class CustomerModule {
           b2b_company_name: string
           account_code: string
           price_listId: string
+          fabric_palettes: {
+            id: string
+          }[]
+          managers: {
+            id: string
+            manager: {
+              name: string
+              surname: string
+              email: string
+              default_phone_number?: string
+              image?: {
+                src_md: string
+                src: string
+              }
+            }
+          }[]
         }
       }>(GET_ME_QUERY)
 
@@ -138,6 +176,11 @@ export class CustomerModule {
         email: customerData.email,
         full_name: customerData.name || "",
         has_account: true,
+        b2b_company_name: customerData.b2b_company_name,
+        account_code: customerData.account_code,
+        price_listId: customerData.price_listId,
+        fabric_palettes: customerData.fabric_palettes,
+        managers: customerData.managers,
       }
 
       return customer
@@ -164,7 +207,10 @@ export class CustomerModule {
           }
           order_external_code?: string
         }[]
-      }>(GET_CUSTOMER_ORDERS_QUERY, {})
+      }>(GET_CUSTOMER_ORDERS_QUERY, {
+        fetchPolicy: "no-cache", // Always fetch fresh data, never use cache
+        errorPolicy: "all", // Return partial data even if there are errors
+      })
 
       const ordersData = response.getCustomerOrders
 
@@ -190,6 +236,26 @@ export class CustomerModule {
       return orders
     } catch (error) {
       console.error("Error fetching customer orders:", error)
+      throw error
+    }
+  }
+
+  async getStoreLoginLink(): Promise<string> {
+    try {
+      const response = await this.client.mutate<{
+        loginToStoreWithToken: string
+      }>(LOGIN_TO_STORE_WITH_TOKEN_MUTATION, {})
+
+      const resultToken = response.loginToStoreWithToken
+
+      if (!resultToken) {
+        throw new Error("Login with token failed: No token received")
+      }
+
+      const storeUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/login?token=${resultToken}`
+
+      return storeUrl
+    } catch (error) {
       throw error
     }
   }

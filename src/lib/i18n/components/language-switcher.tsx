@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState } from "react"
+import { clx } from "@medusajs/ui"
+import ChevronDown from "@modules/common/icons/chevron-down"
 import { useTranslations } from "../provider"
 import { supportedLanguages, SupportedLanguage } from "../index"
 
@@ -169,13 +171,18 @@ export function CompactLanguageSwitcher({
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
         className={`
-          flex items-center justify-center w-10 h-10 rounded-full
-          bg-gray-100 hover:bg-gray-200 transition-colors
+          flex items-center justify-center w-16 h-10 text-base font-medium font-['Montserrat'] 
           ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
         `}
         title={languageNames[language]}
       >
-        <span className="text-lg">{languageFlags[language]}</span>
+        <span className="text-lg pr-1">{language.toUpperCase()}</span>
+        <ChevronDown
+          className={clx("transition-transform duration-200", {
+            "rotate-180": isOpen,
+          })}
+          size={16}
+        />
       </button>
 
       {isOpen && (
@@ -185,7 +192,7 @@ export function CompactLanguageSwitcher({
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+          <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-20 text-dark-blue">
             <div className="py-1">
               {supportedLanguages.map((lang) => (
                 <button

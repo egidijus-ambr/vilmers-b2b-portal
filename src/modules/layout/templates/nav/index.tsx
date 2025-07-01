@@ -59,7 +59,19 @@ export default function Nav({ customer }: NavProps) {
 
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
             <div className="hidden small:flex items-center gap-x-6 h-full">
-              <AccountDropdown customer={customer} isHomePage={isHomePage} />
+              {customer ? (
+                <AccountDropdown customer={customer} isHomePage={isHomePage} />
+              ) : (
+                <LocalizedClientLink
+                  href="/account"
+                  className={`text-base font-medium font-['Montserrat'] px-4 py-2 transition-colors ${
+                    isHomePage ? "text-white " : "text-dark-blue  "
+                  }`}
+                  data-testid="nav-login-link"
+                >
+                  Login
+                </LocalizedClientLink>
+              )}
             </div>
 
             {/* <Suspense

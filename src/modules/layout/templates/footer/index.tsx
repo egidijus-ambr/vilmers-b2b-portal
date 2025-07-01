@@ -4,11 +4,13 @@ import { Text, clx } from "@medusajs/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
+import { getServerT } from "@lib/i18n/server-translations"
 
 export default async function Footer() {
   const { collections } = await listCollections({
     fields: "*products",
   })
+  const t = await getServerT("common")
   const productCategories = await listCategories()
 
   return (
@@ -17,9 +19,9 @@ export default async function Footer() {
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-center justify-between py-24  ">
           <div className="flex items-center gap-2">
             <Text className="text-white text-2xl">
-              How we can help?{" "}
+              {t("how-can-we-help")}{" "}
               <a href="/contact" className="underline hover:no-underline">
-                Contact us.
+                {t("contact-us")}
               </a>
             </Text>
           </div>

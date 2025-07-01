@@ -233,6 +233,18 @@ export class ApolloGraphQLClient {
                   return merged
                 },
               },
+              // Disable caching for customer orders to ensure fresh data
+              getCustomerOrders: {
+                keyArgs: false,
+                merge(existing, incoming) {
+                  // Always return incoming data, never merge with existing
+                  return incoming
+                },
+                read(existing, { args }) {
+                  // Always return undefined to force a fresh fetch
+                  return undefined
+                },
+              },
               cartItems: {
                 keyArgs: false,
                 merge(existing, incoming) {

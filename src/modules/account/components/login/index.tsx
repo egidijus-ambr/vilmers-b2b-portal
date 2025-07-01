@@ -24,7 +24,7 @@ const Login = ({ setCurrentView }: Props) => {
             htmlFor="email"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Email
+            {t("email")}
           </label>
           <input
             id="email"
@@ -32,7 +32,7 @@ const Login = ({ setCurrentView }: Props) => {
             type="email"
             autoComplete="email"
             required
-            placeholder="Email address"
+            placeholder={t("email-placeholder")}
             className="w-full px-3 py-2 border border-gray-300  shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             data-testid="email-input"
           />
@@ -43,7 +43,7 @@ const Login = ({ setCurrentView }: Props) => {
             htmlFor="password"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            Password
+            {t("password")}
           </label>
           <input
             id="password"
@@ -51,7 +51,7 @@ const Login = ({ setCurrentView }: Props) => {
             type="password"
             autoComplete="current-password"
             required
-            placeholder="Password"
+            placeholder={t("password-placeholder")}
             className="w-full px-3 py-2 border border-gray-300 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             data-testid="password-input"
           />
@@ -68,7 +68,7 @@ const Login = ({ setCurrentView }: Props) => {
             htmlFor="remember-me"
             className="font-medium text-gray-900 cursor-pointer leading-none !text-sm !transform-none pt-1"
           >
-            Remember me
+            {t("remember-me")}
           </label>
         </div>
 
@@ -79,7 +79,7 @@ const Login = ({ setCurrentView }: Props) => {
           data-testid="sign-in-button"
           className="w-full flex justify-center py-3 px-4 border border-transparent rounded-3xl shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
         >
-          Login
+          {t("log-in")}
         </button>
       </form>
     </div>

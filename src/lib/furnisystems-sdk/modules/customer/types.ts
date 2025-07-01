@@ -1,5 +1,27 @@
 import { BaseEntity, Address } from "../../types/common"
 
+export interface FabricPalette {
+  id: string
+}
+
+export interface ManagerImage {
+  src_md: string
+  src: string
+}
+
+export interface Manager {
+  name: string
+  surname: string
+  email: string
+  default_phone_number?: string
+  image?: ManagerImage
+}
+
+export interface CustomerManager {
+  id: string
+  manager: Manager
+}
+
 export interface Customer extends BaseEntity {
   email: string
   full_name: string
@@ -7,6 +29,11 @@ export interface Customer extends BaseEntity {
   has_account: boolean
   addresses?: Address[]
   orders?: Order[]
+  b2b_company_name?: string
+  account_code?: string
+  price_listId?: string
+  fabric_palettes?: FabricPalette[]
+  managers?: CustomerManager[]
 }
 
 export interface Order extends BaseEntity {
