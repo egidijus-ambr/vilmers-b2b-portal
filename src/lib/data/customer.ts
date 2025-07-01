@@ -22,20 +22,23 @@ export const retrieveCustomer = async (): Promise<
 > => {
   const authHeaders = await getAuthHeaders()
 
-  if (!authHeaders || !("authorization" in authHeaders)) return null
+  if (!authHeaders || !("authorization" in authHeaders)) {
+    console.log("No authentication headers found, customer is null")
+    return null
+  }
 
   const cacheOptions = await getCacheOptions("customers")
 
   try {
-    console.log("Retrieving customer with auth headers:", authHeaders)
-
     // Set the auth headers on the SDK client before making the request
     sdk.setAuthHeaders(authHeaders)
 
     const customer = await sdk.customer.getMe()
-    console.log("Retrieved customer:", customer)
 
-    if (!customer) return null
+    if (!customer) {
+      console.log("No customer data returned from SDK")
+      return null
+    }
 
     // Map Customer to StoreCustomer with full_name extension
     const storeCustomer: HttpTypes.StoreCustomer & { full_name?: string } = {
@@ -55,6 +58,8 @@ export const retrieveCustomer = async (): Promise<
     return storeCustomer
   } catch (error) {
     console.error("Error retrieving customer:", error)
+    // Clear auth headers from SDK if authentication fails
+    sdk.clearAuthHeaders()
     return null
   }
 }
@@ -178,8 +183,11 @@ export async function signout(countryCode: string) {
     // Remove cart ID from cookies
     await removeCartId()
 
-    // Remove cache ID from cookies to invalidate all cached data
-    await removeCacheId()
+    // Generate a new cache ID instead of removing it to avoid middleware redirect loop
+    const newCacheId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`
+    await setCacheId(newCacheId)
 
     // Revalidate customer cache
     if (customerCacheTag) {

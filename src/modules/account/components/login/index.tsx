@@ -3,7 +3,7 @@ import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
-import { use, useActionState } from "react"
+import { use, useActionState, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 type Props = {

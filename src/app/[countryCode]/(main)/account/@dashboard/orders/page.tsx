@@ -14,9 +14,8 @@ export const metadata: Metadata = {
 export default async function Orders() {
   const orders = await listOrders()
 
-  if (!orders) {
-    notFound()
-  }
+  // Note: listOrders now returns an empty array when not authenticated
+  // The authentication check is handled at the layout level
 
   return (
     <div className="w-full" data-testid="orders-page-wrapper">

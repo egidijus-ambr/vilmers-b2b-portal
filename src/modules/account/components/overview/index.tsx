@@ -57,7 +57,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       </h1>
 
       {/* Action Cards and Profile Section */}
-      <div className="grid grid-cols-3 gap-10 items-start">
+      <div className="grid grid-cols-3 gap-5 items-start">
         {/* Action Cards Grid - Takes 2 columns */}
         <div className="col-span-2 grid grid-cols-2 gap-5">
           {actionCards.map((card, index) => (

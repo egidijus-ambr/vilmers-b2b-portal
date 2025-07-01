@@ -64,7 +64,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   // Default layout for logged-in users (dashboard)
   return (
     <div
-      className="min-h-screen px-10 pt-10 bg-gold-10  pb-20 relative"
+      className="min-h-screen  bg-gold-10  pb-20 relative"
       data-testid="account-page"
     >
       {/* Content container */}

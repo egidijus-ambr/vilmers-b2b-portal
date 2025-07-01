@@ -127,16 +127,10 @@ async function getCountryCode(
  * Middleware to handle region selection and onboarding status.
  */
 export async function middleware(request: NextRequest) {
-  let redirectUrl = request.nextUrl.href
-
-  let response = NextResponse.redirect(redirectUrl, 307)
-
   let cacheIdCookie = request.cookies.get("_medusa_cache_id")
-
   let cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
   const regionMap = await getRegionMap(cacheId)
-
   const countryCode = regionMap && (await getCountryCode(request, regionMap))
 
   const urlHasCountryCode =
@@ -144,15 +138,21 @@ export async function middleware(request: NextRequest) {
 
   // if one of the country codes is in the url and the cache id is set, return next
   if (urlHasCountryCode && cacheIdCookie) {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    response.headers.set("x-pathname", request.nextUrl.pathname)
+    return response
   }
 
-  // if one of the country codes is in the url and the cache id is not set, set the cache id and redirect
+  // if one of the country codes is in the url and the cache id is not set, set the cache id and continue
   if (urlHasCountryCode && !cacheIdCookie) {
+    const response = NextResponse.next()
+    response.headers.set("x-pathname", request.nextUrl.pathname)
     response.cookies.set("_medusa_cache_id", cacheId, {
       maxAge: 60 * 60 * 24,
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
     })
-
     return response
   }
 
@@ -168,11 +168,18 @@ export async function middleware(request: NextRequest) {
 
   // If no country code is set, we redirect to the relevant region.
   if (!urlHasCountryCode && countryCode) {
-    redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
-    response = NextResponse.redirect(`${redirectUrl}`, 307)
+    const redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
+    const response = NextResponse.redirect(redirectUrl, 307)
+    response.cookies.set("_medusa_cache_id", cacheId, {
+      maxAge: 60 * 60 * 24,
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+    })
+    return response
   }
 
-  return response
+  return NextResponse.next()
 }
 
 export const config = {

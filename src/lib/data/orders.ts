@@ -18,7 +18,18 @@ export const listOrders = async (
   offset: number = 0,
   filters?: Record<string, any>
 ): Promise<Order[]> => {
+  const authHeaders = await getAuthHeaders()
+
+  // Return empty array if user is not authenticated
+  if (!authHeaders || !("authorization" in authHeaders)) {
+    console.log("No authentication headers found, returning empty orders array")
+    return []
+  }
+
   try {
+    // Set the auth headers on the SDK client before making the request
+    sdk.setAuthHeaders(authHeaders)
+
     // Use the furnisystems SDK to get customer orders via GraphQL
     const orders = await sdk.customer.getCustomerOrders()
 

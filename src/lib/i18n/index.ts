@@ -18,6 +18,15 @@ export {
   useLanguageDetection,
 } from "./provider"
 
+// Server-side utilities
+export { getServerTranslations, getServerTranslation } from "./server-config"
+export {
+  ServerTranslation,
+  getServerLanguage,
+  getServerT,
+  preloadTranslations,
+} from "./server-translations"
+
 // Components
 export {
   LanguageSwitcher,

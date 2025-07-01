@@ -101,7 +101,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedOrders.map((order, index) => (
               <tr
-                key={order.invoice_code}
+                key={order.id}
                 className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

@@ -36,7 +36,7 @@ i18n
     fallbackLng: defaultLanguage,
     supportedLngs: supportedLanguages,
     defaultNS: "common",
-    ns: ["common", "account"],
+    ns: ["common", "navigation", "product", "cart", "checkout", "account"],
 
     detection: detectionOptions,
 

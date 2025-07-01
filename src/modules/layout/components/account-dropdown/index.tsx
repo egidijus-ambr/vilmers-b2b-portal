@@ -12,9 +12,13 @@ import { signout } from "@lib/data/customer"
 
 interface AccountDropdownProps {
   customer: (HttpTypes.StoreCustomer & { full_name?: string }) | null
+  isHomePage?: boolean
 }
 
-const AccountDropdown = ({ customer }: AccountDropdownProps) => {
+const AccountDropdown = ({
+  customer,
+  isHomePage = false,
+}: AccountDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { countryCode } = useParams() as { countryCode: string }
@@ -43,21 +47,17 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
   const displayName = customer?.full_name || customer?.first_name || "Account"
 
   if (!customer) {
-    return (
-      <LocalizedClientLink
-        className="hover:text-ui-fg-base"
-        href="/account"
-        data-testid="nav-account-link"
-      >
-        Account
-      </LocalizedClientLink>
-    )
+    return <></>
   }
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        className="flex items-center gap-x-1 hover:text-ui-fg-base  text-Dark-blue text-base font-medium font-['Montserrat']"
+        className={`flex items-center gap-x-1 text-base font-medium font-['Montserrat'] ${
+          isHomePage
+            ? "text-white hover:text-gray-200"
+            : "text-Dark-blue hover:text-ui-fg-base"
+        }`}
         onClick={() => setIsOpen(!isOpen)}
         data-testid="account-dropdown-trigger"
       >
@@ -75,7 +75,7 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
           <div className="py-1">
             <LocalizedClientLink
               href="/account"
-              className="flex items-center gap-x-2 px-4 py-2 text-sm hover:bg-ui-bg-subtle"
+              className="flex items-center gap-x-2 px-4 py-2 text-sm text-dark-blue hover:bg-ui-bg-subtle"
               onClick={() => setIsOpen(false)}
               data-testid="dropdown-dashboard-link"
             >
@@ -90,7 +90,7 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
 
             <LocalizedClientLink
               href="/account/profile"
-              className="flex items-center gap-x-2 px-4 py-2 text-sm hover:bg-ui-bg-subtle"
+              className="flex items-center gap-x-2 px-4 py-2 text-sm text-dark-blue hover:bg-ui-bg-subtle"
               onClick={() => setIsOpen(false)}
               data-testid="dropdown-profile-link"
             >
@@ -105,7 +105,7 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
 
             <LocalizedClientLink
               href="/account/orders"
-              className="flex items-center gap-x-2 px-4 py-2 text-sm hover:bg-ui-bg-subtle"
+              className="flex items-center gap-x-2 px-4 py-2 text-sm text-dark-blue hover:bg-ui-bg-subtle"
               onClick={() => setIsOpen(false)}
               data-testid="dropdown-orders-link"
             >
@@ -122,7 +122,7 @@ const AccountDropdown = ({ customer }: AccountDropdownProps) => {
 
             <button
               type="button"
-              className="flex items-center gap-x-2 px-4 py-2 text-sm hover:bg-ui-bg-subtle w-full text-left"
+              className="flex items-center gap-x-2 px-4 py-2 text-sm text-dark-blue hover:bg-ui-bg-subtle w-full text-left"
               onClick={handleLogout}
               data-testid="dropdown-logout-button"
             >

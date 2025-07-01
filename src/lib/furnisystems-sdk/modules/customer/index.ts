@@ -164,9 +164,7 @@ export class CustomerModule {
           }
           order_external_code?: string
         }[]
-      }>(GET_CUSTOMER_ORDERS_QUERY, {
-        variables: distinct ? { distinct } : undefined,
-      })
+      }>(GET_CUSTOMER_ORDERS_QUERY, {})
 
       const ordersData = response.getCustomerOrders
 

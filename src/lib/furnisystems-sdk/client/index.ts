@@ -85,9 +85,9 @@ export class ApolloGraphQLClient {
       ({ graphQLErrors, networkError, operation, forward }) => {
         if (graphQLErrors) {
           graphQLErrors.forEach((error) => {
-            if (this.config.debug) {
-              console.error(`[Furnisystems SDK] GraphQL error:`, error)
-            }
+            // if (this.config.debug) {
+            //   console.error(`[Furnisystems SDK] GraphQL error:`, error)
+            // }
             this.handleGraphQLError(error)
           })
         }

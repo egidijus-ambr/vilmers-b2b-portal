@@ -40,7 +40,7 @@ i18n
     },
 
     react: {
-      useSuspense: false, // Disable suspense for SSR compatibility
+      useSuspense: true, // Enable suspense to wait for translations
     },
 
     // Backend options for loading translations

@@ -1,24 +1,39 @@
-import { Suspense } from "react"
+"use client"
 
-import { listRegions } from "@lib/data/regions"
-import { retrieveCustomer } from "@lib/data/customer"
-import { StoreRegion } from "@medusajs/types"
+import { usePathname } from "next/navigation"
+import { Suspense } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import CartButton from "@modules/layout/components/cart-button"
-import SideMenu from "@modules/layout/components/side-menu"
 import AccountDropdown from "@modules/layout/components/account-dropdown"
 import { CompactLanguageSwitcher } from "@lib/i18n"
 
-export default async function Nav() {
-  // const regions = await listRegions().then((regions: StoreRegion[]) => regions)
-  const customer = await retrieveCustomer()
+interface NavProps {
+  customer: any
+}
 
-  //console.log("Regions:", regions)
+export default function Nav({ customer }: NavProps) {
+  const pathname = usePathname()
+
+  // Check if we're on the home page
+  const isHomePage = pathname === "/" || Boolean(pathname.match(/^\/[a-z]{2}$/)) // matches "/" or "/us", "/en", etc.
 
   return (
-    <div className="sticky top-0 inset-x-0 z-50 group">
-      <header className="relative h-[72px] mx-auto border-b duration-200 bg-white border-ui-border-base">
-        <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
+    <div
+      className={`sticky top-0 inset-x-0 z-50 group ${
+        isHomePage ? "bg-transparent" : "bg-base"
+      }`}
+    >
+      <header
+        className={`relative h-[72px] mx-auto border-b duration-200 ${
+          isHomePage
+            ? "bg-transparent border-transparent"
+            : "bg-white border-ui-border-base"
+        }`}
+      >
+        <nav
+          className={`content-container txt-xsmall-plus flex items-center justify-between w-full h-full text-small-regular ${
+            isHomePage ? "text-white" : "text-ui-fg-subtle"
+          }`}
+        >
           <div className="flex-1 basis-0 h-full flex items-center">
             <CompactLanguageSwitcher />
             <div className="h-full">{/* <SideMenu regions={regions} /> */}</div>
@@ -27,16 +42,24 @@ export default async function Nav() {
           <div className="flex items-center h-full">
             <LocalizedClientLink
               href="/"
-              className="txt-compact-xlarge-plus hover:text-ui-fg-base uppercase"
+              className={`txt-compact-xlarge-plus uppercase ${
+                isHomePage
+                  ? "hover:text-gray-200 text-white"
+                  : "hover:text-ui-fg-base"
+              }`}
               data-testid="nav-store-link"
             >
-              <img src="/images/logo.svg" alt="Store Logo" className="h-6" />
+              <img
+                src="/images/logo.svg"
+                alt="Store Logo"
+                className={`h-6 ${isHomePage ? "brightness-0 invert" : ""}`}
+              />
             </LocalizedClientLink>
           </div>
 
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
             <div className="hidden small:flex items-center gap-x-6 h-full">
-              <AccountDropdown customer={customer} />
+              <AccountDropdown customer={customer} isHomePage={isHomePage} />
             </div>
 
             {/* <Suspense
