@@ -39,9 +39,9 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
   )
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-white pb-6">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 ">
         <div className="flex items-end justify-between">
           <div>
             <h2 className="text-2xl font-medium text-gray-900">
@@ -83,9 +83,9 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto mx-6  border border-zinc-300  ">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-gold-10">
             <tr>
               <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 uppercase tracking-wider">
                 {t("order-id")}
@@ -111,7 +111,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
             {paginatedOrders.map((order, index) => (
               <tr
                 key={order.id}
-                className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                // className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {order.display_id || order.id.slice(-8)}
@@ -145,7 +145,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div className="px-6 py-4 ">
           <div className="flex items-center justify-center space-x-2">
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               const pageNum = i + 1

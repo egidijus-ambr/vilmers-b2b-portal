@@ -24,9 +24,10 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   // Check if this is the login page (when customer is null)
   const isLoginPage = !customer
 
-  // Check if we're on the main account page (should hide AccountNav)
+  // Check if we're on the main account page or orders page (should hide AccountNav)
   const isMainAccountPage = pathname.endsWith("/account")
-  const showAccountNav = customer && !isMainAccountPage
+  const isOrdersPage = pathname.endsWith("/account/orders")
+  const showAccountNav = customer && !isMainAccountPage && !isOrdersPage
 
   if (isLoginPage) {
     return (

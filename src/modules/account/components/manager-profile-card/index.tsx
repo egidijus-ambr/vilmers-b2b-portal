@@ -62,7 +62,7 @@ const ManagerProfileCard = ({
           src="/images/account_profile_banner.png"
           alt="Background"
         />
-        <div className="w-28 h-28 left-[160px] top-[90px] absolute rounded-[66.67px] border-[1.20px] border-white overflow-hidden">
+        <div className="w-28 h-28 top-[90px] left-1/2 -translate-x-1/2 absolute rounded-[66.67px] border-[1.20px] border-white overflow-hidden">
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -79,7 +79,7 @@ const ManagerProfileCard = ({
           )}
         </div>
       </div>
-      <div className="w-96 left-6 top-[226px] absolute inline-flex flex-col justify-start items-start gap-10">
+      <div className="top-[226px]  w-full absolute inline-flex flex-col justify-start items-start gap-10">
         <div className="self-stretch flex flex-col justify-center items-center gap-2">
           <div className="self-stretch text-center justify-start text-dark-blue-70 text-sm font-normal font-sans uppercase leading-snug tracking-[2.80px]">
             {t("manager")}
@@ -88,7 +88,7 @@ const ManagerProfileCard = ({
             {fullName}
           </div>
         </div>
-        <div className="self-stretch flex flex-col justify-start items-start gap-6">
+        <div className="self-stretch flex flex-col justify-start items-start gap-6 px-6">
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="text-justify justify-start text-dark-blue-70 text-base font-normal font-sans leading-normal">
               {t("email")}
