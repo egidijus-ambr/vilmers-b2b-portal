@@ -68,14 +68,14 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       {/* Limit and Date Row */}
       {/* Header */}
 
-      <h1 className="self-stretch justify-start text-dark-blue text-4xl font-medium">
+      <h1 className="self-stretch justify-start text-dark-blue text-2xl sm:text-3xl lg:text-4xl font-medium">
         {customer?.first_name || "User"}
       </h1>
 
       {/* Action Cards and Profile Section */}
-      <div className="grid grid-cols-3 gap-5 items-start">
-        {/* Action Cards Grid - Takes 2 columns */}
-        <div className="col-span-2 grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        {/* Action Cards Grid - First on mobile, left side on large screens */}
+        <div className="order-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
           {actionCards.map((card, index) => (
             <ActionCard
               key={index}
@@ -87,8 +87,8 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           ))}
         </div>
 
-        {/* Manager Profile Card - Takes 1 column */}
-        <div className="col-span-1 w-full h-fit">
+        {/* Manager Profile Card - After action cards on mobile, right side on large screens */}
+        <div className="order-2 lg:col-span-1 w-full h-fit">
           {customer?.managers && customer.managers.length > 0 ? (
             <ManagerProfileCard
               manager={customer.managers[0].manager}

@@ -83,7 +83,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
             </div>
           )}
           <div className={`flex-1 ${showAccountNav ? "" : ""}`}>
-            <div className=" p-8">{children}</div>
+            <div className="p-4 sm:p-6 lg:p-8">{children}</div>
           </div>
         </div>
       </div>
