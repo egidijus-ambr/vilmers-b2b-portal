@@ -286,6 +286,88 @@ export const getStoreLoginLink = async (): Promise<string> => {
   }
 }
 
+export async function requestMagicLink(
+  _currentState: unknown,
+  formData: FormData
+) {
+  const email = formData.get("email") as string
+
+  if (!email) {
+    return "Email is required"
+  }
+
+  try {
+    // Get the current language from the form data or use a default
+    const language = (formData.get("language") as string) || "en"
+
+    const result = await sdk.customer.getMagicLinkForB2BCustomer(
+      email,
+      language
+    )
+
+    console.log("Magic link request result:", result)
+
+    // Return success message
+    return { success: true, message: "Magic link sent successfully" }
+  } catch (error: any) {
+    console.error("Magic link request error:", error)
+    return error.toString()
+  }
+}
+
+export async function verifyMagicLinkAction(
+  _currentState: unknown,
+  formData: FormData
+) {
+  const token = formData.get("token") as string
+  const languageCode = formData.get("languageCode") as string
+
+  console.log("Verifying magic link with token:", token)
+
+  try {
+    const authToken = await sdk.customer.verifyMagicLink(token)
+
+    console.log("Magic link verification successful, received token")
+
+    await setAuthToken(authToken)
+
+    // Generate a new cache ID for this user session
+    const newCacheId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`
+    await setCacheId(newCacheId)
+
+    // Clear all customer-related cache tags to force fresh data
+    revalidateTag("customers")
+
+    // Also clear the specific cache tag if it exists
+    const customerCacheTag = await getCacheTag("customers")
+    if (customerCacheTag) {
+      revalidateTag(customerCacheTag)
+    }
+
+    // Clear Apollo cache to remove any cached data
+    sdk.clearCache()
+
+    // Transfer cart if needed
+    try {
+      await transferCart()
+    } catch (error: any) {
+      console.error("Cart transfer error:", error)
+    }
+
+    console.log(
+      "Magic link login successful, cache cleared, redirecting to account"
+    )
+  } catch (error: any) {
+    console.error("Magic link verification error:", error)
+    // Don't throw error - we'll redirect to account page anyway
+  }
+
+  // Always redirect to account page regardless of success/failure
+  redirect(`/${languageCode}/account`)
+}
+
 export const deleteCustomerAddress = async (
   addressId: string
 ): Promise<void> => {

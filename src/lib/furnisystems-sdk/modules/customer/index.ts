@@ -73,6 +73,18 @@ const GET_CUSTOMER_ORDERS_QUERY = gql`
   }
 `
 
+const GET_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
+  mutation GetMagicLinkForB2BCustomer($email: String!, $language: Language) {
+    getMagicLinkForB2BCustomer(email: $email, language: $language)
+  }
+`
+
+const VERIFY_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
+  mutation VerifyMagicLinkForB2BCustomer($token: String!) {
+    verifyMagicLinkForB2BCustomer(token: $token)
+  }
+`
+
 export class CustomerModule {
   constructor(private client: GraphQLClient) {}
 
@@ -256,6 +268,61 @@ export class CustomerModule {
 
       return storeUrl
     } catch (error) {
+      throw error
+    }
+  }
+
+  async getMagicLinkForB2BCustomer(
+    email: string,
+    language?: string
+  ): Promise<string> {
+    try {
+      const response = await this.client.mutate<{
+        getMagicLinkForB2BCustomer: string
+      }>(GET_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION, {
+        variables: {
+          email,
+          language: language || null,
+        },
+      })
+
+      const result = response.getMagicLinkForB2BCustomer
+
+      if (!result) {
+        throw new Error("Failed to get magic link")
+      }
+
+      return result
+    } catch (error) {
+      console.error("Error getting magic link:", error)
+      throw error
+    }
+  }
+
+  async verifyMagicLink(token: string): Promise<string> {
+    try {
+      const response = await this.client.mutate<{
+        verifyMagicLinkForB2BCustomer: string
+      }>(VERIFY_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION, {
+        variables: {
+          token,
+        },
+      })
+
+      const authToken = response.verifyMagicLinkForB2BCustomer
+
+      if (!authToken) {
+        throw new Error("Magic link verification failed: No token received")
+      }
+
+      // Set the auth token for future requests
+      this.client.setAuthHeaders({
+        authorization: `Bearer ${authToken}`,
+      })
+
+      return authToken
+    } catch (error) {
+      console.error("Error verifying magic link:", error)
       throw error
     }
   }
