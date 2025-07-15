@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "B2B Portal",
+      "script": "npm run start",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "8090"
+      }
+    }
+  ]
+}
