@@ -22,7 +22,6 @@ export const listOrders = async (
 
   // Return empty array if user is not authenticated
   if (!authHeaders || !("authorization" in authHeaders)) {
-    console.log("No authentication headers found, returning empty orders array")
     return []
   }
 

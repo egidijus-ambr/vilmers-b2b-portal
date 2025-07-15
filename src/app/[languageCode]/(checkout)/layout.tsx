@@ -4,13 +4,14 @@ import MedusaCTA from "@modules/layout/components/medusa-cta"
 
 interface CheckoutLayoutProps {
   children: React.ReactNode
-  params: { languageCode: string }
+  params: Promise<{ languageCode: string }>
 }
 
-export default function CheckoutLayout({
+export default async function CheckoutLayout({
   children,
   params,
 }: CheckoutLayoutProps) {
+  const resolvedParams = await params
   return (
     <div className="w-full bg-white relative small:min-h-screen">
       <div className="h-16 bg-white border-b ">

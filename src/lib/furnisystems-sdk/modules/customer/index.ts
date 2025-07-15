@@ -286,16 +286,14 @@ export class CustomerModule {
           language: language || null,
         },
       })
-
+      // console.log("Magic link response:", response)
       const result = response.getMagicLinkForB2BCustomer
 
       if (!result) {
         throw new Error("Failed to get magic link")
       }
-
       return result
     } catch (error) {
-      console.error("Error getting magic link:", error)
       throw error
     }
   }

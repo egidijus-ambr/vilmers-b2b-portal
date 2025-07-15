@@ -80,15 +80,15 @@ export class ApolloGraphQLClient {
       }
     })
 
-    // Error Link
+    // Error Link - Don't throw errors here, let them be handled in query/mutate methods
     const errorLink = onError(
       ({ graphQLErrors, networkError, operation, forward }) => {
         if (graphQLErrors) {
           graphQLErrors.forEach((error) => {
-            // if (this.config.debug) {
-            //   console.error(`[Furnisystems SDK] GraphQL error:`, error)
-            // }
-            this.handleGraphQLError(error)
+            if (this.config.debug) {
+              console.error(`[Furnisystems SDK] GraphQL error:`, error)
+            }
+            // Don't throw here - let the query/mutate methods handle errors
           })
         }
 
@@ -96,7 +96,7 @@ export class ApolloGraphQLClient {
           if (this.config.debug) {
             console.error(`[Furnisystems SDK] Network error:`, networkError)
           }
-          throw new NetworkError(`Network error: ${networkError.message}`)
+          // Don't throw here - let the query/mutate methods handle errors
         }
       }
     )

@@ -17,6 +17,7 @@ import {
   setCacheId,
 } from "./cookies"
 import { getCountryCodeFromLanguage } from "@lib/util/language-mapping"
+import { ErrorHandlers } from "@lib/util/error-handler"
 
 export const retrieveCustomer = async (): Promise<
   | (HttpTypes.StoreCustomer & {
@@ -29,7 +30,6 @@ export const retrieveCustomer = async (): Promise<
   const authHeaders = await getAuthHeaders()
 
   if (!authHeaders || !("authorization" in authHeaders)) {
-    console.log("No authentication headers found, customer is null")
     return null
   }
 
@@ -159,15 +159,15 @@ export async function login(_currentState: unknown, formData: FormData) {
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
   } catch (error: any) {
-    console.error("Login error:", error)
-    return error.toString()
+    return ErrorHandlers.login(error)
   }
 
   try {
     await transferCart()
   } catch (error: any) {
     console.error("Cart transfer error:", error)
-    return error.toString()
+    const { handleError } = await import("@lib/util/error-handler")
+    return handleError(error, "cart transfer")
   }
 
   // Redirect to account dashboard after successful login
@@ -297,28 +297,57 @@ export async function requestMagicLink(
   _currentState: unknown,
   formData: FormData
 ) {
-  const email = formData.get("email") as string
-
-  if (!email) {
-    return "Email is required"
-  }
-
+  // Wrap everything in a top-level try-catch to prevent any uncaught exceptions
   try {
+    const email = formData.get("email") as string
+
+    if (!email) {
+      return "Email is required"
+    }
+
     // Get the current language from the form data or use a default
     const language = (formData.get("language") as string) || "en"
 
-    const result = await sdk.customer.getMagicLinkForB2BCustomer(
-      email,
-      language
-    )
+    try {
+      const result = await sdk.customer.getMagicLinkForB2BCustomer(
+        email,
+        language
+      )
 
-    console.log("Magic link request result:", result)
+      console.log("Magic link request successful:", result)
+      return { success: true, message: "Magic link sent successfully" }
+    } catch (sdkError: any) {
+      // For security reasons, if user doesn't exist, we still show success message
+      // This prevents email enumeration attacks
+      if (
+        sdkError?.message?.includes("There is no such user!") ||
+        sdkError?.message?.includes("no such user") ||
+        sdkError?.message?.includes("user not found") ||
+        sdkError?.message?.includes("not found") ||
+        sdkError?.status === 404
+      ) {
+        console.log("User not found, returning success for security")
+        return { success: true, message: "Magic link sent successfully" }
+      }
 
-    // Return success message
-    return { success: true, message: "Magic link sent successfully" }
+      // For rate limiting errors, return a user-friendly message
+      if (
+        sdkError?.message?.includes("Too many") ||
+        sdkError?.message?.includes("rate limit") ||
+        sdkError?.message?.includes("Try again after")
+      ) {
+        console.log("Rate limit error, returning user-friendly message")
+        return "Too many requests. Please wait a moment and try again."
+      }
+
+      // For all other errors, return a generic error message
+      console.log("Other SDK error, returning generic message")
+      return "Service is currently unavailable. Please try again later."
+    }
   } catch (error: any) {
-    console.error("Magic link request error:", error)
-    return error.toString()
+    // This is the ultimate fallback to prevent any uncaught exceptions
+    console.error("Top-level catch - preventing uncaught exception:", error)
+    return "Service is currently unavailable. Please try again later."
   }
 }
 
