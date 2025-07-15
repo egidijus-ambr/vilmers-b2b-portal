@@ -2,10 +2,10 @@ const c = require("ansi-colors")
 
 const requiredEnvs = [
   {
-    key: "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY",
+    key: "FURNISYSTEMS_BACKEND_URL",
     // TODO: we need a good doc to point this to
     description:
-      "Learn how to create a publishable key: https://docs.medusajs.com/v2/resources/storefront-development/publishable-api-keys",
+      "Your Frontent needs to know where your backend is hosted. This should be the URL of your GraphQL endpoint.",
   },
 ]
 
