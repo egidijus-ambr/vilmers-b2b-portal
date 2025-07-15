@@ -42,6 +42,7 @@ const GET_ME_QUERY = gql`
         manager {
           name
           surname
+          spoken_languages
           email
           default_phone_number
           image {

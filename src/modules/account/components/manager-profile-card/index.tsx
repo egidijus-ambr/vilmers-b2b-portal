@@ -8,28 +8,37 @@ interface ManagerProfileCardProps {
   languages?: string[]
 }
 
-// Flag components for languages
-const UkrainianFlag = () => (
-  <div className="w-6 h-6 relative bg-white rounded-full overflow-hidden">
-    <div className="w-10 h-6 left-0 top-0 absolute bg-blue-600">
-      <div className="w-10 h-3 left-0 top-3 absolute bg-yellow-300"></div>
-    </div>
-  </div>
-)
+// Language code to country code mapping for flagcdn
+// const getCountryCodeFromLanguage = (lang: string): string => {
+//   const languageMap: { [key: string]: string } = {
+//     UA: "ua",
+//     UKRAINIAN: "ua",
+//     LT: "lt",
+//     LITHUANIAN: "lt",
+//     EN: "gb", // Using GB for English
+//     ENGLISH: "gb",
+//     DE: "de",
+//     GERMAN: "de",
+//     FR: "fr",
+//     FRENCH: "fr",
+//     RU: "ru",
+//     RUSSIAN: "ru",
+//     PL: "pl",
+//     POLISH: "pl",
+//     ES: "es",
+//     SPANISH: "es",
+//     IT: "it",
+//     ITALIAN: "it",
+//     PT: "pt",
+//     PORTUGUESE: "pt",
+//     NL: "nl",
+//     DUTCH: "nl",
+//   }
 
-const LithuanianFlag = () => (
-  <div className="w-6 h-6 relative bg-white rounded-3xl overflow-hidden">
-    <div className="w-10 h-6 left-0 top-0 absolute bg-yellow-300 rounded-sm overflow-hidden">
-      <div className="w-10 h-2 left-0 top-2 absolute bg-lime-600"></div>
-      <div className="w-10 h-2 left-0 top-4 absolute bg-rose-500"></div>
-    </div>
-  </div>
-)
+//   return languageMap[lang.toUpperCase()] || lang.toLowerCase()
+// }
 
-const ManagerProfileCard = ({
-  manager,
-  languages = ["UA", "LT"],
-}: ManagerProfileCardProps) => {
+const ManagerProfileCard = ({ manager }: ManagerProfileCardProps) => {
   const fullName = `${manager.name} ${manager.surname}`
   const imageUrl = manager.image?.src || manager.image?.src_md
   console.log("Manager Profile Card Rendered", {
@@ -40,22 +49,21 @@ const ManagerProfileCard = ({
 
   const phone = manager.default_phone_number || ""
   const renderFlag = (lang: string) => {
-    switch (lang) {
-      case "UA":
-        return <UkrainianFlag />
-      case "LT":
-        return <LithuanianFlag />
-      default:
-        return (
-          <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center">
-            <span className="text-xs font-medium text-gray-700">{lang}</span>
-          </div>
-        )
-    }
+    return (
+      <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200">
+        <img
+          src={`https://flagcdn.com/${lang}.svg`}
+          width="24"
+          height="24"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    )
   }
+  const languages = manager.spoken_languages || []
 
   return (
-    <div className="h-[400px] sm:h-[484px] relative bg-white overflow-hidden rounded-lg">
+    <div className="h-[400px] sm:h-[484px] relative bg-white overflow-hidden ">
       <div className="w-full h-28 sm:h-36 left-0 top-0 absolute bg-beige-20">
         <img
           className="w-full h-28 sm:h-36 left-0 top-0 absolute"

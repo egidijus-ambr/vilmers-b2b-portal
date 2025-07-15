@@ -17,7 +17,7 @@ const ActionCard = ({
   onClick,
 }: ActionCardProps) => {
   return (
-    <div className="w-full p-4 sm:p-6 bg-white flex flex-col justify-start items-start gap-2.5 h-[200px] sm:h-[232px] rounded-lg">
+    <div className="w-full p-4 sm:p-6 bg-white flex flex-col justify-start items-start gap-2.5 h-[200px] sm:h-[232px]">
       <div className="self-stretch flex-1 flex flex-col justify-between items-start">
         <div className="self-stretch flex flex-col justify-start items-start gap-2">
           <div className="self-stretch justify-start text-dark-blue text-lg sm:text-xl font-medium font-['Montserrat'] leading-7 sm:leading-9">

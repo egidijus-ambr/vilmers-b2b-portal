@@ -29,8 +29,8 @@ export default async function Home(props: {
   return (
     <>
       <Hero />
-      {collections && region ? (
-        <div className="py-12">
+      {/* {collections && region ? (
+        <div className="py-0">
           <ul className="flex flex-col gap-x-6">
             <FeaturedProducts collections={collections} region={region} />
           </ul>
@@ -42,8 +42,8 @@ export default async function Home(props: {
             <p>Debug: Region not found for country code: {countryCode}</p>
           )}
           {!collections && <p>Debug: Collections not loaded</p>}
-        </div>
-      )}
+        </div> 
+      )}*/}
     </>
   )
 }

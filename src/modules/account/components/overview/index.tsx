@@ -12,7 +12,12 @@ import {
 } from "@lib/furnisystems-sdk/modules/customer/types"
 
 type OverviewProps = {
-  customer: (HttpTypes.StoreCustomer & { managers?: CustomerManager[] }) | null
+  customer:
+    | (HttpTypes.StoreCustomer & {
+        managers?: CustomerManager[]
+        spoken_languages?: string[]
+      })
+    | null
   orders: Order[] | null
 }
 
@@ -92,7 +97,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           {customer?.managers && customer.managers.length > 0 ? (
             <ManagerProfileCard
               manager={customer.managers[0].manager}
-              languages={["UA", "LT"]}
+             
             />
           ) : (
             <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">

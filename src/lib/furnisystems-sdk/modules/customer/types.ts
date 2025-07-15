@@ -15,6 +15,7 @@ export interface Manager {
   email: string
   default_phone_number?: string
   image?: ManagerImage
+  spoken_languages?: string[]
 }
 
 export interface CustomerManager {
@@ -34,6 +35,7 @@ export interface Customer extends BaseEntity {
   price_listId?: string
   fabric_palettes?: FabricPalette[]
   managers?: CustomerManager[]
+  spoken_languages?: string[]
 }
 
 export interface Order extends BaseEntity {

@@ -19,7 +19,12 @@ import {
 import { getCountryCodeFromLanguage } from "@lib/util/language-mapping"
 
 export const retrieveCustomer = async (): Promise<
-  (HttpTypes.StoreCustomer & { full_name?: string; managers?: any[] }) | null
+  | (HttpTypes.StoreCustomer & {
+      full_name?: string
+      managers?: any[]
+      spoken_languages?: string[]
+    })
+  | null
 > => {
   const authHeaders = await getAuthHeaders()
 
@@ -45,6 +50,7 @@ export const retrieveCustomer = async (): Promise<
     const storeCustomer: HttpTypes.StoreCustomer & {
       full_name?: string
       managers?: any[]
+      spoken_languages?: string[]
     } = {
       id: customer.id,
       created_at: customer.created_at,
@@ -58,6 +64,7 @@ export const retrieveCustomer = async (): Promise<
       company_name: null,
       addresses: [],
       managers: customer.managers || [],
+      spoken_languages: customer.spoken_languages || [],
     }
 
     return storeCustomer
