@@ -265,7 +265,7 @@ export class CustomerModule {
         throw new Error("Login with token failed: No token received")
       }
 
-      const storeUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/login?token=${resultToken}`
+      const storeUrl = `${process.env.NEXT_PUBLIC_SHOP_URL}/login?token=${resultToken}`
 
       return storeUrl
     } catch (error) {
