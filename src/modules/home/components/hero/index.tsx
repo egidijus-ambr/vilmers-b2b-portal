@@ -3,9 +3,18 @@ import { Button, Heading } from "@medusajs/ui"
 import OutlineButton from "@modules/common/components/outline-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getServerT } from "@lib/i18n/server-translations"
+import { SupportedLanguage } from "@lib/i18n"
 
-const Hero = async () => {
+interface HeroProps {
+  params: Promise<{ languageCode: string }>
+}
+
+const Hero = async ({ params }: HeroProps) => {
   const customer = await retrieveCustomer()
+  const resolvedParams = await params
+  const language = resolvedParams.languageCode as SupportedLanguage
+  const t = await getServerT("common", language)
   return (
     <div className="h-screen w-full border-b border-ui-border-base relative bg-ui-bg-subtle -mt-[72px]">
       {/* Background Image */}
@@ -37,7 +46,7 @@ const Hero = async () => {
           <div className="flex items-center justify-center gap-x-4 mt-10">
             <LocalizedClientLink href={customer ? "/account" : "/account"}>
               <OutlineButton showArrow>
-                {customer ? "Overview" : "Login"}
+                {customer ? t("overview") : t("log-in")}
               </OutlineButton>
             </LocalizedClientLink>
             \

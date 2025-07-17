@@ -13,6 +13,7 @@ export interface Manager {
   name: string
   surname: string
   email: string
+  role?: string
   default_phone_number?: string
   image?: ManagerImage
   spoken_languages?: string[]

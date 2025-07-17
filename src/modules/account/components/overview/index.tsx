@@ -96,8 +96,10 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         <div className="order-2 lg:col-span-1 w-full h-fit">
           {customer?.managers && customer.managers.length > 0 ? (
             <ManagerProfileCard
-              manager={customer.managers[0].manager}
-             
+              manager={
+                customer.managers.find((m) => m.manager.role === "manager")
+                  ?.manager || {}
+              }
             />
           ) : (
             <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">

@@ -28,7 +28,7 @@ export default async function Home(props: {
   // Always render Hero, make FeaturedProducts conditional
   return (
     <>
-      <Hero />
+      <Hero params={props.params} />
       {/* {collections && region ? (
         <div className="py-0">
           <ul className="flex flex-col gap-x-6">

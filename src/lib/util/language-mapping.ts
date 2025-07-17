@@ -4,6 +4,7 @@ const languageToCountryMap: Record<string, string> = {
   fr: "fr", // French -> France
   de: "de", // German -> Germany
   lt: "lt", // Lithuanian -> Lithuania
+  dk: "dk", // Danish -> Denmark
 }
 
 export function getCountryCodeFromLanguage(languageCode: string): string {

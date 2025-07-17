@@ -9,6 +9,7 @@ import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import { signout } from "@lib/data/customer"
+import { t } from "i18next"
 
 interface AccountDropdownProps {
   customer: (HttpTypes.StoreCustomer & { full_name?: string }) | null
@@ -85,7 +86,7 @@ const AccountDropdown = ({
                 width={16}
                 height={16}
               />
-              <span>Overview</span>
+              <span>{t("overview")}</span>
             </LocalizedClientLink>
 
             {/* <LocalizedClientLink
@@ -115,7 +116,7 @@ const AccountDropdown = ({
                 width={16}
                 height={16}
               />
-              <span>Orders</span>
+              <span>{t("orders")}</span>
             </LocalizedClientLink>
 
             <div className="border-t border-ui-border-base my-1"></div>
@@ -132,7 +133,7 @@ const AccountDropdown = ({
                 width={16}
                 height={16}
               />
-              <span>Logout</span>
+              <span>{t("log-out")}</span>
             </button>
           </div>
         </div>

@@ -11,6 +11,7 @@ import Package from "@modules/common/icons/package"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
 import { signout } from "@lib/data/customer"
+import { t } from "i18next"
 
 const AccountNav = ({
   customer,
@@ -35,7 +36,7 @@ const AccountNav = ({
           >
             <>
               <ChevronDown className="transform rotate-90" />
-              <span>Account</span>
+              <span>{t("account")}</span>
             </>
           </LocalizedClientLink>
         ) : (
@@ -54,7 +55,7 @@ const AccountNav = ({
                     <>
                       <div className="flex items-center gap-x-2">
                         <User size={20} />
-                        <span>Profile</span>
+                        <span>{t("profile")}</span>
                       </div>
                       <ChevronDown className="transform -rotate-90" />
                     </>

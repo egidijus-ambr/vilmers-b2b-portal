@@ -6,6 +6,7 @@ import { HttpTypes } from "@medusajs/types"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signout } from "@lib/data/customer"
+import { useTranslations } from "@lib/i18n"
 
 interface MobileMenuProps {
   customer: (HttpTypes.StoreCustomer & { full_name?: string }) | null
@@ -16,6 +17,7 @@ interface MobileMenuProps {
 const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null)
   const { languageCode } = useParams() as { languageCode: string }
+  const { t } = useTranslations("common")
 
   const handleLogout = async () => {
     await signout(languageCode)
@@ -114,7 +116,7 @@ const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
                 width={20}
                 height={20}
               />
-              <span>Overview</span>
+              <span>{t("overview")}</span>
             </LocalizedClientLink>
 
             {/* <LocalizedClientLink
@@ -144,7 +146,7 @@ const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
                 width={20}
                 height={20}
               />
-              <span>Orders</span>
+              <span>{t("orders")}</span>
             </LocalizedClientLink>
           </div>
 
@@ -162,7 +164,7 @@ const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
                 width={20}
                 height={20}
               />
-              <span>Logout</span>
+              <span>{t("log-out")}</span>
             </button>
           </div>
         </div>

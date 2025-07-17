@@ -1,12 +1,12 @@
 // Types and constants (safe for server-side)
-export type SupportedLanguage = "en" | "es" | "fr" | "de" | "lt"
+export type SupportedLanguage = "en" | "fr" | "de" | "lt" | "dk"
 
 export const supportedLanguages: readonly SupportedLanguage[] = [
   "en",
-  // "es",
   "fr",
   "de",
   "lt",
+  "dk",
 ] as const
 export const defaultLanguage: SupportedLanguage = "lt"
 
@@ -25,6 +25,13 @@ export {
   getServerT,
   preloadTranslations,
 } from "./server-translations"
+
+// Language mapping utilities
+export {
+  languageCodeMapping,
+  getI18nextLanguageCode,
+  getUILanguageCode,
+} from "./config"
 
 // Components
 export {

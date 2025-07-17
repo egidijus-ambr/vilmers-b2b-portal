@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 // Supported languages
-const supportedLanguages = ["en", "fr", "de", "lt"] as const
+const supportedLanguages = ["en", "fr", "de", "lt", "dk"] as const
 type SupportedLanguage = (typeof supportedLanguages)[number]
 
 const DEFAULT_LANGUAGE: SupportedLanguage = "lt"

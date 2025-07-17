@@ -5,6 +5,7 @@ import { initReactI18next } from "react-i18next"
 import LanguageDetector from "i18next-browser-languagedetector"
 import resourcesToBackend from "i18next-resources-to-backend"
 import { supportedLanguages, defaultLanguage } from "./index"
+import { languageCodeMapping } from "./config"
 import Backend from "i18next-locize-backend"
 // Language detection options
 const detectionOptions = {
@@ -28,8 +29,8 @@ i18n
   //   )
   .init({
     debug: process.env.NODE_ENV === "development",
-    fallbackLng: defaultLanguage,
-    supportedLngs: supportedLanguages,
+    fallbackLng: languageCodeMapping[defaultLanguage],
+    supportedLngs: Object.values(languageCodeMapping),
     defaultNS: "common",
     ns: ["common", "navigation", "product", "cart", "checkout", "account"],
 

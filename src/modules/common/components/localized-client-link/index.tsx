@@ -20,7 +20,8 @@ const LocalizedClientLink = ({
   passHref?: true
   [x: string]: any
 }) => {
-  const { languageCode } = useParams()
+  const params = useParams()
+  const languageCode = params?.languageCode || "lt" // fallback to default language
 
   return (
     <Link href={`/${languageCode}${href}`} {...props}>

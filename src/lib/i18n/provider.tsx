@@ -16,6 +16,7 @@ import {
   defaultLanguage,
   getLanguageFromPath,
 } from "./index"
+import { getI18nextLanguageCode, getUILanguageCode } from "./config"
 
 interface I18nContextType {
   language: SupportedLanguage
@@ -48,8 +49,9 @@ export function I18nProvider({ children }: I18nProviderProps) {
 
   // Initialize i18n synchronously to prevent hydration mismatch
   React.useLayoutEffect(() => {
-    // Change language synchronously
-    i18n.changeLanguage(initialLanguage)
+    // Change language synchronously using the mapped i18next language code
+    const i18nextLanguageCode = getI18nextLanguageCode(initialLanguage)
+    i18n.changeLanguage(i18nextLanguageCode)
     setLanguage(initialLanguage)
     setIsLoading(false)
   }, [initialLanguage])
@@ -57,12 +59,13 @@ export function I18nProvider({ children }: I18nProviderProps) {
   // Listen for language changes from i18n
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
-      const newLanguage = lng as SupportedLanguage
+      // Convert i18next language code back to UI language code
+      const uiLanguageCode = getUILanguageCode(lng)
       if (
-        supportedLanguages.includes(newLanguage) &&
-        newLanguage !== language
+        supportedLanguages.includes(uiLanguageCode) &&
+        uiLanguageCode !== language
       ) {
-        setLanguage(newLanguage)
+        setLanguage(uiLanguageCode)
       }
     }
 
@@ -77,10 +80,12 @@ export function I18nProvider({ children }: I18nProviderProps) {
     if (supportedLanguages.includes(lang)) {
       setIsLoading(true)
       try {
-        await i18n.changeLanguage(lang)
+        // Convert UI language code to i18next language code
+        const i18nextLanguageCode = getI18nextLanguageCode(lang)
+        await i18n.changeLanguage(i18nextLanguageCode)
         setLanguage(lang)
 
-        // Store language preference in localStorage
+        // Store language preference in localStorage (using UI language code)
         if (typeof window !== "undefined") {
           localStorage.setItem("preferred-language", lang)
         }

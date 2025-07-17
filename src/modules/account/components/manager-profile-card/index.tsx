@@ -39,7 +39,7 @@ interface ManagerProfileCardProps {
 // }
 
 const ManagerProfileCard = ({ manager }: ManagerProfileCardProps) => {
-  const fullName = `${manager.name} ${manager.surname}`
+  const fullName = `${manager?.name || ""} ${manager.surname || ""}`.trim()
   const imageUrl = manager.image?.src || manager.image?.src_md
   console.log("Manager Profile Card Rendered", {
     manager,
@@ -78,7 +78,7 @@ const ManagerProfileCard = ({ manager }: ManagerProfileCardProps) => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm sm:text-lg font-medium">
+            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-400 text-xl sm:text-2xl font-medium">
               {fullName
                 .split(" ")
                 .map((n: string) => n[0])

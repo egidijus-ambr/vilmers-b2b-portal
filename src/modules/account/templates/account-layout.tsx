@@ -48,7 +48,11 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
                 {t("login-welcome-main-text")}
               </h1>
               <div>
-                {/* <OutlineButton showArrow>Become a partner</OutlineButton> */}
+                <a href="mailto:sales.development@vilmers.com">
+                  <OutlineButton showArrow>
+                    {t("become-a-partner")}
+                  </OutlineButton>
+                </a>
               </div>
             </div>
 

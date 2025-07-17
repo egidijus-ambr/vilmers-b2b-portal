@@ -41,6 +41,7 @@ const GET_ME_QUERY = gql`
         id
         manager {
           name
+          role
           surname
           spoken_languages
           email
@@ -166,6 +167,7 @@ export class CustomerModule {
               surname: string
               email: string
               default_phone_number?: string
+              role?: string
               image?: {
                 src_md: string
                 src: string
@@ -183,6 +185,8 @@ export class CustomerModule {
       if (!customerData) {
         return null
       }
+
+      console.log("Customer data:", customerData.managers)
 
       // Map the response to the Customer interface
       const customer: Customer = {

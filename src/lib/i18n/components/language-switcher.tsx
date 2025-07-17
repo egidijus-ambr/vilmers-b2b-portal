@@ -14,18 +14,18 @@ interface LanguageSwitcherProps {
 
 const languageNames: Record<SupportedLanguage, string> = {
   en: "English",
-  es: "Español",
   fr: "Français",
   de: "Deutsch",
   lt: "Lietuvių",
+  dk: "Dansk",
 }
 
 const languageFlags: Record<SupportedLanguage, string> = {
   en: "🇬🇧",
-  es: "🇪🇸",
   fr: "🇫🇷",
   de: "🇩🇪",
   lt: "🇱🇹",
+  dk: "🇩🇰",
 }
 
 export function LanguageSwitcher({
@@ -43,9 +43,9 @@ export function LanguageSwitcher({
       const pathSegments = pathname.split("/")
       const currentPath = pathSegments.slice(2).join("/") // Remove empty string and language code
 
-      // Navigate to the new language URL
+      // Navigate to the new language URL with full page refresh for server-side components
       const newPath = `/${newLanguage}${currentPath ? `/${currentPath}` : ""}`
-      router.push(newPath)
+      window.location.href = newPath
       setIsOpen(false)
     }
   }
@@ -175,9 +175,9 @@ export function CompactLanguageSwitcher({
       const pathSegments = pathname.split("/")
       const currentPath = pathSegments.slice(2).join("/") // Remove empty string and language code
 
-      // Navigate to the new language URL
+      // Navigate to the new language URL with full page refresh for server-side components
       const newPath = `/${newLanguage}${currentPath ? `/${currentPath}` : ""}`
-      router.push(newPath)
+      window.location.href = newPath
       setIsOpen(false)
     }
   }
