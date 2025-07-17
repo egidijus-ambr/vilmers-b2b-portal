@@ -8,44 +8,9 @@ interface ManagerProfileCardProps {
   languages?: string[]
 }
 
-// Language code to country code mapping for flagcdn
-// const getCountryCodeFromLanguage = (lang: string): string => {
-//   const languageMap: { [key: string]: string } = {
-//     UA: "ua",
-//     UKRAINIAN: "ua",
-//     LT: "lt",
-//     LITHUANIAN: "lt",
-//     EN: "gb", // Using GB for English
-//     ENGLISH: "gb",
-//     DE: "de",
-//     GERMAN: "de",
-//     FR: "fr",
-//     FRENCH: "fr",
-//     RU: "ru",
-//     RUSSIAN: "ru",
-//     PL: "pl",
-//     POLISH: "pl",
-//     ES: "es",
-//     SPANISH: "es",
-//     IT: "it",
-//     ITALIAN: "it",
-//     PT: "pt",
-//     PORTUGUESE: "pt",
-//     NL: "nl",
-//     DUTCH: "nl",
-//   }
-
-//   return languageMap[lang.toUpperCase()] || lang.toLowerCase()
-// }
-
 const ManagerProfileCard = ({ manager }: ManagerProfileCardProps) => {
   const fullName = `${manager?.name || ""} ${manager.surname || ""}`.trim()
   const imageUrl = manager.image?.src || manager.image?.src_md
-  console.log("Manager Profile Card Rendered", {
-    manager,
-    imageUrl,
-    hasImage: !!manager.image,
-  })
 
   const phone = manager.default_phone_number || ""
   const renderFlag = (lang: string) => {
