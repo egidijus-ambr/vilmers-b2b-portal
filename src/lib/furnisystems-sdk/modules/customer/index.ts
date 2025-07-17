@@ -173,7 +173,10 @@ export class CustomerModule {
             }
           }[]
         }
-      }>(GET_ME_QUERY)
+      }>(GET_ME_QUERY, {
+        fetchPolicy: "no-cache", // Always fetch fresh data, never use cache
+        errorPolicy: "all", // Return partial data even if there are errors
+      })
 
       const customerData = response.getMe
 

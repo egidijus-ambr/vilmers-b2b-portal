@@ -117,7 +117,7 @@ const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
               <span>Overview</span>
             </LocalizedClientLink>
 
-            <LocalizedClientLink
+            {/* <LocalizedClientLink
               href="/account/profile"
               className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
               onClick={onClose}
@@ -130,7 +130,7 @@ const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
                 height={20}
               />
               <span>Profile</span>
-            </LocalizedClientLink>
+            </LocalizedClientLink> */}
 
             <LocalizedClientLink
               href="/account/orders"

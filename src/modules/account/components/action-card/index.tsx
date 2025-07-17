@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import ChevronDown from "@modules/common/icons/chevron-down"
+import ArrowRight from "@modules/common/icons/arrow-right"
 
 interface ActionCardProps {
   title: string
@@ -35,25 +35,7 @@ const ActionCard = ({
             <span className="pr-2 text-slate-800 text-sm sm:text-base font-medium font-['Montserrat'] leading-normal">
               {buttonText}
             </span>
-            <svg
-              width="20"
-              height="9"
-              viewBox="0 0 24 11"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="sm:w-6 sm:h-[11px]"
-            >
-              <path
-                d="M18.3711 9.74805L22.745 5.37412L18.3711 1.00019"
-                stroke="#222D37"
-                strokeLinecap="round"
-              />
-              <path
-                d="M22.7461 5.37402L0.5 5.37402"
-                stroke="#222D37"
-                strokeLinecap="round"
-              />
-            </svg>
+            <ArrowRight color="dark-blue" />
           </button>
         </div>
       </div>

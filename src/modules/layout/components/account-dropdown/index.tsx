@@ -88,7 +88,7 @@ const AccountDropdown = ({
               <span>Overview</span>
             </LocalizedClientLink>
 
-            <LocalizedClientLink
+            {/* <LocalizedClientLink
               href="/account/profile"
               className="flex items-center gap-x-2 px-4 py-2 text-sm text-dark-blue hover:bg-ui-bg-subtle"
               onClick={() => setIsOpen(false)}
@@ -101,7 +101,7 @@ const AccountDropdown = ({
                 height={16}
               />
               <span>Profile</span>
-            </LocalizedClientLink>
+            </LocalizedClientLink> */}
 
             <LocalizedClientLink
               href="/account/orders"

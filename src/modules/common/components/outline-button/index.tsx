@@ -1,4 +1,5 @@
 import React from "react"
+import ArrowRight from "@modules/common/icons/arrow-right"
 
 interface OutlineButtonProps {
   children: React.ReactNode
@@ -20,19 +21,7 @@ const OutlineButton: React.FC<OutlineButtonProps> = ({
     >
       {children}
       {showArrow && (
-        <svg
-          className="ml-2 w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
+        <ArrowRight className="ml-2 -translate-y-[1px]" color="currentColor" />
       )}
     </button>
   )

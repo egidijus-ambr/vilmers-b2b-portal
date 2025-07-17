@@ -101,7 +101,7 @@ const ManagerProfileCard = ({ manager }: ManagerProfileCardProps) => {
             <div className="text-justify justify-start text-dark-blue-70 text-sm sm:text-base font-normal font-sans leading-normal">
               {t("email")}
             </div>
-            <div className="justify-start text-dark-blue text-sm sm:text-base font-medium font-sans uppercase leading-normal text-right">
+            <div className="justify-start text-dark-blue text-sm sm:text-base font-medium font-sans leading-normal text-right">
               {manager.email}
             </div>
           </div>

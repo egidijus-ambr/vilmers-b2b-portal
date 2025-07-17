@@ -1,7 +1,11 @@
 import { Github } from "@medusajs/icons"
 import { Button, Heading } from "@medusajs/ui"
+import OutlineButton from "@modules/common/components/outline-button"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { retrieveCustomer } from "@lib/data/customer"
 
-const Hero = () => {
+const Hero = async () => {
+  const customer = await retrieveCustomer()
   return (
     <div className="h-screen w-full border-b border-ui-border-base relative bg-ui-bg-subtle -mt-[72px]">
       {/* Background Image */}
@@ -30,6 +34,14 @@ const Hero = () => {
           >
             with smart design.
           </Heading>
+          <div className="flex items-center justify-center gap-x-4 mt-10">
+            <LocalizedClientLink href={customer ? "/account" : "/account"}>
+              <OutlineButton showArrow>
+                {customer ? "Overview" : "Login"}
+              </OutlineButton>
+            </LocalizedClientLink>
+            \
+          </div>
         </span>
         <a
           href="https://github.com/medusajs/nextjs-starter-medusa"

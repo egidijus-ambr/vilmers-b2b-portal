@@ -9,10 +9,6 @@ export const metadata: Metadata = {
   description: "Overview of your previous orders.",
 }
 
-// Disable caching for this page to ensure fresh order data
-export const dynamic = "force-dynamic"
-export const revalidate = 0
-
 export default async function Orders() {
   const orders = await listOrders()
 

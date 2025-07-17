@@ -2,6 +2,7 @@ import { retrieveOrder } from "@lib/data/orders"
 import OrderDetailsTemplate from "@modules/order/templates/order-details-template"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 
 type Props = {
   params: Promise<{ id: string }>
@@ -9,14 +10,19 @@ type Props = {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
-  const order = await retrieveOrder(params.id).catch(() => null)
+  const order = (await retrieveOrder(params.id).catch(
+    () => null
+  )) as Order | null
 
   if (!order) {
-    notFound()
+    return {
+      title: "Order Details",
+      description: "View your order details",
+    }
   }
 
   return {
-    title: `Order #${order.display_id}`,
+    title: `Order #${order.display_id || order.order_code || params.id}`,
     description: `View your order`,
   }
 }

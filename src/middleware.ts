@@ -69,6 +69,20 @@ export async function middleware(request: NextRequest) {
     response.headers.set("x-pathname", request.nextUrl.pathname)
     response.headers.set("x-language", urlLanguage)
 
+    // Check if this is an account route and add no-cache headers
+    const isAccountRoute = request.nextUrl.pathname.includes("/account")
+    if (isAccountRoute) {
+      // Set comprehensive no-cache headers for account pages
+      response.headers.set(
+        "Cache-Control",
+        "no-cache, no-store, must-revalidate, private"
+      )
+      response.headers.set("Pragma", "no-cache")
+      response.headers.set("Expires", "0")
+      response.headers.set("X-Accel-Expires", "0")
+      response.headers.set("Surrogate-Control", "no-store")
+    }
+
     // Update language preference cookie
     response.cookies.set("preferred-language", urlLanguage, {
       maxAge: 60 * 60 * 24 * 30, // 30 days

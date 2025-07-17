@@ -33,8 +33,6 @@ export const retrieveCustomer = async (): Promise<
     return null
   }
 
-  const cacheOptions = await getCacheOptions("customers")
-
   try {
     // Set the auth headers on the SDK client before making the request
     sdk.setAuthHeaders(authHeaders)

@@ -25,7 +25,10 @@ export default async function Footer({ language }: FooterProps) {
           <div className="flex items-center gap-2">
             <Text className="text-white text-2xl">
               {t("how-can-we-help")}{" "}
-              <a href="/contact" className="underline hover:no-underline">
+              <a
+                href="mailto:support@vilmers.com"
+                className="underline hover:no-underline"
+              >
                 {t("contact-us")}
               </a>
             </Text>
@@ -34,7 +37,7 @@ export default async function Footer({ language }: FooterProps) {
           <div className="flex items-center gap-6">
             {/* Facebook */}
             <a
-              href="#"
+              href="https://lt-lt.facebook.com/vilmersuab"
               className="text-white hover:text-gray-300 transition-colors"
               aria-label="Facebook"
             >
@@ -49,7 +52,7 @@ export default async function Footer({ language }: FooterProps) {
             </a>
 
             {/* X (Twitter) */}
-            <a
+            {/* <a
               href="#"
               className="text-white hover:text-gray-300 transition-colors"
               aria-label="X (Twitter)"
@@ -62,11 +65,11 @@ export default async function Footer({ language }: FooterProps) {
               >
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
-            </a>
+            </a> */}
 
             {/* LinkedIn */}
             <a
-              href="#"
+              href="https://www.linkedin.com/company/vilmers-uab"
               className="text-white hover:text-gray-300 transition-colors"
               aria-label="LinkedIn"
             >
@@ -82,7 +85,7 @@ export default async function Footer({ language }: FooterProps) {
 
             {/* Instagram */}
             <a
-              href="#"
+              href="https://www.instagram.com/vilmers_furniture/"
               className="text-white hover:text-gray-300 transition-colors"
               aria-label="Instagram"
             >
