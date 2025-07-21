@@ -16,6 +16,8 @@ type OverviewProps = {
     | (HttpTypes.StoreCustomer & {
         managers?: CustomerManager[]
         spoken_languages?: string[]
+        is_claims_enabled?: boolean
+        is_configurator_enabled?: boolean
       })
     | null
   orders: Order[] | null
@@ -38,16 +40,24 @@ const Overview = ({ customer, orders }: OverviewProps) => {
   }
 
   const actionCards = [
-    {
-      title: t("place-an-order.title"),
-      description: t("place-an-order.description"),
-      onClick: handlePlaceOrder,
-    },
-    {
-      title: t("claims.title"),
-      description: t("claims.description"),
-      onClick: () => console.log("Claims clicked"),
-    },
+    ...(customer?.is_configurator_enabled
+      ? [
+          {
+            title: t("place-an-order.title"),
+            description: t("place-an-order.description"),
+            onClick: handlePlaceOrder,
+          },
+        ]
+      : []),
+    ...(customer?.is_claims_enabled
+      ? [
+          {
+            title: t("claims.title"),
+            description: t("claims.description"),
+            onClick: () => console.log("Claims clicked"),
+          },
+        ]
+      : []),
     // {
     //   title: t("settings.title"),
     //   description: t("settings.description"),
@@ -95,12 +105,18 @@ const Overview = ({ customer, orders }: OverviewProps) => {
         {/* Manager Profile Card - After action cards on mobile, right side on large screens */}
         <div className="order-2 lg:col-span-1 w-full h-fit">
           {customer?.managers && customer.managers.length > 0 ? (
-            <ManagerProfileCard
-              manager={
-                customer.managers.find((m) => m.manager.role === "manager")
-                  ?.manager || {}
-              }
-            />
+            (() => {
+              const managerData = customer.managers.find(
+                (m) => m.manager.role === "manager"
+              )?.manager
+              return managerData ? (
+                <ManagerProfileCard manager={managerData} />
+              ) : (
+                <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">
+                  <p className="text-gray-500">{t("no-manager-assigned")}</p>
+                </div>
+              )
+            })()
           ) : (
             <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">
               <p className="text-gray-500">{t("no-manager-assigned")}</p>

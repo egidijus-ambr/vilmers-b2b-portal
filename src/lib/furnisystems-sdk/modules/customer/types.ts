@@ -37,6 +37,8 @@ export interface Customer extends BaseEntity {
   fabric_palettes?: FabricPalette[]
   managers?: CustomerManager[]
   spoken_languages?: string[]
+  is_configurator_enabled?: boolean
+  is_claims_enabled?: boolean
 }
 
 export interface Order extends BaseEntity {

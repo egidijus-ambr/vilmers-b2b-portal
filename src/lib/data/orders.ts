@@ -37,8 +37,6 @@ export const listOrders = async (
       order.display_id = order.order_external_code || order.order_code
     })
 
-    console.log("Retrieved orders:", orders)
-
     return orders
   } catch (error) {
     console.error("Error fetching orders:", error)

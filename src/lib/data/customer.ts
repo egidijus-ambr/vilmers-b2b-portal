@@ -24,6 +24,8 @@ export const retrieveCustomer = async (): Promise<
       full_name?: string
       managers?: any[]
       spoken_languages?: string[]
+      is_configurator_enabled?: boolean
+      is_claims_enabled?: boolean
     })
   | null
 > => {
@@ -49,6 +51,8 @@ export const retrieveCustomer = async (): Promise<
       full_name?: string
       managers?: any[]
       spoken_languages?: string[]
+      is_configurator_enabled?: boolean
+      is_claims_enabled?: boolean
     } = {
       id: customer.id,
       created_at: customer.created_at,
@@ -63,6 +67,8 @@ export const retrieveCustomer = async (): Promise<
       addresses: [],
       managers: customer.managers || [],
       spoken_languages: customer.spoken_languages || [],
+      is_configurator_enabled: customer.is_configurator_enabled || false,
+      is_claims_enabled: customer.is_claims_enabled || false,
     }
 
     return storeCustomer

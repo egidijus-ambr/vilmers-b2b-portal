@@ -37,6 +37,8 @@ const GET_ME_QUERY = gql`
       fabric_palettes {
         id
       }
+      is_configurator_enabled
+      is_claims_enabled
       managers {
         id
         manager {
@@ -160,6 +162,9 @@ export class CustomerModule {
           fabric_palettes: {
             id: string
           }[]
+          is_configurator_enabled: boolean
+          is_claims_enabled: boolean
+          // Managers can be an array of objects with id and manager details
           managers: {
             id: string
             manager: {
@@ -201,6 +206,8 @@ export class CustomerModule {
         price_listId: customerData.price_listId,
         fabric_palettes: customerData.fabric_palettes,
         managers: customerData.managers,
+        is_configurator_enabled: customerData.is_configurator_enabled,
+        is_claims_enabled: customerData.is_claims_enabled,
       }
 
       return customer
