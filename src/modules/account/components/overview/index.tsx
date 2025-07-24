@@ -2,7 +2,8 @@
 
 import { HttpTypes } from "@medusajs/types"
 import { useTranslations } from "@lib/i18n"
-import { getStoreLoginLink } from "@lib/data/customer"
+import { getStoreLoginLink, getClaimsLink } from "@lib/data/customer"
+import { useParams } from "next/navigation"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
@@ -25,6 +26,8 @@ type OverviewProps = {
 
 const Overview = ({ customer, orders }: OverviewProps) => {
   const { t } = useTranslations("account")
+  const params = useParams()
+  const languageCode = params.languageCode as string
 
   const handlePlaceOrder = async () => {
     try {
@@ -36,6 +39,18 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       console.error("Error getting store login link:", error)
       // Fallback: open store URL without token
       window.open(process.env.NEXT_PUBLIC_BASE_URL, "_blank")
+    }
+  }
+
+  const handleClaimsClick = async () => {
+    try {
+      // Call the server action to get the claims link with language parameter
+      const claimsUrl = await getClaimsLink(languageCode || "en")
+      // Open the claims URL in a new tab
+      window.open(claimsUrl, "_blank")
+    } catch (error) {
+      console.error("Error getting claims link:", error)
+      // Could add user-friendly error handling here
     }
   }
 
@@ -54,7 +69,7 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           {
             title: t("claims.title"),
             description: t("claims.description"),
-            onClick: () => console.log("Claims clicked"),
+            onClick: handleClaimsClick,
           },
         ]
       : []),

@@ -89,6 +89,14 @@ const VERIFY_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
   }
 `
 
+const GET_CLAIMS_LINK_QUERY = gql`
+  query GetClaimsLink($language: String!) {
+    getClaimsLink(language: $language) {
+      url
+    }
+  }
+`
+
 export class CustomerModule {
   constructor(private client: GraphQLClient) {}
 
@@ -336,6 +344,33 @@ export class CustomerModule {
       return authToken
     } catch (error) {
       console.error("Error verifying magic link:", error)
+      throw error
+    }
+  }
+
+  async getClaimsLink(language: string): Promise<string> {
+    try {
+      const response = await this.client.query<{
+        getClaimsLink: {
+          url: string
+        }
+      }>(GET_CLAIMS_LINK_QUERY, {
+        variables: {
+          language,
+        },
+        fetchPolicy: "no-cache", // Always fetch fresh data, never use cache
+        errorPolicy: "all", // Return partial data even if there are errors
+      })
+
+      const claimsData = response.getClaimsLink
+
+      if (!claimsData?.url) {
+        throw new Error("No claims URL received")
+      }
+
+      return claimsData.url
+    } catch (error) {
+      console.error("Error fetching claims link:", error)
       throw error
     }
   }

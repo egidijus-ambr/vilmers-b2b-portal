@@ -297,6 +297,27 @@ export const getStoreLoginLink = async (): Promise<string> => {
   }
 }
 
+export const getClaimsLink = async (language: string): Promise<string> => {
+  const authHeaders = await getAuthHeaders()
+
+  if (!authHeaders || !("authorization" in authHeaders)) {
+    throw new Error("Not authenticated")
+  }
+
+  try {
+    // Set the auth headers on the SDK client before making the request
+    sdk.setAuthHeaders(authHeaders)
+
+    // Call the SDK method to get the claims link
+    const claimsUrl = await sdk.customer.getClaimsLink(language)
+
+    return claimsUrl
+  } catch (error) {
+    console.error("Error getting claims link:", error)
+    throw error
+  }
+}
+
 export async function requestMagicLink(
   _currentState: unknown,
   formData: FormData
