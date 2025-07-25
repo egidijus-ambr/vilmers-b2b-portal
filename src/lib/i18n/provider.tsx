@@ -15,8 +15,9 @@ import {
   supportedLanguages,
   defaultLanguage,
   getLanguageFromPath,
-} from "./index"
-import { getI18nextLanguageCode, getUILanguageCode } from "./config"
+  getI18nextLanguageCode,
+  getUILanguageCode,
+} from "./config"
 
 interface I18nContextType {
   language: SupportedLanguage

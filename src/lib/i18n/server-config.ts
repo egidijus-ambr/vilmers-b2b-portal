@@ -1,39 +1,20 @@
 import i18n from "i18next"
 import Backend from "i18next-locize-backend"
-import { supportedLanguages, defaultLanguage } from "./index"
-import { languageCodeMapping, getI18nextLanguageCode } from "./config"
+import { i18nConfig, getI18nextLanguageCode, defaultLanguage } from "./config"
 
 // Server-side i18n configuration for SSR
 const createServerI18n = () => {
   const serverI18n = i18n.createInstance()
 
   serverI18n.use(Backend).init({
+    ...i18nConfig,
     debug: false, // Disable debug in server-side
     fallbackLng: getI18nextLanguageCode(defaultLanguage),
-    supportedLngs: Object.values(languageCodeMapping),
-    defaultNS: "common",
-    ns: ["common", "navigation", "product", "cart", "checkout", "account"],
-
-    interpolation: {
-      escapeValue: false, // React already escapes values
-    },
 
     // Disable language detection on server
     detection: {
       order: [],
       caches: [],
-    },
-
-    // Backend options for loading translations from Locize
-    backend: {
-      projectId: "5f861ad5-034b-4e24-8dd8-ff0f2b329332",
-      apiKey: "abd728f2-06fe-48ae-8bd8-57cee71e1f50",
-      referenceLng: "en",
-      loadPath:
-        "https://api.locize.app/{{projectId}}/{{version}}/{{lng}}/{{ns}}",
-      addPath:
-        "https://api.locize.app/missing/{{projectId}}/{{version}}/{{lng}}/{{ns}}",
-      allowedAddOrUpdateHosts: ["localhost"],
     },
 
     // Important: Wait for resources to load
