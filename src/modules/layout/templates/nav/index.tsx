@@ -1,12 +1,12 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import AccountDropdown from "@modules/layout/components/account-dropdown"
 import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
-import NavMenu from "@modules/layout/components/nav-menu"
 import { getNavigationConfig } from "@modules/layout/config/navigation"
 import {
   CompactLanguageSwitcher,
@@ -14,14 +14,22 @@ import {
   useTranslations,
 } from "@lib/i18n"
 
+// Import NavMenu normally for SSR
+import NavMenu from "@modules/layout/components/nav-menu"
+
 interface NavProps {
   customer: any
 }
 
 export default function Nav({ customer }: NavProps) {
   const pathname = usePathname()
-  const { t } = useTranslations()
+  const { t, isReady } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Check if we're on the home page
   const pathSegments = pathname.split("/").filter(Boolean)
@@ -62,6 +70,7 @@ export default function Nav({ customer }: NavProps) {
               <NavMenu
                 menuItems={getNavigationConfig(t).menuItems}
                 isHomePage={isHomePage}
+                isInteractive={isClient && isReady}
               />
             </div>
           </div>
@@ -96,7 +105,7 @@ export default function Nav({ customer }: NavProps) {
                   }`}
                   data-testid="nav-login-link"
                 >
-                  {t("log-in")}
+                  {isReady ? t("log-in") : ""}
                 </LocalizedClientLink>
               )}
             </div>

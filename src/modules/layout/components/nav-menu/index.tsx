@@ -7,12 +7,14 @@ interface NavMenuProps {
   menuItems: MenuItem[]
   isHomePage: boolean
   triggerClassName?: string
+  isInteractive?: boolean
 }
 
 export default function NavMenu({
   menuItems,
   isHomePage,
   triggerClassName,
+  isInteractive = true,
 }: NavMenuProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null)

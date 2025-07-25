@@ -16,10 +16,16 @@ const detectionOptions = {
   cookieMinutes: 60 * 24 * 30, // 30 days
   cookieDomain:
     typeof window !== "undefined" ? window.location.hostname : undefined,
-  // Disable automatic detection that conflicts with middleware routing
-  checkWhitelist: false,
+  // Enable whitelist checking to prevent unsupported language codes
+  checkWhitelist: true,
   lookupFromPathIndex: 0,
   lookupFromSubdomainIndex: 0,
+  // Custom converter to handle dk -> da-DK mapping
+  convertDetectedLanguage: (lng: string) => {
+    if (lng === "dk") return "da-DK"
+    if (lng === "da") return "da-DK"
+    return lng
+  },
 }
 
 // Initialize i18next
@@ -46,7 +52,7 @@ i18n
     },
 
     react: {
-      useSuspense: true, // Enable suspense to wait for translations
+      useSuspense: false, // Disable suspense to prevent hydration issues
     },
 
     // Prevent automatic initialization to avoid language flash

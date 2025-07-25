@@ -2,13 +2,13 @@
 
 import React from "react"
 import { usePathname } from "next/navigation"
+import { useTranslation } from "react-i18next"
 
 import UnderlineLink from "@modules/common/components/interactive-link"
 import OutlineButton from "@modules/common/components/outline-button"
 
 import AccountDropdown from "@modules/layout/components/account-dropdown"
 import { HttpTypes } from "@medusajs/types"
-import { t } from "i18next"
 
 interface AccountLayoutProps {
   customer: HttpTypes.StoreCustomer | null
@@ -20,6 +20,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   children,
 }) => {
   const pathname = usePathname()
+  const { t, ready: isReady } = useTranslation("common")
 
   // Check if this is the login page (when customer is null)
   const isLoginPage = !customer
@@ -28,6 +29,15 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   const isMainAccountPage = pathname.endsWith("/account")
   const isOrdersPage = pathname.endsWith("/account/orders")
   const showAccountNav = customer && !isMainAccountPage && !isOrdersPage
+
+  // Show loading state while translations are loading to prevent flicker
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
 
   if (isLoginPage) {
     return (
@@ -83,7 +93,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
         >
           {showAccountNav && (
             <div className="bg-white rounded-lg shadow-lg p-4 h-fit">
-              <AccountNav customer={customer} />
+              <AccountDropdown customer={customer} />
             </div>
           )}
           <div className={`flex-1 ${showAccountNav ? "" : ""}`}>
