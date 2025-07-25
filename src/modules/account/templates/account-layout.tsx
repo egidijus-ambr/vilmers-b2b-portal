@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import UnderlineLink from "@modules/common/components/interactive-link"
 import OutlineButton from "@modules/common/components/outline-button"
 
-import AccountNav from "../components/account-nav"
+import AccountDropdown from "@modules/layout/components/account-dropdown"
 import { HttpTypes } from "@medusajs/types"
 import { t } from "i18next"
 

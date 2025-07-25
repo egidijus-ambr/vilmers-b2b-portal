@@ -6,9 +6,14 @@ import NavMenuItem, { MenuItem } from "../nav-menu-item"
 interface NavMenuProps {
   menuItems: MenuItem[]
   isHomePage: boolean
+  triggerClassName?: string
 }
 
-export default function NavMenu({ menuItems, isHomePage }: NavMenuProps) {
+export default function NavMenu({
+  menuItems,
+  isHomePage,
+  triggerClassName,
+}: NavMenuProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null)
   const [activeSubSubmenu, setActiveSubSubmenu] = useState<string | null>(null)
@@ -56,6 +61,7 @@ export default function NavMenu({ menuItems, isHomePage }: NavMenuProps) {
           onSubmenuLeave={handleSubmenuLeave}
           onSubSubmenuEnter={handleSubSubmenuEnter}
           onSubSubmenuLeave={handleSubSubmenuLeave}
+          triggerClassName={triggerClassName}
         />
       ))}
     </nav>

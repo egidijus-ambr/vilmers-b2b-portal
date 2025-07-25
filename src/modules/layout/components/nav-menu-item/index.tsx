@@ -2,6 +2,9 @@
 
 import { useState } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import DropdownContainer from "../dropdown-container"
+import DropdownTrigger from "../dropdown-trigger"
+import DropdownList, { DropdownListItem } from "../dropdown-list"
 
 export interface MenuItem {
   id: string
@@ -15,30 +18,9 @@ export interface MenuItem {
   }
 }
 
-export interface DropdownItem {
-  label: string
-  href: string
-  hasSubmenu?: boolean
-  submenu?: {
-    title: string
-    items: SubmenuItem[]
-  }
-}
-
-export interface SubmenuItem {
-  label: string
-  href: string
-  hasSubmenu?: boolean
-  submenu?: {
-    title: string
-    items: SubSubmenuItem[]
-  }
-}
-
-export interface SubSubmenuItem {
-  label: string
-  href: string
-}
+export interface DropdownItem extends DropdownListItem {}
+export interface SubmenuItem extends DropdownListItem {}
+export interface SubSubmenuItem extends DropdownListItem {}
 
 interface NavMenuItemProps {
   item: MenuItem
@@ -52,6 +34,7 @@ interface NavMenuItemProps {
   onSubmenuLeave: () => void
   onSubSubmenuEnter: (itemLabel: string) => void
   onSubSubmenuLeave: () => void
+  triggerClassName?: string
 }
 
 export default function NavMenuItem({
@@ -66,6 +49,7 @@ export default function NavMenuItem({
   onSubmenuLeave,
   onSubSubmenuEnter,
   onSubSubmenuLeave,
+  triggerClassName,
 }: NavMenuItemProps) {
   if (item.type === "link") {
     return (
@@ -89,180 +73,36 @@ export default function NavMenuItem({
         onMouseEnter={() => onDropdownEnter(item.id)}
         onMouseLeave={onDropdownLeave}
       >
-        <button
-          className={`flex items-center space-x-1 h-full px-4 py-2 text-sm font-medium transition-colors ${
-            isHomePage
-              ? "text-white hover:text-gray-200"
-              : "text-ui-fg-subtle hover:text-ui-fg-base"
-          }`}
+        <DropdownTrigger
+          isOpen={activeDropdown === item.id}
+          className={
+            triggerClassName ||
+            `h-full px-4 py-2 text-sm  font-medium font-['Montserrat']  ${
+              isHomePage
+                ? "text-white hover:text-gray-200"
+                : "text-ui-fg-subtle hover:text-ui-fg-base"
+            }`
+          }
         >
           <span>{item.label}</span>
-          <svg
-            className={`w-4 h-4 transition-transform ${
-              activeDropdown === item.id ? "rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
+        </DropdownTrigger>
 
-        {/* Dropdown */}
-        <div
-          className={`absolute left-0 top-full mt-1 ${
-            item.dropdown.width
-          } bg-white shadow-lg transition-all duration-200 z-50 ${
-            activeDropdown === item.id
-              ? "opacity-100 visible"
-              : "opacity-0 invisible"
-          }`}
+        <DropdownContainer
+          isOpen={activeDropdown === item.id}
+          width={item.dropdown.width}
+          position="left"
         >
-          <div className="p-4">
-            <ul className="space-y-6">
-              {item.dropdown.items?.map((subItem, subIndex) => (
-                <li key={subIndex} className="relative">
-                  {subItem.hasSubmenu ? (
-                    <div
-                      className="relative"
-                      onMouseEnter={() => onSubmenuEnter(subItem.label)}
-                      onMouseLeave={onSubmenuLeave}
-                    >
-                      <div className="flex items-center justify-between text-sm text-ui-fg-base hover:text-ui-fg-interactive transition-colors cursor-pointer">
-                        <LocalizedClientLink
-                          href={subItem.href}
-                          className="flex-1"
-                        >
-                          {subItem.label}
-                        </LocalizedClientLink>
-                        <svg
-                          className="w-3 h-3 ml-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </div>
-
-                      {/* Submenu */}
-                      {subItem.submenu && (
-                        <div
-                          className={`absolute left-full -top-4 ml-4 w-48 bg-white shadow-lg transition-all duration-200 z-60 ${
-                            activeSubmenu === subItem.label
-                              ? "opacity-100 visible"
-                              : "opacity-0 invisible"
-                          }`}
-                        >
-                          <div className="p-4">
-                            <ul className="space-y-6">
-                              {subItem.submenu.items.map(
-                                (submenuItem, submenuIndex) => (
-                                  <li key={submenuIndex} className="relative">
-                                    {submenuItem.hasSubmenu ? (
-                                      <div
-                                        className="relative"
-                                        onMouseEnter={() =>
-                                          onSubSubmenuEnter(submenuItem.label)
-                                        }
-                                        onMouseLeave={onSubSubmenuLeave}
-                                      >
-                                        <div className="flex items-center justify-between text-sm text-ui-fg-base hover:text-ui-fg-interactive transition-colors cursor-pointer">
-                                          <LocalizedClientLink
-                                            href={submenuItem.href}
-                                            className="flex-1"
-                                          >
-                                            {submenuItem.label}
-                                          </LocalizedClientLink>
-                                          <svg
-                                            className="w-3 h-3 ml-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M9 5l7 7-7 7"
-                                            />
-                                          </svg>
-                                        </div>
-
-                                        {/* Sub-submenu */}
-                                        {submenuItem.submenu && (
-                                          <div
-                                            className={`absolute left-full -top-4 ml-4 w-48 bg-white shadow-lg transition-all duration-200 z-70 ${
-                                              activeSubSubmenu ===
-                                              submenuItem.label
-                                                ? "opacity-100 visible"
-                                                : "opacity-0 invisible"
-                                            }`}
-                                          >
-                                            <div className="p-4">
-                                              <ul className="space-y-6">
-                                                {submenuItem.submenu.items.map(
-                                                  (
-                                                    subSubmenuItem,
-                                                    subSubmenuIndex
-                                                  ) => (
-                                                    <li key={subSubmenuIndex}>
-                                                      <LocalizedClientLink
-                                                        href={
-                                                          subSubmenuItem.href
-                                                        }
-                                                        className="block text-sm text-ui-fg-base hover:text-ui-fg-interactive transition-colors"
-                                                      >
-                                                        {subSubmenuItem.label}
-                                                      </LocalizedClientLink>
-                                                    </li>
-                                                  )
-                                                )}
-                                              </ul>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <LocalizedClientLink
-                                        href={submenuItem.href}
-                                        className="block text-sm text-ui-fg-base hover:text-ui-fg-interactive transition-colors"
-                                      >
-                                        {submenuItem.label}
-                                      </LocalizedClientLink>
-                                    )}
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <LocalizedClientLink
-                      href={subItem.href}
-                      className="block text-sm text-ui-fg-base hover:text-ui-fg-interactive transition-colors"
-                    >
-                      {subItem.label}
-                    </LocalizedClientLink>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+          <DropdownList
+            items={item.dropdown.items}
+            activeSubmenu={activeSubmenu}
+            activeSubSubmenu={activeSubSubmenu}
+            onSubmenuEnter={onSubmenuEnter}
+            onSubmenuLeave={onSubmenuLeave}
+            onSubSubmenuEnter={onSubSubmenuEnter}
+            onSubSubmenuLeave={onSubSubmenuLeave}
+            spacing="spacious"
+          />
+        </DropdownContainer>
       </div>
     )
   }
