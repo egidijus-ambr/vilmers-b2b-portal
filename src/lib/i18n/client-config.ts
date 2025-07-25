@@ -36,7 +36,7 @@ i18n
     ...i18nConfig,
     detection: detectionOptions,
     react: {
-      useSuspense: false, // Disable suspense to prevent hydration issues
+      useSuspense: true, // Disable suspense to prevent hydration issues
     },
     // Prevent automatic initialization to avoid language flash
     initImmediate: false,

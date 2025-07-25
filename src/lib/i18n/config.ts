@@ -20,7 +20,7 @@ export const i18nConfig = {
   fallbackLng: languageCodeMapping[defaultLanguage],
   supportedLngs: Object.values(languageCodeMapping),
   defaultNS: "common",
-  ns: ["common", "navigation", "product", "cart", "checkout", "account"],
+  ns: ["common", "account"],
   interpolation: {
     escapeValue: false, // React already escapes values
   },
