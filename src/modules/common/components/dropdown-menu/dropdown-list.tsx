@@ -5,7 +5,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 
 export interface DropdownListItem {
   label: string | ReactNode
-  href: string
+  href: string | null
   hasSubmenu?: boolean
   onClick?: () => void
   submenu?: {

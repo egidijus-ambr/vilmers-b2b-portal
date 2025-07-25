@@ -7,7 +7,7 @@ import AccountDropdown from "@modules/layout/components/account-dropdown"
 import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
 import NavMenu from "@modules/layout/components/nav-menu"
-import { navigationConfig } from "@modules/layout/config/navigation"
+import { getNavigationConfig } from "@modules/layout/config/navigation"
 import {
   CompactLanguageSwitcher,
   supportedLanguages,
@@ -60,7 +60,7 @@ export default function Nav({ customer }: NavProps) {
             {/* Desktop Navigation Menu */}
             <div className="hidden small:flex items-center h-full">
               <NavMenu
-                menuItems={navigationConfig.menuItems}
+                menuItems={getNavigationConfig(t).menuItems}
                 isHomePage={isHomePage}
               />
             </div>

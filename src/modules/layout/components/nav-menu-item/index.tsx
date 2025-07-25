@@ -13,7 +13,7 @@ export interface MenuItem {
   id: string
   label: string
   type: "link" | "dropdown"
-  href: string
+  href: string | null
   dropdown?: {
     width: string
     layout: "single-column"
@@ -58,7 +58,7 @@ export default function NavMenuItem({
     return (
       <LocalizedClientLink
         href={item.href}
-        className={`px-4 py-2 text-sm font-medium transition-colors ${
+        className={`px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
           isHomePage
             ? "text-white hover:text-gray-200"
             : "text-ui-fg-subtle hover:text-ui-fg-base"
@@ -80,7 +80,7 @@ export default function NavMenuItem({
           isOpen={activeDropdown === item.id}
           className={
             triggerClassName ||
-            `h-full px-4 py-2 text-sm  font-medium font-['Montserrat']  ${
+            `h-full px-4 py-2 text-sm font-medium font-['Montserrat'] whitespace-nowrap ${
               isHomePage
                 ? "text-white hover:text-gray-200"
                 : "text-ui-fg-subtle hover:text-ui-fg-base"

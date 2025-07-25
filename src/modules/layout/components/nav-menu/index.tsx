@@ -46,7 +46,7 @@ export default function NavMenu({
   }
 
   return (
-    <nav className="flex items-center space-x-4">
+    <nav className="flex items-center space-x-2">
       {menuItems.map((item) => (
         <NavMenuItem
           key={item.id}
