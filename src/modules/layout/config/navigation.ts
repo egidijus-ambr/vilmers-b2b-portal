@@ -127,7 +127,7 @@ export const getNavigationConfig = (
       id: "contact",
       label: t("contact-us"),
       type: "link" as const,
-      href: "/contact",
+      href: "https://vilmers.com/contact-us/",
     },
   ],
 })
