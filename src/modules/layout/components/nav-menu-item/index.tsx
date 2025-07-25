@@ -2,9 +2,12 @@
 
 import { useState } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import DropdownContainer from "../dropdown-container"
-import DropdownTrigger from "../dropdown-trigger"
-import DropdownList, { DropdownListItem } from "../dropdown-list"
+import {
+  DropdownContainer,
+  DropdownTrigger,
+  DropdownList,
+  DropdownListItem,
+} from "@modules/common/components/dropdown-menu"
 
 export interface MenuItem {
   id: string
