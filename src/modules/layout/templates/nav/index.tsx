@@ -52,7 +52,7 @@ export default function Nav({ customer }: NavProps) {
         }`}
       >
         <nav
-          className={`content-container text-xs flex items-center justify-between w-full h-full ${
+          className={`w-full px-6 text-xs flex items-center justify-between h-full ${
             isHomePage ? "text-white" : "text-ui-fg-subtle"
           }`}
         >
