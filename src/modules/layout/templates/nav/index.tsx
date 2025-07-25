@@ -1,13 +1,18 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { Suspense, useState } from "react"
+import { useState } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import AccountDropdown from "@modules/layout/components/account-dropdown"
 import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
-import { CompactLanguageSwitcher, supportedLanguages } from "@lib/i18n"
-import { t } from "i18next"
+import NavMenu from "@modules/layout/components/nav-menu"
+import { navigationConfig } from "@modules/layout/config/navigation"
+import {
+  CompactLanguageSwitcher,
+  supportedLanguages,
+  useTranslations,
+} from "@lib/i18n"
 
 interface NavProps {
   customer: any
@@ -15,6 +20,7 @@ interface NavProps {
 
 export default function Nav({ customer }: NavProps) {
   const pathname = usePathname()
+  const { t } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Check if we're on the home page
@@ -46,19 +52,23 @@ export default function Nav({ customer }: NavProps) {
         }`}
       >
         <nav
-          className={`content-container txt-xsmall-plus flex items-center justify-between w-full h-full text-small-regular ${
+          className={`content-container text-xs flex items-center justify-between w-full h-full ${
             isHomePage ? "text-white" : "text-ui-fg-subtle"
           }`}
         >
           <div className="flex-1 basis-0 h-full flex items-center">
-            <CompactLanguageSwitcher />
-            <div className="h-full">{/* <SideMenu regions={regions} /> */}</div>
+            {/* Desktop Navigation Menu */}
+            <div className="hidden small:flex items-center h-full">
+              <NavMenu
+                menuItems={navigationConfig.menuItems}
+                isHomePage={isHomePage}
+              />
+            </div>
           </div>
-
           <div className="flex items-center h-full">
             <LocalizedClientLink
               href="/"
-              className={`txt-compact-xlarge-plus uppercase ${
+              className={`text-xl font-semibold uppercase ${
                 isHomePage
                   ? "hover:text-gray-200 text-white"
                   : "hover:text-ui-fg-base"
@@ -90,57 +100,16 @@ export default function Nav({ customer }: NavProps) {
                 </LocalizedClientLink>
               )}
             </div>
+            <CompactLanguageSwitcher />
 
-            {/* Mobile Menu Button - Only show when customer is logged in and on small screens */}
-            {customer && (
-              <div className="flex small:hidden items-center h-full">
-                <MobileMenuButton
-                  isOpen={isMobileMenuOpen}
-                  onClick={handleMobileMenuToggle}
-                  isHomePage={isHomePage}
-                />
-              </div>
-            )}
-
-            {/* TEST: Mobile Menu Button for demo - Remove this in production */}
-            {!customer && (
-              <div className="flex small:hidden items-center h-full">
-                <MobileMenuButton
-                  isOpen={isMobileMenuOpen}
-                  onClick={handleMobileMenuToggle}
-                  isHomePage={isHomePage}
-                />
-              </div>
-            )}
-
-            {/* Mobile Login Link - Only show when customer is not logged in and on small screens */}
-            {false && !customer && (
-              <div className="flex small:hidden items-center h-full">
-                <LocalizedClientLink
-                  href="/account"
-                  className={`text-base font-medium font-['Montserrat'] px-4 py-2 transition-colors ${
-                    isHomePage ? "text-white " : "text-dark-blue  "
-                  }`}
-                  data-testid="nav-mobile-login-link"
-                >
-                  {t("log-in")}
-                </LocalizedClientLink>
-              </div>
-            )}
-
-            {/* <Suspense
-              fallback={
-                <LocalizedClientLink
-                  className="hover:text-ui-fg-base flex gap-2"
-                  href="/cart"
-                  data-testid="nav-cart-link"
-                >
-                  Cart (0)
-                </LocalizedClientLink>
-              }
-            >
-              <CartButton />
-            </Suspense> */}
+            {/* Mobile Menu Button */}
+            <div className="flex small:hidden items-center h-full">
+              <MobileMenuButton
+                isOpen={isMobileMenuOpen}
+                onClick={handleMobileMenuToggle}
+                isHomePage={isHomePage}
+              />
+            </div>
           </div>
         </nav>
       </header>
