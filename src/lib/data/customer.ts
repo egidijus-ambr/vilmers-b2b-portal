@@ -16,7 +16,6 @@ import {
   setAuthToken,
   setCacheId,
 } from "./cookies"
-import { getCountryCodeFromLanguage } from "@lib/util/language-mapping"
 import { ErrorHandlers } from "@lib/util/error-handler"
 
 export const retrieveCustomer = async (): Promise<

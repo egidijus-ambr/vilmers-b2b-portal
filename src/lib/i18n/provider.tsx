@@ -45,16 +45,38 @@ export function I18nProvider({ children }: I18nProviderProps) {
   // Initialize language from URL immediately to prevent hydration mismatch
   const initialLanguage = getLanguageFromPath(pathname) || defaultLanguage
   const [language, setLanguage] = useState<SupportedLanguage>(initialLanguage)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false) // Start with false to prevent flash
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Initialize i18n synchronously to prevent hydration mismatch
   React.useLayoutEffect(() => {
-    // Change language synchronously using the mapped i18next language code
-    const i18nextLanguageCode = getI18nextLanguageCode(initialLanguage)
-    i18n.changeLanguage(i18nextLanguageCode)
-    setLanguage(initialLanguage)
-    setIsLoading(false)
-  }, [initialLanguage])
+    if (!isInitialized) {
+      // Change language synchronously using the mapped i18next language code
+      const i18nextLanguageCode = getI18nextLanguageCode(initialLanguage)
+
+      // Set the language immediately without waiting for async operations
+      if (i18n.isInitialized) {
+        i18n.changeLanguage(i18nextLanguageCode)
+      } else {
+        // If i18n is not initialized yet, set it directly
+        i18n.language = i18nextLanguageCode
+      }
+
+      setLanguage(initialLanguage)
+      setIsInitialized(true)
+      setIsLoading(false)
+    }
+  }, [initialLanguage, isInitialized])
+
+  // Sync language when pathname changes (for navigation)
+  React.useEffect(() => {
+    const newLanguage = getLanguageFromPath(pathname)
+    if (newLanguage && newLanguage !== language && isInitialized) {
+      const i18nextLanguageCode = getI18nextLanguageCode(newLanguage)
+      i18n.changeLanguage(i18nextLanguageCode)
+      setLanguage(newLanguage)
+    }
+  }, [pathname, language, isInitialized])
 
   // Listen for language changes from i18n
   useEffect(() => {

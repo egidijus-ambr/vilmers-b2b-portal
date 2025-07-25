@@ -46,6 +46,9 @@ export function LanguageSwitcher({
       // Navigate to the new language URL with full page refresh for server-side components
       const newPath = `/${newLanguage}${currentPath ? `/${currentPath}` : ""}`
       window.location.href = newPath
+
+      // router.push(newPath)
+
       setIsOpen(false)
     }
   }
@@ -59,7 +62,7 @@ export function LanguageSwitcher({
             onClick={() => handleLanguageChange(lang)}
             disabled={isLoading}
             className={`
-              px-3 py-2 rounded-md text-sm font-medium transition-colors
+              px-3 py-2 rounded-md text-sm font-sm transition-colors
               ${
                 language === lang
                   ? "bg-blue-600 text-white"
@@ -82,7 +85,7 @@ export function LanguageSwitcher({
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-md border border-gray-300 
+          flex items-center gap-2 px-3 py-2 
           bg-white text-gray-700 hover:bg-gray-50 transition-colors
           ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
         `}
@@ -115,7 +118,7 @@ export function LanguageSwitcher({
           />
 
           {/* Dropdown */}
-          <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+          <div className="absolute right-0 mt-2 w-48 bg-white  shadow-lg z-20">
             <div className="py-1">
               {supportedLanguages.map((lang) => (
                 <button
@@ -193,7 +196,7 @@ export function CompactLanguageSwitcher({
         `}
         title={languageNames[language]}
       >
-        <span className="text-lg pr-1">{language.toUpperCase()}</span>
+        <span className="text-sm pr-1">{language.toUpperCase()}</span>
         <ChevronDown
           className={clx("transition-transform duration-200", {
             "rotate-180": isOpen,
@@ -209,7 +212,7 @@ export function CompactLanguageSwitcher({
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-20 text-dark-blue">
+          <div className="absolute right-0 mt-2 w-40 bg-white border  shadow-lg z-20 text-dark-blue">
             <div className="py-1">
               {supportedLanguages.map((lang) => (
                 <button

@@ -14,7 +14,6 @@ import {
   setCartId,
 } from "./cookies"
 import { getRegion } from "./regions"
-import { getCountryCodeFromLanguage } from "@lib/util/language-mapping"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -125,7 +124,7 @@ export async function addToCart({
     throw new Error("Missing variant ID when adding to cart")
   }
 
-  const countryCode = getCountryCodeFromLanguage(languageCode)
+  const countryCode = "" + languageCode.toLowerCase() + "'"
   const cart = await getOrSetCart(countryCode)
 
   if (!cart) {

@@ -1,6 +1,7 @@
 import i18n from "i18next"
 import Backend from "i18next-locize-backend"
 import { supportedLanguages, defaultLanguage } from "./index"
+import { languageCodeMapping, getI18nextLanguageCode } from "./config"
 
 // Server-side i18n configuration for SSR
 const createServerI18n = () => {
@@ -8,8 +9,8 @@ const createServerI18n = () => {
 
   serverI18n.use(Backend).init({
     debug: false, // Disable debug in server-side
-    fallbackLng: defaultLanguage,
-    supportedLngs: supportedLanguages,
+    fallbackLng: getI18nextLanguageCode(defaultLanguage),
+    supportedLngs: Object.values(languageCodeMapping),
     defaultNS: "common",
     ns: ["common", "navigation", "product", "cart", "checkout", "account"],
 

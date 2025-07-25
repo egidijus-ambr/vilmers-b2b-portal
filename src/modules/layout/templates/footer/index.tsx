@@ -15,7 +15,16 @@ export default async function Footer({ language }: FooterProps) {
   const { collections } = await listCollections({
     fields: "*products",
   })
+
+  // Debug logging
+  console.log("Footer language:", language)
+
   const t = await getServerT("common", language)
+
+  // Test the translation function
+  const testTranslation = t("how-can-we-help")
+  console.log("Translation result for 'how-can-we-help':", testTranslation)
+
   const productCategories = await listCategories()
 
   return (

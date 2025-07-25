@@ -25,13 +25,17 @@ function detectLanguage(request: NextRequest): SupportedLanguage {
     return storedLanguage
   }
 
-  // 3. Check browser language
+  // 3. Check browser language (improved detection)
   const acceptLanguage = request.headers.get("accept-language")
   if (acceptLanguage) {
-    const browserLanguages = acceptLanguage
-      .split(",")
-      .map((lang) => lang.split(";")[0].split("-")[0].toLowerCase())
+    const browserLanguages = acceptLanguage.split(",").map((lang) => {
+      // Extract language code and handle quality values
+      const langCode = lang.split(";")[0].trim().toLowerCase()
+      // Handle both 'en' and 'en-US' formats
+      return langCode.split("-")[0]
+    })
 
+    // Find the first supported language from browser preferences
     for (const lang of browserLanguages) {
       if (supportedLanguages.includes(lang as SupportedLanguage)) {
         return lang as SupportedLanguage
@@ -39,7 +43,7 @@ function detectLanguage(request: NextRequest): SupportedLanguage {
     }
   }
 
-  // 4. Default fallback
+  // 4. Default fallback (only when no other detection works)
   return DEFAULT_LANGUAGE
 }
 
@@ -94,22 +98,29 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Detect preferred language and redirect
+  // Detect preferred language and redirect immediately
   const preferredLanguage = detectLanguage(request)
   const redirectPath =
     request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
   const queryString = request.nextUrl.search ? request.nextUrl.search : ""
 
   const redirectUrl = `${request.nextUrl.origin}/${preferredLanguage}${redirectPath}${queryString}`
-  const response = NextResponse.redirect(redirectUrl, 307)
 
-  // Set language preference cookie
+  // Use 302 redirect for faster response and set language preference cookie
+  const response = NextResponse.redirect(redirectUrl, 302)
+
+  // Set language preference cookie immediately
   response.cookies.set("preferred-language", preferredLanguage, {
     maxAge: 60 * 60 * 24 * 30, // 30 days
     httpOnly: true,
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
   })
+
+  // Add cache control headers to prevent caching of redirects
+  response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
+  response.headers.set("Pragma", "no-cache")
+  response.headers.set("Expires", "0")
 
   return response
 }

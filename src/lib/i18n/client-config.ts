@@ -7,14 +7,19 @@ import resourcesToBackend from "i18next-resources-to-backend"
 import { supportedLanguages, defaultLanguage } from "./index"
 import { languageCodeMapping } from "./config"
 import Backend from "i18next-locize-backend"
-// Language detection options
+// Language detection options - optimized to work with URL-based routing
 const detectionOptions = {
-  order: ["path", "cookie", "localStorage", "navigator", "htmlTag"],
+  // Prioritize URL path and stored preferences, minimize auto-detection
+  order: ["path", "cookie", "localStorage"],
   caches: ["localStorage", "cookie"],
   excludeCacheFor: ["cimode"],
   cookieMinutes: 60 * 24 * 30, // 30 days
   cookieDomain:
     typeof window !== "undefined" ? window.location.hostname : undefined,
+  // Disable automatic detection that conflicts with middleware routing
+  checkWhitelist: false,
+  lookupFromPathIndex: 0,
+  lookupFromSubdomainIndex: 0,
 }
 
 // Initialize i18next
@@ -43,6 +48,12 @@ i18n
     react: {
       useSuspense: true, // Enable suspense to wait for translations
     },
+
+    // Prevent automatic initialization to avoid language flash
+    initImmediate: false,
+
+    // Load resources synchronously when possible
+    partialBundledLanguages: true,
 
     // Backend options for loading translations
     // backend: {
