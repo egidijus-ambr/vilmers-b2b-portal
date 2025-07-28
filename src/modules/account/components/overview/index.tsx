@@ -33,12 +33,14 @@ const Overview = ({ customer, orders }: OverviewProps) => {
     try {
       // Call the server action to get the store login link
       const storeUrl = await getStoreLoginLink()
+      console.warn("Store URL", languageCode, storeUrl)
       // Open the store URL in a new tab
-      window.open(storeUrl, "_blank")
+      window.open(storeUrl + `&lng=${languageCode}`, "_blank")
     } catch (error) {
       console.error("Error getting store login link:", error)
       // Fallback: open store URL without token
-      window.open(process.env.NEXT_PUBLIC_BASE_URL, "_blank")
+      //
+      // window.open(process.env.NEXT_PUBLIC_BASE_URL, "_blank")
     }
   }
 

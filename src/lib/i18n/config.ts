@@ -7,18 +7,18 @@ export const defaultLanguage: SupportedLanguage = "lt"
 
 // Mapping from UI language codes to i18next language codes
 export const languageCodeMapping: Record<SupportedLanguage, string> = {
+  de: "de",
+  dk: "da-DK", // Map UI "dk" to i18next "da-DK"
   en: "en",
   fr: "fr",
-  de: "de",
   lt: "lt",
-  dk: "da-DK", // Map UI "dk" to i18next "da-DK"
 }
 
 // i18next configuration
 export const i18nConfig = {
   debug: process.env.NODE_ENV === "development",
   fallbackLng: languageCodeMapping[defaultLanguage],
-  supportedLngs: Object.values(languageCodeMapping),
+  supportedLngs: [...Object.values(languageCodeMapping), "da"], // Include "da" to handle browser language detection
   defaultNS: "common",
   ns: ["common", "account"],
   interpolation: {

@@ -37,6 +37,10 @@ function detectLanguage(request: NextRequest): SupportedLanguage {
 
     // Find the first supported language from browser preferences
     for (const lang of browserLanguages) {
+      // Map Danish language codes to our supported "dk" code
+      if (lang === "da") {
+        return "dk" as SupportedLanguage
+      }
       if (supportedLanguages.includes(lang as SupportedLanguage)) {
         return lang as SupportedLanguage
       }

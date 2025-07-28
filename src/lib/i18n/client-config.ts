@@ -23,6 +23,7 @@ const detectionOptions = {
   convertDetectedLanguage: (lng: string) => {
     if (lng === "dk") return "da-DK"
     if (lng === "da") return "da-DK"
+    if (lng === "da-DK") return "da-DK"
     return lng
   },
 }

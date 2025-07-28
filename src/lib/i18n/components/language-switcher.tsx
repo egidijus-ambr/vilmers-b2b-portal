@@ -53,10 +53,14 @@ export function LanguageSwitcher({
     }
   }
 
+  const sortedLanguages = supportedLanguages.toSorted((a, b) =>
+    languageNames[a].localeCompare(languageNames[b])
+  )
+
   if (variant === "buttons") {
     return (
       <div className={`flex gap-2 ${className}`}>
-        {supportedLanguages.map((lang) => (
+        {sortedLanguages.map((lang) => (
           <button
             key={lang}
             onClick={() => handleLanguageChange(lang)}
@@ -120,7 +124,7 @@ export function LanguageSwitcher({
           {/* Dropdown */}
           <div className="absolute right-0 mt-2 w-48 bg-white  shadow-lg z-20">
             <div className="py-1">
-              {supportedLanguages.map((lang) => (
+              {sortedLanguages.map((lang) => (
                 <button
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
@@ -185,6 +189,10 @@ export function CompactLanguageSwitcher({
     }
   }
 
+  const sortedLanguages = supportedLanguages.toSorted((a, b) =>
+    languageNames[a].localeCompare(languageNames[b])
+  )
+
   return (
     <div className={`relative ${className}`}>
       <button
@@ -214,7 +222,7 @@ export function CompactLanguageSwitcher({
 
           <div className="absolute right-0 mt-2 w-40 bg-white border  shadow-lg z-20 text-dark-blue">
             <div className="py-1">
-              {supportedLanguages.map((lang) => (
+              {sortedLanguages.map((lang) => (
                 <button
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
