@@ -6,8 +6,44 @@ import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
 export const metadata: Metadata = {
-  title: "Vilmers",
-  description: "Comfort and quality with smart design",
+  title: "Vilmers - Comfort and Quality with Smart Design",
+  description:
+    "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
+  keywords: [
+    "furniture",
+    "home design",
+    "comfort",
+    "quality",
+    "smart design",
+    "Vilmers",
+  ],
+  openGraph: {
+    title: "Vilmers - Comfort and Quality with Smart Design",
+    description:
+      "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
+    type: "website",
+    locale: "lt_LT",
+    siteName: "Vilmers",
+    images: [
+      {
+        url: "/images/home_page_background.png",
+        width: 1200,
+        height: 630,
+        alt: "Vilmers - Premium Furniture and Home Solutions",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vilmers - Comfort and Quality with Smart Design",
+    description:
+      "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
+    images: ["/images/home_page_background.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default async function Home(props: {

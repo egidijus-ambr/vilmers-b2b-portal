@@ -12,6 +12,23 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
+  title: {
+    default: "Vilmers",
+    template: "%s | Vilmers",
+  },
+  description: "Comfort and quality with smart design",
+  openGraph: {
+    type: "website",
+    locale: "lt_LT",
+    siteName: "Vilmers",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function RootLayout(props: { children: React.ReactNode }) {
