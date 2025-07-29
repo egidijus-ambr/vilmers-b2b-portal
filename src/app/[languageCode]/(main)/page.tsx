@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     siteName: "Vilmers",
     images: [
       {
-        url: "/images/home_page_background.png",
+        url: "https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png",
         width: 1200,
         height: 630,
         alt: "Vilmers - Premium Furniture and Home Solutions",
@@ -38,7 +38,9 @@ export const metadata: Metadata = {
     title: "Vilmers - Comfort and Quality with Smart Design",
     description:
       "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
-    images: ["/images/home_page_background.png"],
+    images: [
+      "https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png",
+    ],
   },
   robots: {
     index: true,
