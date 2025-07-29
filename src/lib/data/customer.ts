@@ -28,22 +28,39 @@ export const retrieveCustomer = async (): Promise<
     })
   | null
 > => {
+  console.log("[retrieveCustomer] Starting customer retrieval...")
+
   const authHeaders = await getAuthHeaders()
+  console.log(
+    "[retrieveCustomer] Auth headers retrieved:",
+    authHeaders && "authorization" in authHeaders ? "present" : "missing"
+  )
 
   if (!authHeaders || !("authorization" in authHeaders)) {
+    console.log(
+      "[retrieveCustomer] No valid auth headers found, returning null"
+    )
     return null
   }
 
   try {
+    console.log("[retrieveCustomer] Setting auth headers on SDK...")
     // Set the auth headers on the SDK client before making the request
     sdk.setAuthHeaders(authHeaders)
 
+    console.log("[retrieveCustomer] Calling sdk.customer.getMe()...")
     const customer = await sdk.customer.getMe()
 
     if (!customer) {
-      console.log("No customer data returned from SDK")
+      console.log("[retrieveCustomer] No customer data returned from SDK")
       return null
     }
+
+    console.log("[retrieveCustomer] Customer data retrieved successfully:", {
+      id: customer.id,
+      email: customer.email,
+      full_name: customer.full_name,
+    })
 
     // Map Customer to StoreCustomer with full_name and managers extension
     const storeCustomer: HttpTypes.StoreCustomer & {
@@ -70,10 +87,17 @@ export const retrieveCustomer = async (): Promise<
       is_claims_enabled: customer.is_claims_enabled || false,
     }
 
+    console.log("[retrieveCustomer] Customer mapping completed successfully")
     return storeCustomer
   } catch (error) {
-    console.error("Error retrieving customer:", error)
+    console.error("[retrieveCustomer] Error retrieving customer:", {
+      error: error,
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
     // Clear auth headers from SDK if authentication fails
+    console.log("[retrieveCustomer] Clearing SDK auth headers due to error")
     sdk.clearAuthHeaders()
     return null
   }

@@ -23,7 +23,14 @@ export default async function PageLayout({
   children,
   params,
 }: PageLayoutProps) {
+  console.log("[PageLayout] Starting main page layout...")
+
   const customer = await retrieveCustomer()
+  console.log(
+    "[PageLayout] Customer retrieval result:",
+    customer ? "customer found" : "no customer"
+  )
+
   const cart = await retrieveCart()
   let shippingOptions: StoreCartShippingOption[] = []
 

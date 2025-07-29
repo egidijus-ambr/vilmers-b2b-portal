@@ -20,5 +20,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function Login() {
+  console.log("[Login] Login page component rendering...")
   return <LoginTemplate />
 }

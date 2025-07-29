@@ -12,7 +12,17 @@ export default async function AccountPageLayout({
   login?: React.ReactNode
   children: React.ReactNode
 }) {
-  const customer = await retrieveCustomer().catch(() => null)
+  console.log("[AccountPageLayout] Starting account page layout...")
+
+  const customer = await retrieveCustomer().catch((error) => {
+    console.error("[AccountPageLayout] Error retrieving customer:", error)
+    return null
+  })
+
+  console.log(
+    "[AccountPageLayout] Customer retrieval result:",
+    customer ? "customer found" : "no customer"
+  )
 
   return (
     <Suspense
