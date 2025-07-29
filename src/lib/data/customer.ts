@@ -30,25 +30,9 @@ export const retrieveCustomer = async (): Promise<
 > => {
   console.log("[retrieveCustomer] Starting customer retrieval...")
 
-  const authHeaders = await getAuthHeaders()
-  console.log(
-    "[retrieveCustomer] Auth headers retrieved:",
-    authHeaders && "authorization" in authHeaders ? "present" : "missing"
-  )
-
-  if (!authHeaders || !("authorization" in authHeaders)) {
-    console.log(
-      "[retrieveCustomer] No valid auth headers found, returning null"
-    )
-    return null
-  }
-
   try {
-    console.log("[retrieveCustomer] Setting auth headers on SDK...")
-    // Set the auth headers on the SDK client before making the request
-    sdk.setAuthHeaders(authHeaders)
-
     console.log("[retrieveCustomer] Calling sdk.customer.getMe()...")
+    // SDK automatically handles authentication from cookies
     const customer = await sdk.customer.getMe()
 
     if (!customer) {
@@ -96,9 +80,6 @@ export const retrieveCustomer = async (): Promise<
       stack: error instanceof Error ? error.stack : undefined,
     })
 
-    // Clear auth headers from SDK if authentication fails
-    console.log("[retrieveCustomer] Clearing SDK auth headers due to error")
-    sdk.clearAuthHeaders()
     return null
   }
 }
@@ -175,9 +156,7 @@ export async function login(_currentState: unknown, formData: FormData) {
 
     console.log("Login result:", result)
 
-    await setAuthToken(result.token)
-
-    // Generate a new cache ID for this user session
+    // SDK handles token storage internally, just manage cache
     const newCacheId = `${Date.now()}-${Math.random()
       .toString(36)
       .substr(2, 9)}`
@@ -300,19 +279,9 @@ export const addCustomerAddress = async (
 }
 
 export const getStoreLoginLink = async (): Promise<string> => {
-  const authHeaders = await getAuthHeaders()
-
-  if (!authHeaders || !("authorization" in authHeaders)) {
-    throw new Error("Not authenticated")
-  }
-
   try {
-    // Set the auth headers on the SDK client before making the request
-    sdk.setAuthHeaders(authHeaders)
-
-    // Call the SDK method to get the store login link
+    // SDK automatically handles authentication from cookies
     const storeUrl = await sdk.customer.getStoreLoginLink()
-
     return storeUrl
   } catch (error) {
     console.error("Error getting store login link:", error)
@@ -321,19 +290,9 @@ export const getStoreLoginLink = async (): Promise<string> => {
 }
 
 export const getClaimsLink = async (language: string): Promise<string> => {
-  const authHeaders = await getAuthHeaders()
-
-  if (!authHeaders || !("authorization" in authHeaders)) {
-    throw new Error("Not authenticated")
-  }
-
   try {
-    // Set the auth headers on the SDK client before making the request
-    sdk.setAuthHeaders(authHeaders)
-
-    // Call the SDK method to get the claims link
+    // SDK automatically handles authentication from cookies
     const claimsUrl = await sdk.customer.getClaimsLink(language)
-
     return claimsUrl
   } catch (error) {
     console.error("Error getting claims link:", error)
@@ -409,13 +368,11 @@ export async function verifyMagicLinkAction(
   console.log("Verifying magic link with token:", token)
 
   try {
-    const authToken = await sdk.customer.verifyMagicLink(token)
+    await sdk.customer.verifyMagicLink(token)
 
     console.log("Magic link verification successful, received token")
 
-    await setAuthToken(authToken)
-
-    // Generate a new cache ID for this user session
+    // SDK handles token storage internally, just manage cache
     const newCacheId = `${Date.now()}-${Math.random()
       .toString(36)
       .substr(2, 9)}`
@@ -450,67 +407,4 @@ export async function verifyMagicLinkAction(
 
   // Always redirect to account page regardless of success/failure
   redirect(`/${languageCode}/account`)
-}
-
-export const deleteCustomerAddress = async (
-  addressId: string
-): Promise<void> => {
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
-
-  // await sdk.store.customer
-  //   .deleteAddress(addressId, headers)
-  //   .then(async () => {
-  //     const customerCacheTag = await getCacheTag("customers")
-  //     revalidateTag(customerCacheTag)
-  //     return { success: true, error: null }
-  //   })
-  //   .catch((err) => {
-  //     return { success: false, error: err.toString() }
-  //   })
-}
-
-export const updateCustomerAddress = async (
-  currentState: Record<string, unknown>,
-  formData: FormData
-): Promise<any> => {
-  const addressId =
-    (currentState.addressId as string) || (formData.get("addressId") as string)
-
-  if (!addressId) {
-    return { success: false, error: "Address ID is required" }
-  }
-
-  const address = {
-    full_name: formData.get("full_name") as string,
-    company: formData.get("company") as string,
-    address_1: formData.get("address_1") as string,
-    address_2: formData.get("address_2") as string,
-    city: formData.get("city") as string,
-    postal_code: formData.get("postal_code") as string,
-    province: formData.get("province") as string,
-    country_code: formData.get("country_code") as string,
-  } as HttpTypes.StoreUpdateCustomerAddress
-
-  const phone = formData.get("phone") as string
-
-  if (phone) {
-    address.phone = phone
-  }
-
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
-
-  // return sdk.store.customer
-  //   .updateAddress(addressId, address, {}, headers)
-  //   .then(async () => {
-  //     const customerCacheTag = await getCacheTag("customers")
-  //     revalidateTag(customerCacheTag)
-  //     return { success: true, error: null }
-  //   })
-  //   .catch((err) => {
-  //     return { success: false, error: err.toString() }
-  //   })
 }

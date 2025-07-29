@@ -20,6 +20,7 @@ import {
   NotFoundError,
 } from "./errors"
 import { ClientConfig, AuthHeaders } from "./types"
+import { cookies } from "next/headers"
 
 export class ApolloGraphQLClient {
   private client: ApolloClient<any>
@@ -57,8 +58,8 @@ export class ApolloGraphQLClient {
       `[Furnisystems SDK] Using GraphQL endpoint: ${this.config.graphqlEndpoint}`
     )
 
-    // Auth Link
-    const authLink = setContext((_, { headers }) => {
+    // Auth Link with automatic cookie-based authentication
+    const authLink = setContext(async (_, { headers }) => {
       const authHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         Accept: "*/*",
@@ -66,6 +67,30 @@ export class ApolloGraphQLClient {
         Pragma: "no-cache",
         ...this.config.defaultHeaders,
         ...this.authHeaders,
+      }
+
+      // Automatically retrieve auth token from cookies if running on server
+      if (typeof window === "undefined") {
+        try {
+          const cookieStore = await cookies()
+          const token = cookieStore.get("_furni_jwt")?.value
+
+          if (token) {
+            authHeaders.authorization = `Bearer ${token}`
+            if (this.config.debug) {
+              console.log(
+                "[Furnisystems SDK] Auto-retrieved auth token from cookies"
+              )
+            }
+          }
+        } catch (error) {
+          if (this.config.debug) {
+            console.warn(
+              "[Furnisystems SDK] Could not retrieve auth token from cookies:",
+              error
+            )
+          }
+        }
       }
 
       if (this.config.publishableKey) {

@@ -12,6 +12,7 @@ import {
   RegisterInput,
 } from "./types"
 import { useMutation } from "@apollo/client"
+import { cookies } from "next/headers"
 
 const LOGIN_MUTATION = gql`
   mutation Login($email: String!, $password: String!) {
@@ -131,10 +132,20 @@ export class CustomerModule {
         throw new Error("Authentication failed: No token received")
       }
 
-      // Set the auth token for future requests
-      this.client.setAuthHeaders({
-        authorization: `Bearer ${token}`,
-      })
+      // Store token in cookies internally within the SDK
+      if (typeof window === "undefined") {
+        try {
+          const cookieStore = await cookies()
+          cookieStore.set("_furni_jwt", token, {
+            maxAge: 60 * 60 * 24 * 7,
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV === "production",
+          })
+        } catch (error) {
+          console.warn("Could not store auth token in cookies:", error)
+        }
+      }
 
       // TODO: Fetch customer data after successful authentication
       // For now, we'll return a placeholder customer object
@@ -336,10 +347,20 @@ export class CustomerModule {
         throw new Error("Magic link verification failed: No token received")
       }
 
-      // Set the auth token for future requests
-      this.client.setAuthHeaders({
-        authorization: `Bearer ${authToken}`,
-      })
+      // Store token in cookies internally within the SDK
+      if (typeof window === "undefined") {
+        try {
+          const cookieStore = await cookies()
+          cookieStore.set("_furni_jwt", authToken, {
+            maxAge: 60 * 60 * 24 * 7,
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV === "production",
+          })
+        } catch (error) {
+          console.warn("Could not store auth token in cookies:", error)
+        }
+      }
 
       return authToken
     } catch (error) {
