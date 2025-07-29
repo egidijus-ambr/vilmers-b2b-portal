@@ -4,6 +4,7 @@ import { HttpTypes } from "@medusajs/types"
 import { useTranslations } from "@lib/i18n"
 import { getStoreLoginLink, getClaimsLink } from "@lib/data/customer"
 import { useParams } from "next/navigation"
+import { useCustomer } from "@lib/context/customer-context"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
@@ -13,18 +14,11 @@ import {
 } from "@lib/furnisystems-sdk/modules/customer/types"
 
 type OverviewProps = {
-  customer:
-    | (HttpTypes.StoreCustomer & {
-        managers?: CustomerManager[]
-        spoken_languages?: string[]
-        is_claims_enabled?: boolean
-        is_configurator_enabled?: boolean
-      })
-    | null
   orders: Order[] | null
 }
 
-const Overview = ({ customer, orders }: OverviewProps) => {
+const Overview = ({ orders }: OverviewProps) => {
+  const { customer } = useCustomer()
   const { t } = useTranslations("account")
   const params = useParams()
   const languageCode = params.languageCode as string

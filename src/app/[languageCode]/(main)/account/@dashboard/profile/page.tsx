@@ -8,7 +8,6 @@ import ProfilePassword from "@modules/account/components/profile-password"
 
 import { notFound } from "next/navigation"
 import { listRegions } from "@lib/data/regions"
-import { retrieveCustomer } from "@lib/data/customer"
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -16,12 +15,8 @@ export const metadata: Metadata = {
 }
 
 export default async function Profile() {
-  const customer = await retrieveCustomer().catch(() => null)
+  // Customer data will be provided by the layout
   // const regions = await listRegions()
-
-  // if (!customer || !regions) {
-  //   notFound()
-  // }
 
   return (
     <div className="w-full" data-testid="profile-page-wrapper">
@@ -51,4 +46,3 @@ export default async function Profile() {
 const Divider = () => {
   return <div className="w-full h-px bg-gray-200" />
 }
-;``

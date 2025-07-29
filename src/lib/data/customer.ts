@@ -3,7 +3,7 @@
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
-import { revalidateTag } from "next/cache"
+import { revalidateTag, unstable_cache } from "next/cache"
 import { redirect } from "next/navigation"
 import {
   getAuthHeaders,
@@ -74,11 +74,22 @@ export const retrieveCustomer = async (): Promise<
     console.log("[retrieveCustomer] Customer mapping completed successfully")
     return storeCustomer
   } catch (error) {
-    console.error("[retrieveCustomer] Error retrieving customer:", {
-      error: error,
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-    })
+    console.log(
+      "[retrieveCustomer] Authentication error or no valid session, returning null"
+    )
+
+    // If there's an authentication error, clear any stale tokens
+    if (error instanceof Error && error.message.includes("not authenticated")) {
+      try {
+        await removeAuthToken()
+        console.log("[retrieveCustomer] Cleared stale auth token")
+      } catch (clearError) {
+        console.warn(
+          "[retrieveCustomer] Could not clear stale auth token:",
+          clearError
+        )
+      }
+    }
 
     return null
   }

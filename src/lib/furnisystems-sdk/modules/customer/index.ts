@@ -400,6 +400,19 @@ export class CustomerModule {
     try {
       // Clear auth headers from the client
       this.client.setAuthHeaders({})
+
+      // Clear JWT token from cookies
+      if (typeof window === "undefined") {
+        try {
+          const cookieStore = await cookies()
+          cookieStore.set("_furni_jwt", "", {
+            maxAge: -1,
+          })
+        } catch (error) {
+          console.warn("Could not clear auth token from cookies:", error)
+        }
+      }
+
       console.log("Customer logged out successfully")
     } catch (error) {
       console.error("Error during logout:", error)

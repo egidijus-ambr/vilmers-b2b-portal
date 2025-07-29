@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { retrieveCustomer } from "@lib/data/customer"
 import { Toaster } from "@medusajs/ui"
 import AccountLayout from "@modules/account/templates/account-layout"
+import { CustomerProvider } from "@lib/context/customer-context"
 
 export default async function AccountPageLayout({
   dashboard,
@@ -32,11 +33,13 @@ export default async function AccountPageLayout({
         </div>
       }
     >
-      <AccountLayout customer={customer}>
-        {customer ? dashboard : login}
-        {children}
-        <Toaster />
-      </AccountLayout>
+      <CustomerProvider customer={customer}>
+        <AccountLayout customer={customer}>
+          {customer ? dashboard : login}
+          {children}
+          <Toaster />
+        </AccountLayout>
+      </CustomerProvider>
     </Suspense>
   )
 }
