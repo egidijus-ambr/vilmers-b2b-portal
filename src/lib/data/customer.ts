@@ -5,6 +5,7 @@ import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag, unstable_cache } from "next/cache"
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -326,10 +327,23 @@ export async function requestMagicLink(
     // Get the current language from the form data or use a default
     const language = (formData.get("language") as string) || "en"
 
+    // Extract IP address from request headers
+    const headersList = await headers()
+    const ipAddress =
+      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      headersList.get("x-real-ip") ||
+      headersList.get("x-client-ip") ||
+      headersList.get("cf-connecting-ip") ||
+      headersList.get("remote-addr") ||
+      "unknown"
+
+    console.log("Magic link request from IP:", ipAddress)
+
     try {
       const result = await sdk.customer.getMagicLinkForB2BCustomer(
         email,
-        language
+        language,
+        ipAddress
       )
 
       console.log("Magic link request successful:", result)

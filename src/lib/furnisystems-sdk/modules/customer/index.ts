@@ -79,8 +79,16 @@ const GET_CUSTOMER_ORDERS_QUERY = gql`
 `
 
 const GET_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
-  mutation GetMagicLinkForB2BCustomer($email: String!, $language: Language) {
-    getMagicLinkForB2BCustomer(email: $email, language: $language)
+  mutation GetMagicLinkForB2BCustomer(
+    $email: String!
+    $language: Language
+    $ipAddress: String
+  ) {
+    getMagicLinkForB2BCustomer(
+      email: $email
+      language: $language
+      ipAddress: $ipAddress
+    )
   }
 `
 
@@ -308,7 +316,8 @@ export class CustomerModule {
 
   async getMagicLinkForB2BCustomer(
     email: string,
-    language?: string
+    language?: string,
+    ipAddress?: string
   ): Promise<string> {
     try {
       const response = await this.client.mutate<{
@@ -317,6 +326,7 @@ export class CustomerModule {
         variables: {
           email,
           language: language || null,
+          ipAddress: ipAddress || null,
         },
       })
       // console.log("Magic link response:", response)
