@@ -234,11 +234,16 @@ export default async function Footer({ language }: FooterProps) {
             </div>
           </div> */}
         </div>
-        <div className="flex w-full mb-4 justify-between text-ui-fg-muted">
+        <div className="flex w-full mb-4 justify-between text-white-80">
           <Text className="txt-compact-small">
             © {new Date().getFullYear()} Vilmers. All rights reserved.
           </Text>
-          <MedusaCTA />
+          <LocalizedClientLink
+            href="https://vilmers.com/privacy-policy"
+            className="txt-compact-small hover:text-white transition-colors"
+          >
+            {t("privacy-policy")}
+          </LocalizedClientLink>
         </div>
       </div>
     </footer>
