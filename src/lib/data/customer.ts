@@ -294,6 +294,23 @@ export const addCustomerAddress = async (
   //   })
 }
 
+export const updateCustomerAddress = async (
+  currentState: Record<string, unknown>,
+  formData: FormData
+): Promise<any> => {
+  throw new Error("updateCustomerAddress is not implemented yet")
+  // return sdk.store.customer
+  //   .updateAddress(address, {}, headers)
+  //   .then(async ({ customer }) => {
+  //     const customerCacheTag = await getCacheTag("customers")
+  //     revalidateTag(customerCacheTag)
+  //     return { success: true, error: null }
+  //   })
+  //   .catch((err) => {
+  //     return { success: false, error: err.toString() }
+  //   })
+}
+
 export const getStoreLoginLink = async (): Promise<string> => {
   try {
     // SDK automatically handles authentication from cookies

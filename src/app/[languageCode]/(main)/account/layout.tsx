@@ -1,33 +1,75 @@
-import { Suspense } from "react"
-import { retrieveCustomer } from "@lib/data/customer"
+"use client"
+
+import { Suspense, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Toaster } from "@medusajs/ui"
 import AccountLayout from "@modules/account/templates/account-layout"
 import { CustomerProvider } from "@lib/context/customer-context"
+import { retrieveCustomer } from "@lib/data/customer"
+import { HttpTypes } from "@medusajs/types"
 
-// Force dynamic rendering to prevent caching of protected pages
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+type CustomerType =
+  | (HttpTypes.StoreCustomer & {
+      full_name?: string
+      managers?: any[]
+      spoken_languages?: string[]
+      is_configurator_enabled?: boolean
+      is_claims_enabled?: boolean
+    })
+  | null
 
-export default async function AccountPageLayout({
-  dashboard,
-  login,
+export default function AccountPageLayout({
   children,
 }: {
-  dashboard?: React.ReactNode
-  login?: React.ReactNode
   children: React.ReactNode
 }) {
-  console.log("[AccountPageLayout] Starting account page layout...")
+  const [customer, setCustomer] = useState<CustomerType>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
-  const customer = await retrieveCustomer().catch((error) => {
-    console.error("[AccountPageLayout] Error retrieving customer:", error)
-    return null
-  })
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const customerData = await retrieveCustomer()
+        setCustomer(customerData)
+      } catch (error) {
+        console.error("[AccountPageLayout] Error retrieving customer:", error)
+        setCustomer(null)
+        setError("Failed to load customer data")
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  console.log(
-    "[AccountPageLayout] Customer retrieval result:",
-    customer ? "customer found" : "no customer"
-  )
+    fetchCustomer()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Suspense
@@ -39,7 +81,6 @@ export default async function AccountPageLayout({
     >
       <CustomerProvider customer={customer}>
         <AccountLayout customer={customer}>
-          {customer ? dashboard : login}
           {children}
           <Toaster />
         </AccountLayout>
