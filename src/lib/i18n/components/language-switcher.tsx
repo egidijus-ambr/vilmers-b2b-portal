@@ -32,7 +32,7 @@ export function LanguageSwitcher({
   className = "",
   variant = "dropdown",
 }: LanguageSwitcherProps) {
-  const { language, isLoading } = useTranslations()
+  const { language } = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -46,8 +46,6 @@ export function LanguageSwitcher({
       // Navigate to the new language URL with full page refresh for server-side components
       const newPath = `/${newLanguage}${currentPath ? `/${currentPath}` : ""}`
       window.location.href = newPath
-
-      // router.push(newPath)
 
       setIsOpen(false)
     }
@@ -64,7 +62,6 @@ export function LanguageSwitcher({
           <button
             key={lang}
             onClick={() => handleLanguageChange(lang)}
-            disabled={isLoading}
             className={`
               px-3 py-2 rounded-md text-sm font-sm transition-colors
               ${
@@ -72,7 +69,6 @@ export function LanguageSwitcher({
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }
-              ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
             `}
           >
             <span className="mr-1">{languageFlags[lang]}</span>
@@ -87,12 +83,7 @@ export function LanguageSwitcher({
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        disabled={isLoading}
-        className={`
-          flex items-center gap-2 px-3 py-2 
-          bg-white text-gray-700 hover:bg-gray-50 transition-colors
-          ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
-        `}
+        className="flex items-center gap-2 px-3 py-2 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
       >
         <span>{languageFlags[language]}</span>
         <span className="text-sm font-medium">{languageNames[language]}</span>
@@ -128,7 +119,6 @@ export function LanguageSwitcher({
                 <button
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
-                  disabled={isLoading}
                   className={`
                     w-full flex items-center gap-3 px-4 py-2 text-sm text-left
                     transition-colors
@@ -137,7 +127,6 @@ export function LanguageSwitcher({
                         ? "bg-blue-50 text-blue-700"
                         : "text-gray-700 hover:bg-gray-50"
                     }
-                    ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
                   `}
                 >
                   <span>{languageFlags[lang]}</span>
@@ -171,7 +160,7 @@ export function CompactLanguageSwitcher({
 }: {
   className?: string
 }) {
-  const { language, isLoading } = useTranslations()
+  const { language } = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -197,11 +186,7 @@ export function CompactLanguageSwitcher({
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        disabled={isLoading}
-        className={`
-          flex items-center justify-center w-16 h-10 text-base font-medium font-['Montserrat'] 
-          ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
-        `}
+        className="flex items-center justify-center w-16 h-10 text-base font-medium font-['Montserrat']"
         title={languageNames[language]}
       >
         <span className="text-sm pr-1">{language.toUpperCase()}</span>
@@ -226,7 +211,6 @@ export function CompactLanguageSwitcher({
                 <button
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
-                  disabled={isLoading}
                   className={`
                     w-full flex items-center gap-2 px-3 py-2 text-sm text-left
                     transition-colors
@@ -235,7 +219,6 @@ export function CompactLanguageSwitcher({
                         ? "bg-blue-50 text-blue-700"
                         : "text-gray-700 hover:bg-gray-50"
                     }
-                    ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
                   `}
                 >
                   <span>{languageFlags[lang]}</span>

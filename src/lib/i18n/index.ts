@@ -23,6 +23,14 @@ export {
   preloadTranslations,
 } from "./server-translations"
 
+// Unified configuration utilities
+export {
+  createI18nInstance,
+  loadTranslations,
+  getTranslation,
+  type I18nInstanceOptions,
+} from "./unified-config"
+
 // Components
 export {
   LanguageSwitcher,
