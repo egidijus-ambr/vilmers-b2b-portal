@@ -24,28 +24,57 @@ const Overview = ({ orders }: OverviewProps) => {
   const languageCode = params.languageCode as string
 
   const handlePlaceOrder = async () => {
+    // Open a blank window immediately to preserve user interaction context
+    const newWindow = window.open("", "_blank")
+
     try {
       // Call the server action to get the store login link
       const storeUrl = await getStoreLoginLink()
       console.warn("Store URL", languageCode, storeUrl)
-      // Open the store URL in a new tab
-      window.open(storeUrl + `&lng=${languageCode}`, "_blank")
+
+      if (newWindow) {
+        // Navigate the already opened window to the store URL
+        newWindow.location.href = storeUrl + `&lng=${languageCode}`
+      } else {
+        // Fallback: try to open normally (might still be blocked)
+        window.open(storeUrl + `&lng=${languageCode}`, "_blank")
+      }
     } catch (error) {
       console.error("Error getting store login link:", error)
+
+      if (newWindow) {
+        // Close the blank window if there was an error
+        newWindow.close()
+      }
+
       // Fallback: open store URL without token
-      //
       // window.open(process.env.NEXT_PUBLIC_BASE_URL, "_blank")
     }
   }
 
   const handleClaimsClick = async () => {
+    // Open a blank window immediately to preserve user interaction context
+    const newWindow = window.open("", "_blank")
+
     try {
       // Call the server action to get the claims link with language parameter
       const claimsUrl = await getClaimsLink(languageCode || "en")
-      // Open the claims URL in a new tab
-      window.open(claimsUrl, "_blank")
+
+      if (newWindow) {
+        // Navigate the already opened window to the claims URL
+        newWindow.location.href = claimsUrl
+      } else {
+        // Fallback: try to open normally (might still be blocked)
+        window.open(claimsUrl, "_blank")
+      }
     } catch (error) {
       console.error("Error getting claims link:", error)
+
+      if (newWindow) {
+        // Close the blank window if there was an error
+        newWindow.close()
+      }
+
       // Could add user-friendly error handling here
     }
   }
