@@ -49,7 +49,6 @@ const Hero = async ({ params }: HeroProps) => {
                 {customer ? t("overview") : t("log-in")}
               </OutlineButton>
             </LocalizedClientLink>
-            \
           </div>
         </span>
         <a

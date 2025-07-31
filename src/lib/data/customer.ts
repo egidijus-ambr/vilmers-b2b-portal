@@ -242,8 +242,8 @@ export async function signout(languageCode: string) {
     console.error("Error during logout:", error)
   }
 
-  // Redirect to account page (login page)
-  redirect(`/${languageCode}/account`)
+  // Redirect to home page after logout
+  redirect(`/${languageCode}`)
 }
 
 export async function transferCart() {

@@ -16,7 +16,12 @@ const ManagerProfileCard = ({ manager }: ManagerProfileCardProps) => {
   const renderFlag = (lang: string) => {
     if (lang === "en") {
       lang = "gb" // Use 'gb' for English flag
+    } else if (lang === "sv") {
+      lang = "se" // Use 'se' for Swedish flag
+    } else if (lang === "zh") {
+      lang = "cn" // Use 'cn' for Chinese flag
     }
+
     return (
       <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200">
         <img

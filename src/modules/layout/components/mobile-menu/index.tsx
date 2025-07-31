@@ -28,6 +28,8 @@ const MobileMenu = ({
   const handleLogout = async () => {
     await signout(languageCode)
     onClose()
+    // Force a page refresh to clear client-side cache and show login form
+    window.location.reload()
   }
 
   // Close menu when clicking outside

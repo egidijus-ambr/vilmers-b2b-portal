@@ -22,6 +22,7 @@ const AccountDropdown = ({
 
   const handleLogout = async () => {
     await signout(languageCode)
+    // The signout function already handles the redirect to the login page
   }
 
   const displayName = customer?.full_name || customer?.first_name || "Account"
