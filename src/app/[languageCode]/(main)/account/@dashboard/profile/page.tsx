@@ -9,6 +9,10 @@ import ProfilePassword from "@modules/account/components/profile-password"
 import { notFound } from "next/navigation"
 import { listRegions } from "@lib/data/regions"
 
+// Force dynamic rendering to prevent caching of protected pages
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: "Profile",
   description: "View and edit your Medusa Store profile.",

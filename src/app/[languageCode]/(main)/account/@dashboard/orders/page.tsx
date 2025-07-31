@@ -4,6 +4,10 @@ import OrdersTable from "@modules/account/components/orders-table"
 import { notFound } from "next/navigation"
 import { listOrders } from "@lib/data/orders"
 
+// Force dynamic rendering to prevent caching of protected pages
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: "Orders",
   description: "Overview of your previous orders.",

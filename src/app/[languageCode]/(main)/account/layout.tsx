@@ -4,6 +4,10 @@ import { Toaster } from "@medusajs/ui"
 import AccountLayout from "@modules/account/templates/account-layout"
 import { CustomerProvider } from "@lib/context/customer-context"
 
+// Force dynamic rendering to prevent caching of protected pages
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function AccountPageLayout({
   dashboard,
   login,

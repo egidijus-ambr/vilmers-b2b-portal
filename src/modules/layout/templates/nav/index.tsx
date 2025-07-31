@@ -13,6 +13,7 @@ import {
   supportedLanguages,
   useTranslations,
 } from "@lib/i18n"
+import { useSessionValidation } from "@lib/hooks/use-session-validation"
 
 // Import NavMenu normally for SSR
 import NavMenu from "@modules/layout/components/nav-menu"
@@ -26,10 +27,16 @@ export default function Nav({ customer }: NavProps) {
   const { t, isReady } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const { isSessionValid, isSessionLoading } = useSessionValidation()
 
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Determine if user is truly logged in
+  // Since JWT cookie is httpOnly, client-side validation can't access it
+  // We need to rely primarily on server-side customer data
+  const isLoggedIn = !!customer
 
   // Check if we're on the home page
   const pathSegments = pathname.split("/").filter(Boolean)
@@ -95,7 +102,7 @@ export default function Nav({ customer }: NavProps) {
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
             {/* Desktop Account Menu */}
             <div className="hidden small:flex items-center gap-x-6 h-full">
-              {customer ? (
+              {isLoggedIn ? (
                 <AccountDropdown customer={customer} isHomePage={isHomePage} />
               ) : (
                 <LocalizedClientLink
@@ -128,6 +135,7 @@ export default function Nav({ customer }: NavProps) {
         customer={customer}
         isOpen={isMobileMenuOpen}
         onClose={handleMobileMenuClose}
+        isLoggedIn={isLoggedIn}
       />
     </div>
   )

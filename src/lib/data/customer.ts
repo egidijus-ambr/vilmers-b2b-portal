@@ -3,7 +3,7 @@
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
-import { revalidateTag, unstable_cache } from "next/cache"
+import { revalidateTag, unstable_cache, unstable_noStore } from "next/cache"
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
 import {
@@ -18,6 +18,7 @@ import {
   setCacheId,
 } from "./cookies"
 import { ErrorHandlers } from "@lib/util/error-handler"
+import { validateSession } from "@lib/util/session-validation"
 
 export const retrieveCustomer = async (): Promise<
   | (HttpTypes.StoreCustomer & {
@@ -29,15 +30,31 @@ export const retrieveCustomer = async (): Promise<
     })
   | null
 > => {
-  console.log("[retrieveCustomer] Starting customer retrieval...")
+  // Prevent caching for authentication-related data
+  unstable_noStore()
+
+  console.log(
+    "[retrieveCustomer] Starting customer retrieval with session validation..."
+  )
 
   try {
-    console.log("[retrieveCustomer] Calling sdk.customer.getMe()...")
-    // SDK automatically handles authentication from cookies
-    const customer = await sdk.customer.getMe()
+    // Use the new session validation system
+    const validation = await validateSession()
+
+    if (!validation.isValid) {
+      console.log(
+        "[retrieveCustomer] Session validation failed:",
+        validation.error
+      )
+      return null
+    }
+
+    const customer = validation.customer
 
     if (!customer) {
-      console.log("[retrieveCustomer] No customer data returned from SDK")
+      console.log(
+        "[retrieveCustomer] No customer data returned from validation"
+      )
       return null
     }
 
@@ -76,22 +93,9 @@ export const retrieveCustomer = async (): Promise<
     return storeCustomer
   } catch (error) {
     console.log(
-      "[retrieveCustomer] Authentication error or no valid session, returning null"
+      "[retrieveCustomer] Error during customer retrieval:",
+      error instanceof Error ? error.message : error
     )
-
-    // If there's an authentication error, clear any stale tokens
-    if (error instanceof Error && error.message.includes("not authenticated")) {
-      try {
-        await removeAuthToken()
-        console.log("[retrieveCustomer] Cleared stale auth token")
-      } catch (clearError) {
-        console.warn(
-          "[retrieveCustomer] Could not clear stale auth token:",
-          clearError
-        )
-      }
-    }
-
     return null
   }
 }

@@ -5,6 +5,8 @@ import medusaError from "@lib/util/medusa-error"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
+import { validateSession } from "@lib/util/session-validation"
+import { unstable_noStore } from "next/cache"
 
 export const retrieveOrder = async (id: string) => {
   // TODO: Implement with GraphQL when single order query is available
@@ -18,16 +20,21 @@ export const listOrders = async (
   offset: number = 0,
   filters?: Record<string, any>
 ): Promise<Order[]> => {
-  const authHeaders = await getAuthHeaders()
+  // Prevent caching for authentication-related data
+  unstable_noStore()
 
-  // Return empty array if user is not authenticated
-  if (!authHeaders || !("authorization" in authHeaders)) {
-    return []
-  }
+  console.log(
+    "[listOrders] Starting orders retrieval with session validation..."
+  )
 
   try {
-    // Set the auth headers on the SDK client before making the request
-    sdk.setAuthHeaders(authHeaders)
+    // Use the new session validation system
+    const validation = await validateSession()
+
+    if (!validation.isValid) {
+      console.log("[listOrders] Session validation failed:", validation.error)
+      return []
+    }
 
     // Use the furnisystems SDK to get customer orders via GraphQL
     const orders = await sdk.customer.getCustomerOrders()
@@ -37,9 +44,10 @@ export const listOrders = async (
       order.display_id = order.order_external_code || order.order_code
     })
 
+    console.log("[listOrders] Orders retrieved successfully:", orders.length)
     return orders
   } catch (error) {
-    console.error("Error fetching orders:", error)
+    console.error("[listOrders] Error fetching orders:", error)
     return []
   }
 }

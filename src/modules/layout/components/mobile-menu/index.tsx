@@ -12,9 +12,15 @@ interface MobileMenuProps {
   customer: (HttpTypes.StoreCustomer & { full_name?: string }) | null
   isOpen: boolean
   onClose: () => void
+  isLoggedIn: boolean
 }
 
-const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
+const MobileMenu = ({
+  customer,
+  isOpen,
+  onClose,
+  isLoggedIn,
+}: MobileMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null)
   const { languageCode } = useParams() as { languageCode: string }
   const { t } = useTranslations("common")
@@ -67,10 +73,11 @@ const MobileMenu = ({ customer, isOpen, onClose }: MobileMenuProps) => {
 
   const displayName = customer?.full_name || customer?.first_name || "Test User"
 
-  // For testing purposes, show menu even without customer
-  // if (!customer) {
-  //   return null
-  // }
+  // Show menu if user appears to be logged in
+  // This will be validated by the parent component's isLoggedIn logic
+  if (!isLoggedIn) {
+    return null
+  }
 
   return (
     <>
