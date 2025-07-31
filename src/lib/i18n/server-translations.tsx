@@ -3,8 +3,8 @@ import {
   getLanguageFromPath,
   defaultLanguage,
   SupportedLanguage,
+  getBackendLanguageCode,
 } from "./index"
-import { getI18nextLanguageCode } from "./config"
 
 // Server-side translation component
 interface ServerTranslationProps {
@@ -22,9 +22,9 @@ export async function ServerTranslation({
   language,
 }: ServerTranslationProps) {
   const lang = language || defaultLanguage
-  const i18nextLang = getI18nextLanguageCode(lang)
+  const backendLang = getBackendLanguageCode(lang)
   const translation = await getServerTranslation(
-    i18nextLang,
+    backendLang,
     translationKey,
     namespace
   )
@@ -45,8 +45,8 @@ export async function getServerT(
   language?: SupportedLanguage
 ) {
   const lang = language || defaultLanguage
-  const i18nextLang = getI18nextLanguageCode(lang)
-  const translations = await getServerTranslations(i18nextLang, [namespace])
+  const backendLang = getBackendLanguageCode(lang)
+  const translations = await getServerTranslations(backendLang, [namespace])
 
   return (key: string, fallback?: string) => {
     const fullKey = namespace === "common" ? key : `${namespace}:${key}`
@@ -60,6 +60,6 @@ export async function preloadTranslations(
   language?: string
 ) {
   const lang = language || (await getServerLanguage())
-  const i18nextLang = getI18nextLanguageCode(lang as SupportedLanguage)
-  return await getServerTranslations(i18nextLang, namespaces)
+  const backendLang = getBackendLanguageCode(lang as SupportedLanguage)
+  return await getServerTranslations(backendLang, namespaces)
 }

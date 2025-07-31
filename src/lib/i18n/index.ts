@@ -3,9 +3,9 @@ export type { SupportedLanguage } from "./config"
 export {
   supportedLanguages,
   defaultLanguage,
-  languageCodeMapping,
-  getI18nextLanguageCode,
-  getUILanguageCode,
+  backendLanguageMapping,
+  getBackendLanguageCode,
+  getUILanguageCodeFromBackend,
   getLanguageFromPath,
   removeLanguageFromPath,
   addLanguageToPath,
@@ -13,12 +13,7 @@ export {
 } from "./config"
 
 // Provider and hooks
-export {
-  I18nProvider,
-  useI18n,
-  useTranslations,
-  useLanguageDetection,
-} from "./provider"
+export { I18nProvider, useI18n, useTranslations } from "./provider"
 
 // Server-side utilities
 export { getServerTranslations, getServerTranslation } from "./server-config"

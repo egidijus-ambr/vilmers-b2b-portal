@@ -17,7 +17,7 @@ const languageNames: Record<SupportedLanguage, string> = {
   fr: "Français",
   de: "Deutsch",
   lt: "Lietuvių",
-  dk: "Dansk",
+  da: "Dansk",
 }
 
 const languageFlags: Record<SupportedLanguage, string> = {
@@ -25,7 +25,7 @@ const languageFlags: Record<SupportedLanguage, string> = {
   fr: "🇫🇷",
   de: "🇩🇪",
   lt: "🇱🇹",
-  dk: "🇩🇰",
+  da: "🇩🇰",
 }
 
 export function LanguageSwitcher({

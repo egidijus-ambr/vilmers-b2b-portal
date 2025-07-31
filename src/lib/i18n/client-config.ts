@@ -6,26 +6,11 @@ import LanguageDetector from "i18next-browser-languagedetector"
 import Backend from "i18next-locize-backend"
 import { i18nConfig } from "./config"
 
-// Language detection options - optimized to work with URL-based routing
+// Simplified detection options - middleware handles language detection
 const detectionOptions = {
-  // Prioritize URL path and stored preferences, minimize auto-detection
-  order: ["path", "cookie", "localStorage"],
-  caches: ["localStorage", "cookie"],
-  excludeCacheFor: ["cimode"],
-  cookieMinutes: 60 * 24 * 30, // 30 days
-  cookieDomain:
-    typeof window !== "undefined" ? window.location.hostname : undefined,
-  // Enable whitelist checking to prevent unsupported language codes
-  checkWhitelist: true,
-  lookupFromPathIndex: 0,
-  lookupFromSubdomainIndex: 0,
-  // Custom converter to handle dk -> da-DK mapping
-  convertDetectedLanguage: (lng: string) => {
-    if (lng === "dk") return "da-DK"
-    if (lng === "da") return "da-DK"
-    if (lng === "da-DK") return "da-DK"
-    return lng
-  },
+  // Disable automatic detection since middleware handles it
+  order: [],
+  caches: [],
 }
 
 // Initialize i18next
@@ -37,10 +22,12 @@ i18n
     ...i18nConfig,
     detection: detectionOptions,
     react: {
-      useSuspense: true, // Disable suspense to prevent hydration issues
+      useSuspense: true,
     },
-    // Prevent automatic initialization to avoid language flash
-    initImmediate: false,
+    // Set initial language to prevent flash
+    lng: i18nConfig.fallbackLng,
+    // Allow immediate initialization but with fallback language
+    initImmediate: true,
     // Load resources synchronously when possible
     partialBundledLanguages: true,
   })

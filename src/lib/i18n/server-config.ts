@@ -1,6 +1,6 @@
 import i18n from "i18next"
 import Backend from "i18next-locize-backend"
-import { i18nConfig, getI18nextLanguageCode, defaultLanguage } from "./config"
+import { i18nConfig, defaultLanguage, getBackendLanguageCode } from "./config"
 
 // Server-side i18n configuration for SSR
 const createServerI18n = () => {
@@ -9,7 +9,7 @@ const createServerI18n = () => {
   serverI18n.use(Backend).init({
     ...i18nConfig,
     debug: false, // Disable debug in server-side
-    fallbackLng: getI18nextLanguageCode(defaultLanguage),
+    fallbackLng: getBackendLanguageCode(defaultLanguage),
 
     // Disable language detection on server
     detection: {

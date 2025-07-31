@@ -1,24 +1,24 @@
 // Core configuration - no imports to avoid circular dependencies
-export const supportedLanguages = ["en", "fr", "de", "lt", "dk"] as const
+export const supportedLanguages = ["en", "fr", "de", "lt", "da"] as const
 export type SupportedLanguage = (typeof supportedLanguages)[number]
 
 // Default language
 export const defaultLanguage: SupportedLanguage = "lt"
 
-// Mapping from UI language codes to i18next language codes
-export const languageCodeMapping: Record<SupportedLanguage, string> = {
-  de: "de",
-  dk: "da-DK", // Map UI "dk" to i18next "da-DK"
+// Mapping for backend translation loading (Locize uses different codes)
+export const backendLanguageMapping: Record<SupportedLanguage, string> = {
   en: "en",
   fr: "fr",
+  de: "de",
   lt: "lt",
+  da: "da-DK", // Locize backend uses da-DK for Danish
 }
 
 // i18next configuration
 export const i18nConfig = {
   debug: process.env.NODE_ENV === "development",
-  fallbackLng: languageCodeMapping[defaultLanguage],
-  supportedLngs: [...Object.values(languageCodeMapping), "da"], // Include "da" to handle browser language detection
+  fallbackLng: backendLanguageMapping[defaultLanguage],
+  supportedLngs: [...Object.values(backendLanguageMapping)],
   defaultNS: "common",
   ns: ["common", "account"],
   interpolation: {
@@ -36,18 +36,18 @@ export const i18nConfig = {
   saveMissing: true,
 }
 
-// Helper functions to convert between UI language codes and i18next language codes
-export const getI18nextLanguageCode = (
+// Helper functions to convert between UI language codes and backend language codes
+export const getBackendLanguageCode = (
   uiLanguageCode: SupportedLanguage
 ): string => {
-  return languageCodeMapping[uiLanguageCode]
+  return backendLanguageMapping[uiLanguageCode]
 }
 
-export const getUILanguageCode = (
-  i18nextLanguageCode: string
+export const getUILanguageCodeFromBackend = (
+  backendLanguageCode: string
 ): SupportedLanguage => {
-  const entry = Object.entries(languageCodeMapping).find(
-    ([, i18nextCode]) => i18nextCode === i18nextLanguageCode
+  const entry = Object.entries(backendLanguageMapping).find(
+    ([, backendCode]) => backendCode === backendLanguageCode
   )
   return (entry?.[0] as SupportedLanguage) || defaultLanguage
 }
@@ -98,7 +98,12 @@ export const detectLanguageFromHeaders = (
 
   const languages = acceptLanguage
     .split(",")
-    .map((lang) => lang.split(";")[0].trim().split("-")[0])
+    .map((lang) => {
+      const langCode = lang.split(";")[0].trim().split("-")[0]
+      // Map Danish language codes to our supported "da" code
+      if (langCode === "dk") return "da"
+      return langCode
+    })
     .filter((lang) => supportedLanguages.includes(lang as SupportedLanguage))
 
   return (languages[0] as SupportedLanguage) || defaultLanguage

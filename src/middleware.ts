@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 // Supported languages
-const supportedLanguages = ["en", "fr", "de", "lt", "dk"] as const
+const supportedLanguages = ["en", "fr", "de", "lt", "da"] as const
 type SupportedLanguage = (typeof supportedLanguages)[number]
 
 const DEFAULT_LANGUAGE: SupportedLanguage = "lt"
@@ -37,9 +37,9 @@ function detectLanguage(request: NextRequest): SupportedLanguage {
 
     // Find the first supported language from browser preferences
     for (const lang of browserLanguages) {
-      // Map Danish language codes to our supported "dk" code
-      if (lang === "da") {
-        return "dk" as SupportedLanguage
+      // Map Danish language codes to our supported "da" code
+      if (lang === "dk") {
+        return "da" as SupportedLanguage
       }
       if (supportedLanguages.includes(lang as SupportedLanguage)) {
         return lang as SupportedLanguage
