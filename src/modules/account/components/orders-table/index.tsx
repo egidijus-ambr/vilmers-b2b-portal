@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { formatPrice } from "@lib/util/money"
+import { capitalizeFirstLetter } from "@lib/util/string"
 import StatusBadge from "../status-badge"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
@@ -145,7 +146,9 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                   {new Date(order.created_at).toLocaleDateString()}
                 </td>
                 <td className="hidden sm:table-cell px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                  {order.order_type || "-"}
+                  {order.order_type
+                    ? capitalizeFirstLetter(order.order_type)
+                    : "-"}
                 </td>
                 <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                   {order.order_items_count || 0}

@@ -74,9 +74,12 @@ const ManagerProfileCard = ({ manager }: ManagerProfileCardProps) => {
             <div className="text-justify justify-start text-dark-blue-70 text-sm sm:text-base font-normal font-sans leading-normal">
               {t("email")}
             </div>
-            <div className="justify-start text-dark-blue text-sm sm:text-base font-medium font-sans leading-normal text-right">
+            <a
+              href={`mailto:${manager.email}`}
+              className="justify-start text-dark-blue text-sm sm:text-base font-medium font-sans leading-normal text-right hover:underline"
+            >
               {manager.email}
-            </div>
+            </a>
           </div>
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="text-justify justify-start text-dark-blue-70 text-sm sm:text-base font-normal font-sans leading-normal">

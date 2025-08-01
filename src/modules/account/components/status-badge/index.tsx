@@ -1,10 +1,25 @@
 import React from "react"
+import { useTranslations } from "@lib/i18n"
+
+const orderStatusesTextKeys = {
+  AWAITING_SINCHRONIZATION: "submitted",
+  MANUFACTURING: "manufacturing",
+  AWAITING_CONFIRMATION: "waiting-for-confirmation",
+  ERROR: "submitted",
+  CANCELLED: "cancelled",
+  AWAITING_PAYMENT: "awaiting-payment",
+  PAYMENT_COMPLETED: "payment-completed",
+  REFUNDED: "refunded",
+  PARTIALLY_DELIVERED: "partially-delivered",
+  COMPLETED: "completed",
+}
 
 interface StatusBadgeProps {
   status: string
 }
 
 const StatusBadge = ({ status }: StatusBadgeProps) => {
+  const { t } = useTranslations("account")
   const getStatusClasses = () => {
     switch (status) {
       case "AWAITING_SINCHRONIZATION":
@@ -32,15 +47,19 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
     }
   }
 
-  const formatStatusText = (status: string) => {
-    return status.replace(/_/g, " ").toLowerCase()
+  const getTranslatedStatus = (status: string) => {
+    const translationKey =
+      orderStatusesTextKeys[status as keyof typeof orderStatusesTextKeys]
+    return translationKey
+      ? t(translationKey)
+      : status.replace(/_/g, " ").toLowerCase()
   }
 
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${getStatusClasses()}`}
     >
-      {formatStatusText(status)}
+      {getTranslatedStatus(status)}
     </span>
   )
 }
