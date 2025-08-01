@@ -120,7 +120,10 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                 {t("order-id")}
               </th>
               <th className="px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("date")}
+                {t("order-date")}
+              </th>
+              <th className="hidden lg:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
+                {t("confirmed-delivery-date")}
               </th>
               <th className="hidden sm:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
                 {t("type")}
@@ -144,6 +147,13 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                 </td>
                 <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                   {new Date(order.created_at).toLocaleDateString()}
+                </td>
+                <td className="hidden lg:table-cell px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                  {order.confirmed_delivery_date
+                    ? new Date(
+                        order.confirmed_delivery_date
+                      ).toLocaleDateString()
+                    : "-"}
                 </td>
                 <td className="hidden sm:table-cell px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                   {order.order_type

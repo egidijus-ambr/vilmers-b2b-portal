@@ -11,7 +11,7 @@ const orderStatusesTextKeys = {
   PAYMENT_COMPLETED: "payment-completed",
   REFUNDED: "refunded",
   PARTIALLY_DELIVERED: "partially-delivered",
-  COMPLETED: "completed",
+  COMPLETED: "dispatched",
 }
 
 interface StatusBadgeProps {
@@ -27,7 +27,7 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
       case "AWAITING_CONFIRMATION":
         return "bg-status-pending text-dark-blue"
       case "ERROR":
-        return "bg-red-400 text-white"
+        return "bg-status-pending text-dark-blue"
       case "CANCELLED":
         return "bg-status-canceled text-dark-blue"
       case "AWAITING_PAYMENT":
