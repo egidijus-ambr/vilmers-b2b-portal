@@ -19,6 +19,7 @@ import {
 } from "./cookies"
 import { ErrorHandlers } from "@lib/util/error-handler"
 import { validateSession } from "@lib/util/session-validation"
+import { validateTokenAndExtractCustomerId } from "@lib/util/jwt-utils"
 
 export const retrieveCustomer = async (): Promise<
   | (HttpTypes.StoreCustomer & {
@@ -413,10 +414,100 @@ export async function verifyMagicLinkAction(
 
   console.log("Verifying magic link with token:", token)
 
+  // Check existing session state
+  const existingSessionValidation = await validateSession()
+  console.log("[Magic Link] Existing session status:", {
+    isValid: existingSessionValidation.isValid,
+    customerId: existingSessionValidation.customerId,
+    error: existingSessionValidation.error,
+  })
+
+  // Validate and extract customer ID from magic link token
+  const tokenInfo = validateTokenAndExtractCustomerId(token)
+  console.log("[Magic Link] Token validation:", {
+    isValid: tokenInfo.isValid,
+    isExpired: tokenInfo.isExpired,
+    customerId: tokenInfo.customerId,
+  })
+
+  // Decision matrix based on session state, token state, and customer ID comparison
+  if (existingSessionValidation.isValid) {
+    // Existing session is valid
+    if (tokenInfo.isValid) {
+      // Token is valid
+      if (
+        existingSessionValidation.customerId === tokenInfo.customerId &&
+        tokenInfo.customerId
+      ) {
+        // Scenario 1: Valid session + Valid token + Same customer ID → Keep existing session
+        console.log(
+          "[Magic Link] Scenario 1: Same customer with valid token - keeping existing session"
+        )
+        redirect(`/${languageCode}/account`)
+        return
+      } else {
+        // Scenario 2: Valid session + Valid token + Different customer ID → Switch to new user
+        console.log(
+          "[Magic Link] Scenario 2: Different customer with valid token - switching users"
+        )
+        await performMagicLinkLogin(token, languageCode)
+        return
+      }
+    } else {
+      // Token is expired/invalid
+      if (
+        existingSessionValidation.customerId === tokenInfo.customerId &&
+        tokenInfo.customerId
+      ) {
+        // Scenario 3: Valid session + Expired token + Same customer ID → Keep existing session
+        console.log(
+          "[Magic Link] Scenario 3: Same customer with expired token - keeping existing session"
+        )
+        redirect(`/${languageCode}/account`)
+        return
+      } else {
+        // Scenario 4: Valid session + Expired token + Different customer ID → Logout current user
+        console.log(
+          "[Magic Link] Scenario 4: Different customer with expired token - logging out current user"
+        )
+        await signout(languageCode)
+        return
+      }
+    }
+  } else {
+    // No valid existing session
+    if (tokenInfo.isValid) {
+      // Scenario 5: Invalid session + Valid token → Login with token
+      console.log(
+        "[Magic Link] Scenario 5: No session with valid token - logging in"
+      )
+      await performMagicLinkLogin(token, languageCode)
+      return
+    } else {
+      // Scenario 6: Invalid session + Expired token → Redirect without login
+      console.log(
+        "[Magic Link] Scenario 6: No session with expired token - redirecting without login"
+      )
+      redirect(`/${languageCode}/account`)
+      return
+    }
+  }
+}
+
+/**
+ * Performs the actual magic link login process
+ */
+async function performMagicLinkLogin(
+  token: string,
+  languageCode: string
+): Promise<void> {
   try {
+    console.log("[performMagicLinkLogin] Starting magic link verification...")
+
+    // Verify the magic link token with the backend
     await sdk.customer.verifyMagicLink(token)
 
-    console.log("Magic link verification successful, received token")
+    console.log("[performMagicLinkLogin] Magic link verification successful")
 
     // SDK handles token storage internally, just manage cache
     const newCacheId = `${Date.now()}-${Math.random()
@@ -440,17 +531,19 @@ export async function verifyMagicLinkAction(
     try {
       await transferCart()
     } catch (error: any) {
-      console.error("Cart transfer error:", error)
+      console.error("[performMagicLinkLogin] Cart transfer error:", error)
     }
 
     console.log(
-      "Magic link login successful, cache cleared, redirecting to account"
+      "[performMagicLinkLogin] Magic link login successful, redirecting to account"
     )
   } catch (error: any) {
-    console.error("Magic link verification error:", error)
-    // Don't throw error - we'll redirect to account page anyway
+    console.error(
+      "[performMagicLinkLogin] Magic link verification failed:",
+      error
+    )
+    // Even if login fails, we still redirect to account page
   }
 
-  // Always redirect to account page regardless of success/failure
   redirect(`/${languageCode}/account`)
 }

@@ -4,7 +4,7 @@ import { sdk } from "@lib/config"
 import { cookies } from "next/headers"
 import { revalidateTag } from "next/cache"
 import { removeAuthToken, removeCacheId, setCacheId } from "@lib/data/cookies"
-import { isTokenExpired } from "./jwt-utils"
+import { isTokenExpired, getCustomerAccountIdFromToken } from "./jwt-utils"
 
 /**
  * Validates the current session by checking JWT token and attempting to fetch customer data
@@ -12,6 +12,7 @@ import { isTokenExpired } from "./jwt-utils"
 export async function validateSession(): Promise<{
   isValid: boolean
   customer: any | null
+  customerId: string | null
   error?: string
 }> {
   console.log("[validateSession] Starting session validation...")
@@ -23,14 +24,27 @@ export async function validateSession(): Promise<{
 
     if (!jwtToken) {
       console.log("[validateSession] No JWT token found")
-      return { isValid: false, customer: null, error: "No token" }
+      return {
+        isValid: false,
+        customer: null,
+        customerId: null,
+        error: "No token",
+      }
     }
+
+    // Extract customer ID from token for comparison
+    const customerId = getCustomerAccountIdFromToken(jwtToken)
 
     // Check if token is expired (client-side check)
     if (isTokenExpired(jwtToken)) {
       console.log("[validateSession] JWT token is expired")
       await cleanupInvalidSession()
-      return { isValid: false, customer: null, error: "Token expired" }
+      return {
+        isValid: false,
+        customer: null,
+        customerId,
+        error: "Token expired",
+      }
     }
 
     // Attempt to fetch customer data to validate token with backend
@@ -40,17 +54,28 @@ export async function validateSession(): Promise<{
     if (!customer) {
       console.log("[validateSession] No customer data returned")
       await cleanupInvalidSession()
-      return { isValid: false, customer: null, error: "No customer data" }
+      return {
+        isValid: false,
+        customer: null,
+        customerId,
+        error: "No customer data",
+      }
     }
 
     console.log("[validateSession] Session is valid, customer found:", {
       id: customer.id,
       email: customer.email,
+      customerId: customerId,
     })
 
-    return { isValid: true, customer }
+    return { isValid: true, customer, customerId }
   } catch (error: any) {
     console.log("[validateSession] Session validation failed:", error.message)
+
+    // Try to extract customer ID even from invalid session for comparison
+    const cookieStore = await cookies()
+    const jwtToken = cookieStore.get("_furni_jwt")?.value
+    const customerId = jwtToken ? getCustomerAccountIdFromToken(jwtToken) : null
 
     // If authentication error, clean up invalid session
     if (
@@ -63,7 +88,7 @@ export async function validateSession(): Promise<{
       await cleanupInvalidSession()
     }
 
-    return { isValid: false, customer: null, error: error.message }
+    return { isValid: false, customer: null, customerId, error: error.message }
   }
 }
 
