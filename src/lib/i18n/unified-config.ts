@@ -1,6 +1,11 @@
 import i18n from "i18next"
-import Backend from "i18next-locize-backend"
-import { i18nConfig, getBackendLanguageCode, defaultLanguage } from "./config"
+import resourcesToBackend from "i18next-resources-to-backend"
+import {
+  i18nConfig,
+  getBackendLanguageCode,
+  defaultLanguage,
+  supportedLanguages,
+} from "./config"
 
 // Unified i18next configuration factory
 export interface I18nInstanceOptions {
@@ -8,6 +13,21 @@ export interface I18nInstanceOptions {
   enableDebug?: boolean
   enableDetection?: boolean
   initialLanguage?: string
+}
+
+// Local resource loader function
+const loadLocalResource = async (language: string, namespace: string) => {
+  try {
+    // Dynamic import of translation files
+    const resource = await import(`./locales/${language}/${namespace}.json`)
+    return resource.default || resource
+  } catch (error) {
+    console.warn(
+      `Failed to load translation file: ${language}/${namespace}`,
+      error
+    )
+    return null
+  }
 }
 
 export const createI18nInstance = (options: I18nInstanceOptions = {}) => {
@@ -61,8 +81,8 @@ export const createI18nInstance = (options: I18nInstanceOptions = {}) => {
     }),
   }
 
-  // Initialize with backend
-  instance.use(Backend)
+  // Initialize with local resources backend
+  instance.use(resourcesToBackend(loadLocalResource))
 
   return { instance, config }
 }
@@ -126,5 +146,27 @@ export const getTranslation = async (
   } catch (error) {
     console.error("Failed to get translation:", error)
     return key
+  }
+}
+
+// Pre-load all available translations for build optimization
+export const preloadTranslations = async () => {
+  if (typeof window !== "undefined") {
+    // Client-side: preload all translations
+    const preloadPromises = []
+
+    for (const uiLang of supportedLanguages) {
+      const backendLang = getBackendLanguageCode(uiLang)
+      for (const namespace of i18nConfig.ns) {
+        preloadPromises.push(loadLocalResource(backendLang, namespace))
+      }
+    }
+
+    try {
+      await Promise.all(preloadPromises)
+      console.log("All translations preloaded successfully")
+    } catch (error) {
+      console.warn("Some translations failed to preload:", error)
+    }
   }
 }

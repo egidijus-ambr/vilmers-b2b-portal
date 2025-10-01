@@ -1,0 +1,41 @@
+{
+  "awaiting-payment": "Pending Confirmation",
+  "cancelled": "Cancelled",
+  "check": "Check",
+  "claims": {
+    "description": "Effectively report and track issues or discrepancies related with claimed products.",
+    "title": "Claims"
+  },
+  "completed": "Completed",
+  "confirmed-delivery-date": "Delivery date",
+  "date": "Submitted",
+  "dispatched": "Shipped",
+  "exposition-rules": {
+    "description": "Access and review guidelines for marketing tools and exhibition rules for your displays.",
+    "title": "Exposition rules"
+  },
+  "items": "Items",
+  "manufacturing": "In Production",
+  "no-orders-found": "No orders found",
+  "order-date": "Order date",
+  "order-id": "Order ID",
+  "orders": "Orders",
+  "orders-description": "Track, manage, and process purchases seamlessly with real-time updates and intuitive tools.",
+  "partially-delivered": "Partially delivered",
+  "payment-completed": "Payment Completed",
+  "place-an-order": {
+    "description": "Place and manage new product orders with real-time tracking and streamlined processing.",
+    "title": "Place an order"
+  },
+  "refunded": "Refunded",
+  "search-placeholder": "Search",
+  "settings": {
+    "description": "Easily manage, track, and resolve disputes or requests with streamlined tools and updates.",
+    "title": "Settings"
+  },
+  "status": "Status",
+  "submitted": "Submitted",
+  "total-price": "Total Amount",
+  "type": "Order Type",
+  "waiting-for-confirmation": "Pending Confirmation"
+}

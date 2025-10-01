@@ -1,0 +1,41 @@
+{
+  "awaiting-payment": "En attente de confirmation",
+  "cancelled": "Annulé",
+  "check": "Vérifier",
+  "claims": {
+    "description": "Signaler et suivre efficacement les problèmes ou les écarts liés aux produits réclamés.",
+    "title": "Réclamations"
+  },
+  "completed": "Complété",
+  "confirmed-delivery-date": "La date de livraison",
+  "date": "Soumis",
+  "dispatched": "Expédié",
+  "exposition-rules": {
+    "description": "Accédez et consultez les directives relatives aux outils marketing et aux règles d'exposition pour vos présentoirs.",
+    "title": "Règles d'exposition"
+  },
+  "items": "Articles",
+  "manufacturing": "En production",
+  "no-orders-found": "Aucune commande trouvée",
+  "order-date": "Date de commande",
+  "order-id": "ID de commande",
+  "orders": "Ordres",
+  "orders-description": "Suivre, gérer et traiter les achats de manière transparente avec des mises à jour en temps réel et des outils intuitifs.",
+  "partially-delivered": "Partiellement livré",
+  "payment-completed": "Paiement effectué",
+  "place-an-order": {
+    "description": "Passez et gérez de nouvelles commandes de produits avec un suivi en temps réel et un traitement simplifié.",
+    "title": "Passer une commande"
+  },
+  "refunded": "Remboursé",
+  "search-placeholder": "Recherche",
+  "settings": {
+    "description": "Gérer, suivre et résoudre facilement les litiges ou les demandes facilement avec des outils et des mises à jour rationalisés.",
+    "title": "Paramètres"
+  },
+  "status": "Statut",
+  "submitted": "Soumis",
+  "total-price": "Montant total",
+  "type": "Type de commande",
+  "waiting-for-confirmation": "En attente de confirmation"
+}

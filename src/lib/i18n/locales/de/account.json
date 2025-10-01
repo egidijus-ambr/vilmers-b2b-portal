@@ -1,0 +1,41 @@
+{
+  "awaiting-payment": "Ausstehende Bestätigung",
+  "cancelled": "Abgesagt",
+  "check": "Überprüfen",
+  "claims": {
+    "description": "Melden und verfolgen Sie Probleme oder Unstimmigkeiten im Zusammenhang mit reklamierten Produkten effektiv.",
+    "title": "Reklamationsbearbeitung"
+  },
+  "completed": "Vollendet",
+  "confirmed-delivery-date": "Liefertermin",
+  "date": "Gesendet",
+  "dispatched": "Versendet",
+  "exposition-rules": {
+    "description": "Greifen Sie auf Richtlinien zu Marketingtools und Vorschläge für Ihre Displays zu und setzen Sie diese erfolgreich um.",
+    "title": "Produkt Platzierung"
+  },
+  "items": "Artikel",
+  "manufacturing": "In Produktion",
+  "no-orders-found": "Keine Bestellungen gefunden",
+  "order-date": "Bestelldatum",
+  "order-id": "BESTELLATUNGS ID",
+  "orders": "Bestellungen",
+  "orders-description": "Verfolgen-, Verwalten- und Verarbeiten Sie Ihre Bestellungen mit Echtzeit-Updates und intuitiven Tools.",
+  "partially-delivered": "Teilweise geliefert",
+  "payment-completed": "Zahlung abgeschlossen",
+  "place-an-order": {
+    "description": "Geben Sie neue Produktbestellungen auf und verwalten Sie sie mit Echtzeit-Tracking und optimierter Verarbeitung.",
+    "title": "Eine Bestellung aufgeben"
+  },
+  "refunded": "Rückerstattung",
+  "search-placeholder": "Suchen",
+  "settings": {
+    "description": "Auf einfach verwalten, verfolgen und beheben Streitigkeiten oder Anfragen mit optimierten Tools und Updates.",
+    "title": "Einstellungen"
+  },
+  "status": "Status",
+  "submitted": "Eingereicht",
+  "total-price": "Gesamtbetrag",
+  "type": "Auftragsart",
+  "waiting-for-confirmation": "Ausstehende Bestätigung"
+}

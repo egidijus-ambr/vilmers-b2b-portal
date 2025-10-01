@@ -5,13 +5,13 @@ export type SupportedLanguage = (typeof supportedLanguages)[number]
 // Default language
 export const defaultLanguage: SupportedLanguage = "lt"
 
-// Mapping for backend translation loading (Locize uses different codes)
+// Mapping for backend translation loading (now uses local file structure)
 export const backendLanguageMapping: Record<SupportedLanguage, string> = {
   en: "en",
   fr: "fr",
   de: "de",
   lt: "lt",
-  da: "da-DK", // Locize backend uses da-DK for Danish
+  da: "da", // Local files use da for Danish
 }
 
 // i18next configuration
@@ -24,16 +24,6 @@ export const i18nConfig = {
   interpolation: {
     escapeValue: false, // React already escapes values
   },
-  backend: {
-    projectId: "5f861ad5-034b-4e24-8dd8-ff0f2b329332",
-    apiKey: "abd728f2-06fe-48ae-8bd8-57cee71e1f50",
-    referenceLng: "en",
-    loadPath: "https://api.locize.app/{{projectId}}/{{version}}/{{lng}}/{{ns}}",
-    addPath:
-      "https://api.locize.app/missing/{{projectId}}/{{version}}/{{lng}}/{{ns}}",
-    allowedAddOrUpdateHosts: ["localhost"],
-  },
-  saveMissing: true,
 }
 
 // Helper functions to convert between UI language codes and backend language codes

@@ -1,0 +1,41 @@
+{
+  "awaiting-payment": "Afventer bekræftelse",
+  "cancelled": "Annulleret",
+  "check": "Check",
+  "claims": {
+    "description": "Effektiv rapportering og sporing af problemer eller uoverensstemmelser relateret til de produkter, der er omfattet af deklarationen.",
+    "title": "Reklamationer"
+  },
+  "completed": "Færdiggjort",
+  "confirmed-delivery-date": "Leveringsdato",
+  "date": "Indsendt",
+  "dispatched": "Sendt",
+  "exposition-rules": {
+    "description": "Få adgang til og gennemgå retningslinjer for marketingværktøjer og udstillingsregler for dine udstillinger.",
+    "title": "Ekspositionsregler"
+  },
+  "items": "Genstande",
+  "manufacturing": "I produktion",
+  "no-orders-found": "Ingen ordrer fundet",
+  "order-date": "Ordredato",
+  "order-id": "Ordre-ID",
+  "orders": "Ordrer",
+  "orders-description": "Spor, administrere og procesopkøb problemfrit med realtidsopdateringer og intuitive værktøjer.",
+  "partially-delivered": "Delvist leveret",
+  "payment-completed": "Betaling gennemført",
+  "place-an-order": {
+    "description": "Placer og administrer nye produktordrer med sporing i realtid og strømlinet behandling.",
+    "title": "Placere en ordre"
+  },
+  "refunded": "Refunderet",
+  "search-placeholder": "Søge",
+  "settings": {
+    "description": "Administrer, spore og løsne tvister eller anmodninger med strømlinede værktøjer og opdateringer.",
+    "title": "Indstillinger"
+  },
+  "status": "Status",
+  "submitted": "Indsendt",
+  "total-price": "Samlet beløb",
+  "type": "Ordretype",
+  "waiting-for-confirmation": "Afventer bekræftelse"
+}

@@ -1,0 +1,41 @@
+{
+  "awaiting-payment": "Laukiama patvirtinimo",
+  "cancelled": "Atšaukta",
+  "check": "Patikrinkite",
+  "claims": {
+    "description": "Efektyviai pranešti ir sekti problemas ar neatitikimus, susijusius su produktais, dėl kurių pateikta pretenzija.",
+    "title": "Pretenzijos"
+  },
+  "completed": "Užbaigta",
+  "confirmed-delivery-date": "Pristatymo data",
+  "date": "Pateikta",
+  "dispatched": "Išsiųsta",
+  "exposition-rules": {
+    "description": "Pasiekite ir peržiūrėkite rinkodaros priemonių gaires ir parodų taisykles savo ekspozicijoms.",
+    "title": "Ekspozicijos taisyklės"
+  },
+  "items": "Prekės",
+  "manufacturing": "Gaminama",
+  "no-orders-found": "Nerasta užsakymų",
+  "order-date": "Užsakymo data",
+  "order-id": "Užsakymo ID",
+  "orders": "Užsakymai",
+  "orders-description": "Stebėkite, valdykite ir apdorokite sklandžiai pirkdami realiojo laiko atnaujinimus ir intuityvius įrankius.",
+  "partially-delivered": "Iš dalies pristatyta",
+  "payment-completed": "Mokėjimas atliktas",
+  "place-an-order": {
+    "description": "Pateikite ir valdykite naujus produktų užsakymus naudodami stebėjimą realiuoju laiku ir supaprastintą apdorojimą.",
+    "title": "Pateikite užsakymą"
+  },
+  "refunded": "Grąžinta",
+  "search-placeholder": "Ieškoti",
+  "settings": {
+    "description": "Lengvai valdykite, stebėkite ir išspręsite ginčus ar užklausas su supaprastintais įrankiais ir atnaujinimais.",
+    "title": "Nustatymai"
+  },
+  "status": "Būsena",
+  "submitted": "Pateikta",
+  "total-price": "Bendra suma",
+  "type": "Užsakymo tipas",
+  "waiting-for-confirmation": "Laukiama patvirtinimo"
+}
