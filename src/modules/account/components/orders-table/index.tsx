@@ -39,6 +39,8 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
     startIndex + itemsPerPage
   )
 
+  console.log("Rendering OrdersTable with orders:", orders)
+
   return (
     <div className="bg-white pb-6">
       {/* Header */}
@@ -168,12 +170,39 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                     status={order.order_status || "AWAITING_CONFIRMATION"}
                   />
                 </td>
+
                 <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900 text-right">
-                  {formatPrice({
-                    amount: order.total_price,
-                    currency_code: order.currency_code || "EUR",
-                    language,
-                  })}
+                  <div
+                    className={`flex items-center justify-end gap-1 ${
+                      order.total_price_confirmed
+                        ? "font-medium text-green-700"
+                        : ""
+                    }`}
+                    title={
+                      order.total_price_confirmed
+                        ? "Confirmed Price"
+                        : "Unconfirmed Price"
+                    }
+                  >
+                    {order.total_price_confirmed && (
+                      <svg
+                        className="h-4 w-4 text-green-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                    {formatPrice({
+                      amount: order.total_price_confirmed || order.total_price,
+                      currency_code: order.currency_code || "EUR",
+                      language,
+                    })}
+                  </div>
                 </td>
               </tr>
             ))}

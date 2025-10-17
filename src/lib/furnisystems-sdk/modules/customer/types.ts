@@ -55,6 +55,8 @@ export interface Order extends BaseEntity {
   order_external_code?: string
   order_items_count?: number
   confirmed_delivery_date?: string
+  metadata?: Record<string, any>
+  total_price_confirmed?: number
   items?: OrderItem[]
   shipping_address?: Address
   billing_address?: Address

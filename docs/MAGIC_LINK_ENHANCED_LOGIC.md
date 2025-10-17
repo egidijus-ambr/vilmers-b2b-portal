@@ -13,7 +13,7 @@ The magic link authentication has been enhanced to intelligently handle session 
 | 3        | Valid          | Expired      | Same              | Keep existing session (ignore expired token) |
 | 4        | Valid          | Expired      | Different         | Logout current user                          |
 | 5        | Invalid        | Valid        | N/A               | Login with token                             |
-| 6        | Invalid        | Expired      | N/A               | Redirect without login                       |
+| 6        | Invalid        | Expired      | N/A               | Redirect to homepage without login           |
 
 ## Key Benefits
 

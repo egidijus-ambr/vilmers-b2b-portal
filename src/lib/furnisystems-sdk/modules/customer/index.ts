@@ -66,6 +66,8 @@ const GET_CUSTOMER_ORDERS_QUERY = gql`
       createdAt
       order_status
       confirmed_delivery_date
+      total_price_confirmed
+      metadata
       total_price
       order_code
       order_number
@@ -253,6 +255,8 @@ export class CustomerModule {
           createdAt: string
           order_status: string
           confirmed_delivery_date?: string
+          metadata?: Record<string, any>
+          total_price_confirmed?: number
           total_price: number
           order_code: string
           order_number: string
@@ -281,6 +285,8 @@ export class CustomerModule {
         updated_at: orderData.createdAt, // Use createdAt as fallback for updated_at
         order_status: orderData.order_status,
         confirmed_delivery_date: orderData.confirmed_delivery_date,
+        metadata: orderData.metadata || {},
+        total_price_confirmed: orderData.total_price_confirmed,
         total_price: orderData.total_price,
         order_code: orderData.order_code,
         order_number: orderData.order_number,
