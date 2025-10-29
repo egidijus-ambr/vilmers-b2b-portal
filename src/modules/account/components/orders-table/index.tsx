@@ -7,6 +7,7 @@ import { capitalizeFirstLetter } from "@lib/util/string"
 import StatusBadge from "../status-badge"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
+import { useCustomer } from "@lib/context/customer-context"
 
 interface OrdersTableProps {
   orders: Order[]
@@ -18,6 +19,12 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
   const itemsPerPage = 8
   const { t } = useTranslations("account")
   const { language } = useI18n()
+  const { customer } = useCustomer()
+
+  // Check if user is an agent
+  const isAgent = customer?.role === "agent"
+
+  console.log("OrdersTable - isAgent:", isAgent)
 
   const filteredOrders = orders
     .filter(
@@ -121,9 +128,11 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
                 {t("order-id")}
               </th>
-              <th className="px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("order-date")}
-              </th>
+              {isAgent && (
+                <th className="hidden md:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider w-[300px]">
+                  Customer
+                </th>
+              )}
               <th className="hidden lg:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
                 {t("confirmed-delivery-date")}
               </th>
@@ -133,6 +142,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               <th className="px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
                 {t("items")}
               </th>
+
               <th className="px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
                 {t("status")}
               </th>
@@ -144,12 +154,43 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedOrders.map((order, index) => (
               <tr key={order.id}>
-                <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                  {order.display_id || order.id.slice(-8)}
+                <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900">
+                  <div className="font-medium">
+                    {order.display_id || order.id.slice(-8)}
+                  </div>
+                  <div className="text-gray-600 text-xs mt-1">
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </div>
                 </td>
-                <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                  {new Date(order.created_at).toLocaleDateString()}
-                </td>
+                {isAgent && (
+                  <td className="hidden md:table-cell px-2 md:px-4 py-3 md:py-4 text-gray-900 w-[100px] max-w-[100px]">
+                    <div className="break-words">
+                      <div className="text-xs leading-tight">
+                        {order.purchased_by?.name || "-"}
+                      </div>
+                      {order.purchased_subAccount?.name && (
+                        <div className="text-[10px] text-gray-600 leading-tight mt-1 flex items-start gap-1">
+                          <svg
+                            className="h-3 w-3 text-gray-500 flex-shrink-0 mt-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                            />
+                          </svg>
+                          <span className="flex-1">
+                            {order.purchased_subAccount.name}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                )}
                 <td className="hidden lg:table-cell px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                   {order.confirmed_delivery_date
                     ? new Date(
@@ -165,6 +206,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                 <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                   {order.order_items_count || 0}
                 </td>
+
                 <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap">
                   <StatusBadge
                     status={order.order_status || "AWAITING_CONFIRMATION"}

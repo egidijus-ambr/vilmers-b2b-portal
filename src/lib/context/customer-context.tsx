@@ -11,6 +11,7 @@ type CustomerContextType = {
         spoken_languages?: string[]
         is_configurator_enabled?: boolean
         is_claims_enabled?: boolean
+        role?: string
       })
     | null
 }

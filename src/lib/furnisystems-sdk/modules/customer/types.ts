@@ -39,6 +39,7 @@ export interface Customer extends BaseEntity {
   spoken_languages?: string[]
   is_configurator_enabled?: boolean
   is_claims_enabled?: boolean
+  role?: string
 }
 
 export interface Order extends BaseEntity {
@@ -60,6 +61,13 @@ export interface Order extends BaseEntity {
   items?: OrderItem[]
   shipping_address?: Address
   billing_address?: Address
+  purchased_subAccount?: {
+    name: string
+  }
+  purchased_by?: {
+    name: string
+    account_code: string
+  }
 }
 
 export interface OrderItem extends BaseEntity {

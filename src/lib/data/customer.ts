@@ -28,6 +28,7 @@ export const retrieveCustomer = async (): Promise<
       spoken_languages?: string[]
       is_configurator_enabled?: boolean
       is_claims_enabled?: boolean
+      role?: string
     })
   | null
 > => {
@@ -72,6 +73,7 @@ export const retrieveCustomer = async (): Promise<
       spoken_languages?: string[]
       is_configurator_enabled?: boolean
       is_claims_enabled?: boolean
+      role?: string
     } = {
       id: customer.id,
       created_at: customer.created_at,
@@ -88,6 +90,7 @@ export const retrieveCustomer = async (): Promise<
       spoken_languages: customer.spoken_languages || [],
       is_configurator_enabled: customer.is_configurator_enabled || false,
       is_claims_enabled: customer.is_claims_enabled || false,
+      role: customer.role,
     }
 
     console.log("[retrieveCustomer] Customer mapping completed successfully")

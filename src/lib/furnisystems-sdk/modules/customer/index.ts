@@ -40,6 +40,7 @@ const GET_ME_QUERY = gql`
       }
       is_configurator_enabled
       is_claims_enabled
+      role
       managers {
         id
         manager {
@@ -75,6 +76,18 @@ const GET_CUSTOMER_ORDERS_QUERY = gql`
       order_type
       _count {
         order_items
+      }
+      purchased_customerAccount {
+        customerSubAccount {
+          name
+        }
+      }
+      purchased_subAccount {
+        name
+      }
+      purchased_by {
+        name
+        account_code
       }
       order_external_code
     }
@@ -194,6 +207,7 @@ export class CustomerModule {
           }[]
           is_configurator_enabled: boolean
           is_claims_enabled: boolean
+          role?: string
           // Managers can be an array of objects with id and manager details
           managers: {
             id: string
@@ -221,7 +235,7 @@ export class CustomerModule {
         return null
       }
 
-      console.log("Customer data:", customerData.managers)
+      console.log("Customer data:", customerData)
 
       // Map the response to the Customer interface
       const customer: Customer = {
@@ -238,6 +252,7 @@ export class CustomerModule {
         managers: customerData.managers,
         is_configurator_enabled: customerData.is_configurator_enabled,
         is_claims_enabled: customerData.is_claims_enabled,
+        role: customerData.role,
       }
 
       return customer
@@ -266,6 +281,13 @@ export class CustomerModule {
             order_items: number
           }
           order_external_code?: string
+          purchased_subAccount?: {
+            name: string
+          }
+          purchased_by?: {
+            name: string
+            account_code: string
+          }
         }[]
       }>(GET_CUSTOMER_ORDERS_QUERY, {
         fetchPolicy: "no-cache", // Always fetch fresh data, never use cache
@@ -274,6 +296,7 @@ export class CustomerModule {
 
       const ordersData = response.getCustomerOrders
 
+      // console.log("Fetched customer orders:", ordersData)
       if (!ordersData) {
         return []
       }
@@ -294,6 +317,8 @@ export class CustomerModule {
         order_type: orderData.order_type,
         order_external_code: orderData.order_external_code,
         order_items_count: orderData._count.order_items,
+        purchased_subAccount: orderData.purchased_subAccount,
+        purchased_by: orderData.purchased_by,
       }))
 
       return orders
