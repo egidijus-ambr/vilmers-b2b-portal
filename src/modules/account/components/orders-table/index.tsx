@@ -32,7 +32,13 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
         (order.display_id?.toString() || "")
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.purchased_by?.name || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (order.purchased_subAccount?.name || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
     )
     .sort(
       (a, b) =>
