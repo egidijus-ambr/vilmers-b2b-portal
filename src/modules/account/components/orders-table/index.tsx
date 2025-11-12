@@ -24,6 +24,8 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
   // Check if user is an agent
   const isAgent = customer?.role === "agent"
 
+  console.log("Customer role:", customer)
+
   console.log("OrdersTable - isAgent:", isAgent)
 
   const filteredOrders = orders
@@ -139,6 +141,11 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                   Customer
                 </th>
               )}
+              {!isAgent && (
+                <th className="hidden md:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider w-[300px]">
+                  Location
+                </th>
+              )}
               <th className="hidden lg:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
                 {t("confirmed-delivery-date")}
               </th>
@@ -168,35 +175,60 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                     {new Date(order.created_at).toLocaleDateString()}
                   </div>
                 </td>
-                {isAgent && (
-                  <td className="hidden md:table-cell px-2 md:px-4 py-3 md:py-4 text-gray-900 w-[100px] max-w-[100px]">
-                    <div className="break-words">
+
+                <td className="hidden md:table-cell px-2 md:px-4 py-3 md:py-4 text-gray-900 w-[100px] max-w-[100px]">
+                  <div className="break-words">
+                    {isAgent ? (
                       <div className="text-xs leading-tight">
                         {order.purchased_by?.name || "-"}
                       </div>
-                      {order.purchased_subAccount?.name && (
-                        <div className="text-[10px] text-gray-600 leading-tight mt-1 flex items-start gap-1">
-                          <svg
-                            className="h-3 w-3 text-gray-500 flex-shrink-0 mt-0"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                            />
-                          </svg>
-                          <span className="flex-1">
-                            {order.purchased_subAccount.name}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                )}
+                    ) : (
+                      <div className="text-xs text-gray-600 leading-tight mt-1 flex items-start gap-1">
+                        {order.purchased_subAccount?.name && (
+                          <>
+                            <svg
+                              className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                              />
+                            </svg>
+                            <span className="flex-1">
+                              {order.purchased_subAccount?.name}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {isAgent && order.purchased_subAccount?.name && (
+                      <div className="text-[10px] text-gray-600 leading-tight mt-1 flex items-start gap-1">
+                        <svg
+                          className="h-3 w-3 text-gray-500 flex-shrink-0 mt-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                          />
+                        </svg>
+                        <span className="flex-1">
+                          {order.purchased_subAccount.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </td>
+
                 <td className="hidden lg:table-cell px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                   {order.confirmed_delivery_date
                     ? new Date(
