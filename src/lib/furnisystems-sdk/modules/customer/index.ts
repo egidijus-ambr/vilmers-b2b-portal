@@ -10,6 +10,8 @@ import {
   UpdateAddressInput,
   AuthCredentials,
   RegisterInput,
+  OrdersQueryOptions,
+  OrdersQueryResult,
 } from "./types"
 import { useMutation } from "@apollo/client"
 import { cookies } from "next/headers"
@@ -61,35 +63,50 @@ const GET_ME_QUERY = gql`
 `
 
 const GET_CUSTOMER_ORDERS_QUERY = gql`
-  query GetCustomerOrders {
-    getCustomerOrders {
-      id
-      createdAt
-      order_status
-      confirmed_delivery_date
-      total_price_confirmed
-      metadata
-      total_price
-      order_code
-      order_number
-      invoice_code
-      order_type
-      _count {
-        order_items
-      }
-      purchased_customerAccount {
-        customerSubAccount {
+  query GetCustomerOrdersWithSearch(
+    $searchText: String
+    $take: Int
+    $skip: Int
+  ) {
+    getCustomerOrders(searchText: $searchText, take: $take, skip: $skip) {
+      totalCount
+      currentPage
+      totalPages
+      pageSize
+      hasNextPage
+      hasPreviousPage
+
+      orders {
+        id
+        createdAt
+        order_status
+        confirmed_delivery_date
+        total_price_confirmed
+        metadata
+        total_price
+        order_code
+        order_number
+        invoice_code
+        order_type
+
+        purchased_customerAccount {
+          customerSubAccount {
+            name
+          }
+        }
+        purchased_subAccount {
           name
         }
+        purchased_by {
+          name
+          account_code
+        }
+        order_external_code
+
+        order_items {
+          reference
+        }
       }
-      purchased_subAccount {
-        name
-      }
-      purchased_by {
-        name
-        account_code
-      }
-      order_external_code
     }
   }
 `
@@ -262,47 +279,78 @@ export class CustomerModule {
     }
   }
 
-  async getCustomerOrders(distinct?: string[]): Promise<Order[]> {
+  async getCustomerOrders(
+    options?: OrdersQueryOptions
+  ): Promise<OrdersQueryResult> {
     try {
+      // Set default values
+      const searchText = options?.searchText || undefined
+      const take = options?.take || 20
+      const skip = options?.skip || 0
+
       const response = await this.client.query<{
         getCustomerOrders: {
-          id: string
-          createdAt: string
-          order_status: string
-          confirmed_delivery_date?: string
-          metadata?: Record<string, any>
-          total_price_confirmed?: number
-          total_price: number
-          order_code: string
-          order_number: string
-          invoice_code?: string
-          order_type?: string
-          _count: {
-            order_items: number
-          }
-          order_external_code?: string
-          purchased_subAccount?: {
-            name: string
-          }
-          purchased_by?: {
-            name: string
-            account_code: string
-          }
-        }[]
+          totalCount: number
+          currentPage: number
+          totalPages: number
+          pageSize: number
+          hasNextPage: boolean
+          hasPreviousPage: boolean
+          orders: {
+            id: string
+            createdAt: string
+            order_status: string
+            confirmed_delivery_date?: string
+            metadata?: Record<string, any>
+            total_price_confirmed?: number
+            total_price: number
+            order_code: string
+            order_number: string
+            invoice_code?: string
+            order_type?: string
+            _count: {
+              order_items: number
+            }
+            order_external_code?: string
+            purchased_subAccount?: {
+              name: string
+            }
+            purchased_by?: {
+              name: string
+              account_code: string
+            }
+            order_items?: {
+              reference?: string
+            }[]
+          }[]
+        }
       }>(GET_CUSTOMER_ORDERS_QUERY, {
+        variables: {
+          searchText,
+          take,
+          skip,
+        },
         fetchPolicy: "no-cache", // Always fetch fresh data, never use cache
         errorPolicy: "all", // Return partial data even if there are errors
       })
 
       const ordersData = response.getCustomerOrders
 
-      // console.log("Fetched customer orders:", ordersData)
+
       if (!ordersData) {
-        return []
+        return {
+          orders: [],
+          totalCount: 0,
+          currentPage: 1,
+          totalPages: 0,
+          pageSize: take,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        }
       }
 
       // Map the response to the Order interface
-      const orders: Order[] = ordersData.map((orderData) => ({
+      const orders: Order[] = ordersData.orders.map((orderData) => ({
         id: orderData.order_external_code || orderData.id, // Use order_external_code as primary id
         created_at: orderData.createdAt,
         updated_at: orderData.createdAt, // Use createdAt as fallback for updated_at
@@ -316,12 +364,24 @@ export class CustomerModule {
         invoice_code: orderData.invoice_code,
         order_type: orderData.order_type,
         order_external_code: orderData.order_external_code,
-        order_items_count: orderData._count.order_items,
+        // order_items_count: orderData._count.order_items,
         purchased_subAccount: orderData.purchased_subAccount,
         purchased_by: orderData.purchased_by,
+        order_item_references:
+          orderData.order_items
+            ?.map((item) => item.reference)
+            .filter((ref): ref is string => Boolean(ref)) || [],
       }))
 
-      return orders
+      return {
+        orders,
+        totalCount: ordersData.totalCount,
+        currentPage: ordersData.currentPage,
+        totalPages: ordersData.totalPages,
+        pageSize: ordersData.pageSize,
+        hasNextPage: ordersData.hasNextPage,
+        hasPreviousPage: ordersData.hasPreviousPage,
+      }
     } catch (error) {
       console.error("Error fetching customer orders:", error)
       throw error

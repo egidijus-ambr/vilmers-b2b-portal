@@ -259,17 +259,17 @@ export class ApolloGraphQLClient {
                 },
               },
               // Disable caching for customer orders to ensure fresh data
-              getCustomerOrders: {
-                keyArgs: false,
-                merge(existing, incoming) {
-                  // Always return incoming data, never merge with existing
-                  return incoming
-                },
-                read(existing, { args }) {
-                  // Always return undefined to force a fresh fetch
-                  return undefined
-                },
-              },
+              // getCustomerOrders: {
+              //   keyArgs: false,
+              //   merge(existing, incoming) {
+              //     // Always return incoming data, never merge with existing
+              //     return incoming
+              //   },
+              //   read(existing, { args }) {
+              //     // Always return undefined to force a fresh fetch
+              //     return undefined
+              //   },
+              // },
               // Disable caching for customer data to ensure fresh data
               getMe: {
                 keyArgs: false,

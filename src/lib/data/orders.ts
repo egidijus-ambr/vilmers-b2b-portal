@@ -37,7 +37,13 @@ export const listOrders = async (
     }
 
     // Use the furnisystems SDK to get customer orders via GraphQL
-    const orders = await sdk.customer.getCustomerOrders()
+    const result = await sdk.customer.getCustomerOrders({
+      take: limit,
+      skip: offset,
+    })
+
+    // Extract orders array from the result
+    const orders = result.orders
 
     // set order display_id
     orders.forEach((order) => {
@@ -49,6 +55,80 @@ export const listOrders = async (
   } catch (error) {
     console.error("[listOrders] Error fetching orders:", error)
     return []
+  }
+}
+
+export const listOrdersWithPagination = async (
+  limit: number = 10,
+  offset: number = 0,
+  searchText?: string
+): Promise<{
+  orders: Order[]
+  totalCount: number
+  currentPage: number
+  totalPages: number
+  pageSize: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}> => {
+  // Prevent caching for authentication-related data
+  unstable_noStore()
+
+  console.log(
+    "[listOrdersWithPagination] Starting orders retrieval with pagination..."
+  )
+
+  try {
+    // Use the new session validation system
+    const validation = await validateSession()
+
+    if (!validation.isValid) {
+      console.log(
+        "[listOrdersWithPagination] Session validation failed:",
+        validation.error
+      )
+      return {
+        orders: [],
+        totalCount: 0,
+        currentPage: 1,
+        totalPages: 1,
+        pageSize: limit,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    }
+
+    // Use the furnisystems SDK to get customer orders via GraphQL with pagination
+    const result = await sdk.customer.getCustomerOrders({
+      take: limit,
+      skip: offset,
+      searchText: searchText || undefined,
+    })
+
+    // set order display_id
+    result.orders.forEach((order) => {
+      order.display_id = order.order_external_code || order.order_code
+    })
+
+    console.log("[listOrdersWithPagination] Orders retrieved successfully:", {
+      ordersCount: result.orders.length,
+      totalCount: result.totalCount,
+      currentPage: result.currentPage,
+      totalPages: result.totalPages,
+    })
+
+    return result
+  } catch (error) {
+    console.error("[listOrdersWithPagination] Error fetching orders:", error)
+    return {
+      orders: [],
+      totalCount: 0,
+      currentPage: 1,
+      totalPages: 1,
+      pageSize: limit,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    }
   }
 }
 

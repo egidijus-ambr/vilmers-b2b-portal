@@ -68,6 +68,7 @@ export interface Order extends BaseEntity {
     name: string
     account_code: string
   }
+  order_item_references?: string[]
 }
 
 export interface OrderItem extends BaseEntity {
@@ -77,6 +78,7 @@ export interface OrderItem extends BaseEntity {
   total: number
   variant_id: string
   product_id: string
+  reference?: string
 }
 
 export interface CreateCustomerInput {
@@ -126,4 +128,45 @@ export interface AuthCredentials {
 export interface RegisterInput extends AuthCredentials {
   full_name: string
   phone?: string
+}
+
+export interface OrdersFilterInput {
+  company_code?: string
+  company_name?: string
+  vat_code?: string
+  order_code?: string
+  order_status?: string
+  order_type?: string
+  purchased_by?: {
+    account_code?: string
+    name?: string
+    surname?: string
+    email?: string
+  }
+}
+
+export interface PaginationInput {
+  take?: number
+  skip?: number
+}
+
+export interface OrdersQueryOptions {
+  searchText?: string
+  take?: number
+  skip?: number
+  filters?: OrdersFilterInput
+  orderBy?: {
+    field: string
+    direction: "asc" | "desc"
+  }
+}
+
+export interface OrdersQueryResult {
+  orders: Order[]
+  totalCount: number
+  currentPage: number
+  totalPages: number
+  pageSize: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
 }
