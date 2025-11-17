@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { formatPrice } from "@lib/util/money"
 import { capitalizeFirstLetter } from "@lib/util/string"
 import StatusBadge from "../status-badge"
@@ -8,40 +8,129 @@ import ReferencesTooltip from "../references-tooltip"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
 import { useCustomer } from "@lib/context/customer-context"
+import { listOrdersWithPagination } from "@lib/data/orders"
 
-interface OrdersTableProps {
+interface OrdersPageState {
   orders: Order[]
-  searchTerm?: string
-  onSearchChange?: (term: string) => void
-  currentPage?: number
-  totalPages?: number
-  onPageChange?: (page: number) => void
-  totalCount?: number
-  pageSize?: number
-  hasNextPage?: boolean
-  hasPreviousPage?: boolean
-  loading?: boolean
+  totalCount: number
+  currentPage: number
+  totalPages: number
+  pageSize: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
 }
 
-const OrdersTable = ({
-  orders,
-  searchTerm = "",
-  onSearchChange,
-  currentPage = 1,
-  totalPages = 1,
-  onPageChange,
-  totalCount,
-  pageSize = 10,
-  hasNextPage = false,
-  hasPreviousPage = false,
-  loading = false,
-}: OrdersTableProps) => {
+interface OrdersTableProps {
+  /** Optional prop to show only limited number of orders (for overview page) */
+  pageSize?: number
+}
+
+const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
+  const { customer } = useCustomer()
+  const [ordersData, setOrdersData] = useState<OrdersPageState | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Debounced search to avoid too many API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  const fetchOrders = useCallback(
+    async (page: number = 1, search: string = "") => {
+      try {
+        setLoading(true)
+        const offset = (page - 1) * pageSize
+        const result = await listOrdersWithPagination(pageSize, offset, search)
+
+        // Calculate currentPage based on the page parameter we sent
+        const calculatedCurrentPage = page
+        const calculatedTotalPages = Math.ceil(
+          (result.totalCount || 0) / pageSize
+        )
+        const calculatedHasNextPage =
+          calculatedCurrentPage < calculatedTotalPages
+        const calculatedHasPreviousPage = calculatedCurrentPage > 1
+
+        setOrdersData({
+          orders: result.orders || [],
+          totalCount: result.totalCount || 0,
+          currentPage: calculatedCurrentPage, // Use the page we requested
+          totalPages: calculatedTotalPages,
+          pageSize: pageSize,
+          hasNextPage: calculatedHasNextPage,
+          hasPreviousPage: calculatedHasPreviousPage,
+        })
+      } catch (error) {
+        console.error("Error loading orders:", error)
+        setOrdersData({
+          orders: [],
+          totalCount: 0,
+          currentPage: 1,
+          totalPages: 1,
+          pageSize,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [pageSize]
+  )
+
+  useEffect(() => {
+    if (!customer) {
+      return
+    }
+
+    fetchOrders(1, debouncedSearchTerm)
+  }, [customer, debouncedSearchTerm, fetchOrders])
+
+  const handlePageChange = (page: number) => {
+    fetchOrders(page, debouncedSearchTerm)
+  }
+
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term)
+    // Reset to page 1 when searching
+    if (term !== debouncedSearchTerm) {
+      setOrdersData((prev) => (prev ? { ...prev, currentPage: 1 } : null))
+    }
+  }
+
+  if (!customer) {
+    return null
+  }
+
+  // Show empty state if no orders found
+  if (ordersData && ordersData.orders.length === 0 && !loading) {
+    return (
+      <div className="bg-white rounded-lg p-8 text-center">
+        <p className="text-gray-500">No orders found</p>
+      </div>
+    )
+  }
+
   const { t } = useTranslations("account")
   const { language } = useI18n()
-  const { customer } = useCustomer()
 
   // Check if user is an agent
   const isAgent = customer?.role === "agent" || customer?.role === "admin"
+
+  // Use ordersData if available, otherwise fall back to empty state
+  const orders = ordersData?.orders || []
+  const currentPage = ordersData?.currentPage || 1
+  const totalPages = ordersData?.totalPages || 1
+  const totalCount = ordersData?.totalCount || 0
+  const hasNextPage = ordersData?.hasNextPage || false
+  const hasPreviousPage = ordersData?.hasPreviousPage || false
 
   return (
     <div className="bg-white pb-6">
@@ -57,41 +146,9 @@ const OrdersTable = ({
             </p>
           </div>
 
-          {/* Search - Hidden on mobile, shown on desktop - Only show when search functionality is available */}
-          {onSearchChange && (
-            <div className="hidden md:flex">
-              <div className="relative max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-dark-blue"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder={t("search-placeholder")}
-                  value={searchTerm}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
-                  className="block w-[368px] pl-10 pr-3 py-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Search - Shown on mobile below description - Only show when search functionality is available */}
-        {onSearchChange && (
-          <div className="md:hidden mt-4">
-            <div className="relative">
+          {/* Search - Hidden on mobile, shown on desktop */}
+          <div className="hidden md:flex">
+            <div className="relative max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg
                   className="h-5 w-5 text-dark-blue"
@@ -111,12 +168,40 @@ const OrdersTable = ({
                 type="text"
                 placeholder={t("search-placeholder")}
                 value={searchTerm}
-                onChange={(e) => onSearchChange?.(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="block w-[368px] pl-10 pr-3 py-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Search - Shown on mobile below description */}
+        <div className="md:hidden mt-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-5 w-5 text-dark-blue"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder={t("search-placeholder")}
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="block w-full pl-10 pr-3 py-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -359,7 +444,7 @@ const OrdersTable = ({
               {/* Previous button */}
               <button
                 onClick={() =>
-                  hasPreviousPage && onPageChange?.(currentPage - 1)
+                  hasPreviousPage && handlePageChange(currentPage - 1)
                 }
                 disabled={!hasPreviousPage}
                 className={`px-3 py-2 text-xs md:text-sm font-medium rounded transition-colors ${
@@ -395,7 +480,7 @@ const OrdersTable = ({
                         console.log(
                           `Clicking page ${i}, current page is ${currentPage}`
                         )
-                        onPageChange?.(i)
+                        handlePageChange(i)
                       }}
                       className={`w-10 h-10 md:w-12 md:h-12 rounded-full text-xs md:text-sm font-medium transition-colors ${
                         currentPage === i
@@ -413,7 +498,7 @@ const OrdersTable = ({
 
               {/* Next button */}
               <button
-                onClick={() => hasNextPage && onPageChange?.(currentPage + 1)}
+                onClick={() => hasNextPage && handlePageChange(currentPage + 1)}
                 disabled={!hasNextPage}
                 className={`px-3 py-2 text-xs md:text-sm font-medium rounded transition-colors ${
                   hasNextPage

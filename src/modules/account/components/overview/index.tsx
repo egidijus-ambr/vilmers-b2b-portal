@@ -13,11 +13,9 @@ import {
   CustomerManager,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 
-type OverviewProps = {
-  orders: Order[] | null
-}
+type OverviewProps = {}
 
-const Overview = ({ orders }: OverviewProps) => {
+const Overview = (): JSX.Element => {
   const { customer } = useCustomer()
   const { t } = useTranslations("account")
   const params = useParams()
@@ -167,13 +165,7 @@ const Overview = ({ orders }: OverviewProps) => {
 
       {/* Orders Section */}
       <div className="space-y-10">
-        {orders && orders.length > 0 ? (
-          <OrdersTable orders={orders} />
-        ) : (
-          <div className="bg-white rounded-lg p-8 text-center">
-            <p className="text-gray-500">{t("no-orders-found")}</p>
-          </div>
-        )}
+        <OrdersTable pageSize={10} />
       </div>
     </div>
   )

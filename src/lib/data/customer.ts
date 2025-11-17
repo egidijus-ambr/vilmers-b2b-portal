@@ -35,36 +35,19 @@ export const retrieveCustomer = async (): Promise<
   // Prevent caching for authentication-related data
   unstable_noStore()
 
-  console.log(
-    "[retrieveCustomer] Starting customer retrieval with session validation..."
-  )
-
   try {
     // Use the new session validation system
     const validation = await validateSession()
 
     if (!validation.isValid) {
-      console.log(
-        "[retrieveCustomer] Session validation failed:",
-        validation.error
-      )
       return null
     }
 
     const customer = validation.customer
 
     if (!customer) {
-      console.log(
-        "[retrieveCustomer] No customer data returned from validation"
-      )
       return null
     }
-
-    console.log("[retrieveCustomer] Customer data retrieved successfully:", {
-      id: customer.id,
-      email: customer.email,
-      full_name: customer.full_name,
-    })
 
     // Map Customer to StoreCustomer with full_name and managers extension
     const storeCustomer: HttpTypes.StoreCustomer & {
