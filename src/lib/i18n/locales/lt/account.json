@@ -27,6 +27,10 @@
     "description": "Pateikite ir valdykite naujus produktų užsakymus naudodami stebėjimą realiuoju laiku ir supaprastintą apdorojimą.",
     "title": "Pateikite užsakymą"
   },
+  "product-photos": {
+    "description": "Naršykite ir valdykite produktų nuotraukas. Ši funkcija netrukus bus prieinama.",
+    "title": "Produktų nuotraukos"
+  },
   "refunded": "Grąžinta",
   "search-placeholder": "Ieškoti",
   "settings": {

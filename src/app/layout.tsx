@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="lt" data-mode="light">
+    <html lang="lt" data-mode="light" suppressHydrationWarning={true}>
       <body className={montserrat.className}>
         <I18nProvider>
           <HtmlLangUpdater />

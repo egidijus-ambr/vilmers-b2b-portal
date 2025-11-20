@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next"
 import UnderlineLink from "@modules/common/components/interactive-link"
 import OutlineButton from "@modules/common/components/outline-button"
 
-import AccountDropdown from "@modules/layout/components/account-dropdown"
 import { HttpTypes } from "@medusajs/types"
 
 interface AccountLayoutProps {
@@ -24,11 +23,6 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
 
   // Check if this is the login page (when customer is null)
   const isLoginPage = !customer
-
-  // Check if we're on the main account page or orders page (should hide AccountNav)
-  const isMainAccountPage = pathname.endsWith("/account")
-  const isOrdersPage = pathname.endsWith("/account/orders")
-  const showAccountNav = customer && !isMainAccountPage && !isOrdersPage
 
   // Show loading state while translations are loading to prevent flicker
   if (!isReady) {
@@ -84,19 +78,8 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
     >
       {/* Content container */}
       <div className="flex-1 max-w-[1440px] mx-auto flex flex-col">
-        <div
-          className={`grid ${
-            showAccountNav
-              ? "grid-cols-1 small:grid-cols-[240px_1fr] gap-4"
-              : "grid-cols-1"
-          }`}
-        >
-          {showAccountNav && (
-            <div className="bg-white rounded-lg shadow-lg p-4 h-fit">
-              <AccountDropdown customer={customer} />
-            </div>
-          )}
-          <div className={`flex-1 ${showAccountNav ? "" : ""}`}>
+        <div className="grid grid-cols-1">
+          <div className="flex-1">
             <div className="p-4 sm:p-6 lg:p-8">{children}</div>
           </div>
         </div>

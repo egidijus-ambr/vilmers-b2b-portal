@@ -27,6 +27,10 @@
     "description": "Place and manage new product orders with real-time tracking and streamlined processing.",
     "title": "Place an order"
   },
+  "product-photos": {
+    "description": "Browse and manage product photos. This feature is coming soon.",
+    "title": "Product Photos"
+  },
   "refunded": "Refunded",
   "search-placeholder": "Search",
   "settings": {

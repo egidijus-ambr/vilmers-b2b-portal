@@ -20,7 +20,24 @@ import {
   NotFoundError,
 } from "./errors"
 import { ClientConfig, AuthHeaders } from "./types"
-import { cookies } from "next/headers"
+
+// Helper function to safely access cookies in server context only
+async function getCookiesIfAvailable(): Promise<string | null> {
+  // Only attempt to access cookies on server-side and not in client components
+  if (typeof window !== "undefined") {
+    return null // Client-side, no cookies access
+  }
+
+  try {
+    // Dynamic import to avoid bundling issues in client components
+    const { cookies } = await import("next/headers")
+    const cookieStore = await cookies()
+    return cookieStore.get("_furni_jwt")?.value || null
+  } catch (error) {
+    // If we can't access cookies (e.g., in client component during SSR), return null
+    return null
+  }
+}
 
 export class ApolloGraphQLClient {
   private client: ApolloClient<any>
@@ -69,27 +86,14 @@ export class ApolloGraphQLClient {
         ...this.authHeaders,
       }
 
-      // Automatically retrieve auth token from cookies if running on server
-      if (typeof window === "undefined") {
-        try {
-          const cookieStore = await cookies()
-          const token = cookieStore.get("_furni_jwt")?.value
-
-          if (token) {
-            authHeaders.authorization = `Bearer ${token}`
-            if (this.config.debug) {
-              console.log(
-                "[Furnisystems SDK] Auto-retrieved auth token from cookies"
-              )
-            }
-          }
-        } catch (error) {
-          if (this.config.debug) {
-            console.warn(
-              "[Furnisystems SDK] Could not retrieve auth token from cookies:",
-              error
-            )
-          }
+      // Automatically retrieve auth token from cookies if available
+      const token = await getCookiesIfAvailable()
+      if (token) {
+        authHeaders.authorization = `Bearer ${token}`
+        if (this.config.debug) {
+          console.log(
+            "[Furnisystems SDK] Auto-retrieved auth token from cookies"
+          )
         }
       }
 

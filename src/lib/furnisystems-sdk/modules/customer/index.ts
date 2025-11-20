@@ -14,7 +14,25 @@ import {
   OrdersQueryResult,
 } from "./types"
 import { useMutation } from "@apollo/client"
-import { cookies } from "next/headers"
+
+// Helper function to safely access cookies in server context only
+async function setCookieIfAvailable(
+  name: string,
+  value: string,
+  options?: any
+): Promise<void> {
+  if (typeof window !== "undefined") {
+    return // Client-side, no cookie setting
+  }
+
+  try {
+    const { cookies } = await import("next/headers")
+    const cookieStore = await cookies()
+    cookieStore.set(name, value, options)
+  } catch (error) {
+    console.warn("Could not set cookie:", error)
+  }
+}
 
 const LOGIN_MUTATION = gql`
   mutation Login($email: String!, $password: String!) {
@@ -174,19 +192,12 @@ export class CustomerModule {
       }
 
       // Store token in cookies internally within the SDK
-      if (typeof window === "undefined") {
-        try {
-          const cookieStore = await cookies()
-          cookieStore.set("_furni_jwt", token, {
-            maxAge: 60 * 60 * 24 * 7,
-            httpOnly: true,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV === "production",
-          })
-        } catch (error) {
-          console.warn("Could not store auth token in cookies:", error)
-        }
-      }
+      await setCookieIfAvailable("_furni_jwt", token, {
+        maxAge: 60 * 60 * 24 * 7,
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      })
 
       // TODO: Fetch customer data after successful authentication
       // For now, we'll return a placeholder customer object
@@ -336,7 +347,6 @@ export class CustomerModule {
 
       const ordersData = response.getCustomerOrders
 
-
       if (!ordersData) {
         return {
           orders: [],
@@ -452,19 +462,12 @@ export class CustomerModule {
       }
 
       // Store token in cookies internally within the SDK
-      if (typeof window === "undefined") {
-        try {
-          const cookieStore = await cookies()
-          cookieStore.set("_furni_jwt", authToken, {
-            maxAge: 60 * 60 * 24 * 7,
-            httpOnly: true,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV === "production",
-          })
-        } catch (error) {
-          console.warn("Could not store auth token in cookies:", error)
-        }
-      }
+      await setCookieIfAvailable("_furni_jwt", authToken, {
+        maxAge: 60 * 60 * 24 * 7,
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      })
 
       return authToken
     } catch (error) {
@@ -506,16 +509,9 @@ export class CustomerModule {
       this.client.setAuthHeaders({})
 
       // Clear JWT token from cookies
-      if (typeof window === "undefined") {
-        try {
-          const cookieStore = await cookies()
-          cookieStore.set("_furni_jwt", "", {
-            maxAge: -1,
-          })
-        } catch (error) {
-          console.warn("Could not clear auth token from cookies:", error)
-        }
-      }
+      await setCookieIfAvailable("_furni_jwt", "", {
+        maxAge: -1,
+      })
 
       console.log("Customer logged out successfully")
     } catch (error) {

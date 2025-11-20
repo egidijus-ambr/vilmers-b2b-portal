@@ -7,6 +7,7 @@ export interface GraphQLRequestConfig {
 
 export interface ClientConfig {
   graphqlEndpoint: string
+  restApiEndpoint?: string
   apiKey?: string
   publishableKey?: string
   debug?: boolean

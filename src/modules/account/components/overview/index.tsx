@@ -3,7 +3,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { useTranslations } from "@lib/i18n"
 import { getStoreLoginLink, getClaimsLink } from "@lib/data/customer"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
@@ -19,6 +19,7 @@ const Overview = (): JSX.Element => {
   const { customer } = useCustomer()
   const { t } = useTranslations("account")
   const params = useParams()
+  const router = useRouter()
   const languageCode = params.languageCode as string
 
   const handlePlaceOrder = async () => {
@@ -96,11 +97,12 @@ const Overview = (): JSX.Element => {
           },
         ]
       : []),
-    // {
-    //   title: t("settings.title"),
-    //   description: t("settings.description"),
-    //   onClick: () => console.log("Settings clicked"),
-    // },
+    {
+      title: t("product-photos.title"),
+      description: t("product-photos.description"),
+      onClick: () => router.push(`/${languageCode}/account/product-photos`),
+    },
+
     {
       title: t("exposition-rules.title"),
       description: t("exposition-rules.description"),
@@ -160,6 +162,18 @@ const Overview = (): JSX.Element => {
               <p className="text-gray-500">{t("no-manager-assigned")}</p>
             </div>
           )}
+        </div>
+      </div>
+      <div className="space-y-4">
+        <div className="bg-white ">
+          <ActionCard
+            key="product_range_index"
+            title=" Product range"
+            description="Explore our range of products designed to meet diverse needs."
+            onClick={() => window.open("https://portal.vilmers.com/", "_blank")}
+            buttonText={t("check")}
+            height="auto"
+          />
         </div>
       </div>
 
