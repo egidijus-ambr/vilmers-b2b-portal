@@ -13,6 +13,10 @@ if (process.env.BACKEND_REST_API) {
   BACKEND_REST_API = process.env.BACKEND_REST_API
 }
 
+console.log("Furnisystems SDK Configuration:")
+console.log("GRAPHQL Endpoint:", BACKEND_GRAPHQL)
+console.log("REST API Endpoint:", BACKEND_REST_API)
+
 export const sdk = new FurnisystemsSDK({
   graphqlEndpoint: BACKEND_GRAPHQL,
   restApiEndpoint: BACKEND_REST_API,

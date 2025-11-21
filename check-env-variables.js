@@ -6,6 +6,11 @@ const requiredEnvs = [
     description:
       "Your Frontend needs to know where your backend is hosted. This should be the URL of your GraphQL endpoint.",
   },
+  {
+    key: "BACKEND_REST_API",
+    description:
+      "Your Frontend needs to know where your backend is hosted. This should be the URL of your REST API endpoint.",
+  },
 ]
 
 function checkEnvVariables() {
