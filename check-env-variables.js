@@ -2,10 +2,9 @@ const c = require("ansi-colors")
 
 const requiredEnvs = [
   {
-    key: "FURNISYSTEMS_BACKEND_URL",
-    // TODO: we need a good doc to point this to
+    key: "BACKEND_GRAPHQL",
     description:
-      "Your Frontent needs to know where your backend is hosted. This should be the URL of your GraphQL endpoint.",
+      "Your Frontend needs to know where your backend is hosted. This should be the URL of your GraphQL endpoint.",
   },
 ]
 

@@ -1,7 +1,9 @@
 export interface ProductSummary {
   name: string
-  productPhotos: number
-  interiorPhotos: number
+  main_product_category: string
+  secondary_category: string
+  productPhotos?: number
+  interiorPhotos?: number
 }
 
 export interface ProductsSummaryResponse {
@@ -15,12 +17,15 @@ export interface ProductsSummaryResponse {
 }
 
 export interface ProductPhoto {
-  key: string
+  url: string
   name: string
+  variant?: string
+  category: "INTERIOR_PHOTOS" | "PRODUCT_PHOTOS"
+  combination?: string
+  fabric?: string
 }
 
 export interface ProductPhotosResponse {
   productName: string
   photos: ProductPhoto[]
-  count: number
 }

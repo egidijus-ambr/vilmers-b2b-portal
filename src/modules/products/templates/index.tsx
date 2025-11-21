@@ -5,11 +5,13 @@ import ProductActions from "@modules/products/components/product-actions"
 import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
 import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
+import InteriorPhotoGallery from "@modules/products/components/interior-photo-gallery"
 import ProductInfo from "@modules/products/templates/product-info"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import { notFound } from "next/navigation"
 import ProductActionsWrapper from "./product-actions-wrapper"
 import { HttpTypes } from "@medusajs/types"
+import { getProductInteriorPhotos } from "@lib/data/product-photos"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -17,7 +19,7 @@ type ProductTemplateProps = {
   countryCode: string
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = ({
+const ProductTemplate: React.FC<ProductTemplateProps> = async ({
   product,
   region,
   countryCode,
@@ -25,6 +27,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   if (!product || !product.id) {
     return notFound()
   }
+
+  // Fetch interior photos for this product
+  const interiorPhotos = await getProductInteriorPhotos(product.title || "")
 
   return (
     <>
@@ -54,6 +59,17 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           </Suspense>
         </div>
       </div>
+
+      {/* Interior Photos Gallery */}
+      {interiorPhotos.length > 0 && (
+        <div className="content-container my-16 small:my-32">
+          <InteriorPhotoGallery
+            photos={interiorPhotos}
+            productName={product.title || ""}
+          />
+        </div>
+      )}
+
       <div
         className="content-container my-16 small:my-32"
         data-testid="related-products-container"
