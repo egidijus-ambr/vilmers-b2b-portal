@@ -2,12 +2,12 @@ const c = require("ansi-colors")
 
 const requiredEnvs = [
   {
-    key: "BACKEND_GRAPHQL",
+    key: "NEXT_PUBLIC_BACKEND_GRAPHQL",
     description:
       "Your Frontend needs to know where your backend is hosted. This should be the URL of your GraphQL endpoint.",
   },
   {
-    key: "BACKEND_REST_API",
+    key: "NEXT_PUBLIC_BACKEND_REST_API",
     description:
       "Your Frontend needs to know where your backend is hosted. This should be the URL of your REST API endpoint.",
   },
