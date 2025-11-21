@@ -1,10 +1,9 @@
 "use client"
 
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, usePathname } from "next/navigation"
 import { useTranslations } from "@lib/i18n"
-import { useState, useEffect } from "react"
-import { sdk } from "@lib/config"
-import { ProductSummary } from "@lib/furnisystems-sdk"
+import { useProductPhotos } from "@lib/context/product-photos-context"
+import { ProductSummary } from "@lib/furnisystems-sdk/modules/product-photos/types"
 
 interface ProductPhotosNavProps {
   currentPath?: string
@@ -13,29 +12,13 @@ interface ProductPhotosNavProps {
 const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
   const router = useRouter()
   const params = useParams()
+  const pathname = usePathname()
   const { t } = useTranslations("account")
   const languageCode = params.languageCode as string
-  const [products, setProducts] = useState<ProductSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { products, loading, error } = useProductPhotos()
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await sdk.productPhotos.getProductsSummary()
-        setProducts(data.products)
-        console.log("Fetched products summary:", data)
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch products"
-        )
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchProducts()
-  }, [])
+  // Use currentPath prop or fallback to pathname
+  const activePath = currentPath || pathname
 
   const handleProductClick = (productName: string) => {
     router.push(`/${languageCode}/account/product-photos/${productName}`)
@@ -75,7 +58,7 @@ const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
 
   return (
     <div className="bg-white  p-4 h-fit min-w-[280px]">
-      <nav className="space-y-3 max-h-96 overflow-y-auto">
+      <nav className="space-y-3">
         {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
           <div key={category} className="space-y-1">
             <div className="px-2 py-1 bg-gray-100">

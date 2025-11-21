@@ -1,7 +1,6 @@
 "use client"
 
 import { ProductPhoto } from "@lib/furnisystems-sdk/modules/product-photos/types"
-import { Container } from "@medusajs/ui"
 import Image from "next/image"
 import { useState } from "react"
 
@@ -27,7 +26,7 @@ const InteriorPhotoGallery = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Main Image Display */}
-      <Container className="relative aspect-[4/3] w-full overflow-hidden bg-ui-bg-subtle">
+      <div className="shadow-elevation-card-rest px-6 py-4 relative aspect-[4/3] w-full overflow-hidden bg-ui-bg-subtle">
         <Image
           src={photos[selectedImageIndex].url}
           alt={`${productName} interior photo ${selectedImageIndex + 1}`}
@@ -36,11 +35,11 @@ const InteriorPhotoGallery = ({
           className="object-cover"
           sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
         />
-      </Container>
+      </div>
 
       {/* Thumbnails */}
       {photos.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex flex-wrap gap-2 pb-2">
           {photos.map((photo, index) => (
             <button
               key={index}
@@ -64,23 +63,6 @@ const InteriorPhotoGallery = ({
               />
             </button>
           ))}
-        </div>
-      )}
-
-      {/* Photo Count */}
-      <div className="text-sm text-ui-fg-muted text-center">
-        {photos.length > 1 && (
-          <span>
-            {selectedImageIndex + 1} of {photos.length} interior photos
-          </span>
-        )}
-        {photos.length === 1 && <span>1 interior photo</span>}
-      </div>
-
-      {/* Photo Details */}
-      {photos[selectedImageIndex].variant && (
-        <div className="text-xs text-ui-fg-subtle text-center">
-          Variant: {photos[selectedImageIndex].variant}
         </div>
       )}
     </div>

@@ -1,30 +1,22 @@
 "use client"
 
 import { useCustomer } from "@lib/context/customer-context"
-import { useRouter, usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { useTranslations } from "@lib/i18n"
-import ProductPhotosNav from "@modules/account/components/product-photos-nav"
-import InteriorPhotoGallery from "@modules/products/components/interior-photo-gallery"
-import { getProductInteriorPhotos } from "@lib/data/product-photos"
-import { sdk } from "@lib/config"
-import {
-  ProductPhoto,
-  ProductSummary,
-} from "@lib/furnisystems-sdk/modules/product-photos/types"
-import { Button } from "@medusajs/ui"
+import { useProductPhotos } from "@lib/context/product-photos-context"
+import Image from "next/image"
+import Link from "next/link"
 
 export default function ProductPhotosPage() {
   const { customer } = useCustomer()
   const router = useRouter()
-  const pathname = usePathname()
   const { t } = useTranslations("account")
-
-  const [products, setProducts] = useState<ProductSummary[]>([])
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
-  const [photos, setPhotos] = useState<ProductPhoto[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    products,
+    loading: productsLoading,
+    error: productsError,
+  } = useProductPhotos()
 
   useEffect(() => {
     if (!customer) {
@@ -33,154 +25,77 @@ export default function ProductPhotosPage() {
     }
   }, [customer, router])
 
-  useEffect(() => {
-    // Fetch products list on component mount
-    const fetchProducts = async () => {
-      try {
-        setLoading(true)
-        const response = await sdk.productPhotos.getProductsSummary()
-        // Filter to only show products that have interior photos
-        const productsWithInteriorPhotos = response.products.filter(
-          (product) => product.interiorPhotos && product.interiorPhotos > 0
-        )
-        setProducts(productsWithInteriorPhotos)
-      } catch (err) {
-        setError("Failed to load products")
-        console.error("Error fetching products:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (customer) {
-      fetchProducts()
-    }
-  }, [customer])
-
-  const handleProductSelect = async (productName: string) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const interiorPhotos = await getProductInteriorPhotos(productName)
-      setPhotos(interiorPhotos)
-      setSelectedProduct(productName)
-    } catch (err) {
-      setError("Failed to load photos for this product")
-      console.error("Error fetching product photos:", err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleBackToProductsList = () => {
-    setSelectedProduct(null)
-    setPhotos([])
-    setError(null)
-  }
+  // Filter products to only show those that have interior photos with thumbnail
+  const productsWithPhotos = products.filter(
+    (product) => product.first_interior_photo_url
+  )
 
   if (!customer) {
     return null // Will redirect
   }
 
+  console.log("Rendering ProductPhotosPage with products:", products)
+
   return (
     <div className="w-full" data-testid="product-photos-page-wrapper">
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-        {/* Left sidebar navigation */}
-        <div className="hidden lg:block">
-          <ProductPhotosNav currentPath={pathname} />
+      <div className="w-full">
+        <div className="mb-4 flex flex-col gap-y-2">
+          <h1 className="text-2xl-semi">Product Photos</h1>
         </div>
 
-        {/* Main content */}
-        <div className="w-full">
-          <div className="mb-8 flex flex-col gap-y-4">
-            <h1 className="text-2xl-semi">Product Photos</h1>
-            <p className="text-base-regular">
-              Browse interior photos of our products.
-            </p>
-          </div>
+        <div className="flex flex-col gap-y-8 w-full">
+          {productsLoading && (
+            <div className="text-center p-8">
+              <p className="text-ui-fg-subtle">Loading products...</p>
+            </div>
+          )}
 
-          <div className="flex flex-col gap-y-8 w-full">
-            {loading && (
-              <div className="text-center p-8">
-                <p className="text-ui-fg-subtle">Loading...</p>
-              </div>
-            )}
+          {productsError && (
+            <div className="text-center p-8 bg-red-50 text-red-700 ">
+              <p>{productsError}</p>
+            </div>
+          )}
 
-            {error && (
-              <div className="text-center p-8 bg-red-50 text-red-700 rounded">
-                <p>{error}</p>
-              </div>
-            )}
-
-            {!selectedProduct ? (
-              // Products list view
-              <div>
-                <h2 className="text-xl-semi mb-4">Select a Product</h2>
-                {products.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products.map((product) => (
-                      <button
-                        key={product.name}
-                        onClick={() => handleProductSelect(product.name)}
-                        className="p-4 border border-ui-border-base rounded hover:border-ui-border-strong transition-colors text-left"
-                        disabled={loading}
-                      >
-                        <h3 className="font-medium text-ui-fg-base mb-2">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-ui-fg-subtle mb-1">
-                          {product.main_product_category}
-                          {product.secondary_category &&
-                            ` • ${product.secondary_category}`}
-                        </p>
-                        <p className="text-xs text-ui-fg-muted">
-                          {product.interiorPhotos} interior photo
-                          {product.interiorPhotos !== 1 ? "s" : ""}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  !loading && (
-                    <div className="text-center p-8 bg-ui-bg-subtle rounded">
-                      <p className="text-ui-fg-muted">
-                        No products with interior photos found.
-                      </p>
-                    </div>
-                  )
-                )}
-              </div>
-            ) : (
-              // Gallery view
-              <div>
-                <div className="mb-6 flex items-center gap-4">
-                  <Button
-                    variant="secondary"
-                    onClick={handleBackToProductsList}
-                    disabled={loading}
-                  >
-                    ← Back to Products
-                  </Button>
-                  <h2 className="text-xl-semi">{selectedProduct}</h2>
+          {!productsLoading && (
+            <div>
+              {productsWithPhotos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {productsWithPhotos.map((product) => (
+                    <Link
+                      key={product.name}
+                      href={`/account/product-photos/${encodeURIComponent(
+                        product.name
+                      )}`}
+                      className="group block"
+                    >
+                      <div className="bg-white shadow-elevation-card-rest  overflow-hidden hover:shadow-elevation-card-hover transition-shadow duration-200">
+                        <div className="relative aspect-square">
+                          <Image
+                            src={product.first_interior_photo_url!}
+                            alt={`${product.name} interior photo`}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-200"
+                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                          />
+                        </div>
+                        <div className="p-3">
+                          <h3 className="font-medium text-ui-fg-base text-sm line-clamp-2 group-hover:text-ui-fg-interactive transition-colors">
+                            {product.name}
+                          </h3>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-
-                {photos.length > 0 ? (
-                  <InteriorPhotoGallery
-                    photos={photos}
-                    productName={selectedProduct}
-                  />
-                ) : (
-                  !loading && (
-                    <div className="text-center p-8 bg-ui-bg-subtle rounded">
-                      <p className="text-ui-fg-muted">
-                        No interior photos available for {selectedProduct}.
-                      </p>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="text-center p-8 bg-ui-bg-subtle">
+                  <p className="text-ui-fg-muted">
+                    No products with interior photos found.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ export interface ProductSummary {
   secondary_category: string
   productPhotos?: number
   interiorPhotos?: number
+  first_interior_photo_url?: string
 }
 
 export interface ProductsSummaryResponse {
