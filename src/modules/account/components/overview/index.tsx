@@ -164,18 +164,22 @@ const Overview = (): JSX.Element => {
           )}
         </div>
       </div>
-      <div className="space-y-4">
-        <div className="bg-white ">
-          <ActionCard
-            key="product_range_index"
-            title=" Product range"
-            description="Explore our range of products designed to meet diverse needs."
-            onClick={() => window.open("https://portal.vilmers.com/", "_blank")}
-            buttonText={t("check")}
-            height="auto"
-          />
+      {(customer?.role === "admin" || customer?.role === "agent") && (
+        <div className="space-y-4">
+          <div className="bg-white ">
+            <ActionCard
+              key="product_range_index"
+              title=" Product range"
+              description="Explore our range of products designed to meet diverse needs."
+              onClick={() =>
+                window.open("https://portal.vilmers.com/", "_blank")
+              }
+              buttonText={t("check")}
+              height="auto"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Orders Section */}
       <div className="space-y-10">
