@@ -366,7 +366,7 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
                     </div>
                   </td>
                   <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                    {order.order_items_count || 0}
+                    {order.order_items_count ?? order.items?.length ?? 0}
                   </td>
 
                   <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap">

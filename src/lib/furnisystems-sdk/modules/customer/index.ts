@@ -319,9 +319,6 @@ export class CustomerModule {
             order_number: string
             invoice_code?: string
             order_type?: string
-            _count: {
-              order_items: number
-            }
             order_external_code?: string
             purchased_subAccount?: {
               name: string
@@ -374,7 +371,19 @@ export class CustomerModule {
         invoice_code: orderData.invoice_code,
         order_type: orderData.order_type,
         order_external_code: orderData.order_external_code,
-        // order_items_count: orderData._count.order_items,
+        items:
+          orderData.order_items?.map((item) => ({
+            id: "", // Will be populated when we have full order item data
+            created_at: orderData.createdAt,
+            updated_at: orderData.createdAt,
+            title: "", // Will be populated when we have full order item data
+            quantity: 1, // Will be populated when we have full order item data
+            unit_price: 0, // Will be populated when we have full order item data
+            total: 0, // Will be populated when we have full order item data
+            variant_id: "", // Will be populated when we have full order item data
+            product_id: "", // Will be populated when we have full order item data
+            reference: item.reference,
+          })) || [],
         purchased_subAccount: orderData.purchased_subAccount,
         purchased_by: orderData.purchased_by,
         order_item_references:
