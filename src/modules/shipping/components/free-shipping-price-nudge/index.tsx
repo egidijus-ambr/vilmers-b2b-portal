@@ -42,7 +42,7 @@ const computeTarget = (
         currentAmount > targetAmount ? 0 : targetAmount - currentAmount,
       remaining_percentage: (currentAmount / targetAmount) * 100,
     }
-  } else if (priceRule.operator === "lt") {
+  } else if (priceRule.operator === "en") {
     return {
       current_amount: currentAmount,
       target_amount: targetAmount,

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: "Comfort and quality with smart design",
   openGraph: {
     type: "website",
-    locale: "lt_LT",
+    locale: "en_US",
     siteName: "Vilmers",
   },
   twitter: {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="lt" data-mode="light" suppressHydrationWarning={true}>
+    <html lang="en" data-mode="light" suppressHydrationWarning={true}>
       <body className={montserrat.className}>
         <I18nProvider>
           <HtmlLangUpdater />

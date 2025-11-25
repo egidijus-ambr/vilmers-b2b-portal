@@ -1,16 +1,16 @@
 // Core configuration - no imports to avoid circular dependencies
-export const supportedLanguages = ["en", "fr", "de", "lt", "da"] as const
+export const supportedLanguages = ["en", "fr", "de", "da"] as const
 export type SupportedLanguage = (typeof supportedLanguages)[number]
 
 // Default language
-export const defaultLanguage: SupportedLanguage = "lt"
+export const defaultLanguage: SupportedLanguage = "en"
 
 // Mapping for backend translation loading (now uses local file structure)
 export const backendLanguageMapping: Record<SupportedLanguage, string> = {
   en: "en",
   fr: "fr",
   de: "de",
-  lt: "lt",
+  // lt: "lt",
   da: "da", // Local files use da for Danish
 }
 

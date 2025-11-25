@@ -19,8 +19,8 @@ export const listRegions = async () => {
       countries: [
         {
           id: "string",
-          iso_2: "lt",
-          iso_3: "ltu",
+          iso_2: "en",
+          iso_3: "eng",
           num_code: 840,
           name: "string",
           display_name: "string",

@@ -21,7 +21,7 @@ const LocalizedClientLink = ({
   [x: string]: any
 }) => {
   const params = useParams()
-  const languageCode = params?.languageCode || "lt" // fallback to default language
+  const languageCode = params?.languageCode || "en" // fallback to default language
 
   // If href is null, render as a span with cursor-pointer styling
   if (href === null) {

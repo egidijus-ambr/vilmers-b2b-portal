@@ -35,7 +35,7 @@ export const getLocaleFromLanguage = (language: SupportedLanguage): string => {
     es: "es-ES",
     fr: "fr-FR",
     de: "de-DE",
-    lt: "lt-LT",
+    // lt: "lt-LT",
   }
   return localeMap[language] || "en-US"
 }

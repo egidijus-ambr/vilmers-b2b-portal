@@ -26,7 +26,7 @@ const LANGUAGES = {
   en: 'en',
   fr: 'fr', 
   de: 'de',
-  lt: 'lt',
+  // lt: 'lt',
   da: 'da-DK' // Danish maps to da-DK in Locize
 };
 

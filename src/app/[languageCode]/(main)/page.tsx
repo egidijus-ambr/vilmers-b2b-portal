@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description:
       "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
     type: "website",
-    locale: "lt_LT",
+    locale: "en_US",
     siteName: "Vilmers",
     images: [
       {

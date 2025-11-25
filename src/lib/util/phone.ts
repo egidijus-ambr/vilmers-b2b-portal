@@ -12,7 +12,7 @@ import {
  */
 export function formatToE164(
   phoneNumber: string,
-  defaultCountry: string = "LT"
+  defaultCountry: string = "EN"
 ): string {
   if (!phoneNumber) return ""
 
@@ -45,7 +45,7 @@ export function formatToE164(
  */
 export function formatPhoneForDisplay(
   phoneNumber: string,
-  defaultCountry: string = "LT"
+  defaultCountry: string = "EN"
 ): string {
   if (!phoneNumber) return ""
 

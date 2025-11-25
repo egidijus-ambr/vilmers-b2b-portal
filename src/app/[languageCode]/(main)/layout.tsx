@@ -43,7 +43,7 @@ export default async function PageLayout({
   // Extract language from URL parameter
   const resolvedParams = await params
   const language = resolvedParams.languageCode as SupportedLanguage
-  const validLanguage = supportedLanguages.includes(language) ? language : "lt"
+  const validLanguage = supportedLanguages.includes(language) ? language : "en"
 
   return (
     <>
