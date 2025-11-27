@@ -1,6 +1,7 @@
 "use client"
 
 import { ProductPhoto } from "@lib/furnisystems-sdk/modules/product-photos/types"
+import DownloadPhotosButton from "@modules/products/components/download-photos-button"
 import Image from "next/image"
 import { useState, useEffect, useRef } from "react"
 
@@ -78,7 +79,7 @@ const InteriorPhotoGallery = ({
       </div>
 
       {/* Thumbnails */}
-      {photos.length > 1 && (
+      {photos.length > 0 && (
         <div className="flex flex-wrap gap-2 pb-2">
           {photos.map((photo, index) => (
             <button
@@ -113,6 +114,14 @@ const InteriorPhotoGallery = ({
               />
             </button>
           ))}
+
+          {/* Download all photos button as last thumbnail */}
+          <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
+            <DownloadPhotosButton
+              productName={productName}
+              photoCount={photos.length}
+            />
+          </div>
         </div>
       )}
     </div>

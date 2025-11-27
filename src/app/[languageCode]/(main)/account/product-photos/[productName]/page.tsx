@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { useTranslations } from "@lib/i18n"
 import { useProductPhotos } from "@lib/context/product-photos-context"
 import InteriorPhotoGallery from "@modules/products/components/interior-photo-gallery"
+import DownloadPhotosButton from "@modules/products/components/download-photos-button"
 import { getProductInteriorPhotos } from "@lib/data/product-photos"
 import { ProductPhoto } from "@lib/furnisystems-sdk/modules/product-photos/types"
 import { notFound } from "next/navigation"
@@ -98,10 +99,17 @@ export default function ProductPhotoDetailPage(): JSX.Element | null {
     <div className="w-full" data-testid="product-photo-detail-page-wrapper">
       {/* Main content - navigation is now handled by layout */}
       <div className="w-full">
-        <div className="flex items-center gap-4 mb-4 ">
+        <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h1 className="text-2xl-semi">{decodedProductName}</h1>
           </div>
+          {!loading && !error && photos.length > 0 && (
+            <DownloadPhotosButton
+              productName={decodedProductName}
+              photoCount={photos.length}
+              disabled={loading}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-y-8 w-full">
