@@ -26,13 +26,14 @@ const InteriorPhotoGallery = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Main Image Display */}
-      <div className="shadow-elevation-card-rest px-6 py-4 relative aspect-[4/3] w-full overflow-hidden bg-ui-bg-subtle">
+      <div className="shadow-elevation-card-rest relative w-full bg-ui-bg-subtle">
         <Image
           src={photos[selectedImageIndex].url}
           alt={`${productName} interior photo ${selectedImageIndex + 1}`}
-          fill
+          width={800}
+          height={600}
           priority={selectedImageIndex === 0}
-          className="object-cover"
+          className="w-full h-auto object-contain"
           sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
         />
       </div>
