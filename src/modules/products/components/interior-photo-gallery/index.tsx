@@ -60,27 +60,11 @@ const InteriorPhotoGallery = ({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       {/* Main Image Display */}
-      <div
-        ref={containerRef}
-        className="shadow-elevation-card-rest relative w-full bg-ui-bg-subtle "
-      >
-        <Image
-          src={photos[selectedImageIndex].url}
-          alt={`${productName} interior photo ${selectedImageIndex + 1}`}
-          width={containerWidth || 800}
-          height={Math.round((containerWidth || 800) * 0.75)} // 4:3 aspect ratio fallback
-          priority={selectedImageIndex === 0}
-          className="w-full h-auto object-contain"
-          sizes={getResponsiveSizes()}
-          quality={85}
-        />
-      </div>
-
       {/* Thumbnails */}
       {photos.length > 0 && (
-        <div className="flex flex-wrap gap-2 pb-2">
+        <div className="flex flex-wrap gap-2 pb-0">
           {photos.map((photo, index) => (
             <button
               key={index}
@@ -116,14 +100,29 @@ const InteriorPhotoGallery = ({
           ))}
 
           {/* Download all photos button as last thumbnail */}
-          <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
+          {/* <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
             <DownloadPhotosButton
               productName={productName}
               photoCount={photos.length}
             />
-          </div>
+          </div> */}
         </div>
       )}
+      <div
+        ref={containerRef}
+        className="shadow-elevation-card-rest relative w-full bg-ui-bg-subtle "
+      >
+        <Image
+          src={photos[selectedImageIndex].url}
+          alt={`${productName} interior photo ${selectedImageIndex + 1}`}
+          width={containerWidth || 800}
+          height={Math.round((containerWidth || 800) * 0.75)} // 4:3 aspect ratio fallback
+          priority={selectedImageIndex === 0}
+          className="w-full h-auto object-contain"
+          sizes={getResponsiveSizes()}
+          quality={85}
+        />
+      </div>
     </div>
   )
 }

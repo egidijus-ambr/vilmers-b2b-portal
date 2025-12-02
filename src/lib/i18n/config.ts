@@ -1,5 +1,5 @@
 // Core configuration - no imports to avoid circular dependencies
-export const supportedLanguages = ["en", "fr", "de", "da"] as const
+export const supportedLanguages = ["en", "fr", "de"] as const
 export type SupportedLanguage = (typeof supportedLanguages)[number]
 
 // Default language

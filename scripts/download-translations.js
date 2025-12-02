@@ -27,7 +27,7 @@ const LANGUAGES = {
   fr: 'fr', 
   de: 'de',
   // lt: 'lt',
-  da: 'da-DK' // Danish maps to da-DK in Locize
+  // da: 'da-DK' // Danish maps to da-DK in Locize
 };
 
 const NAMESPACES = ['common', 'account'];

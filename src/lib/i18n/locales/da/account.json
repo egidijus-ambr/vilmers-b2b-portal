@@ -14,6 +14,14 @@
     "description": "Få adgang til og gennemgå retningslinjer for marketingværktøjer og udstillingsregler for dine udstillinger.",
     "title": "Ekspositionsregler"
   },
+  "product-photos": {
+    "description": "Gennemse og administrer produktfotos. Denne funktion kommer snart.",
+    "title": "Produktfotos"
+  },
+  "product-range": {
+    "description": "Udforsk vores udvalg af produkter designet til at imødekomme forskellige behov.",
+    "title": "Produktudvalg"
+  },
   "items": "Genstande",
   "manufacturing": "I produktion",
   "no-orders-found": "Ingen ordrer fundet",

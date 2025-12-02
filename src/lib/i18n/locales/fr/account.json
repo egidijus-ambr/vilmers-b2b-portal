@@ -7,12 +7,20 @@
     "title": "Réclamations"
   },
   "completed": "Complété",
-  "confirmed-delivery-date": "La date de livraison",
+  "confirmed-delivery-date": "Date d'expédition",
   "date": "Soumis",
   "dispatched": "Expédié",
   "exposition-rules": {
     "description": "Accédez et consultez les directives relatives aux outils marketing et aux règles d'exposition pour vos présentoirs.",
     "title": "Règles d'exposition"
+  },
+  "product-photos": {
+    "description": "Parcourez et gérez les photos des produits. Cette fonctionnalité sera bientôt disponible.",
+    "title": "Photos des produits"
+  },
+  "product-range": {
+    "description": "Découvrez notre gamme de produits conçus pour répondre à divers besoins.",
+    "title": "Gamme de produits"
   },
   "items": "Articles",
   "manufacturing": "En production",

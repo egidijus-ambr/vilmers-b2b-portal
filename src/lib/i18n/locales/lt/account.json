@@ -31,6 +31,10 @@
     "description": "Naršykite ir valdykite produktų nuotraukas. Ši funkcija netrukus bus prieinama.",
     "title": "Produktų nuotraukos"
   },
+  "product-range": {
+    "description": "Explore our range of products designed to meet diverse needs.",
+    "title": "Product range"
+  },
   "refunded": "Grąžinta",
   "search-placeholder": "Ieškoti",
   "settings": {

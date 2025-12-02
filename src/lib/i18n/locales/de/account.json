@@ -7,7 +7,7 @@
     "title": "Reklamationsbearbeitung"
   },
   "completed": "Vollendet",
-  "confirmed-delivery-date": "Liefertermin",
+  "confirmed-delivery-date": "Versanddatum",
   "date": "Gesendet",
   "dispatched": "Versendet",
   "exposition-rules": {
@@ -27,11 +27,19 @@
     "description": "Geben Sie neue Produktbestellungen auf und verwalten Sie sie mit Echtzeit-Tracking und optimierter Verarbeitung.",
     "title": "Eine Bestellung aufgeben"
   },
+  "product-photos": {
+    "description": "Produktfotos durchsuchen und verwalten. Diese Funktion ist in Kürze verfügbar.",
+    "title": "Produktfotos"
+  },
   "refunded": "Rückerstattung",
   "search-placeholder": "Suchen",
   "settings": {
     "description": "Auf einfach verwalten, verfolgen und beheben Streitigkeiten oder Anfragen mit optimierten Tools und Updates.",
     "title": "Einstellungen"
+  },
+  "product-range": {
+    "description": "Entdecken Sie unsere Produktpalette, die auf vielfältige Bedürfnisse zugeschnitten ist.",
+    "title": "Produktpalette"
   },
   "status": "Status",
   "submitted": "Eingereicht",
