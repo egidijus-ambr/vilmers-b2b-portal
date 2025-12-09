@@ -61,6 +61,17 @@ const GET_ME_QUERY = gql`
       is_configurator_enabled
       is_claims_enabled
       role
+      customer_accounts {
+        id
+        name
+        email
+        customerSubAccount {
+          name
+        }
+      }
+      b2b_company_address {
+        country
+      }
       managers {
         id
         manager {
@@ -236,6 +247,17 @@ export class CustomerModule {
           is_configurator_enabled: boolean
           is_claims_enabled: boolean
           role?: string
+          customer_accounts?: {
+            id: string
+            name: string
+            email: string
+            customerSubAccount: {
+              name: string
+            }
+          }[]
+          b2b_company_address: {
+            country: string
+          }
           // Managers can be an array of objects with id and manager details
           managers: {
             id: string
@@ -281,6 +303,19 @@ export class CustomerModule {
         is_configurator_enabled: customerData.is_configurator_enabled,
         is_claims_enabled: customerData.is_claims_enabled,
         role: customerData.role,
+        b2b_company_address: customerData.b2b_company_address,
+        customer_account: customerData?.customer_accounts?.[0]
+          ? {
+              id: customerData.customer_accounts[0].id,
+              name: customerData.customer_accounts[0].name,
+              email: customerData.customer_accounts[0].email,
+              shop: customerData.customer_accounts[0]?.customerSubAccount?.name,
+            }
+          : {
+              name: "",
+              email: "",
+              shop: "",
+            },
       }
 
       return customer

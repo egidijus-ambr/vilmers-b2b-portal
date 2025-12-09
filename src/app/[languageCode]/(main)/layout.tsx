@@ -9,6 +9,8 @@ import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { CustomerProvider } from "@lib/context/customer-context"
+import TawkToChat from "@modules/common/components/tawk-to-chat"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -46,7 +48,7 @@ export default async function PageLayout({
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
 
   return (
-    <>
+    <CustomerProvider customer={customer}>
       <Nav customer={customer} />
       {customer && cart && (
         <CartMismatchBanner customer={customer} cart={cart} />
@@ -61,6 +63,7 @@ export default async function PageLayout({
       )}
       {children}
       <Footer language={validLanguage} />
-    </>
+      <TawkToChat />
+    </CustomerProvider>
   )
 }

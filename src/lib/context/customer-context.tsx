@@ -2,18 +2,10 @@
 
 import React, { createContext, useContext } from "react"
 import { HttpTypes } from "@medusajs/types"
+import { Customer } from "@lib/furnisystems-sdk/modules/customer/types"
 
 type CustomerContextType = {
-  customer:
-    | (HttpTypes.StoreCustomer & {
-        full_name?: string
-        managers?: any[]
-        spoken_languages?: string[]
-        is_configurator_enabled?: boolean
-        is_claims_enabled?: boolean
-        role?: string
-      })
-    | null
+  customer: (HttpTypes.StoreCustomer & Customer) | null
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(

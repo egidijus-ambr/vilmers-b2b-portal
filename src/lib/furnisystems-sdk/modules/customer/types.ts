@@ -24,12 +24,16 @@ export interface CustomerManager {
   manager: Manager
 }
 
-export interface Customer extends BaseEntity {
+export interface Customer {
+  id?: string | number
+  created_at?: string | Date
+  updated_at?: string | Date
+  deleted_at?: string | Date | null
   email: string
-  full_name: string
-  phone?: string
-  has_account: boolean
-  addresses?: Address[]
+  full_name?: string
+  phone?: string | null
+  has_account?: boolean
+  addresses?: any[]
   orders?: Order[]
   b2b_company_name?: string
   account_code?: string
@@ -40,6 +44,15 @@ export interface Customer extends BaseEntity {
   is_configurator_enabled?: boolean
   is_claims_enabled?: boolean
   role?: string
+  customer_account?: {
+    name: string
+    email: string
+    shop: string
+    id: string
+  }
+  b2b_company_address?: {
+    country: string
+  }
 }
 
 export interface Order extends BaseEntity {

@@ -29,6 +29,7 @@ export const retrieveCustomer = async (): Promise<
       is_configurator_enabled?: boolean
       is_claims_enabled?: boolean
       role?: string
+      account_code?: string
     })
   | null
 > => {
@@ -49,35 +50,8 @@ export const retrieveCustomer = async (): Promise<
       return null
     }
 
-    // Map Customer to StoreCustomer with full_name and managers extension
-    const storeCustomer: HttpTypes.StoreCustomer & {
-      full_name?: string
-      managers?: any[]
-      spoken_languages?: string[]
-      is_configurator_enabled?: boolean
-      is_claims_enabled?: boolean
-      role?: string
-    } = {
-      id: customer.id,
-      created_at: customer.created_at,
-      updated_at: customer.updated_at,
-      email: customer.email,
-      first_name: customer.full_name || null,
-      last_name: null,
-      full_name: customer.full_name,
-      default_billing_address_id: null,
-      default_shipping_address_id: null,
-      company_name: null,
-      addresses: [],
-      managers: customer.managers || [],
-      spoken_languages: customer.spoken_languages || [],
-      is_configurator_enabled: customer.is_configurator_enabled || false,
-      is_claims_enabled: customer.is_claims_enabled || false,
-      role: customer.role,
-    }
-
     console.log("[retrieveCustomer] Customer mapping completed successfully")
-    return storeCustomer
+    return customer
   } catch (error) {
     console.log(
       "[retrieveCustomer] Error during customer retrieval:",
