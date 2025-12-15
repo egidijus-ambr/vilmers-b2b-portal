@@ -304,6 +304,7 @@ export class CustomerModule {
         is_claims_enabled: customerData.is_claims_enabled,
         role: customerData.role,
         b2b_company_address: customerData.b2b_company_address,
+        name: customerData.name || "",
         customer_account: customerData?.customer_accounts?.[0]
           ? {
               id: customerData.customer_accounts[0].id,
