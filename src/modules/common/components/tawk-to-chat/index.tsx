@@ -36,18 +36,20 @@ const TawkToChat = () => {
         "[TawkToChat] Generating authentication hash and starting widget..."
       )
 
-      // Get authentication hash from our API route
-      const response = await fetch("/api/tawk-hash", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: customer.customer_account.id,
-          email: customer.customer_account.email,
-          type: "login",
-        }),
-      })
+      // Get authentication hash from backend API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_REST_API}/tawk-hash`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: customer.customer_account.email,
+            type: "login",
+          }),
+        }
+      )
 
       if (!response.ok) {
         throw new Error(

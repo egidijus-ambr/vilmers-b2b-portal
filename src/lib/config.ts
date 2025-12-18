@@ -1,9 +1,5 @@
 import FurnisystemsSDK from "./furnisystems-sdk"
 
-console.log("Furnisystems SDK Configuration:")
-console.log("GRAPHQL Endpoint:", process.env.NEXT_PUBLIC_BACKEND_GRAPHQL)
-console.log("REST API Endpoint:", process.env.NEXT_PUBLIC_BACKEND_REST_API)
-
 export const sdk = new FurnisystemsSDK({
   graphqlEndpoint: process.env.NEXT_PUBLIC_BACKEND_GRAPHQL || "",
   restApiEndpoint: process.env.NEXT_PUBLIC_BACKEND_REST_API || "",

@@ -32,7 +32,9 @@
     "i18next-resources-to-backend": "^1.2.1",
     "libphonenumber-js": "^1.12.9",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.561.0",
     "next": "^15.3.1",
+    "next-pwa": "^5.6.0",
     "pg": "^8.11.3",
     "qs": "^6.12.1",
     "react": "19.0.0-rc-66855b96-20241106",
@@ -41,7 +43,8 @@
     "react-i18next": "^15.5.3",
     "server-only": "^0.0.1",
     "tailwindcss-radix": "^2.8.0",
-    "webpack": "^5"
+    "webpack": "^5",
+    "workbox-webpack-plugin": "^7.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.17.5",
