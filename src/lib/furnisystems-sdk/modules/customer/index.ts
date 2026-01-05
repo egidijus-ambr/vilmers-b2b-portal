@@ -35,8 +35,8 @@ async function setCookieIfAvailable(
 }
 
 const LOGIN_MUTATION = gql`
-  mutation Login($email: String!, $password: String!) {
-    authenticateB2BCustomer(email: $email, password: $password)
+  mutation Login($email: String!, $password: String!, $ipAddress: String) {
+    authenticateB2BCustomer(email: $email, password: $password, ipAddress: $ipAddress)
   }
 `
 
@@ -155,8 +155,8 @@ const GET_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
 `
 
 const VERIFY_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
-  mutation VerifyMagicLinkForB2BCustomer($token: String!) {
-    verifyMagicLinkForB2BCustomer(token: $token)
+  mutation VerifyMagicLinkForB2BCustomer($token: String!, $ipAddress: String) {
+    verifyMagicLinkForB2BCustomer(token: $token, ipAddress: $ipAddress)
   }
 `
 
@@ -184,7 +184,8 @@ export class CustomerModule {
   // - deleteAddress(id: string): Promise<void>
 
   async login(
-    credentials: AuthCredentials
+    credentials: AuthCredentials,
+    ipAddress?: string
   ): Promise<{ token: string; customer: Customer }> {
     try {
       const response = await this.client.mutate<{
@@ -193,6 +194,7 @@ export class CustomerModule {
         variables: {
           email: credentials.email,
           password: credentials.password,
+          ipAddress: ipAddress || null,
         },
       })
 
@@ -490,13 +492,14 @@ export class CustomerModule {
     }
   }
 
-  async verifyMagicLink(token: string): Promise<string> {
+  async verifyMagicLink(token: string, ipAddress?: string): Promise<string> {
     try {
       const response = await this.client.mutate<{
         verifyMagicLinkForB2BCustomer: string
       }>(VERIFY_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION, {
         variables: {
           token,
+          ipAddress: ipAddress || null,
         },
       })
 

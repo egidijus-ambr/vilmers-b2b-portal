@@ -2,6 +2,7 @@ import { Metadata } from "next"
 
 import { listCartOptions, retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getShopSettings } from "@lib/data/shop-settings"
 import { getBaseURL } from "@lib/util/env"
 import { StoreCartShippingOption } from "@medusajs/types"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
@@ -10,6 +11,7 @@ import Nav from "@modules/layout/templates/nav"
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import { CustomerProvider } from "@lib/context/customer-context"
+import { ShopSettingsProvider } from "@lib/context/shop-settings-context"
 import TawkToChat from "@modules/common/components/tawk-to-chat"
 
 export const metadata: Metadata = {
@@ -33,6 +35,12 @@ export default async function PageLayout({
     customer ? "customer found" : "no customer"
   )
 
+  const shopSettings = await getShopSettings()
+  console.log(
+    "[PageLayout] Shop settings retrieval result:",
+    shopSettings ? "shop settings found" : "no shop settings"
+  )
+
   const cart = await retrieveCart()
   let shippingOptions: StoreCartShippingOption[] = []
 
@@ -49,21 +57,23 @@ export default async function PageLayout({
 
   return (
     <CustomerProvider customer={customer}>
-      <Nav customer={customer} />
-      {customer && cart && (
-        <CartMismatchBanner customer={customer} cart={cart} />
-      )}
+      <ShopSettingsProvider initialShopSettings={shopSettings}>
+        <Nav customer={customer} />
+        {customer && cart && (
+          <CartMismatchBanner customer={customer} cart={cart} />
+        )}
 
-      {cart && (
-        <FreeShippingPriceNudge
-          variant="popup"
-          cart={cart}
-          shippingOptions={shippingOptions}
-        />
-      )}
-      {children}
-      <Footer language={validLanguage} />
-      <TawkToChat />
+        {cart && (
+          <FreeShippingPriceNudge
+            variant="popup"
+            cart={cart}
+            shippingOptions={shippingOptions}
+          />
+        )}
+        {children}
+        <Footer language={validLanguage} />
+        <TawkToChat />
+      </ShopSettingsProvider>
     </CustomerProvider>
   )
 }

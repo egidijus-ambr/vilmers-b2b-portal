@@ -7,6 +7,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import AccountDropdown from "@modules/layout/components/account-dropdown"
 import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
+import BackButton from "@modules/layout/components/back-button"
 import { getNavigationConfig } from "@modules/layout/config/navigation"
 import {
   CompactLanguageSwitcher,
@@ -72,6 +73,9 @@ export default function Nav({ customer }: NavProps) {
           }`}
         >
           <div className="flex-1 basis-0 h-full flex items-center">
+            {/* Back Button */}
+            <BackButton isHomePage={isHomePage} className="mr-3" />
+
             {/* Desktop Navigation Menu */}
             <div className="hidden small:flex items-center h-full">
               <NavMenu

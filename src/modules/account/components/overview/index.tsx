@@ -78,6 +78,72 @@ const Overview = (): JSX.Element => {
     }
   }
 
+  // Function to detect if running as PWA desktop app
+  const isPWADesktop = () => {
+    // Check if running in standalone mode (PWA desktop app)
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+
+    // Additional check for iOS PWA
+    const isIOSStandalone = (window.navigator as any).standalone === true
+
+    // Check if running in a WebView (another PWA indicator)
+    const isInWebView = window.matchMedia("(display-mode: fullscreen)").matches
+
+    return isStandalone || isIOSStandalone || isInWebView
+  }
+
+  // Function to detect operating system
+  const isMac = () => {
+    return (
+      navigator.platform.toUpperCase().indexOf("MAC") >= 0 ||
+      navigator.userAgent.toUpperCase().indexOf("MAC") >= 0
+    )
+  }
+
+  const handleExpositionRulesClick = async () => {
+    const runningAsPWA = isPWADesktop()
+    const isMacOS = isMac()
+
+    // Strategy: Try to open PDF directly first (works well on Mac PWA)
+    // Only use download approach as fallback for specific cases
+    try {
+      // First attempt: Direct opening (works for both browser and Mac PWA)
+      const opened = window.open("/Exposition rules.pdf", "_blank")
+
+      // If direct opening failed or we're in a PWA that needs download behavior
+      if (!opened && runningAsPWA && !isMacOS) {
+        // Fallback: Download approach for non-Mac PWA environments
+        const response = await fetch("/Exposition rules.pdf")
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch PDF")
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+
+        // Create a temporary download link
+        const link = document.createElement("a")
+        link.href = url
+        link.download = "Exposition rules.pdf"
+        link.style.display = "none"
+
+        // Add to DOM, click, and remove
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        // Clean up the object URL
+        window.URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      console.error("Error handling PDF:", error)
+
+      // Final fallback: try direct opening again
+      window.open("/Exposition rules.pdf", "_blank")
+    }
+  }
+
   const actionCards = [
     ...(customer?.is_configurator_enabled
       ? [
@@ -106,7 +172,7 @@ const Overview = (): JSX.Element => {
     {
       title: t("exposition-rules.title"),
       description: t("exposition-rules.description"),
-      onClick: () => window.open("/Exposition rules.pdf", "_blank"),
+      onClick: handleExpositionRulesClick,
     },
   ]
 
