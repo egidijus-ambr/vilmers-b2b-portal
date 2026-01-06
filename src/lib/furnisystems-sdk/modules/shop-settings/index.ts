@@ -46,8 +46,6 @@ export class ShopSettingsModule {
         return null
       }
 
-      console.log("Shop settings data:", shopSettings)
-
       return shopSettings
     } catch (error) {
       console.error("Error fetching shop settings:", error)

@@ -112,18 +112,35 @@ const TawkToChat = () => {
       await waitForTawkAPI()
 
       // Login user to Tawk.to with secure authentication
+      // Only include required fields - Tawk.to can crash on undefined/null custom attributes
+      const loginData: Record<string, string> = {
+        hash: hash,
+        userId: customer.customer_account.id,
+        name: customer.customer_account.name || "",
+        email: customer.customer_account.email,
+      }
+
+      // Only add optional attributes if they have actual values
+      if (customer.customer_account.shop) {
+        loginData.shop = customer.customer_account.shop
+      }
+      if (customer.b2b_company_address?.country) {
+        loginData.country = customer.b2b_company_address.country
+      }
+      if (customer.name) {
+        loginData["customer-name"] = customer.name
+      }
+      if (customer.role) {
+        loginData.role = customer.role
+      }
+      if (customer.account_code) {
+        loginData["account-code"] = customer.account_code
+      }
+
+      console.log("[TawkToChat] Login data:", loginData)
+
       window.Tawk_API.login(
-        {
-          hash: hash,
-          userId: customer.customer_account.id,
-          name: customer.customer_account.name,
-          email: customer.customer_account.email,
-          shop: customer.customer_account.shop || "",
-          country: customer.b2b_company_address?.country || "",
-          "customer-name": customer.name || "",
-          role: customer.role || "",
-          "account-code": customer.account_code || "",
-        },
+        loginData,
         function (error: any) {
           if (error) {
             console.warn("[TawkToChat] Authentication error:", error)

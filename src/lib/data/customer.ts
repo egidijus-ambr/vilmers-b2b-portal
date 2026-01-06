@@ -125,26 +125,11 @@ export async function login(_currentState: unknown, formData: FormData) {
 
   console.log("Logging in with email:", email)
 
-  // Extract IP address from request headers
-  const headersList = await headers()
-  const ipAddress =
-    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headersList.get("x-real-ip") ||
-    headersList.get("x-client-ip") ||
-    headersList.get("cf-connecting-ip") ||
-    headersList.get("remote-addr") ||
-    "unknown"
-
-  console.log("Login request from IP:", ipAddress)
-
   try {
-    const result = await sdk.customer.login(
-      {
-        email,
-        password,
-      },
-      ipAddress
-    )
+    const result = await sdk.customer.login({
+      email,
+      password,
+    })
 
     console.log("Login result:", result)
 
@@ -479,20 +464,8 @@ async function performMagicLinkLogin(
   try {
     console.log("[performMagicLinkLogin] Starting magic link verification...")
 
-    // Extract IP address from request headers
-    const headersList = await headers()
-    const ipAddress =
-      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      headersList.get("x-real-ip") ||
-      headersList.get("x-client-ip") ||
-      headersList.get("cf-connecting-ip") ||
-      headersList.get("remote-addr") ||
-      "unknown"
-
-    console.log("[performMagicLinkLogin] Verifying from IP:", ipAddress)
-
     // Verify the magic link token with the backend
-    await sdk.customer.verifyMagicLink(token, ipAddress)
+    await sdk.customer.verifyMagicLink(token)
 
     console.log("[performMagicLinkLogin] Magic link verification successful")
 

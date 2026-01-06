@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react"
 import { ShopSetting } from "@lib/furnisystems-sdk"
-import { getShopSettings } from "@lib/data/shop-settings"
 
 type ShopSettingsContextType = {
   shopSettings: ShopSetting | null
@@ -32,7 +31,12 @@ export function ShopSettingsProvider({
     try {
       setIsLoading(true)
       setError(null)
-      const settings = await getShopSettings()
+      // Call the API route instead of the server-side function
+      const response = await fetch('/api/shop-settings')
+      if (!response.ok) {
+        throw new Error('Failed to fetch shop settings')
+      }
+      const settings = await response.json()
       setShopSettings(settings)
     } catch (err) {
       console.error("Error fetching shop settings:", err)
