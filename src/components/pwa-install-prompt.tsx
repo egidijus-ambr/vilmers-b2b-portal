@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { X, Download, Smartphone } from "lucide-react"
+import { useIsPWAStandalone } from "@lib/hooks/use-is-pwa-standalone"
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -23,18 +24,12 @@ export function PWAInstallPrompt() {
     useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
-  const [isStandalone, setIsStandalone] = useState(false)
+  const isStandalone = useIsPWAStandalone()
 
   useEffect(() => {
     // Check if it's iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     setIsIOS(iOS)
-
-    // Check if already installed (standalone mode)
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true
-    setIsStandalone(standalone)
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
@@ -66,7 +61,7 @@ export function PWAInstallPrompt() {
     // Show iOS install prompt if conditions are met
     if (
       iOS &&
-      !standalone &&
+      !isStandalone &&
       !localStorage.getItem("pwa-install-dismissed-ios")
     ) {
       setTimeout(() => setShowInstallPrompt(true), 2000)
@@ -79,7 +74,7 @@ export function PWAInstallPrompt() {
       )
       window.removeEventListener("appinstalled", handleAppInstalled)
     }
-  }, [])
+  }, [isStandalone])
 
   const handleInstall = async () => {
     if (isIOS) {

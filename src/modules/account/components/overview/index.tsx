@@ -5,6 +5,7 @@ import { useTranslations } from "@lib/i18n"
 import { getStoreLoginLink, getClaimsLink } from "@lib/data/customer"
 import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
+import { isInternalDomain } from "@lib/utils/internal-domains"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
@@ -23,57 +24,52 @@ const Overview = (): JSX.Element => {
   const languageCode = params.languageCode as string
 
   const handlePlaceOrder = async () => {
-    // Open a blank window immediately to preserve user interaction context
-    const newWindow = window.open("", "_blank")
-
     try {
       // Call the server action to get the store login link
       const storeUrl = await getStoreLoginLink()
       console.warn("Store URL", languageCode, storeUrl)
 
-      if (newWindow) {
-        // Navigate the already opened window to the store URL
-        newWindow.location.href = storeUrl + `&lng=${languageCode}`
+      const finalUrl = storeUrl + `&lng=${languageCode}`
+
+      // Check if this is an internal domain
+      if (isInternalDomain(finalUrl)) {
+        // Internal domain - navigate within PWA
+        window.location.href = finalUrl
       } else {
-        // Fallback: try to open normally (might still be blocked)
-        window.open(storeUrl + `&lng=${languageCode}`, "_blank")
+        // External domain - open in new tab
+        const newWindow = window.open("", "_blank")
+        if (newWindow) {
+          newWindow.location.href = finalUrl
+        } else {
+          window.open(finalUrl, "_blank")
+        }
       }
     } catch (error) {
       console.error("Error getting store login link:", error)
-
-      if (newWindow) {
-        // Close the blank window if there was an error
-        newWindow.close()
-      }
-
-      // Fallback: open store URL without token
-      // window.open(process.env.NEXT_PUBLIC_BASE_URL, "_blank")
+      // Could add user-friendly error handling here
     }
   }
 
   const handleClaimsClick = async () => {
-    // Open a blank window immediately to preserve user interaction context
-    const newWindow = window.open("", "_blank")
-
     try {
       // Call the server action to get the claims link with language parameter
       const claimsUrl = await getClaimsLink(languageCode || "en")
 
-      if (newWindow) {
-        // Navigate the already opened window to the claims URL
-        newWindow.location.href = claimsUrl
+      // Check if this is an internal domain
+      if (isInternalDomain(claimsUrl)) {
+        // Internal domain - navigate within PWA
+        window.location.href = claimsUrl
       } else {
-        // Fallback: try to open normally (might still be blocked)
-        window.open(claimsUrl, "_blank")
+        // External domain - open in new tab
+        const newWindow = window.open("", "_blank")
+        if (newWindow) {
+          newWindow.location.href = claimsUrl
+        } else {
+          window.open(claimsUrl, "_blank")
+        }
       }
     } catch (error) {
       console.error("Error getting claims link:", error)
-
-      if (newWindow) {
-        // Close the blank window if there was an error
-        newWindow.close()
-      }
-
       // Could add user-friendly error handling here
     }
   }

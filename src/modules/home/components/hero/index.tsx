@@ -54,6 +54,7 @@ const Hero = async ({ params }: HeroProps) => {
         <a
           href="https://github.com/medusajs/nextjs-starter-medusa"
           target="_blank"
+          rel="noopener noreferrer"
         ></a>
       </div>
     </div>

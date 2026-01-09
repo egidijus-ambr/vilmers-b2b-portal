@@ -40,6 +40,8 @@ export default async function Footer({ language }: FooterProps) {
             {/* Facebook */}
             <a
               href="https://lt-lt.facebook.com/vilmersuab"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white hover:text-gray-300 transition-colors"
               aria-label="Facebook"
             >
@@ -72,6 +74,8 @@ export default async function Footer({ language }: FooterProps) {
             {/* LinkedIn */}
             <a
               href="https://www.linkedin.com/company/vilmers-uab"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white hover:text-gray-300 transition-colors"
               aria-label="LinkedIn"
             >
@@ -88,6 +92,8 @@ export default async function Footer({ language }: FooterProps) {
             {/* Instagram */}
             <a
               href="https://www.instagram.com/vilmers_furniture/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white hover:text-gray-300 transition-colors"
               aria-label="Instagram"
             >
