@@ -540,7 +540,7 @@ export class CustomerModule {
       if (!claimsData?.url) {
         throw new Error("No claims URL received")
       }
-
+      
       return claimsData.url
     } catch (error) {
       console.error("Error fetching claims link:", error)

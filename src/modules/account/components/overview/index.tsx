@@ -30,20 +30,7 @@ const Overview = (): JSX.Element => {
       console.warn("Store URL", languageCode, storeUrl)
 
       const finalUrl = storeUrl + `&lng=${languageCode}`
-
-      // Check if this is an internal domain
-      if (isInternalDomain(finalUrl)) {
-        // Internal domain - navigate within PWA
-        window.location.href = finalUrl
-      } else {
-        // External domain - open in new tab
-        const newWindow = window.open("", "_blank")
-        if (newWindow) {
-          newWindow.location.href = finalUrl
-        } else {
-          window.open(finalUrl, "_blank")
-        }
-      }
+      window.location.href = finalUrl
     } catch (error) {
       console.error("Error getting store login link:", error)
       // Could add user-friendly error handling here
@@ -54,20 +41,7 @@ const Overview = (): JSX.Element => {
     try {
       // Call the server action to get the claims link with language parameter
       const claimsUrl = await getClaimsLink(languageCode || "en")
-
-      // Check if this is an internal domain
-      if (isInternalDomain(claimsUrl)) {
-        // Internal domain - navigate within PWA
-        window.location.href = claimsUrl
-      } else {
-        // External domain - open in new tab
-        const newWindow = window.open("", "_blank")
-        if (newWindow) {
-          newWindow.location.href = claimsUrl
-        } else {
-          window.open(claimsUrl, "_blank")
-        }
-      }
+      window.location.href = claimsUrl
     } catch (error) {
       console.error("Error getting claims link:", error)
       // Could add user-friendly error handling here

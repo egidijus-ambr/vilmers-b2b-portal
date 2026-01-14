@@ -41,19 +41,19 @@ const LocalizedClientLink = ({
   // If href starts with http or https, render as external link
   if (href.startsWith("http://") || href.startsWith("https://")) {
     // Internal domains open within PWA, external domains open in new tab
-    if (isInternalDomain(href)) {
-      return (
-        <a href={href} target="_self" rel="noopener noreferrer" {...props}>
-          {children}
-        </a>
-      )
-    }
-
+    //if (isInternalDomain(href)) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+      <a href={href} target="_self" rel="noopener noreferrer" {...props}>
         {children}
       </a>
     )
+    // }
+
+    // return (
+    //   <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+    //     {children}
+    //   </a>
+    // )
   }
 
   return (
