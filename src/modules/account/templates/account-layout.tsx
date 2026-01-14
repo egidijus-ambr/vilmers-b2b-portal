@@ -7,10 +7,10 @@ import { useTranslation } from "react-i18next"
 import UnderlineLink from "@modules/common/components/interactive-link"
 import OutlineButton from "@modules/common/components/outline-button"
 
-import { HttpTypes } from "@medusajs/types"
+import { ExtendedStoreCustomer } from "@lib/types/customer"
 
 interface AccountLayoutProps {
-  customer: HttpTypes.StoreCustomer | null
+  customer: ExtendedStoreCustomer | null
   children: React.ReactNode
 }
 

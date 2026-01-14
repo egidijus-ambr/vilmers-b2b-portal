@@ -1,16 +1,16 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { HttpTypes } from "@medusajs/types"
 import Image from "next/image"
 
 import NavMenu from "@modules/layout/components/nav-menu"
 import { MenuItem } from "@modules/layout/components/nav-menu-item"
 import { signout } from "@lib/data/customer"
 import { t } from "i18next"
+import { ExtendedStoreCustomer } from "@lib/types/customer"
 
 interface AccountDropdownProps {
-  customer: (HttpTypes.StoreCustomer & { full_name?: string }) | null
+  customer: ExtendedStoreCustomer | null
   isHomePage?: boolean
 }
 
@@ -25,7 +25,7 @@ const AccountDropdown = ({
     // The signout function already handles the redirect to the login page
   }
 
-  const displayName = customer?.full_name || customer?.first_name || "Account"
+  const displayName = customer?.full_name || customer?.name || "Account"
 
   if (!customer) {
     return <></>

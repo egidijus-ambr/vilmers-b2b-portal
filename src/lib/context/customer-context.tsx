@@ -1,11 +1,10 @@
 "use client"
 
 import React, { createContext, useContext } from "react"
-import { HttpTypes } from "@medusajs/types"
-import { Customer } from "@lib/furnisystems-sdk/modules/customer/types"
+import { ExtendedStoreCustomer } from "@lib/types/customer"
 
 type CustomerContextType = {
-  customer: (HttpTypes.StoreCustomer & Customer) | null
+  customer: ExtendedStoreCustomer | null
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(

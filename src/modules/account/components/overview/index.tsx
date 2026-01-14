@@ -186,7 +186,7 @@ const Overview = (): JSX.Element => {
       {/* Header */}
 
       <h1 className="self-stretch justify-start text-dark-blue text-2xl sm:text-3xl lg:text-4xl font-medium">
-        {customer?.first_name || "User"}
+        {customer?.full_name || customer?.name || "User"}
       </h1>
 
       {/* Action Cards and Profile Section */}

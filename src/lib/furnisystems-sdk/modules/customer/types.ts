@@ -45,6 +45,7 @@ export interface Customer {
   is_claims_enabled?: boolean
   role?: string
   name?: string
+  surname?: string
   customer_account?: {
     name: string
     email: string

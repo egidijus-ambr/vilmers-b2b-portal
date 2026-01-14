@@ -6,17 +6,9 @@ import { Toaster } from "@medusajs/ui"
 import AccountLayout from "@modules/account/templates/account-layout"
 import { CustomerProvider } from "@lib/context/customer-context"
 import { retrieveCustomer } from "@lib/data/customer"
-import { HttpTypes } from "@medusajs/types"
+import { ExtendedStoreCustomer } from "@lib/types/customer"
 
-type CustomerType =
-  | (HttpTypes.StoreCustomer & {
-      full_name?: string
-      managers?: any[]
-      spoken_languages?: string[]
-      is_configurator_enabled?: boolean
-      is_claims_enabled?: boolean
-    })
-  | null
+type CustomerType = ExtendedStoreCustomer | null
 
 export default function AccountPageLayout({
   children,

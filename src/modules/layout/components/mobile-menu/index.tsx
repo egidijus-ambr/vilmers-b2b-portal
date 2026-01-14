@@ -2,14 +2,14 @@
 
 import { useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
-import { HttpTypes } from "@medusajs/types"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signout } from "@lib/data/customer"
 import { useTranslations } from "@lib/i18n"
+import { ExtendedStoreCustomer } from "@lib/types/customer"
 
 interface MobileMenuProps {
-  customer: (HttpTypes.StoreCustomer & { full_name?: string }) | null
+  customer: ExtendedStoreCustomer | null
   isOpen: boolean
   onClose: () => void
   isLoggedIn: boolean
@@ -73,7 +73,7 @@ const MobileMenu = ({
     }
   }, [isOpen, onClose])
 
-  const displayName = customer?.full_name || customer?.first_name || "Test User"
+  const displayName = customer?.full_name || customer?.name || "Test User"
 
   // Show menu if user appears to be logged in
   // This will be validated by the parent component's isLoggedIn logic

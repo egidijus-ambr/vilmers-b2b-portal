@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Download, Smartphone } from "lucide-react"
+import Image from "next/image"
+import { X } from "lucide-react"
 import { useIsPWAStandalone } from "@lib/hooks/use-is-pwa-standalone"
 
 interface BeforeInstallPromptEvent extends Event {
@@ -116,55 +117,64 @@ export function PWAInstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 animate-slide-up">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <Smartphone className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-gray-900">Install App</h3>
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+      <div className="w-96 bg-white rounded-2xl overflow-hidden flex flex-col">
+        {/* Header section with laptop image */}
+        <div className="relative h-28 bg-stone-100 rounded-tl-2xl rounded-tr-2xl">
+          {/* Laptop image */}
+          <div className="w-full h-full flex items-center justify-center">
+            <Image
+              src="/images/pwa-laptop-header.png"
+              alt=""
+              width={250}
+              height={106}
+              className="object-contain"
+              priority
+            />
           </div>
+
+          {/* Close button */}
           <button
             onClick={handleDismiss}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-4 top-4 w-6 h-6 flex items-center justify-center cursor-pointer hover:bg-white/50 rounded-full transition-colors"
             aria-label="Dismiss install prompt"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5 text-stone-400" strokeWidth={2} />
           </button>
         </div>
 
-        {isIOS ? (
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">
-              Install this app for a better experience:
-            </p>
-            <ol className="text-xs text-gray-500 space-y-1">
-              <li>1. Tap the Share button in Safari</li>
-              <li>2. Select "Add to Home Screen"</li>
-              <li>3. Tap "Add" to install</li>
-            </ol>
-          </div>
-        ) : (
-          <>
-            <p className="text-sm text-gray-600 mb-3">
-              Install our app for faster access and offline functionality.
-            </p>
-            <div className="flex space-x-2">
-              <button
-                onClick={handleInstall}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors flex items-center justify-center space-x-1"
-              >
-                <Download className="w-4 h-4" />
-                <span>Install</span>
-              </button>
-              <button
-                onClick={handleDismiss}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2 px-3 rounded-md transition-colors"
-              >
-                Not Now
-              </button>
-            </div>
-          </>
-        )}
+        {/* Content section */}
+        <div className="flex-1 px-6 py-5 flex flex-col gap-2">
+          <h2 className="text-xl font-semibold text-black font-['Montserrat']">
+            Install App
+          </h2>
+          <p className="text-md font-normal text-black font-['Montserrat'] leading-snug">
+            {isIOS
+              ? "Tap Share → Add to Home Screen → Add"
+              : "Install our app for faster access and offline functionality."}
+          </p>
+        </div>
+
+        {/* Action buttons */}
+        <div className="px-6 pb-5 flex gap-3">
+          <button
+            onClick={handleInstall}
+            className="flex-1 h-8 px-6 bg-[#9A8555] hover:bg-[#8a7545] rounded-full flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <span className="text-white text-sm font-normal font-['Montserrat']">
+              Install Now
+            </span>
+          </button>
+
+          <button
+            onClick={handleDismiss}
+            className="px-6 h-8 rounded-full border border-[#9A8555] hover:bg-stone-50 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <span className="text-[#9A8555] text-sm font-normal font-['Montserrat']">
+              Later
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -20,19 +20,9 @@ import {
 import { ErrorHandlers } from "@lib/util/error-handler"
 import { validateSession } from "@lib/util/session-validation"
 import { validateTokenAndExtractCustomerId } from "@lib/util/jwt-utils"
+import { ExtendedStoreCustomer } from "@lib/types/customer"
 
-export const retrieveCustomer = async (): Promise<
-  | (HttpTypes.StoreCustomer & {
-      full_name?: string
-      managers?: any[]
-      spoken_languages?: string[]
-      is_configurator_enabled?: boolean
-      is_claims_enabled?: boolean
-      role?: string
-      account_code?: string
-    })
-  | null
-> => {
+export const retrieveCustomer = async (): Promise<ExtendedStoreCustomer | null> => {
   // Prevent caching for authentication-related data
   unstable_noStore()
 
