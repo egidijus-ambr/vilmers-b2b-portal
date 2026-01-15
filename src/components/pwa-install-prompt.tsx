@@ -32,8 +32,32 @@ export function PWAInstallPrompt() {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     setIsIOS(iOS)
 
+    // Check if it's macOS Safari
+    const isMacOsSafari = (): boolean => {
+      const userAgent = navigator.userAgent.toLowerCase()
+
+      // Check if it's macOS (using userAgent since platform is deprecated)
+      const isMac = userAgent.includes('mac os x') || userAgent.includes('macintosh')
+
+      // Check if it's Safari (and not Chrome or other browsers)
+      const isSafari =
+        userAgent.includes('safari') &&
+        !userAgent.includes('chrome') &&
+        !userAgent.includes('chromium') &&
+        !userAgent.includes('edg')
+
+      return isMac && isSafari
+    }
+
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+      // Suppress install prompt on macOS Safari
+      if (isMacOsSafari()) {
+        console.log('PWA install prompt suppressed on macOS Safari')
+        e.preventDefault()
+        return
+      }
+
       e.preventDefault()
       setDeferredPrompt(e)
 
