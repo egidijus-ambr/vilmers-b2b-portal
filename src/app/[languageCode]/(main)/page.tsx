@@ -64,10 +64,6 @@ export default async function Home(props: {
   return (
     <>
       <Hero params={props.params} />
-      <div className="container mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold mb-4">Shop Settings Context Test</h2>
-        <ShopSettingsTest />
-      </div>
       {/* {collections && region ? (
         <div className="py-0">
           <ul className="flex flex-col gap-x-6">
