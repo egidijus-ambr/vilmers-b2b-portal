@@ -37,14 +37,15 @@ export function PWAInstallPrompt() {
       const userAgent = navigator.userAgent.toLowerCase()
 
       // Check if it's macOS (using userAgent since platform is deprecated)
-      const isMac = userAgent.includes('mac os x') || userAgent.includes('macintosh')
+      const isMac =
+        userAgent.includes("mac os x") || userAgent.includes("macintosh")
 
       // Check if it's Safari (and not Chrome or other browsers)
       const isSafari =
-        userAgent.includes('safari') &&
-        !userAgent.includes('chrome') &&
-        !userAgent.includes('chromium') &&
-        !userAgent.includes('edg')
+        userAgent.includes("safari") &&
+        !userAgent.includes("chrome") &&
+        !userAgent.includes("chromium") &&
+        !userAgent.includes("edg")
 
       return isMac && isSafari
     }
@@ -53,7 +54,7 @@ export function PWAInstallPrompt() {
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
       // Suppress install prompt on macOS Safari
       if (isMacOsSafari()) {
-        console.log('PWA install prompt suppressed on macOS Safari')
+        console.log("PWA install prompt suppressed on macOS Safari")
         e.preventDefault()
         return
       }
@@ -141,8 +142,8 @@ export function PWAInstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-      <div className="w-96 bg-white rounded-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 flex items-end justify-center bg-black/50 z-50 p-4 pb-8">
+      <div className="w-full max-w-96 bg-white rounded-2xl overflow-hidden flex flex-col shadow-2xl">
         {/* Header section with laptop image */}
         <div className="relative h-28 bg-stone-100 rounded-tl-2xl rounded-tr-2xl">
           {/* Laptop image */}
