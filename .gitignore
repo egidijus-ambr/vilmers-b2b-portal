@@ -56,3 +56,4 @@ dump.rdb
 /playwright/.cache/
 /playwright/.auth
 /tmp/photo-zips
+public/sw.js
