@@ -21,6 +21,14 @@ declare global {
 }
 
 export function PWAInstallPrompt() {
+  // Check if PWA install prompt is enabled via environment variable
+  const isPWAPromptEnabled = process.env.NEXT_PUBLIC_SHOW_PWA_PROMPT === 'true'
+
+  // Return early if prompt is disabled
+  if (!isPWAPromptEnabled) {
+    return null
+  }
+
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
