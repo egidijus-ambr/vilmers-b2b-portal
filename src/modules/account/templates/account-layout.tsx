@@ -1,8 +1,9 @@
 "use client"
 
 import React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
+import Link from "next/link"
 
 import UnderlineLink from "@modules/common/components/interactive-link"
 import OutlineButton from "@modules/common/components/outline-button"
@@ -19,6 +20,8 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   children,
 }) => {
   const pathname = usePathname()
+  const params = useParams()
+  const languageCode = params.languageCode as string
   const { t, ready: isReady } = useTranslation("common")
 
   // Check if this is the login page (when customer is null)
@@ -52,11 +55,11 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
                 {t("login-welcome-main-text")}
               </h1>
               <div>
-                <a href="mailto:sales.development@vilmers.com">
+                <Link href={`/${languageCode}/become-partner`}>
                   <OutlineButton showArrow>
                     {t("become-a-partner")}
                   </OutlineButton>
-                </a>
+                </Link>
               </div>
             </div>
 
