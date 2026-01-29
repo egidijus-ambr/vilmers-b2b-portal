@@ -86,6 +86,74 @@ export interface Order extends BaseEntity {
   order_item_references?: string[]
 }
 
+export interface OrderDetailAddress {
+  id?: number
+  phone_number?: string
+  country?: string
+  city?: string
+  postal_code?: string
+  state_region?: string
+  address_1?: string
+  address_2?: string
+}
+
+export interface OrderDetailPaymentMethod {
+  id?: number
+  payment_method_profiles?: {
+    title: string
+    language: string
+  }[]
+}
+
+export interface OrderDetailShippingMethod {
+  id?: number
+  shipping_method_profiles?: {
+    title: string
+    language: string
+  }[]
+}
+
+export interface OrderDetailImage {
+  src: string
+  src_xs?: string
+  src_thumbnail?: string
+}
+
+export interface OrderDetailProductProfile {
+  name: string
+  language: string
+}
+
+export interface OrderDetailItem {
+  id: string
+  reference?: string
+  price: number
+  shipping_price: number
+  quantity: number
+  sku?: string
+  volume?: number
+  cart_item?: {
+    product_container?: {
+      single_product?: {
+        images?: OrderDetailImage[]
+        product_profiles?: OrderDetailProductProfile[]
+      }
+      advanced_product?: {
+        images?: OrderDetailImage[]
+        advanced_product_profiles?: OrderDetailProductProfile[]
+      }
+    }
+  }
+  shipping_method?: OrderDetailShippingMethod
+}
+
+export interface OrderDetail extends Order {
+  shipping_address?: OrderDetailAddress
+  billing_address?: OrderDetailAddress
+  payment_method?: OrderDetailPaymentMethod
+  order_items_detail?: OrderDetailItem[]
+}
+
 export interface OrderItem extends BaseEntity {
   title: string
   quantity: number

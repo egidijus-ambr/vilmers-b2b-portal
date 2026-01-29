@@ -1,30 +1,42 @@
 "use client"
 
 import { useCustomer } from "@lib/context/customer-context"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import OrderCard from "@modules/account/components/order-card"
 import { retrieveOrder } from "@lib/data/orders"
+import { OrderDetail } from "@lib/furnisystems-sdk/modules/customer/types"
+import OrderDetailsTemplate from "@modules/account/components/order-details"
+import Breadcrumb from "@modules/common/components/breadcrumb"
+import { useTranslations } from "@lib/i18n"
+
+const isFeatureEnabled =
+  process.env.NEXT_PUBLIC_FEATURE_ORDER_DETAILS === "true"
 
 export default function OrderDetailsPage() {
   const { customer } = useCustomer()
   const router = useRouter()
   const params = useParams()
-  const [order, setOrder] = useState<any | null>(null)
+  const { t } = useTranslations("account")
+  const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const orderId = params?.id as string
+  const languageCode = params?.languageCode as string
 
   useEffect(() => {
+    if (!isFeatureEnabled) {
+      router.push(`/${languageCode}/account/orders`)
+      return
+    }
+
     if (!customer) {
-      router.push("/account")
+      router.push(`/${languageCode}/account`)
       return
     }
 
     if (!orderId) {
-      router.push("/account/orders")
+      router.push(`/${languageCode}/account/orders`)
       return
     }
 
@@ -33,10 +45,14 @@ export default function OrderDetailsPage() {
         setLoading(true)
         setError(null)
         const orderData = await retrieveOrder(orderId)
+        if (!orderData) {
+          setError(t("order-not-found"))
+          return
+        }
         setOrder(orderData)
-      } catch (error) {
-        console.error("Error loading order:", error)
-        setError("Failed to load order details")
+      } catch (err) {
+        console.error("Error loading order:", err)
+        setError(t("order-load-error"))
         setOrder(null)
       } finally {
         setLoading(false)
@@ -44,16 +60,16 @@ export default function OrderDetailsPage() {
     }
 
     fetchOrder()
-  }, [customer, router, orderId])
+  }, [customer, router, orderId, languageCode, t])
 
-  if (!customer) {
-    return null // Will redirect
+  if (!isFeatureEnabled || !customer) {
+    return null
   }
 
   if (loading) {
     return (
       <div className="w-full flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-blue"></div>
       </div>
     )
   }
@@ -62,27 +78,34 @@ export default function OrderDetailsPage() {
     return (
       <div className="w-full" data-testid="order-details-error">
         <div className="mb-8 flex flex-col gap-y-4">
-          <h1 className="text-2xl-semi">Order Details</h1>
-          <p className="text-base-regular text-red-600">
-            {error || "Order not found"}
+          <h1 className="text-2xl font-medium text-dark-blue">
+            {t("order-details")}
+          </h1>
+          <p className="text-sm text-red-600">
+            {error || t("order-not-found")}
           </p>
           <button
-            onClick={() => router.push("/account/orders")}
-            className="w-fit px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => router.push(`/${languageCode}/account/orders`)}
+            className="w-fit px-4 py-2 bg-dark-blue text-white hover:opacity-90 transition-opacity"
           >
-            Back to Orders
+            {t("back-to-orders")}
           </button>
         </div>
       </div>
     )
   }
 
+  const breadcrumbItems = [
+    { label: t("breadcrumb-home"), href: "/" },
+    { label: t("breadcrumb-my-profile"), href: "/account" },
+    { label: t("breadcrumb-orders-history"), href: "/account/orders" },
+    { label: `#${order.display_id}`, href: null },
+  ]
+
   return (
     <div className="w-full" data-testid="order-details-wrapper">
-      <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Order Details</h1>
-      </div>
-      <OrderCard order={order} />
+      <Breadcrumb items={breadcrumbItems} />
+      <OrderDetailsTemplate order={order} />
     </div>
   )
 }

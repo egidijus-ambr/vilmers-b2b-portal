@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useCallback } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { formatPrice } from "@lib/util/money"
 import { capitalizeFirstLetter } from "@lib/util/string"
 import StatusBadge from "../status-badge"
@@ -8,6 +9,10 @@ import ReferencesTooltip from "../references-tooltip"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
 import { useCustomer } from "@lib/context/customer-context"
+import {
+  TableHeader,
+  TableHeaderCell,
+} from "@modules/common/components/table-header"
 import { listOrdersWithPagination } from "@lib/data/orders"
 
 interface OrdersPageState {
@@ -29,6 +34,9 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
   const { customer } = useCustomer()
   const { t } = useTranslations("account")
   const { language } = useI18n()
+  const router = useRouter()
+  const params = useParams()
+  const languageCode = params?.languageCode as string
 
   const [ordersData, setOrdersData] = useState<OrdersPageState | null>(null)
   const [loading, setLoading] = useState(true)
@@ -208,39 +216,32 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
       {/* Table */}
       <div className="overflow-x-auto mx-4 md:mx-6 border border-zinc-300">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gold-10">
-            <tr>
-              <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("order-id")}
-              </th>
-              {isAgent && (
-                <th className="hidden md:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider w-[300px]">
-                  Customer
-                </th>
-              )}
-              {!isAgent && (
-                <th className="hidden md:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider w-[300px]">
-                  Location
-                </th>
-              )}
-              <th className="hidden lg:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("confirmed-delivery-date")}
-              </th>
-              <th className="hidden sm:table-cell px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("type")}
-              </th>
-              <th className="px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("items")}
-              </th>
-
-              <th className="px-2 md:px-4 py-3 md:py-4 text-left text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("status")}
-              </th>
-              <th className="px-2 md:px-4 py-3 md:py-4 text-right text-xs md:text-sm font-medium text-gray-900 uppercase tracking-wider">
-                {t("total-price")}
-              </th>
-            </tr>
-          </thead>
+          <TableHeader>
+            <TableHeaderCell className="px-3 md:px-6">
+              {t("order-id")}
+            </TableHeaderCell>
+            {isAgent && (
+              <TableHeaderCell className="hidden md:table-cell w-[300px]">
+                Customer
+              </TableHeaderCell>
+            )}
+            {!isAgent && (
+              <TableHeaderCell className="hidden md:table-cell w-[300px]">
+                Location
+              </TableHeaderCell>
+            )}
+            <TableHeaderCell className="hidden lg:table-cell">
+              {t("confirmed-delivery-date")}
+            </TableHeaderCell>
+            <TableHeaderCell className="hidden sm:table-cell">
+              {t("type")}
+            </TableHeaderCell>
+            <TableHeaderCell>{t("items")}</TableHeaderCell>
+            <TableHeaderCell>{t("status")}</TableHeaderCell>
+            <TableHeaderCell align="right">
+              {t("total-price")}
+            </TableHeaderCell>
+          </TableHeader>
           {ordersData && ordersData.orders.length === 0 && !loading && (
             <tbody>
               <tr>
@@ -268,7 +269,15 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
             ) : (
               // Actual order rows
               orders.map((order, index) => (
-                <tr key={order.id}>
+                <tr
+                  key={order.id}
+                  onClick={() =>
+                    router.push(
+                      `/${languageCode}/account/orders/details/${order.id}`
+                    )
+                  }
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                >
                   <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900">
                     <div className="font-medium">
                       {order.display_id || order.id.slice(-8)}

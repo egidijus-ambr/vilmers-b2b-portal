@@ -4,15 +4,35 @@ import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { HttpTypes } from "@medusajs/types"
-import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
+import { Order, OrderDetail } from "@lib/furnisystems-sdk/modules/customer/types"
 import { validateSession } from "@lib/util/session-validation"
 import { unstable_noStore } from "next/cache"
 
-export const retrieveOrder = async (id: string) => {
-  // TODO: Implement with GraphQL when single order query is available
-  // For now, return null to avoid breaking the app
-  console.log("retrieveOrder not yet implemented with GraphQL")
-  return null
+export const retrieveOrder = async (
+  id: string
+): Promise<OrderDetail | null> => {
+  unstable_noStore()
+
+  try {
+    const validation = await validateSession()
+
+    if (!validation.isValid) {
+      console.log("[retrieveOrder] Session validation failed:", validation.error)
+      return null
+    }
+
+    const order = await sdk.customer.getCustomerOrderById(id)
+
+    if (!order) {
+      console.log("[retrieveOrder] Order not found for ID:", id)
+      return null
+    }
+
+    return order
+  } catch (error) {
+    console.error("[retrieveOrder] Error fetching order:", error)
+    return null
+  }
 }
 
 export const listOrders = async (

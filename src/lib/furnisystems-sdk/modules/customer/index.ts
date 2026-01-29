@@ -4,6 +4,7 @@ import { GraphQLRequestConfig } from "../../client/types"
 import {
   Customer,
   Order,
+  OrderDetail,
   CreateCustomerInput,
   UpdateCustomerInput,
   CreateAddressInput,
@@ -134,6 +135,109 @@ const GET_CUSTOMER_ORDERS_QUERY = gql`
 
         order_items {
           reference
+        }
+      }
+    }
+  }
+`
+
+const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
+  query GetCustomerOrderById($where: OrderWhereInput, $take: Int) {
+    getCustomerOrders(where: $where, take: $take) {
+      totalCount
+      orders {
+        id
+        createdAt
+        order_status
+        confirmed_delivery_date
+        total_price_confirmed
+        total_price
+        order_code
+        order_number
+        invoice_code
+        order_type
+        order_external_code
+        metadata
+
+        shipping_address {
+          id
+          phone_number
+          country
+          city
+          postal_code
+          state_region
+          address_1
+          address_2
+        }
+
+        billing_address {
+          id
+          phone_number
+          country
+          city
+          postal_code
+          state_region
+          address_1
+          address_2
+        }
+
+        payment_method {
+          id
+          payment_method_profiles {
+            title
+            language
+          }
+        }
+
+        order_items {
+          id
+          reference
+          price
+          shipping_price
+          quantity
+          sku
+          volume
+          cart_item {
+            product_container {
+              single_product {
+                images {
+                  src
+                  src_xs
+                  src_thumbnail
+                }
+                product_profiles {
+                  name
+                  language
+                }
+              }
+              advanced_product {
+                images {
+                  src
+                  src_xs
+                  src_thumbnail
+                }
+                advanced_product_profiles {
+                  name
+                  language
+                }
+              }
+            }
+          }
+          shipping_method {
+            id
+            shipping_method_profiles {
+              title
+              language
+            }
+          }
+        }
+
+        purchased_subAccount {
+          name
+        }
+        purchased_by {
+          name
+          account_code
         }
       }
     }
@@ -394,7 +498,8 @@ export class CustomerModule {
 
       // Map the response to the Order interface
       const orders: Order[] = ordersData.orders.map((orderData) => ({
-        id: orderData.order_external_code || orderData.id, // Use order_external_code as primary id
+        id: orderData.id, // Use raw DB id for navigation
+        display_id: orderData.order_external_code || orderData.order_code,
         created_at: orderData.createdAt,
         updated_at: orderData.createdAt, // Use createdAt as fallback for updated_at
         order_status: orderData.order_status,
@@ -439,6 +544,148 @@ export class CustomerModule {
       }
     } catch (error) {
       console.error("Error fetching customer orders:", error)
+      throw error
+    }
+  }
+
+  async getCustomerOrderById(orderId: string): Promise<OrderDetail | null> {
+    try {
+      const response = await this.client.query<{
+        getCustomerOrders: {
+          totalCount: number
+          orders: {
+            id: string
+            createdAt: string
+            order_status: string
+            confirmed_delivery_date?: string
+            total_price_confirmed?: number
+            total_price: number
+            order_code: string
+            order_number: string
+            invoice_code?: string
+            order_type?: string
+            order_external_code?: string
+            metadata?: Record<string, any>
+            shipping_address?: {
+              id: number
+              phone_number: string
+              country: string
+              city: string
+              postal_code: string
+              state_region?: string
+              address_1: string
+              address_2?: string
+            }
+            billing_address?: {
+              id: number
+              phone_number: string
+              country: string
+              city: string
+              postal_code: string
+              state_region?: string
+              address_1: string
+              address_2?: string
+            }
+            payment_method?: {
+              id: number
+              payment_method_profiles?: {
+                title: string
+                language: string
+              }[]
+            }
+            order_items?: {
+              id: string
+              reference?: string
+              price: number
+              shipping_price: number
+              quantity: number
+              sku?: string
+              volume?: number
+              cart_item?: {
+                product_container?: {
+                  single_product?: {
+                    images?: {
+                      src: string
+                      src_xs?: string
+                      src_thumbnail?: string
+                    }[]
+                    product_profiles?: {
+                      name: string
+                      language: string
+                    }[]
+                  }
+                  advanced_product?: {
+                    images?: {
+                      src: string
+                      src_xs?: string
+                      src_thumbnail?: string
+                    }[]
+                    advanced_product_profiles?: {
+                      name: string
+                      language: string
+                    }[]
+                  }
+                }
+              }
+              shipping_method?: {
+                id: number
+                shipping_method_profiles?: {
+                  title: string
+                  language: string
+                }[]
+              }
+            }[]
+            purchased_subAccount?: {
+              name: string
+            }
+            purchased_by?: {
+              name: string
+              account_code: string
+            }
+          }[]
+        }
+      }>(GET_CUSTOMER_ORDER_BY_ID_QUERY, {
+        variables: {
+          where: { id: { equals: orderId } },
+          take: 1,
+        },
+        fetchPolicy: "no-cache",
+        errorPolicy: "all",
+      })
+
+      const ordersData = response.getCustomerOrders
+      if (!ordersData || ordersData.orders.length === 0) {
+        return null
+      }
+
+      const orderData = ordersData.orders[0]
+
+      const order: OrderDetail = {
+        id: orderData.id, // Use raw DB id
+        created_at: orderData.createdAt,
+        updated_at: orderData.createdAt,
+        order_status: orderData.order_status,
+        confirmed_delivery_date: orderData.confirmed_delivery_date,
+        total_price_confirmed: orderData.total_price_confirmed,
+        total_price: orderData.total_price,
+        order_code: orderData.order_code,
+        order_number: orderData.order_number,
+        invoice_code: orderData.invoice_code,
+        order_type: orderData.order_type,
+        order_external_code: orderData.order_external_code,
+        metadata: orderData.metadata || {},
+        display_id: orderData.order_external_code || orderData.order_code,
+        shipping_address: orderData.shipping_address,
+        billing_address: orderData.billing_address,
+        payment_method: orderData.payment_method,
+        order_items_detail: orderData.order_items,
+        purchased_subAccount: orderData.purchased_subAccount,
+        purchased_by: orderData.purchased_by,
+      }
+
+      return order
+    } catch (error) {
+      console.error("Error fetching customer order by ID:", error)
       throw error
     }
   }
