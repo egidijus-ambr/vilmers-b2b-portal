@@ -75,5 +75,19 @@
   "total-incl-tax": "TOTAL (TTC)",
   "no-image": "Pas d'image",
   "volume": "Volume",
-  "customer-reference": "Référence client"
+  "customer-reference": "Référence client",
+  "fabric": "Tissu",
+  "dimensions": "Dimensions",
+  "parts": "Éléments",
+  "width": "Largeur",
+  "height": "Hauteur",
+  "length": "Longueur",
+  "armrest-width": "Largeur accoudoir",
+  "group": "Groupe",
+  "color": "Couleur",
+  "type-label": "Type",
+  "configuration": "Configuration",
+  "sofa-set": "Ensemble canapé",
+  "show-configuration": "Afficher la configuration",
+  "hide-configuration": "Masquer la configuration"
 }

@@ -75,5 +75,19 @@
   "total-incl-tax": "TOTAL (tax incl.)",
   "no-image": "No image",
   "volume": "Volume",
-  "customer-reference": "Customer reference"
+  "customer-reference": "Customer reference",
+  "fabric": "Fabric",
+  "dimensions": "Dimensions",
+  "parts": "Parts",
+  "width": "Width",
+  "height": "Height",
+  "length": "Length",
+  "armrest-width": "Armrest width",
+  "group": "Group",
+  "color": "Color",
+  "type-label": "Type",
+  "configuration": "Configuration",
+  "sofa-set": "Sofa set",
+  "show-configuration": "Show configuration",
+  "hide-configuration": "Hide configuration"
 }

@@ -124,6 +124,61 @@ export interface OrderDetailProductProfile {
   language: string
 }
 
+export interface CartItemFabricDetail {
+  id: string
+  fabric?: {
+    id: string
+    code?: string
+    color_name?: string
+    image?: {
+      src: string
+      src_thumbnail?: string
+    }
+  }
+  fabric_group?: {
+    id: string
+    code?: string
+    type?: string
+    fabric_group_profiles?: {
+      name: string
+      language: string
+    }[]
+  }
+  combination_option?: {
+    fabricCombinationOptionProfiles?: {
+      name: string
+      language: string
+    }[]
+  }
+}
+
+export interface SofaFormDimensions {
+  width?: number
+  height?: number
+  length?: number
+  armrest_width?: number
+}
+
+export interface SofaFormDetail {
+  id: string
+  name?: string
+  type?: string
+  code?: string
+  dimensions?: SofaFormDimensions
+}
+
+export interface SofaConfigurationPart {
+  moduleName: string
+  shapeType: string
+  moduleCode: string
+  price: number
+  setId: string
+  fabrics: {
+    position: string
+    fabricCode?: string
+  }[]
+}
+
 export interface OrderDetailItem {
   id: string
   reference?: string
@@ -132,6 +187,7 @@ export interface OrderDetailItem {
   quantity: number
   sku?: string
   volume?: number
+  metadata?: Record<string, any>
   cart_item?: {
     product_container?: {
       single_product?: {
@@ -143,6 +199,15 @@ export interface OrderDetailItem {
         advanced_product_profiles?: OrderDetailProductProfile[]
       }
     }
+    advanced_product_type?: string
+    selected_sofa_combinations?: string
+    fabric_code?: string
+    fabric_group_name?: string
+    cartItemFabrics?: CartItemFabricDetail[]
+    fabricCombination?: {
+      image?: OrderDetailImage
+    }
+    sofa_forms?: SofaFormDetail[]
   }
   shipping_method?: OrderDetailShippingMethod
 }

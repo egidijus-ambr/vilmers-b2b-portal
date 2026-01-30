@@ -75,5 +75,19 @@
   "total-incl-tax": "GESAMT (inkl. MwSt.)",
   "no-image": "Kein Bild",
   "volume": "Volumen",
-  "customer-reference": "Kundenreferenz"
+  "customer-reference": "Kundenreferenz",
+  "fabric": "Stoff",
+  "dimensions": "Abmessungen",
+  "parts": "Teile",
+  "width": "Breite",
+  "height": "Höhe",
+  "length": "Länge",
+  "armrest-width": "Armlehnenbreite",
+  "group": "Gruppe",
+  "color": "Farbe",
+  "type-label": "Typ",
+  "configuration": "Konfiguration",
+  "sofa-set": "Sofa-Set",
+  "show-configuration": "Konfiguration anzeigen",
+  "hide-configuration": "Konfiguration ausblenden"
 }

@@ -197,7 +197,12 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
           quantity
           sku
           volume
+          metadata
           cart_item {
+            advanced_product_type
+            selected_sofa_combinations
+            fabric_code
+            fabric_group_name
             product_container {
               single_product {
                 images {
@@ -220,6 +225,13 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
                   name
                   language
                 }
+              }
+            }
+            fabricCombination {
+              image {
+                src
+                src_xs
+                src_thumbnail
               }
             }
           }
@@ -601,7 +613,12 @@ export class CustomerModule {
               quantity: number
               sku?: string
               volume?: number
+              metadata?: Record<string, any>
               cart_item?: {
+                advanced_product_type?: string
+                selected_sofa_combinations?: string
+                fabric_code?: string
+                fabric_group_name?: string
                 product_container?: {
                   single_product?: {
                     images?: {
@@ -624,6 +641,13 @@ export class CustomerModule {
                       name: string
                       language: string
                     }[]
+                  }
+                }
+                fabricCombination?: {
+                  image?: {
+                    src: string
+                    src_xs?: string
+                    src_thumbnail?: string
                   }
                 }
               }

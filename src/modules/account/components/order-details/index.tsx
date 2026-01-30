@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import {
   OrderDetail,
   OrderDetailAddress,
@@ -11,6 +11,7 @@ import {
   TableHeaderCell,
 } from "@modules/common/components/table-header"
 import { useTranslations, useI18n } from "@lib/i18n"
+import SofaConfigurationDetail from "@modules/account/components/sofa-configuration"
 
 interface OrderDetailsProps {
   order: OrderDetail
@@ -24,9 +25,27 @@ const localeMap: Record<string, string> = {
   da: "da-DK",
 }
 
+const isSofaItem = (item: OrderDetailItem): boolean =>
+  item.cart_item?.advanced_product_type === "SOFA" &&
+  Array.isArray(item.metadata?.configurations) &&
+  item.metadata.configurations.length > 0
+
 const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
   const { t } = useTranslations("account")
   const { language } = useI18n()
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
+  const toggleItemExpand = (itemId: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev)
+      if (next.has(itemId)) {
+        next.delete(itemId)
+      } else {
+        next.add(itemId)
+      }
+      return next
+    })
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(
@@ -366,54 +385,77 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                   const imageSrc = getItemImage(item)
                   const productName = getItemProductName(item)
                   const lineTotal = item.price * item.quantity
+                  const hasSofaConfig = isSofaItem(item)
+                  const isExpanded = expandedItems.has(item.id)
+                  const colCount = 4 + (showVolume ? 1 : 0)
                   return (
-                    <tr key={item.id} className="align-top">
-                      <td className="px-4 py-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-[150px] h-[150px] flex-shrink-0 bg-gray-100 overflow-hidden">
-                            {imageSrc ? (
-                              <img
-                                src={imageSrc}
-                                alt={productName}
-                                width={150}
-                                height={150}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                {t("no-image")}
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-dark-blue font-medium">
-                              {productName}
-                            </p>
-                            {item.reference && (
-                              <p className="text-dark-blue-70 text-xs mt-0.5">
-                                {t("customer-reference")}: {item.reference}
+                    <React.Fragment key={item.id}>
+                      <tr className="align-top">
+                        <td className="px-4 py-4">
+                          <div className="flex items-start gap-3">
+                            <div className="w-[150px] h-[150px] flex-shrink-0 bg-gray-100 overflow-hidden">
+                              {imageSrc ? (
+                                <img
+                                  src={imageSrc}
+                                  alt={productName}
+                                  width={150}
+                                  height={150}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                  {t("no-image")}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-dark-blue font-medium">
+                                {productName}
                               </p>
-                            )}
+                              {item.reference && (
+                                <p className="text-dark-blue-70 text-xs mt-0.5">
+                                  {t("customer-reference")}: {item.reference}
+                                </p>
+                              )}
+                              {hasSofaConfig && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleItemExpand(item.id)}
+                                  className="mt-2 text-xs text-dark-blue-70 hover:text-dark-blue underline underline-offset-2 transition-colors"
+                                >
+                                  {isExpanded
+                                    ? t("hide-configuration")
+                                    : t("show-configuration")}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-gray-900">
-                        {formatPrice(item.price)}
-                      </td>
-                      <td className="px-4 py-4 text-gray-900">
-                        {item.quantity}
-                      </td>
-                      {showVolume && (
-                        <td className="px-4 py-4 text-gray-900">
-                          {item.volume != null
-                            ? `${item.volume.toFixed(2)} m³`
-                            : "-"}
                         </td>
+                        <td className="px-4 py-4 text-gray-900">
+                          {formatPrice(item.price)}
+                        </td>
+                        <td className="px-4 py-4 text-gray-900">
+                          {item.quantity}
+                        </td>
+                        {showVolume && (
+                          <td className="px-4 py-4 text-gray-900">
+                            {item.volume != null
+                              ? `${item.volume.toFixed(2)} m³`
+                              : "-"}
+                          </td>
+                        )}
+                        <td className="px-4 py-4 text-right text-gray-900 font-medium">
+                          {formatPrice(lineTotal)}
+                        </td>
+                      </tr>
+                      {hasSofaConfig && isExpanded && (
+                        <tr>
+                          <td colSpan={colCount} className="p-0">
+                            <SofaConfigurationDetail item={item} />
+                          </td>
+                        </tr>
                       )}
-                      <td className="px-4 py-4 text-right text-gray-900 font-medium">
-                        {formatPrice(lineTotal)}
-                      </td>
-                    </tr>
+                    </React.Fragment>
                   )
                 })}
               </tbody>

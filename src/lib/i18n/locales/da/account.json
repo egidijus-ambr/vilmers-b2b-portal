@@ -75,5 +75,19 @@
   "total-incl-tax": "TOTAL (inkl. moms)",
   "no-image": "Intet billede",
   "volume": "Volumen",
-  "customer-reference": "Kundereference"
+  "customer-reference": "Kundereference",
+  "fabric": "Stof",
+  "dimensions": "Dimensioner",
+  "parts": "Dele",
+  "width": "Bredde",
+  "height": "Højde",
+  "length": "Længde",
+  "armrest-width": "Armlænsbredde",
+  "group": "Gruppe",
+  "color": "Farve",
+  "type-label": "Type",
+  "configuration": "Konfiguration",
+  "sofa-set": "Sofasæt",
+  "show-configuration": "Vis konfiguration",
+  "hide-configuration": "Skjul konfiguration"
 }
