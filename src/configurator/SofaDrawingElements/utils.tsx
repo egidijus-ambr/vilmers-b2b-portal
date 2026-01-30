@@ -492,6 +492,119 @@ export const getShapeExtensionHeight = item => {
   return extensionHeight
 }
 
+// Draws metric lines (width/height arrows) around groups of sofa shapes on a Konva layer
+export const drawMetricLinesForGroups = (
+  groupOfGroups,
+  layer,
+  scale,
+  params = null,
+  fontSize = 12
+) => {
+  const {
+    VerticalMetricKonvaNode,
+    HorizontalMetricKonvaNode,
+  } = require('./SofaElements/MetricLines')
+
+  const { offsetX = 0, offsetY = 0 } = params ?? { offsetX: 0, offsetY: 0 }
+  const relativeTo = groupOfGroups[0].getParent()
+  let topLeftRect = getClientRect(groupOfGroups[0], {
+    roundValues: true,
+    relativeTo,
+  })
+
+  let topRightRect = topLeftRect
+  let topLeftGroup = groupOfGroups[0]
+
+  for (const group of groupOfGroups) {
+    const groupRect = getClientRect(group, {
+      roundValues: true,
+      relativeTo,
+    })
+    // find Top left corner
+    if (
+      groupRect.x < topLeftRect.x ||
+      (groupRect.x === topLeftRect.x && groupRect.y < topLeftRect.y)
+    ) {
+      topLeftRect = groupRect
+      topLeftGroup = group
+    }
+    // find Top right corner
+    if (
+      groupRect.x > topRightRect.x ||
+      (groupRect.x === topRightRect.x && groupRect.y < topRightRect.y)
+    ) {
+      topRightRect = groupRect
+    }
+  }
+
+  // Find bottom left and right
+  let bottomLeftRec = topLeftRect
+  let bottomRightRec = topRightRect
+  for (const group of groupOfGroups) {
+    const groupRect = getClientRect(group, {
+      roundValues: true,
+      relativeTo,
+    })
+    if (groupRect.y > bottomLeftRec.y && groupRect.x === topLeftRect.x) {
+      bottomLeftRec = groupRect
+    }
+    if (groupRect.y > bottomRightRec.y && groupRect.x === topRightRect.x) {
+      bottomRightRec = groupRect
+    }
+  }
+
+  // Draw left vertical line
+  const height = bottomLeftRec.y - topLeftRect.y + bottomLeftRec.height
+
+  const verticalMetric = VerticalMetricKonvaNode({
+    x: topLeftRect.x + offsetX,
+    y: topLeftRect.y + offsetY,
+    width: null,
+    height,
+    fontSize,
+  })
+  layer.add(verticalMetric)
+
+  // Draw right vertical line if needed
+  if (bottomRightRec.y !== bottomLeftRec.y) {
+    let rightHeight = bottomRightRec.y - topRightRect.y + bottomRightRec.height
+
+    let y = topRightRect.y + offsetY
+
+    // this is the case when the bottomRightRec is higher than the bottomLeftRec
+    if (topRightRect.y > topLeftRect.y) {
+      y = topLeftRect.y + offsetY
+      rightHeight += topRightRect.y - topLeftRect.y
+    }
+
+    const rightVerticalMetric = VerticalMetricKonvaNode({
+      x: topRightRect.x + topRightRect.width + 30 + offsetX,
+      y,
+      width: null,
+      height: rightHeight,
+      fontSize,
+    })
+    layer.add(rightVerticalMetric)
+  }
+
+  // Draw top horizontal line
+  const width = Math.floor(topRightRect.x - topLeftRect.x + topRightRect.width)
+
+  const horizontalMetric = HorizontalMetricKonvaNode({
+    x: topLeftRect.x + offsetX,
+    y: topLeftRect.y + offsetY,
+    width,
+    height: null,
+    fontSize,
+  })
+  layer.add(horizontalMetric)
+
+  return {
+    width,
+    height,
+  }
+}
+
 // Draws a vertical zigzag pattern on the canvas context
 export const drawVerticalZigzag = (ctx, startX, startY, height) => {
   const zigzagWidth = 8

@@ -42,20 +42,30 @@ echo "  To:   $PORTAL_SOFA"
 echo ""
 
 # ---- 1. Sync SofaElements/ directory (all files) ----
-echo "1/3 Syncing SofaElements/ ..."
+echo "1/5 Syncing SofaElements/ ..."
 rsync -av --delete \
   "$ADMIN_SOFA/SofaElements/" \
   "$PORTAL_SOFA/SofaElements/"
 
 # ---- 2. Sync Gizmo.tsx ----
 echo ""
-echo "2/3 Syncing Gizmo.tsx ..."
+echo "2/5 Syncing Gizmo.tsx ..."
 cp -v "$ADMIN_SOFA/Gizmo.tsx" "$PORTAL_SOFA/Gizmo.tsx"
 
 # ---- 3. Sync utils.tsx ----
 echo ""
-echo "3/3 Syncing utils.tsx ..."
+echo "3/5 Syncing utils.tsx ..."
 cp -v "$ADMIN_SOFA/utils.tsx" "$PORTAL_SOFA/utils.tsx"
+
+# ---- 4. Sync SofaDrawingPreview.tsx ----
+echo ""
+echo "4/5 Syncing SofaDrawingPreview.tsx ..."
+cp -v "$ADMIN_SOFA/SofaDrawingPreview.tsx" "$PORTAL_SOFA/SofaDrawingPreview.tsx"
+
+# ---- 5. Sync README.md ----
+echo ""
+echo "5/5 Syncing README.md ..."
+cp -v "$ADMIN_SOFA/README.md" "$PORTAL_SOFA/README.md"
 
 echo ""
 echo "Sync complete."
