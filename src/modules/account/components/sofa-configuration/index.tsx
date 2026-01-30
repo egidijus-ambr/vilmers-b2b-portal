@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { OrderDetailItem } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations } from "@lib/i18n"
@@ -176,8 +176,27 @@ const SofaSetPreview: React.FC<SofaSetPreviewProps> = ({
   maxHeight = 250,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [combination, setCombination] = useState<any[]>([])
 
-  if (shapes.length === 0) return null
+  // Rehydrate static JSON data into live Konva nodes (same pattern as frontend shop)
+  useEffect(() => {
+    if (shapes.length === 0) return
+    import("konva").then(({ default: Konva }) => {
+      const rehydrated = shapes.map((item: any) => {
+        const newGroup = new Konva.Group(item)
+        if (item.children) {
+          for (const child of item.children) {
+            const newChild = new (Konva as any)[child.className](child)
+            newGroup.add(newChild)
+          }
+        }
+        return newGroup
+      })
+      setCombination(rehydrated)
+    })
+  }, [shapes])
+
+  if (combination.length === 0) return null
 
   return (
     <div
@@ -185,7 +204,7 @@ const SofaSetPreview: React.FC<SofaSetPreviewProps> = ({
       style={{ width: maxWidth, height: maxHeight, position: "relative" }}
     >
       <SofaDrawingPreview
-        combination={shapes}
+        combination={combination}
         parentRef={containerRef}
         sofaScale={1}
       />
@@ -218,10 +237,6 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
 
   return (
     <div className="px-4 py-4 sm:px-6">
-      <h4 className="text-sm font-semibold text-dark-blue mb-4">
-        {t("configuration")}
-      </h4>
-
       {sofaSets.map((sofaSet, idx) => {
         // Match this sofa set to a combination by index
         const comboShapes = combinations[idx] || []

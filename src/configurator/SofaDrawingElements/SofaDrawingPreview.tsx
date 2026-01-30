@@ -9,7 +9,7 @@
 // Mode is auto-detected from the combination items.
 // ========================================================
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import * as SofaElements from './SofaElements'
 import {
@@ -77,8 +77,10 @@ const SofaDrawingPreview = ({
   onImage = null,
 }: SofaDrawingPreviewProps) => {
   const stageRef = useRef(null)
-  const layerRef = useRef(null)
-  const layer = layerRef.current
+  const [layer, setLayer] = useState<any>(null)
+  const layerRef = useCallback((node: any) => {
+    if (node) setLayer(node)
+  }, [])
 
   // Detect if items are live Konva nodes or static data
   const isLiveNodes = typeof combination[0]?.findOne === 'function'
