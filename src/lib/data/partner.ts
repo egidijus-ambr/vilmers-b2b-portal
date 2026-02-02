@@ -6,10 +6,12 @@ import { sdk } from "@lib/config"
 const SEND_PARTNER_REQUEST_MUTATION = gql`
   mutation SendPartnerRequest(
     $companyName: String!
-    $companyCode: String!
-    $vatCode: String!
-    $country: String!
-    $message: String!
+    $companyCode: String
+    $vatCode: String
+    $country: String
+    $message: String
+    $expectedTurnover: String
+    $contactEmail: String!
   ) {
     sendPartnerRequest(
       companyName: $companyName
@@ -17,6 +19,8 @@ const SEND_PARTNER_REQUEST_MUTATION = gql`
       vatCode: $vatCode
       country: $country
       message: $message
+      expectedTurnover: $expectedTurnover
+      contactEmail: $contactEmail
     )
   }
 `
@@ -24,6 +28,7 @@ const SEND_PARTNER_REQUEST_MUTATION = gql`
 export interface PartnerRequestState {
   success: boolean
   error?: string
+  fieldErrors?: Record<string, string>
 }
 
 export async function sendPartnerRequest(
@@ -36,11 +41,17 @@ export async function sendPartnerRequest(
     const vatCode = formData.get("vatCode") as string
     const country = formData.get("country") as string
     const message = formData.get("message") as string
+    const expectedTurnover = (formData.get("expectedTurnover") as string) || undefined
+    const contactEmail = formData.get("contactEmail") as string
 
-    if (!companyName || !companyCode || !vatCode || !country || !message) {
+    const fieldErrors: Record<string, string> = {}
+    if (!companyName) fieldErrors.companyName = "required"
+    if (!contactEmail) fieldErrors.contactEmail = "required"
+
+    if (Object.keys(fieldErrors).length > 0) {
       return {
         success: false,
-        error: "All fields are required",
+        fieldErrors,
       }
     }
 
@@ -54,6 +65,8 @@ export async function sendPartnerRequest(
         vatCode,
         country,
         message,
+        expectedTurnover,
+        contactEmail,
       },
     })
 

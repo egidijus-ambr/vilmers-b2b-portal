@@ -203,6 +203,33 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
             selected_sofa_combinations
             fabric_code
             fabric_group_name
+            cartItemFabrics {
+              id
+              fabric_group {
+                id
+                code
+                type
+                fabric_group_profiles {
+                  language
+                  name
+                }
+              }
+              fabric {
+                id
+                code
+                color_name
+                image {
+                  src
+                  src_thumbnail
+                }
+              }
+              combination_option {
+                fabricCombinationOptionProfiles {
+                  language
+                  name
+                }
+              }
+            }
             product_container {
               single_product {
                 images {

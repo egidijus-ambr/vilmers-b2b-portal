@@ -60,6 +60,7 @@ export default function BecomePartnerPage() {
 
   const isSuccess = state?.success === true
   const errorMessage = state?.error
+  const fieldErrors = state?.fieldErrors || {}
 
   if (isSuccess) {
     return (
@@ -142,16 +143,24 @@ export default function BecomePartnerPage() {
                   id="companyName"
                   name="companyName"
                   type="text"
-                  required
                   label={t("company-name")}
                   placeholder={t("company-name-placeholder")}
+                  error={fieldErrors.companyName && t("field-required")}
+                />
+
+                <FormInput
+                  id="contactEmail"
+                  name="contactEmail"
+                  type="email"
+                  label={t("contact-email")}
+                  placeholder={t("contact-email-placeholder")}
+                  error={fieldErrors.contactEmail && t("field-required")}
                 />
 
                 <FormInput
                   id="companyCode"
                   name="companyCode"
                   type="text"
-                  required
                   label={t("company-code")}
                   placeholder={t("company-code-placeholder")}
                 />
@@ -160,7 +169,6 @@ export default function BecomePartnerPage() {
                   id="vatCode"
                   name="vatCode"
                   type="text"
-                  required
                   label={t("vat-code")}
                   placeholder={t("vat-code-placeholder")}
                 />
@@ -168,7 +176,6 @@ export default function BecomePartnerPage() {
                 <FormSelect
                   id="country"
                   name="country"
-                  required
                   defaultValue=""
                   label={t("country")}
                 >
@@ -182,11 +189,18 @@ export default function BecomePartnerPage() {
                   ))}
                 </FormSelect>
 
+                <FormInput
+                  id="expectedTurnover"
+                  name="expectedTurnover"
+                  type="text"
+                  label={t("expected-turnover")}
+                  placeholder={t("expected-turnover-placeholder")}
+                />
+
                 <FormTextarea
                   id="message"
                   name="message"
                   rows={4}
-                  required
                   label={t("message")}
                   placeholder={t("message-placeholder")}
                 />

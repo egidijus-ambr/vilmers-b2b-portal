@@ -2,8 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
-import { OrderDetailItem } from "@lib/furnisystems-sdk/modules/customer/types"
-import { useTranslations } from "@lib/i18n"
+import {
+  OrderDetailItem,
+  CartItemFabricDetail,
+} from "@lib/furnisystems-sdk/modules/customer/types"
+import { useTranslations, getBackendLanguageCode } from "@lib/i18n"
 
 // Dynamically import Konva-based preview (requires browser DOM, no SSR)
 const SofaDrawingPreview = dynamic(
@@ -217,7 +220,7 @@ const SofaSetPreview: React.FC<SofaSetPreviewProps> = ({
 const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
   item,
 }) => {
-  const { t } = useTranslations("account")
+  const { t, language } = useTranslations("account")
 
   const isSofa = item.cart_item?.advanced_product_type === "SOFA"
   const hasConfigurations =
@@ -232,8 +235,10 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
     ? parseSofaCombinations(item.cart_item.selected_sofa_combinations)
     : []
 
-  const fabricCode = item.cart_item?.fabric_code
-  const fabricGroupName = item.cart_item?.fabric_group_name
+  const cartItemFabrics = item.cart_item?.cartItemFabrics || []
+  const backendLang = getBackendLanguageCode(language as any)
+
+  console.log("cartItemFabrics rendering", { item })
 
   return (
     <div className="px-4 py-4 sm:px-6">
@@ -255,91 +260,154 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left column */}
               <div className="space-y-5">
-                {(fabricCode || fabricGroupName) && (
+                {cartItemFabrics.length > 0 ? (
+                  <div>
+                    <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+                      {t("fabric")}
+                    </h6>
+                    <div className="flex flex-row flex-wrap gap-3">
+                      {cartItemFabrics.map((cif: CartItemFabricDetail) => {
+                        const fabricGroupProfile =
+                          cif.fabric_group?.fabric_group_profiles?.find(
+                            (p) =>
+                              p.language.toLowerCase() ===
+                              backendLang.toLowerCase()
+                          ) || cif.fabric_group?.fabric_group_profiles?.[0]
+                        const optionProfile =
+                          cif.combination_option?.fabricCombinationOptionProfiles?.find(
+                            (p) =>
+                              p.language.toLowerCase() ===
+                              backendLang.toLowerCase()
+                          ) ||
+                          cif.combination_option
+                            ?.fabricCombinationOptionProfiles?.[0]
+
+                        return (
+                          <div
+                            key={cif.id}
+                            className="flex bg-white rounded border border-gray-100 overflow-hidden"
+                          >
+                            {cif.fabric?.image?.src_thumbnail && (
+                              <img
+                                src={cif.fabric.image.src_thumbnail}
+                                alt={cif.fabric.code || ""}
+                                className="w-28 h-28 object-cover flex-shrink-0"
+                              />
+                            )}
+                            <div className="p-2 text-xs space-y-0.5 min-w-0">
+                              <p className="font-medium text-dark-blue">
+                                {t("fabric")}
+                                {optionProfile?.name
+                                  ? `: ${optionProfile.name}`
+                                  : ""}
+                              </p>
+                              {fabricGroupProfile?.name && (
+                                <p className="text-dark-blue-70">
+                                  {t("group")}: {fabricGroupProfile.name}
+                                </p>
+                              )}
+                              {cif.fabric?.code && (
+                                <p className="text-dark-blue-70">
+                                  {t("color")}: {cif.fabric.code}
+                                  {cif.fabric.color_name
+                                    ? ` - ${cif.fabric.color_name}`
+                                    : ""}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : item.cart_item?.fabric_code ||
+                  item.cart_item?.fabric_group_name ? (
                   <div>
                     <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
                       {t("fabric")}
                     </h6>
                     <div className="bg-white p-3 rounded border border-gray-100 text-xs space-y-0.5">
-                      {fabricGroupName && (
+                      {item.cart_item.fabric_group_name && (
                         <p className="text-dark-blue-70">
-                          {t("group")}: {fabricGroupName}
+                          {t("group")}: {item.cart_item.fabric_group_name}
                         </p>
                       )}
-                      {fabricCode && (
+                      {item.cart_item.fabric_code && (
                         <p className="text-dark-blue-70">
-                          {t("color")}: {fabricCode}
+                          {t("color")}: {item.cart_item.fabric_code}
                         </p>
                       )}
                     </div>
                   </div>
-                )}
+                ) : null}
 
-                {sofaSet.dimensions && (
-                  <div>
-                    <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
-                      {t("dimensions")}
-                    </h6>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                      {sofaSet.dimensions.width > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-dark-blue-70">
-                            {t("width")}:
-                          </span>
-                          <span className="text-dark-blue font-medium">
-                            {sofaSet.dimensions.width} cm
-                          </span>
-                        </div>
-                      )}
-                      {sofaSet.dimensions.length > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-dark-blue-70">
-                            {t("length")}:
-                          </span>
-                          <span className="text-dark-blue font-medium">
-                            {sofaSet.dimensions.length} cm
-                          </span>
-                        </div>
-                      )}
-                      {sofaSet.dimensions.height > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-dark-blue-70">
-                            {t("height")}:
-                          </span>
-                          <span className="text-dark-blue font-medium">
-                            {sofaSet.dimensions.height} cm
-                          </span>
-                        </div>
-                      )}
-                      {sofaSet.dimensions.armrestWidth > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-dark-blue-70">
-                            {t("armrest-width")}:
-                          </span>
-                          <span className="text-dark-blue font-medium">
-                            {sofaSet.dimensions.armrestWidth} cm
-                          </span>
-                        </div>
-                      )}
+                <div className="grid grid-cols-2 gap-6">
+                  {sofaSet.dimensions && (
+                    <div>
+                      <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+                        {t("dimensions")}
+                      </h6>
+                      <div className="space-y-1 text-xs">
+                        {sofaSet.dimensions.width > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-dark-blue-70">
+                              {t("width")}:
+                            </span>
+                            <span className="text-dark-blue font-medium">
+                              {sofaSet.dimensions.width} cm
+                            </span>
+                          </div>
+                        )}
+                        {sofaSet.dimensions.length > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-dark-blue-70">
+                              {t("length")}:
+                            </span>
+                            <span className="text-dark-blue font-medium">
+                              {sofaSet.dimensions.length} cm
+                            </span>
+                          </div>
+                        )}
+                        {sofaSet.dimensions.height > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-dark-blue-70">
+                              {t("height")}:
+                            </span>
+                            <span className="text-dark-blue font-medium">
+                              {sofaSet.dimensions.height} cm
+                            </span>
+                          </div>
+                        )}
+                        {sofaSet.dimensions.armrestWidth > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-dark-blue-70">
+                              {t("armrest-width")}:
+                            </span>
+                            <span className="text-dark-blue font-medium">
+                              {sofaSet.dimensions.armrestWidth} cm
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {sofaSet.parts.length > 0 && (
-                  <div>
-                    <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
-                      {t("parts")}
-                    </h6>
-                    <ul className="text-xs text-dark-blue space-y-1">
-                      {sofaSet.parts.map((part, pIdx) => (
-                        <li key={pIdx} className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-dark-blue-70 flex-shrink-0" />
-                          {part.moduleName}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {sofaSet.parts.length > 0 && (
+                    <div>
+                      <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+                        {t("parts")}
+                      </h6>
+                      <ul className="text-xs text-dark-blue space-y-1">
+                        {sofaSet.parts.map((part, pIdx) => (
+                          <li key={pIdx} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-dark-blue-70 flex-shrink-0" />
+                            {part.moduleName}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Right column: Konva rendering of shapes */}
