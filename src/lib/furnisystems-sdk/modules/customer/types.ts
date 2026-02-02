@@ -179,6 +179,34 @@ export interface SofaConfigurationPart {
   }[]
 }
 
+export interface AdditionalComponentDetail {
+  id: number
+  additionalComponentGroupId: number
+  code?: string
+  additional_component_profiles?: {
+    name: string
+    material_name?: string
+    language: string
+  }[]
+  image?: {
+    src: string
+    src_thumbnail?: string
+  }
+  color?: {
+    id: number
+    hex?: string
+    background?: string
+  }
+  additional_component_group?: {
+    id: number
+    code?: string
+    additional_component_group_profiles?: {
+      name: string
+      language: string
+    }[]
+  }
+}
+
 export interface OrderDetailItem {
   id: string
   reference?: string
@@ -208,6 +236,7 @@ export interface OrderDetailItem {
       image?: OrderDetailImage
     }
     sofa_forms?: SofaFormDetail[]
+    additional_components?: AdditionalComponentDetail[]
   }
   shipping_method?: OrderDetailShippingMethod
 }

@@ -254,6 +254,33 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
                 }
               }
             }
+            additional_components {
+              id
+              additionalComponentGroupId
+              code
+              additional_component_profiles {
+                name
+                material_name
+                language
+              }
+              image {
+                src
+                src_thumbnail
+              }
+              color {
+                id
+                hex
+                background
+              }
+              additional_component_group {
+                id
+                code
+                additional_component_group_profiles {
+                  name
+                  language
+                }
+              }
+            }
             fabricCombination {
               image {
                 src

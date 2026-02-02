@@ -16,27 +16,34 @@ const Items = ({ order }: ItemsProps) => {
   return (
     <div className="flex flex-col">
       <Divider className="!mb-0" />
-      <Table>
-        <Table.Body data-testid="products-table">
-          {items?.length
-            ? items
-                .sort((a, b) => {
-                  return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
-                })
-                .map((item) => {
-                  return (
-                    <Item
-                      key={item.id}
-                      item={item}
-                      currencyCode={order.currency_code}
-                    />
-                  )
-                })
-            : repeat(5).map((i) => {
-                return <SkeletonLineItem key={i} />
-              })}
-        </Table.Body>
-      </Table>
+      {items?.length ? (
+        <div
+          data-testid="products-table"
+          className="text-ui-fg-subtle txt-compact-small"
+        >
+          {items
+            .sort((a, b) => {
+              return (a.created_at ?? "") > (b.created_at ?? "") ? -1 : 1
+            })
+            .map((item) => {
+              return (
+                <Item
+                  key={item.id}
+                  item={item}
+                  currencyCode={order.currency_code}
+                />
+              )
+            })}
+        </div>
+      ) : (
+        <Table>
+          <Table.Body data-testid="products-table">
+            {repeat(5).map((i) => {
+              return <SkeletonLineItem key={i} />
+            })}
+          </Table.Body>
+        </Table>
+      )}
     </div>
   )
 }

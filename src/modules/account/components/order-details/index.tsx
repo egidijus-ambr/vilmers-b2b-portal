@@ -5,6 +5,7 @@ import {
   OrderDetail,
   OrderDetailAddress,
   OrderDetailItem,
+  AdditionalComponentDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import {
   TableHeader,
@@ -116,6 +117,52 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
       container?.single_product?.images || container?.advanced_product?.images
     if (!images?.length) return null
     return images[0].src_xs || images[0].src_thumbnail || images[0].src
+  }
+
+  const getComponentName = (
+    component: AdditionalComponentDetail
+  ): string => {
+    const profile = component.additional_component_profiles?.find(
+      (p) => p.language.toLowerCase() === language
+    )
+    return (
+      profile?.name ||
+      component.additional_component_profiles?.[0]?.name ||
+      "-"
+    )
+  }
+
+  const getComponentGroupName = (
+    component: AdditionalComponentDetail
+  ): string => {
+    const profile =
+      component.additional_component_group?.additional_component_group_profiles?.find(
+        (p) => p.language.toLowerCase() === language
+      )
+    return (
+      profile?.name ||
+      component.additional_component_group
+        ?.additional_component_group_profiles?.[0]?.name ||
+      ""
+    )
+  }
+
+  const getVisibleComponents = (
+    item: OrderDetailItem
+  ): AdditionalComponentDetail[] => {
+    const components = item.cart_item?.additional_components
+    if (!components?.length) return []
+    const excludedCodes = [
+      "shooting",
+      "threads-type",
+      "market",
+      "direction",
+    ]
+    return components.filter((c) => {
+      const groupCode = c.additional_component_group?.code
+      if (groupCode && excludedCodes.includes(groupCode)) return false
+      return true
+    })
   }
 
   const formatPrice = (price: number): string => {
@@ -371,7 +418,106 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
           <h3 className="text-lg font-medium text-dark-blue mb-4">
             {t("order-items")}
           </h3>
-          <div className="overflow-x-auto">
+          {/* Mobile: card layout */}
+          <div className="small:hidden divide-y divide-gray-100">
+            {orderItems.map((item) => {
+              const imageSrc = getItemImage(item)
+              const productName = getItemProductName(item)
+              const lineTotal = item.price * item.quantity
+              const hasSofaConfig = isSofaItem(item)
+              const isExpanded = expandedItems.has(item.id)
+              return (
+                <React.Fragment key={item.id}>
+                  <div className="flex gap-4 py-4">
+                    <div className="w-[100px] h-[100px] flex-shrink-0 bg-gray-100 overflow-hidden">
+                      {imageSrc ? (
+                        <img
+                          src={imageSrc}
+                          alt={productName}
+                          width={100}
+                          height={100}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                          {t("no-image")}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col text-sm min-w-0">
+                      <p className="text-dark-blue font-medium">
+                        {productName}
+                      </p>
+                      {item.reference && (
+                        <p className="text-dark-blue-70 text-xs mt-0.5">
+                          {t("customer-reference")}: {item.reference}
+                        </p>
+                      )}
+                      <p className="text-dark-blue-70 mt-1">
+                        {t("quantity-short")}: {item.quantity}
+                      </p>
+                      <p className="text-dark-blue font-medium mt-1">
+                        {formatPrice(lineTotal)}
+                      </p>
+                      {!hasSofaConfig &&
+                        getVisibleComponents(item).length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {getVisibleComponents(item).map((comp) => {
+                              const groupName = getComponentGroupName(comp)
+                              const compName = getComponentName(comp)
+                              return (
+                                <div
+                                  key={comp.id}
+                                  className="flex items-center gap-2 text-xs"
+                                >
+                                  {comp.image?.src_thumbnail ? (
+                                    <img
+                                      src={comp.image.src_thumbnail}
+                                      alt={compName}
+                                      className="w-6 h-6 rounded object-cover flex-shrink-0"
+                                    />
+                                  ) : comp.color?.hex ? (
+                                    <span
+                                      className="w-6 h-6 rounded flex-shrink-0 border border-gray-200"
+                                      style={{
+                                        backgroundColor: comp.color.hex,
+                                      }}
+                                    />
+                                  ) : null}
+                                  <span className="text-dark-blue-70">
+                                    {groupName ? `${groupName}: ` : ""}
+                                    <span className="text-dark-blue font-medium">
+                                      {compName}
+                                    </span>
+                                  </span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      {hasSofaConfig && (
+                        <button
+                          type="button"
+                          onClick={() => toggleItemExpand(item.id)}
+                          className="mt-2 text-xs text-dark-blue-70 hover:text-dark-blue underline underline-offset-2 transition-colors self-start"
+                        >
+                          {isExpanded
+                            ? t("hide-configuration")
+                            : t("show-configuration")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {hasSofaConfig && isExpanded && (
+                    <SofaConfigurationDetail item={item} />
+                  )}
+                </React.Fragment>
+              )
+            })}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden small:block overflow-x-auto">
             <table className="w-full text-sm">
               <TableHeader>
                 <TableHeaderCell>{t("order-items")}</TableHeaderCell>
@@ -417,6 +563,51 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                                   {t("customer-reference")}: {item.reference}
                                 </p>
                               )}
+                              {!hasSofaConfig &&
+                                getVisibleComponents(item).length > 0 && (
+                                  <div className="mt-2 space-y-1">
+                                    {getVisibleComponents(item).map(
+                                      (comp) => {
+                                        const groupName =
+                                          getComponentGroupName(comp)
+                                        const compName =
+                                          getComponentName(comp)
+                                        return (
+                                          <div
+                                            key={comp.id}
+                                            className="flex items-center gap-2 text-xs"
+                                          >
+                                            {comp.image?.src_thumbnail ? (
+                                              <img
+                                                src={
+                                                  comp.image.src_thumbnail
+                                                }
+                                                alt={compName}
+                                                className="w-6 h-6 rounded object-cover flex-shrink-0"
+                                              />
+                                            ) : comp.color?.hex ? (
+                                              <span
+                                                className="w-6 h-6 rounded flex-shrink-0 border border-gray-200"
+                                                style={{
+                                                  backgroundColor:
+                                                    comp.color.hex,
+                                                }}
+                                              />
+                                            ) : null}
+                                            <span className="text-dark-blue-70">
+                                              {groupName
+                                                ? `${groupName}: `
+                                                : ""}
+                                              <span className="text-dark-blue font-medium">
+                                                {compName}
+                                              </span>
+                                            </span>
+                                          </div>
+                                        )
+                                      }
+                                    )}
+                                  </div>
+                                )}
                               {hasSofaConfig && (
                                 <button
                                   type="button"

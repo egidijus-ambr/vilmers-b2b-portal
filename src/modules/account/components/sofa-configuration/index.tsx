@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import {
   OrderDetailItem,
   CartItemFabricDetail,
+  AdditionalComponentDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, getBackendLanguageCode } from "@lib/i18n"
 
@@ -204,7 +205,7 @@ const SofaSetPreview: React.FC<SofaSetPreviewProps> = ({
   return (
     <div
       ref={containerRef}
-      style={{ width: maxWidth, height: maxHeight, position: "relative" }}
+      style={{ maxWidth, height: maxHeight, width: "100%", position: "relative" }}
     >
       <SofaDrawingPreview
         combination={combination}
@@ -241,7 +242,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
   console.log("cartItemFabrics rendering", { item })
 
   return (
-    <div className="px-4 py-4 sm:px-6">
+    <div className="px-4 py-4">
       {sofaSets.map((sofaSet, idx) => {
         // Match this sofa set to a combination by index
         const comboShapes = combinations[idx] || []
@@ -295,23 +296,31 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                               />
                             )}
                             <div className="p-2 text-xs space-y-0.5 min-w-0">
-                              <p className="font-medium text-dark-blue">
-                                {t("fabric")}
-                                {optionProfile?.name
-                                  ? `: ${optionProfile.name}`
-                                  : ""}
-                              </p>
+                              {cartItemFabrics.length > 1 && (
+                                <p className="font-medium text-dark-blue">
+                                  {t("fabric")}
+                                  {optionProfile?.name
+                                    ? `: ${optionProfile.name}`
+                                    : ""}
+                                </p>
+                              )}
                               {fabricGroupProfile?.name && (
                                 <p className="text-dark-blue-70">
-                                  {t("group")}: {fabricGroupProfile.name}
+                                  {t("group")}:{" "}
+                                  <span className="font-semibold text-dark-blue">
+                                    {fabricGroupProfile.name}
+                                  </span>
                                 </p>
                               )}
                               {cif.fabric?.code && (
                                 <p className="text-dark-blue-70">
-                                  {t("color")}: {cif.fabric.code}
-                                  {cif.fabric.color_name
-                                    ? ` - ${cif.fabric.color_name}`
-                                    : ""}
+                                  {t("color")}:{" "}
+                                  <span className="font-semibold text-dark-blue">
+                                    {cif.fabric.code}
+                                    {cif.fabric.color_name
+                                      ? ` - ${cif.fabric.color_name}`
+                                      : ""}
+                                  </span>
                                 </p>
                               )}
                             </div>
@@ -326,7 +335,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                     <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
                       {t("fabric")}
                     </h6>
-                    <div className="bg-white p-3 rounded border border-gray-100 text-xs space-y-0.5">
+                    <div className="bg-white text-xs space-y-0.5">
                       {item.cart_item.fabric_group_name && (
                         <p className="text-dark-blue-70">
                           {t("group")}: {item.cart_item.fabric_group_name}
@@ -341,7 +350,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                   </div>
                 ) : null}
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
                   {sofaSet.dimensions && (
                     <div>
                       <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
@@ -408,21 +417,119 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                     </div>
                   )}
                 </div>
+
               </div>
 
               {/* Right column: Konva rendering of shapes */}
               <div className="flex items-start justify-center">
-                <div className="bg-white p-3 rounded border border-gray-100">
+                <div className="bg-white w-full">
                   {comboShapes.length > 0 ? (
                     <SofaSetPreview shapes={comboShapes} />
                   ) : (
-                    <div className="w-[300px] h-[150px] flex items-center justify-center text-gray-400 text-xs">
+                    <div className="max-w-[300px] w-full h-[150px] flex items-center justify-center text-gray-400 text-xs">
                       {t("no-image")}
                     </div>
                   )}
                 </div>
               </div>
             </div>
+
+            {/* Additional Components — full width below the grid */}
+            {(() => {
+              const components =
+                item.cart_item?.additional_components || []
+              const excludedCodes = [
+                "shooting",
+                "threads-type",
+                "market",
+                "direction",
+              ]
+              const visible = components.filter((c) => {
+                const groupCode = c.additional_component_group?.code
+                return !(
+                  groupCode && excludedCodes.includes(groupCode)
+                )
+              })
+              if (visible.length === 0) return null
+
+              const getCompName = (
+                comp: AdditionalComponentDetail
+              ): string => {
+                const profile =
+                  comp.additional_component_profiles?.find(
+                    (p) =>
+                      p.language.toLowerCase() ===
+                      backendLang.toLowerCase()
+                  )
+                return (
+                  profile?.name ||
+                  comp.additional_component_profiles?.[0]?.name ||
+                  "-"
+                )
+              }
+
+              const getGroupName = (
+                comp: AdditionalComponentDetail
+              ): string => {
+                const profile =
+                  comp.additional_component_group?.additional_component_group_profiles?.find(
+                    (p) =>
+                      p.language.toLowerCase() ===
+                      backendLang.toLowerCase()
+                  )
+                return (
+                  profile?.name ||
+                  comp.additional_component_group
+                    ?.additional_component_group_profiles?.[0]?.name ||
+                  ""
+                )
+              }
+
+              return (
+                <div className="mt-5">
+                  <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+                    {t("type-label")}
+                  </h6>
+                  <div className="flex flex-row flex-wrap gap-3">
+                    {visible.map((comp) => {
+                      const groupName = getGroupName(comp)
+                      const compName = getCompName(comp)
+                      return (
+                        <div
+                          key={comp.id}
+                          className="flex bg-white rounded border border-gray-100 overflow-hidden"
+                        >
+                          {comp.image?.src ? (
+                            <img
+                              src={comp.image.src}
+                              alt={compName}
+                              className="h-16 w-auto max-w-[6rem] small:max-w-none flex-shrink-0 object-contain"
+                            />
+                          ) : comp.color?.hex ? (
+                            <span
+                              className="w-16 h-16 flex-shrink-0"
+                              style={{
+                                backgroundColor: comp.color.hex,
+                              }}
+                            />
+                          ) : null}
+                          <div className="p-2 text-xs space-y-0.5 min-w-0 max-w-[360px]">
+                            {groupName && (
+                              <p className="text-dark-blue-70">
+                                {groupName}
+                              </p>
+                            )}
+                            <p className="font-semibold text-dark-blue">
+                              {compName}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )
       })}
