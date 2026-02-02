@@ -252,6 +252,23 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
                   name
                   language
                 }
+                dimensions {
+                  width
+                  height
+                  length
+                  seat_height
+                  seat_width
+                  seat_depth
+                  headboard_height
+                  headboard_width
+                  mattress_width
+                  mattress_length
+                  table_extended_lengh
+                  table_top_thickness
+                  table_leg_width
+                  shade_height
+                  shade_radius
+                }
               }
             }
             additional_components {
@@ -279,6 +296,11 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
                   name
                   language
                 }
+              }
+              dimensions {
+                width
+                height
+                length
               }
             }
             fabricCombination {

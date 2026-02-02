@@ -1,18 +1,17 @@
-export interface EnabledLanguage {
-  id: string
-  language: string
-  web_address_enabled: boolean
-  default_language: boolean
-  web_address: string
-  shop_phone_number?: string
-  google_analytics?: string
-  google_tag_manager?: string
-  facebook_pixel?: string
-  facebook_page_id?: string
-  hotjar?: string
-  enable_language_switcher: boolean
-  price_multiplier?: number
-}
+export type ContentBlockType =
+  | "text_and_image"
+  | "text_and_video"
+  | "only_text"
+  | "only_image"
+  | "only_video"
+  | "gallery"
+
+export type ContentBlockStyle =
+  | "1_column_title_top"
+  | "2_columns_title_top_center"
+  | "3_columns_title_left"
+
+export type VideoType = "uploaded" | "youtube" | "vimeo"
 
 export interface ContentBlockProfile {
   id: string
@@ -26,17 +25,17 @@ export interface ContentBlockImage {
   src: string
 }
 
-export interface ContentBlock {
+export interface ContentBlockData {
   id: string
-  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery"
+  type: ContentBlockType
   style: string | null
   video_link: string | null
-  video_type: "uploaded" | "youtube" | "vimeo" | null
+  video_type: VideoType | null
   video_autoplay: boolean | null
   video_loop: boolean | null
   arrangement: number | null
   main_image: ContentBlockImage | null
-  gallery_images?: ContentBlockImage[]
+  gallery_images: ContentBlockImage[]
   content_block_profiles: ContentBlockProfile[]
   default_margins: boolean | null
   max_height: number | null
@@ -57,13 +56,16 @@ export interface ContentBlock {
   extra_css: string | null
 }
 
-export interface ShopSetting {
-  id: string
-  currency: string
-  enabled_languages: EnabledLanguage[]
-  homepage_content_blocks?: ContentBlock[]
+export interface ContentBlockProps {
+  data: ContentBlockData
+  index: number
+  languageCode: string
 }
 
-export interface ShopSettingsResponse {
-  findFirstShopSetting: ShopSetting
+export interface VideoPlayerProps {
+  videoType: VideoType | null
+  videoLink: string | null
+  videoAutoplay: boolean | null
+  videoLoop: boolean | null
+  objectFitCover: boolean | null
 }

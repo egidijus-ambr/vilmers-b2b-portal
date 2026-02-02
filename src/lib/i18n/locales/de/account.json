@@ -89,5 +89,17 @@
   "configuration": "Konfiguration",
   "sofa-set": "Sofa-Set",
   "show-configuration": "Konfiguration anzeigen",
-  "hide-configuration": "Konfiguration ausblenden"
+  "hide-configuration": "Konfiguration ausblenden",
+  "seat-height": "Sitzhöhe",
+  "seat-width": "Sitzbreite",
+  "seat-depth": "Sitztiefe",
+  "headboard-height": "Kopfteilhöhe",
+  "headboard-width": "Kopfteilbreite",
+  "mattress-width": "Matratzenbreite",
+  "mattress-length": "Matratzenlänge",
+  "table-extended-length": "Ausgezogene Länge",
+  "table-top-thickness": "Plattenstärke",
+  "table-leg-width": "Beinbreite",
+  "shade-height": "Schirmhöhe",
+  "shade-radius": "Schirmradius"
 }

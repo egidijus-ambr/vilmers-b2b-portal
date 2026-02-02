@@ -89,5 +89,17 @@
   "configuration": "Configuration",
   "sofa-set": "Sofa set",
   "show-configuration": "Show configuration",
-  "hide-configuration": "Hide configuration"
+  "hide-configuration": "Hide configuration",
+  "seat-height": "Seat height",
+  "seat-width": "Seat width",
+  "seat-depth": "Seat depth",
+  "headboard-height": "Headboard height",
+  "headboard-width": "Headboard width",
+  "mattress-width": "Mattress width",
+  "mattress-length": "Mattress length",
+  "table-extended-length": "Extended length",
+  "table-top-thickness": "Top thickness",
+  "table-leg-width": "Leg width",
+  "shade-height": "Shade height",
+  "shade-radius": "Shade radius"
 }

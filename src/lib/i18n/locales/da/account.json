@@ -89,5 +89,17 @@
   "configuration": "Konfiguration",
   "sofa-set": "Sofasæt",
   "show-configuration": "Vis konfiguration",
-  "hide-configuration": "Skjul konfiguration"
+  "hide-configuration": "Skjul konfiguration",
+  "seat-height": "Sædehøjde",
+  "seat-width": "Sædebredde",
+  "seat-depth": "Sædedybde",
+  "headboard-height": "Hovedgavlhøjde",
+  "headboard-width": "Hovedgavlbredde",
+  "mattress-width": "Madrasbredde",
+  "mattress-length": "Madraslængde",
+  "table-extended-length": "Udtrukket længde",
+  "table-top-thickness": "Bordpladetykkelse",
+  "table-leg-width": "Benbredde",
+  "shade-height": "Skærmhøjde",
+  "shade-radius": "Skærmradius"
 }

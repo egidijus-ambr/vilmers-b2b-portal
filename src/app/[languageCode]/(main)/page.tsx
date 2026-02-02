@@ -2,9 +2,11 @@ import { Metadata } from "next"
 
 import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
+import ContentBlock from "@modules/home/components/content-block"
 import ShopSettingsTest from "@modules/common/components/shop-settings-test"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
+import { getShopSettings } from "@lib/data/shop-settings"
 
 export const metadata: Metadata = {
   title: "Vilmers - Comfort and Quality with Smart Design",
@@ -56,14 +58,33 @@ export default async function Home(props: {
 
   const { languageCode } = params
 
-  const { collections } = await listCollections({
-    fields: "id, handle, title",
-  })
+  const [{ collections }, shopSettings] = await Promise.all([
+    listCollections({ fields: "id, handle, title" }),
+    getShopSettings(languageCode),
+  ])
+
+  const contentBlocks = (shopSettings?.homepage_content_blocks ?? [])
+    .slice()
+    .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0))
 
   // Always render Hero, make FeaturedProducts conditional
   return (
     <>
       <Hero params={props.params} />
+
+      {contentBlocks.length > 0 && (
+        <div>
+          {contentBlocks.map((block, index) => (
+            <ContentBlock
+              key={block.id}
+              data={block}
+              index={index}
+              languageCode={languageCode}
+            />
+          ))}
+        </div>
+      )}
+
       {/* {collections && region ? (
         <div className="py-0">
           <ul className="flex flex-col gap-x-6">
@@ -77,7 +98,7 @@ export default async function Home(props: {
             <p>Debug: Region not found for country code: {countryCode}</p>
           )}
           {!collections && <p>Debug: Collections not loaded</p>}
-        </div> 
+        </div>
       )}*/}
     </>
   )

@@ -6,6 +6,7 @@ import {
   OrderDetailItem,
   CartItemFabricDetail,
   AdditionalComponentDetail,
+  AdvancedProductDimensions,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, getBackendLanguageCode } from "@lib/i18n"
 
@@ -205,7 +206,12 @@ const SofaSetPreview: React.FC<SofaSetPreviewProps> = ({
   return (
     <div
       ref={containerRef}
-      style={{ maxWidth, height: maxHeight, width: "100%", position: "relative" }}
+      style={{
+        maxWidth,
+        height: maxHeight,
+        width: "100%",
+        position: "relative",
+      }}
     >
       <SofaDrawingPreview
         combination={combination}
@@ -229,22 +235,246 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
     Array.isArray(item.metadata.configurations) &&
     item.metadata.configurations.length > 0
 
-  if (!isSofa || !hasConfigurations) return null
-
-  const sofaSets = parseSofaSets(item)
-  const combinations = item.cart_item?.selected_sofa_combinations
-    ? parseSofaCombinations(item.cart_item.selected_sofa_combinations)
-    : []
-
   const cartItemFabrics = item.cart_item?.cartItemFabrics || []
+  const additionalComponents = item.cart_item?.additional_components || []
+  const hasFabrics = cartItemFabrics.length > 0
+  const hasComponents = additionalComponents.length > 0
+
+  if (!hasFabrics && !hasComponents && !hasConfigurations) return null
+
+  const sofaSets = isSofa && hasConfigurations ? parseSofaSets(item) : []
+  const combinations =
+    isSofa && item.cart_item?.selected_sofa_combinations
+      ? parseSofaCombinations(item.cart_item.selected_sofa_combinations)
+      : []
+
   const backendLang = getBackendLanguageCode(language as any)
 
-  console.log("cartItemFabrics rendering", { item })
+  const excludedCodes = ["shooting", "threads-type", "market", "direction"]
+  const visibleComponents = additionalComponents.filter((c) => {
+    const groupCode = c.additional_component_group?.code
+    return !(groupCode && excludedCodes.includes(groupCode))
+  })
 
+  const getCompName = (comp: AdditionalComponentDetail): string => {
+    const profile = comp.additional_component_profiles?.find(
+      (p) => p.language.toLowerCase() === backendLang.toLowerCase()
+    )
+    return profile?.name || comp.additional_component_profiles?.[0]?.name || "-"
+  }
+
+  const getGroupName = (comp: AdditionalComponentDetail): string => {
+    const profile =
+      comp.additional_component_group?.additional_component_group_profiles?.find(
+        (p) => p.language.toLowerCase() === backendLang.toLowerCase()
+      )
+    return (
+      profile?.name ||
+      comp.additional_component_group?.additional_component_group_profiles?.[0]
+        ?.name ||
+      ""
+    )
+  }
+
+  const renderFabrics = () => {
+    if (cartItemFabrics.length > 0) {
+      return (
+        <div>
+          <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+            {t("fabric")}
+          </h6>
+          <div className="flex flex-row flex-wrap gap-3">
+            {cartItemFabrics.map((cif: CartItemFabricDetail) => {
+              const fabricGroupProfile =
+                cif.fabric_group?.fabric_group_profiles?.find(
+                  (p) => p.language.toLowerCase() === backendLang.toLowerCase()
+                ) || cif.fabric_group?.fabric_group_profiles?.[0]
+              const optionProfile =
+                cif.combination_option?.fabricCombinationOptionProfiles?.find(
+                  (p) => p.language.toLowerCase() === backendLang.toLowerCase()
+                ) ||
+                cif.combination_option?.fabricCombinationOptionProfiles?.[0]
+
+              return (
+                <div
+                  key={cif.id}
+                  className="flex bg-white rounded border border-gray-100 overflow-hidden"
+                >
+                  {cif.fabric?.image?.src_thumbnail && (
+                    <img
+                      src={cif.fabric.image.src_thumbnail}
+                      alt={cif.fabric.code || ""}
+                      className="w-28 h-28 object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="p-2 text-xs space-y-0.5 min-w-0">
+                    {cartItemFabrics.length > 1 && (
+                      <p className="font-medium text-dark-blue">
+                        {t("fabric")}
+                        {optionProfile?.name ? `: ${optionProfile.name}` : ""}
+                      </p>
+                    )}
+                    {fabricGroupProfile?.name && (
+                      <p className="text-dark-blue-70">
+                        {t("group")}:{" "}
+                        <span className="font-semibold text-dark-blue">
+                          {fabricGroupProfile.name}
+                        </span>
+                      </p>
+                    )}
+                    {cif.fabric?.code && (
+                      <p className="text-dark-blue-70">
+                        {t("color")}:{" "}
+                        <span className="font-semibold text-dark-blue">
+                          {cif.fabric.code}
+                          {cif.fabric.color_name
+                            ? ` - ${cif.fabric.color_name}`
+                            : ""}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
+    if (item.cart_item?.fabric_code || item.cart_item?.fabric_group_name) {
+      return (
+        <div>
+          <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+            {t("fabric")}
+          </h6>
+          <div className="bg-white text-xs space-y-0.5">
+            {item.cart_item.fabric_group_name && (
+              <p className="text-dark-blue-70">
+                {t("group")}: {item.cart_item.fabric_group_name}
+              </p>
+            )}
+            {item.cart_item.fabric_code && (
+              <p className="text-dark-blue-70">
+                {t("color")}: {item.cart_item.fabric_code}
+              </p>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  const renderAdditionalComponents = () => {
+    if (visibleComponents.length === 0) return null
+
+    return (
+      <div className="mt-5">
+        <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+          {t("type-label")}
+        </h6>
+        <div className="flex flex-row flex-wrap gap-3">
+          {visibleComponents.map((comp) => {
+            const groupName = getGroupName(comp)
+            const compName = getCompName(comp)
+            return (
+              <div
+                key={comp.id}
+                className="flex bg-white rounded border border-gray-100 overflow-hidden"
+              >
+                {comp.image?.src ? (
+                  <img
+                    src={comp.image.src}
+                    alt={compName}
+                    className="h-16 w-auto max-w-[6rem] small:max-w-none flex-shrink-0 object-contain"
+                  />
+                ) : comp.color?.hex ? (
+                  <span
+                    className="w-16 h-16 flex-shrink-0"
+                    style={{
+                      backgroundColor: comp.color.hex,
+                    }}
+                  />
+                ) : null}
+                <div className="p-2 text-xs space-y-0.5 min-w-0 max-w-[360px]">
+                  {groupName && (
+                    <p className="text-dark-blue-70">{groupName}</p>
+                  )}
+                  <p className="font-semibold text-dark-blue">{compName}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  const renderProductDimensions = () => {
+    // Dimensions are stored on the "model" / "model-other" additional component
+    const modelComponent = additionalComponents.find(
+      (c) =>
+        c.dimensions &&
+        c.additional_component_group?.code?.startsWith("model")
+    )
+    const dims = modelComponent?.dimensions
+    if (!dims) return null
+
+    const dimensionEntries: {
+      label: string
+      value: number | null | undefined
+      unit: string
+    }[] = [
+      { label: t("width"), value: dims.width, unit: "cm" },
+      { label: t("height"), value: dims.height, unit: "cm" },
+      { label: t("length"), value: dims.length, unit: "cm" },
+    ]
+
+    const visible = dimensionEntries.filter(
+      (d) => d.value != null && d.value > 0
+    )
+    if (visible.length === 0) return null
+
+    return (
+      <div>
+        <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+          {t("dimensions")}
+        </h6>
+        <div className="space-y-1 text-xs">
+          {visible.map((d) => (
+            <div key={d.label} className="flex justify-between">
+              <span className="text-dark-blue-70">{d.label}:</span>
+              <span className="text-dark-blue font-medium">
+                {d.value} {d.unit}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Non-SOFA items: single-column layout with fabrics, dimensions + additional components
+  if (!isSofa || !hasConfigurations) {
+    return (
+      <div className="px-4 py-4">
+        <div className="space-y-5">
+          {renderFabrics()}
+          <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
+            {renderProductDimensions()}
+          </div>
+        </div>
+        {renderAdditionalComponents()}
+      </div>
+    )
+  }
+
+  // SOFA items with configurations: full layout with Konva preview
   return (
     <div className="px-4 py-4">
       {sofaSets.map((sofaSet, idx) => {
-        // Match this sofa set to a combination by index
         const comboShapes = combinations[idx] || []
 
         return (
@@ -261,94 +491,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left column */}
               <div className="space-y-5">
-                {cartItemFabrics.length > 0 ? (
-                  <div>
-                    <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
-                      {t("fabric")}
-                    </h6>
-                    <div className="flex flex-row flex-wrap gap-3">
-                      {cartItemFabrics.map((cif: CartItemFabricDetail) => {
-                        const fabricGroupProfile =
-                          cif.fabric_group?.fabric_group_profiles?.find(
-                            (p) =>
-                              p.language.toLowerCase() ===
-                              backendLang.toLowerCase()
-                          ) || cif.fabric_group?.fabric_group_profiles?.[0]
-                        const optionProfile =
-                          cif.combination_option?.fabricCombinationOptionProfiles?.find(
-                            (p) =>
-                              p.language.toLowerCase() ===
-                              backendLang.toLowerCase()
-                          ) ||
-                          cif.combination_option
-                            ?.fabricCombinationOptionProfiles?.[0]
-
-                        return (
-                          <div
-                            key={cif.id}
-                            className="flex bg-white rounded border border-gray-100 overflow-hidden"
-                          >
-                            {cif.fabric?.image?.src_thumbnail && (
-                              <img
-                                src={cif.fabric.image.src_thumbnail}
-                                alt={cif.fabric.code || ""}
-                                className="w-28 h-28 object-cover flex-shrink-0"
-                              />
-                            )}
-                            <div className="p-2 text-xs space-y-0.5 min-w-0">
-                              {cartItemFabrics.length > 1 && (
-                                <p className="font-medium text-dark-blue">
-                                  {t("fabric")}
-                                  {optionProfile?.name
-                                    ? `: ${optionProfile.name}`
-                                    : ""}
-                                </p>
-                              )}
-                              {fabricGroupProfile?.name && (
-                                <p className="text-dark-blue-70">
-                                  {t("group")}:{" "}
-                                  <span className="font-semibold text-dark-blue">
-                                    {fabricGroupProfile.name}
-                                  </span>
-                                </p>
-                              )}
-                              {cif.fabric?.code && (
-                                <p className="text-dark-blue-70">
-                                  {t("color")}:{" "}
-                                  <span className="font-semibold text-dark-blue">
-                                    {cif.fabric.code}
-                                    {cif.fabric.color_name
-                                      ? ` - ${cif.fabric.color_name}`
-                                      : ""}
-                                  </span>
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ) : item.cart_item?.fabric_code ||
-                  item.cart_item?.fabric_group_name ? (
-                  <div>
-                    <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
-                      {t("fabric")}
-                    </h6>
-                    <div className="bg-white text-xs space-y-0.5">
-                      {item.cart_item.fabric_group_name && (
-                        <p className="text-dark-blue-70">
-                          {t("group")}: {item.cart_item.fabric_group_name}
-                        </p>
-                      )}
-                      {item.cart_item.fabric_code && (
-                        <p className="text-dark-blue-70">
-                          {t("color")}: {item.cart_item.fabric_code}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
+                {renderFabrics()}
 
                 <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
                   {sofaSet.dimensions && (
@@ -417,7 +560,6 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                     </div>
                   )}
                 </div>
-
               </div>
 
               {/* Right column: Konva rendering of shapes */}
@@ -434,102 +576,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
               </div>
             </div>
 
-            {/* Additional Components — full width below the grid */}
-            {(() => {
-              const components =
-                item.cart_item?.additional_components || []
-              const excludedCodes = [
-                "shooting",
-                "threads-type",
-                "market",
-                "direction",
-              ]
-              const visible = components.filter((c) => {
-                const groupCode = c.additional_component_group?.code
-                return !(
-                  groupCode && excludedCodes.includes(groupCode)
-                )
-              })
-              if (visible.length === 0) return null
-
-              const getCompName = (
-                comp: AdditionalComponentDetail
-              ): string => {
-                const profile =
-                  comp.additional_component_profiles?.find(
-                    (p) =>
-                      p.language.toLowerCase() ===
-                      backendLang.toLowerCase()
-                  )
-                return (
-                  profile?.name ||
-                  comp.additional_component_profiles?.[0]?.name ||
-                  "-"
-                )
-              }
-
-              const getGroupName = (
-                comp: AdditionalComponentDetail
-              ): string => {
-                const profile =
-                  comp.additional_component_group?.additional_component_group_profiles?.find(
-                    (p) =>
-                      p.language.toLowerCase() ===
-                      backendLang.toLowerCase()
-                  )
-                return (
-                  profile?.name ||
-                  comp.additional_component_group
-                    ?.additional_component_group_profiles?.[0]?.name ||
-                  ""
-                )
-              }
-
-              return (
-                <div className="mt-5">
-                  <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
-                    {t("type-label")}
-                  </h6>
-                  <div className="flex flex-row flex-wrap gap-3">
-                    {visible.map((comp) => {
-                      const groupName = getGroupName(comp)
-                      const compName = getCompName(comp)
-                      return (
-                        <div
-                          key={comp.id}
-                          className="flex bg-white rounded border border-gray-100 overflow-hidden"
-                        >
-                          {comp.image?.src ? (
-                            <img
-                              src={comp.image.src}
-                              alt={compName}
-                              className="h-16 w-auto max-w-[6rem] small:max-w-none flex-shrink-0 object-contain"
-                            />
-                          ) : comp.color?.hex ? (
-                            <span
-                              className="w-16 h-16 flex-shrink-0"
-                              style={{
-                                backgroundColor: comp.color.hex,
-                              }}
-                            />
-                          ) : null}
-                          <div className="p-2 text-xs space-y-0.5 min-w-0 max-w-[360px]">
-                            {groupName && (
-                              <p className="text-dark-blue-70">
-                                {groupName}
-                              </p>
-                            )}
-                            <p className="font-semibold text-dark-blue">
-                              {compName}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })()}
+            {renderAdditionalComponents()}
           </div>
         )
       })}

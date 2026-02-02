@@ -89,5 +89,17 @@
   "configuration": "Configuration",
   "sofa-set": "Ensemble canapé",
   "show-configuration": "Afficher la configuration",
-  "hide-configuration": "Masquer la configuration"
+  "hide-configuration": "Masquer la configuration",
+  "seat-height": "Hauteur d'assise",
+  "seat-width": "Largeur d'assise",
+  "seat-depth": "Profondeur d'assise",
+  "headboard-height": "Hauteur tête de lit",
+  "headboard-width": "Largeur tête de lit",
+  "mattress-width": "Largeur matelas",
+  "mattress-length": "Longueur matelas",
+  "table-extended-length": "Longueur dépliée",
+  "table-top-thickness": "Épaisseur du plateau",
+  "table-leg-width": "Largeur des pieds",
+  "shade-height": "Hauteur abat-jour",
+  "shade-radius": "Rayon abat-jour"
 }

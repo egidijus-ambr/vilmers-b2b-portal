@@ -152,6 +152,24 @@ export interface CartItemFabricDetail {
   }
 }
 
+export interface AdvancedProductDimensions {
+  width?: number | null
+  height?: number | null
+  length?: number | null
+  seat_height?: number | null
+  seat_width?: number | null
+  seat_depth?: number | null
+  headboard_height?: number | null
+  headboard_width?: number | null
+  mattress_width?: number | null
+  mattress_length?: number | null
+  table_extended_lengh?: number | null
+  table_top_thickness?: number | null
+  table_leg_width?: number | null
+  shade_height?: number | null
+  shade_radius?: number | null
+}
+
 export interface SofaFormDimensions {
   width?: number
   height?: number
@@ -205,6 +223,11 @@ export interface AdditionalComponentDetail {
       language: string
     }[]
   }
+  dimensions?: {
+    width?: number | null
+    height?: number | null
+    length?: number | null
+  } | null
 }
 
 export interface OrderDetailItem {
@@ -225,6 +248,7 @@ export interface OrderDetailItem {
       advanced_product?: {
         images?: OrderDetailImage[]
         advanced_product_profiles?: OrderDetailProductProfile[]
+        dimensions?: AdvancedProductDimensions | null
       }
     }
     advanced_product_type?: string

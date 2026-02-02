@@ -26,10 +26,15 @@ const localeMap: Record<string, string> = {
   da: "da-DK",
 }
 
-const isSofaItem = (item: OrderDetailItem): boolean =>
-  item.cart_item?.advanced_product_type === "SOFA" &&
-  Array.isArray(item.metadata?.configurations) &&
-  item.metadata.configurations.length > 0
+const isAdvancedItem = (item: OrderDetailItem): boolean => {
+  if (!item.cart_item?.advanced_product_type) return false
+  const hasFabrics = (item.cart_item?.cartItemFabrics?.length ?? 0) > 0
+  const hasComponents = (item.cart_item?.additional_components?.length ?? 0) > 0
+  const hasConfigurations =
+    Array.isArray(item.metadata?.configurations) &&
+    item.metadata.configurations.length > 0
+  return hasFabrics || hasComponents || hasConfigurations
+}
 
 const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
   const { t } = useTranslations("account")
@@ -424,7 +429,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
               const imageSrc = getItemImage(item)
               const productName = getItemProductName(item)
               const lineTotal = item.price * item.quantity
-              const hasSofaConfig = isSofaItem(item)
+              const hasAdvancedConfig = isAdvancedItem(item)
               const isExpanded = expandedItems.has(item.id)
               return (
                 <React.Fragment key={item.id}>
@@ -459,7 +464,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                       <p className="text-dark-blue font-medium mt-1">
                         {formatPrice(lineTotal)}
                       </p>
-                      {!hasSofaConfig &&
+                      {!hasAdvancedConfig &&
                         getVisibleComponents(item).length > 0 && (
                           <div className="mt-2 space-y-1">
                             {getVisibleComponents(item).map((comp) => {
@@ -495,7 +500,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                             })}
                           </div>
                         )}
-                      {hasSofaConfig && (
+                      {hasAdvancedConfig && (
                         <button
                           type="button"
                           onClick={() => toggleItemExpand(item.id)}
@@ -508,7 +513,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                       )}
                     </div>
                   </div>
-                  {hasSofaConfig && isExpanded && (
+                  {hasAdvancedConfig && isExpanded && (
                     <SofaConfigurationDetail item={item} />
                   )}
                 </React.Fragment>
@@ -531,7 +536,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                   const imageSrc = getItemImage(item)
                   const productName = getItemProductName(item)
                   const lineTotal = item.price * item.quantity
-                  const hasSofaConfig = isSofaItem(item)
+                  const hasAdvancedConfig = isAdvancedItem(item)
                   const isExpanded = expandedItems.has(item.id)
                   const colCount = 4 + (showVolume ? 1 : 0)
                   return (
@@ -563,7 +568,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                                   {t("customer-reference")}: {item.reference}
                                 </p>
                               )}
-                              {!hasSofaConfig &&
+                              {!hasAdvancedConfig &&
                                 getVisibleComponents(item).length > 0 && (
                                   <div className="mt-2 space-y-1">
                                     {getVisibleComponents(item).map(
@@ -608,7 +613,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                                     )}
                                   </div>
                                 )}
-                              {hasSofaConfig && (
+                              {hasAdvancedConfig && (
                                 <button
                                   type="button"
                                   onClick={() => toggleItemExpand(item.id)}
@@ -639,7 +644,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                           {formatPrice(lineTotal)}
                         </td>
                       </tr>
-                      {hasSofaConfig && isExpanded && (
+                      {hasAdvancedConfig && isExpanded && (
                         <tr>
                           <td colSpan={colCount} className="p-0">
                             <SofaConfigurationDetail item={item} />

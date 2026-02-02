@@ -89,5 +89,17 @@
   "configuration": "Konfigūracija",
   "sofa-set": "Sofos komplektas",
   "show-configuration": "Rodyti konfigūraciją",
-  "hide-configuration": "Slėpti konfigūraciją"
+  "hide-configuration": "Slėpti konfigūraciją",
+  "seat-height": "Sėdynės aukštis",
+  "seat-width": "Sėdynės plotis",
+  "seat-depth": "Sėdynės gylis",
+  "headboard-height": "Galvūgalio aukštis",
+  "headboard-width": "Galvūgalio plotis",
+  "mattress-width": "Čiužinio plotis",
+  "mattress-length": "Čiužinio ilgis",
+  "table-extended-length": "Ištrauktas ilgis",
+  "table-top-thickness": "Stalviršio storis",
+  "table-leg-width": "Kojos plotis",
+  "shade-height": "Gaubto aukštis",
+  "shade-radius": "Gaubto spindulys"
 }
