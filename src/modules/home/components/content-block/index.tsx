@@ -7,6 +7,8 @@ import {
   ContentBlockStyle,
 } from "./types"
 import VideoPlayer from "./video-player"
+import ArrowLeft from "@modules/common/icons/arrow-left"
+import ArrowRight from "@modules/common/icons/arrow-right"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -614,6 +616,30 @@ function Gallery({
         isMasonry ? "content-container" : "overflow-hidden"
       }`}
     >
+      {/* Navigation arrows — above photos, hidden on mobile */}
+      {totalPages > 1 && (
+        <div
+          className={`mb-4 flex items-center justify-end gap-4 ${
+            isMasonry ? "" : "content-container hidden small:flex"
+          }`}
+        >
+          <button
+            onClick={goToPrevious}
+            className="transition-opacity hover:opacity-70"
+            aria-label="Previous images"
+          >
+            <ArrowLeft size="20" color="dark-blue-70" />
+          </button>
+          <button
+            onClick={goToNext}
+            className="transition-opacity hover:opacity-70"
+            aria-label="Next images"
+          >
+            <ArrowRight size="20" color="dark-blue" />
+          </button>
+        </div>
+      )}
+
       {isMasonry ? (
         <GalleryMasonry pageImages={pages[currentPage] ?? []} />
       ) : (
@@ -626,67 +652,18 @@ function Gallery({
         />
       )}
 
-      {/* Navigation arrows — hidden on mobile for spread harmony (uses swipe instead) */}
-      {totalPages > 1 && (
-        <div
-          className={`items-center gap-3 ${
-            isMasonry
-              ? "flex absolute left-7 bottom-4"
-              : "hidden small:flex content-container mt-4"
-          }`}
-        >
-          <button
-            onClick={goToPrevious}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white transition-colors hover:bg-gray-50"
-            aria-label="Previous images"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="h-4 w-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 19.5L8.25 12l7.5-7.5"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={goToNext}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 bg-white transition-colors hover:bg-gray-50"
-            aria-label="Next images"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="h-4 w-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8.25 4.5l7.5 7.5-7.5 7.5"
-              />
-            </svg>
-          </button>
-        </div>
-      )}
-
       {/* Desktop progress indicator */}
       {totalPages > 1 && !isMasonry && (
-        <div className="mt-4 hidden content-container small:block">
+        <div className="px-8 mt-6 hidden content-container small:block">
           <div className="h-0.5 w-full bg-gray-200">
             <div
               className="h-full bg-gray-900 transition-all duration-300"
               style={{
                 width: `${(1 / totalPages) * 100}%`,
-                marginLeft: `${(currentPage / (totalPages - 1)) * (100 - (1 / totalPages) * 100)}%`,
+                marginLeft: `${
+                  (currentPage / (totalPages - 1)) *
+                  (100 - (1 / totalPages) * 100)
+                }%`,
               }}
             />
           </div>
@@ -762,7 +739,8 @@ function GallerySpreadHarmony({
   useEffect(() => {
     const measure = () => {
       if (containerRef.current) {
-        const firstGroup = containerRef.current.querySelector('[data-group="0"]')
+        const firstGroup =
+          containerRef.current.querySelector('[data-group="0"]')
         if (firstGroup) {
           setGroupWidth(firstGroup.getBoundingClientRect().width)
         }
@@ -811,8 +789,8 @@ function GallerySpreadHarmony({
                 height: isVertical
                   ? "min(110vw, 500px)"
                   : isHorizontal
-                    ? "auto"
-                    : "80vw",
+                  ? "auto"
+                  : "80vw",
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -828,10 +806,10 @@ function GallerySpreadHarmony({
         })}
       </div>
 
-      {/* Scroll progress indicator - mobile only */}
+      {/* Scroll progress indicator - mobile only, centered to align with 80vw images */}
       {allImages.length > 1 && (
-        <div className="mt-4 px-6 small:hidden">
-          <div className="h-0.5 w-full bg-gray-200">
+        <div className="mt-4 flex justify-center small:hidden">
+          <div className="h-0.5 bg-gray-200" style={{ width: "80vw" }}>
             <div
               className="h-full bg-gray-900 transition-all duration-100"
               style={{
@@ -894,7 +872,9 @@ function GallerySpreadHarmony({
                         src={groupImages[1].src}
                         alt=""
                         className="h-full object-cover"
-                        style={{ maxWidth: anySmallHorizontal ? "100%" : "75%" }}
+                        style={{
+                          maxWidth: anySmallHorizontal ? "100%" : "75%",
+                        }}
                       />
                     </div>
                   )}
