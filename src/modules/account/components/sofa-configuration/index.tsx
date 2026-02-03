@@ -444,9 +444,10 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
         </h6>
         <div className="space-y-1 text-xs">
           {visible.map((d) => (
-            <div key={d.label} className="flex justify-between">
-              <span className="text-dark-blue-70">{d.label}:</span>
-              <span className="text-dark-blue font-medium">
+            <div key={d.label} className="flex items-baseline gap-2">
+              <span className="text-dark-blue-70 whitespace-nowrap">{d.label}</span>
+              <span className="flex-1 border-b border-dashed border-gray-300" />
+              <span className="text-dark-blue font-medium whitespace-nowrap">
                 {d.value} {d.unit}
               </span>
             </div>
@@ -499,41 +500,45 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                       </h6>
                       <div className="space-y-1 text-xs">
                         {sofaSet.dimensions.width > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-dark-blue-70">
-                              {t("width")}:
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-dark-blue-70 whitespace-nowrap">
+                              {t("width")}
                             </span>
-                            <span className="text-dark-blue font-medium">
+                            <span className="flex-1 border-b border-dashed border-gray-300" />
+                            <span className="text-dark-blue font-medium whitespace-nowrap">
                               {sofaSet.dimensions.width} cm
                             </span>
                           </div>
                         )}
                         {sofaSet.dimensions.length > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-dark-blue-70">
-                              {t("length")}:
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-dark-blue-70 whitespace-nowrap">
+                              {t("length")}
                             </span>
-                            <span className="text-dark-blue font-medium">
+                            <span className="flex-1 border-b border-dashed border-gray-300" />
+                            <span className="text-dark-blue font-medium whitespace-nowrap">
                               {sofaSet.dimensions.length} cm
                             </span>
                           </div>
                         )}
                         {sofaSet.dimensions.height > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-dark-blue-70">
-                              {t("height")}:
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-dark-blue-70 whitespace-nowrap">
+                              {t("height")}
                             </span>
-                            <span className="text-dark-blue font-medium">
+                            <span className="flex-1 border-b border-dashed border-gray-300" />
+                            <span className="text-dark-blue font-medium whitespace-nowrap">
                               {sofaSet.dimensions.height} cm
                             </span>
                           </div>
                         )}
                         {sofaSet.dimensions.armrestWidth > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-dark-blue-70">
-                              {t("armrest-width")}:
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-dark-blue-70 whitespace-nowrap">
+                              {t("armrest-width")}
                             </span>
-                            <span className="text-dark-blue font-medium">
+                            <span className="flex-1 border-b border-dashed border-gray-300" />
+                            <span className="text-dark-blue font-medium whitespace-nowrap">
                               {sofaSet.dimensions.armrestWidth} cm
                             </span>
                           </div>
