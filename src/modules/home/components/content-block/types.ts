@@ -10,6 +10,8 @@ export type ContentBlockStyle =
   | "1_column_title_top"
   | "2_columns_title_top_center"
   | "3_columns_title_left"
+  | "side_by_side"
+  | "text_on_image"
 
 export type VideoType = "uploaded" | "youtube" | "vimeo"
 

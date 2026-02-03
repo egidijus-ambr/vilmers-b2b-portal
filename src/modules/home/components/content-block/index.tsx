@@ -58,7 +58,7 @@ export default function ContentBlock({
     <section style={sectionStyle}>
       {data.type === "text_and_image" && (
         <TextAndImage
-          alignImage={alignImage}
+          style={data.style}
           sectionImage={data.main_image?.src ?? null}
           sectionName={profile?.name ?? null}
           sectionDescription={profile?.description ?? null}
@@ -178,7 +178,7 @@ function mediaStyle(opts: {
 /* ─── Text + Image ────────────────────────────────────────── */
 
 function TextAndImage({
-  alignImage,
+  style,
   sectionImage,
   sectionName,
   sectionDescription,
@@ -190,7 +190,7 @@ function TextAndImage({
   mediaMinWidth,
   objectFitCover,
 }: {
-  alignImage: "left" | "right"
+  style: string | null
   sectionImage: string | null
   sectionName: string | null
   sectionDescription: string | null
@@ -202,11 +202,63 @@ function TextAndImage({
   mediaMinWidth: number | null
   objectFitCover: boolean | null
 }) {
+  // Text on image (overlay) style
+  if (style === "text_on_image") {
+    return (
+      <div
+        className="relative mx-auto w-full"
+        style={backgroundColor ? { backgroundColor } : undefined}
+      >
+        {/* Background image */}
+        {sectionImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={sectionImage}
+            alt={sectionName ?? ""}
+            className="h-full w-full object-cover"
+            style={{
+              ...mediaStyle({
+                mediaMaxHeight,
+                mediaMaxWidth,
+                mediaMinHeight,
+                mediaMinWidth,
+              }),
+              minHeight: mediaMinHeight ?? 400,
+            }}
+          />
+        )}
+
+        {/* Overlay text - centered */}
+        <div className="absolute inset-0 flex items-center justify-center px-6 py-10">
+          <div className="max-w-2xl text-center">
+            {sectionName && (
+              <h3
+                className="mb-4 text-xl font-medium small:text-2xl"
+                style={textColor ? { color: textColor } : undefined}
+              >
+                {sectionName}
+              </h3>
+            )}
+            {sectionDescription &&
+              sectionDescription.split("\n").map((line, i) => (
+                <p
+                  key={i}
+                  className="text-base font-normal leading-6"
+                  style={textColor ? { color: textColor } : undefined}
+                >
+                  {line}
+                </p>
+              ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Default: side_by_side style (text left, image right)
   return (
     <div
-      className={`mx-auto flex max-w-screen-xl flex-col small:flex-row ${
-        alignImage === "right" ? "small:flex-row-reverse" : ""
-      }`}
+      className="mx-auto flex max-w-screen-xl flex-col small:flex-row"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <TextSection
