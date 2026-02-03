@@ -621,14 +621,17 @@ function Gallery({
           pageImages={pageImages}
           orientations={orientations}
           peekImage={peekImage}
+          allImages={images}
         />
       )}
 
-      {/* Navigation arrows */}
+      {/* Navigation arrows — hidden on mobile for spread harmony (uses swipe instead) */}
       {totalPages > 1 && (
         <div
-          className={`flex items-center gap-3 ${
-            isMasonry ? "absolute left-7 bottom-4" : "content-container mt-4"
+          className={`items-center gap-3 ${
+            isMasonry
+              ? "flex absolute left-7 bottom-4"
+              : "hidden small:flex content-container mt-4"
           }`}
         >
           <button
@@ -725,82 +728,111 @@ function GallerySpreadHarmony({
   pageImages,
   orientations,
   peekImage,
+  allImages,
 }: {
   pageImages: ContentBlockImage[]
   orientations: Record<string, Orientation>
   peekImage: ContentBlockImage | null
+  allImages: ContentBlockImage[]
 }) {
   const anySmallHorizontal =
     (pageImages[1] && orientations[pageImages[1].id] === "horizontal") ||
     (pageImages[2] && orientations[pageImages[2].id] === "horizontal")
 
   return (
-    <div className="flex" style={{ height: "clamp(400px, 60vw, 800px)" }}>
-      {/* Main 3 images — bounded by content-container width */}
+    <>
+      {/* Mobile: horizontal scroll gallery */}
       <div
-        className="flex h-full flex-shrink-0 gap-4"
-        style={{
-          width: "min(1360px, calc(100vw - 24px))",
-          marginLeft: "max(40px, calc((100vw - 1400px) / 2 + 16px))",
-        }}
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 small:hidden"
+        style={{ height: "70vw", maxHeight: "400px" }}
       >
-        {/* Left — large image */}
-        {pageImages[0] && (
+        {allImages.map((img) => (
           <div
-            className="h-full flex-shrink-0 overflow-hidden"
-            style={{ width: "min(670px, 48%)" }}
+            key={img.id}
+            className="h-full flex-shrink-0 snap-center overflow-hidden"
+            style={{ width: "80vw" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={pageImages[0].src}
+              src={img.src}
               alt=""
               className="h-full w-full object-cover"
             />
           </div>
-        )}
+        ))}
+      </div>
 
-        {/* Right column — two smaller images */}
-        <div className="flex h-full flex-1 flex-col gap-4">
-          {pageImages[1] && (
-            <div className="flex flex-1 items-start justify-start overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={pageImages[1].src}
-                alt=""
-                className="h-full object-cover"
-                style={{ maxWidth: anySmallHorizontal ? "100%" : "75%" }}
-              />
-            </div>
-          )}
-          {pageImages[2] && (
+      {/* Desktop: spread harmony layout */}
+      <div
+        className="hidden small:flex"
+        style={{ height: "clamp(400px, 60vw, 800px)" }}
+      >
+        {/* Main 3 images — bounded by content-container width */}
+        <div
+          className="flex h-full flex-shrink-0 gap-4"
+          style={{
+            width: "min(1360px, calc(100vw - 24px))",
+            marginLeft: "max(40px, calc((100vw - 1400px) / 2 + 16px))",
+          }}
+        >
+          {/* Left — large image */}
+          {pageImages[0] && (
             <div
-              className={`flex flex-1 items-end overflow-hidden ${
-                anySmallHorizontal ? "justify-start" : "justify-end"
-              }`}
+              className="h-full flex-shrink-0 overflow-hidden"
+              style={{ width: "min(670px, 48%)" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={pageImages[2].src}
+                src={pageImages[0].src}
                 alt=""
-                className="h-full object-cover"
-                style={{ maxWidth: "75%" }}
+                className="h-full w-full object-cover"
               />
             </div>
           )}
-        </div>
-      </div>
 
-      {/* 4th image — fills remaining space to right viewport edge */}
-      {peekImage && (
-        <div className="h-full flex-1 overflow-hidden pl-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={peekImage.src}
-            alt=""
-            className="h-full w-full object-cover object-left"
-          />
+          {/* Right column — two smaller images */}
+          <div className="flex h-full flex-1 flex-col gap-4">
+            {pageImages[1] && (
+              <div className="flex flex-1 items-start justify-start overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={pageImages[1].src}
+                  alt=""
+                  className="h-full object-cover"
+                  style={{ maxWidth: anySmallHorizontal ? "100%" : "75%" }}
+                />
+              </div>
+            )}
+            {pageImages[2] && (
+              <div
+                className={`flex flex-1 items-end overflow-hidden ${
+                  anySmallHorizontal ? "justify-start" : "justify-end"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={pageImages[2].src}
+                  alt=""
+                  className="h-full object-cover"
+                  style={{ maxWidth: "75%" }}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </div>
+
+        {/* 4th image — fills remaining space to right viewport edge */}
+        {peekImage && (
+          <div className="h-full flex-1 overflow-hidden pl-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={peekImage.src}
+              alt=""
+              className="h-full w-full object-cover object-left"
+            />
+          </div>
+        )}
+      </div>
+    </>
   )
 }
