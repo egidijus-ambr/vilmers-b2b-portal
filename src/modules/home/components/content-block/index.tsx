@@ -795,7 +795,7 @@ function GallerySpreadHarmony({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex snap-x snap-mandatory items-center gap-4 overflow-x-auto px-6 small:hidden"
+        className="no-scrollbar flex snap-x snap-mandatory items-center gap-4 overflow-x-auto px-6 small:hidden"
       >
         {allImages.map((img) => {
           const orientation = orientations[img.id]
