@@ -101,5 +101,6 @@
   "table-top-thickness": "Plattenstärke",
   "table-leg-width": "Beinbreite",
   "shade-height": "Schirmhöhe",
-  "shade-radius": "Schirmradius"
+  "shade-radius": "Schirmradius",
+  "confirmed-price": "Bestätigter Preis"
 }

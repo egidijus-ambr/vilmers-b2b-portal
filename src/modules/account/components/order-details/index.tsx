@@ -124,16 +124,12 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
     return images[0].src_xs || images[0].src_thumbnail || images[0].src
   }
 
-  const getComponentName = (
-    component: AdditionalComponentDetail
-  ): string => {
+  const getComponentName = (component: AdditionalComponentDetail): string => {
     const profile = component.additional_component_profiles?.find(
       (p) => p.language.toLowerCase() === language
     )
     return (
-      profile?.name ||
-      component.additional_component_profiles?.[0]?.name ||
-      "-"
+      profile?.name || component.additional_component_profiles?.[0]?.name || "-"
     )
   }
 
@@ -157,12 +153,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
   ): AdditionalComponentDetail[] => {
     const components = item.cart_item?.additional_components
     if (!components?.length) return []
-    const excludedCodes = [
-      "shooting",
-      "threads-type",
-      "market",
-      "direction",
-    ]
+    const excludedCodes = ["shooting", "threads-type", "market", "direction"]
     return components.filter((c) => {
       const groupCode = c.additional_component_group?.code
       if (groupCode && excludedCodes.includes(groupCode)) return false
@@ -531,7 +522,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                 {showVolume && <TableHeaderCell>{t("volume")}</TableHeaderCell>}
                 <TableHeaderCell align="right">{t("total")}</TableHeaderCell>
               </TableHeader>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="">
                 {orderItems.map((item) => {
                   const imageSrc = getItemImage(item)
                   const productName = getItemProductName(item)
@@ -541,7 +532,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                   const colCount = 4 + (showVolume ? 1 : 0)
                   return (
                     <React.Fragment key={item.id}>
-                      <tr className="align-top">
+                      <tr className="align-top border-t border-gray-200">
                         <td className="px-4 py-4">
                           <div className="flex items-start gap-3">
                             <div className="w-[150px] h-[150px] flex-shrink-0 bg-gray-100 overflow-hidden">
@@ -571,46 +562,38 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                               {!hasAdvancedConfig &&
                                 getVisibleComponents(item).length > 0 && (
                                   <div className="mt-2 space-y-1">
-                                    {getVisibleComponents(item).map(
-                                      (comp) => {
-                                        const groupName =
-                                          getComponentGroupName(comp)
-                                        const compName =
-                                          getComponentName(comp)
-                                        return (
-                                          <div
-                                            key={comp.id}
-                                            className="flex items-center gap-2 text-xs"
-                                          >
-                                            {comp.image?.src_thumbnail ? (
-                                              <img
-                                                src={
-                                                  comp.image.src_thumbnail
-                                                }
-                                                alt={compName}
-                                                className="w-6 h-6 rounded object-cover flex-shrink-0"
-                                              />
-                                            ) : comp.color?.hex ? (
-                                              <span
-                                                className="w-6 h-6 rounded flex-shrink-0 border border-gray-200"
-                                                style={{
-                                                  backgroundColor:
-                                                    comp.color.hex,
-                                                }}
-                                              />
-                                            ) : null}
-                                            <span className="text-dark-blue-70">
-                                              {groupName
-                                                ? `${groupName}: `
-                                                : ""}
-                                              <span className="text-dark-blue font-medium">
-                                                {compName}
-                                              </span>
+                                    {getVisibleComponents(item).map((comp) => {
+                                      const groupName =
+                                        getComponentGroupName(comp)
+                                      const compName = getComponentName(comp)
+                                      return (
+                                        <div
+                                          key={comp.id}
+                                          className="flex items-center gap-2 text-xs"
+                                        >
+                                          {comp.image?.src_thumbnail ? (
+                                            <img
+                                              src={comp.image.src_thumbnail}
+                                              alt={compName}
+                                              className="w-6 h-6 rounded object-cover flex-shrink-0"
+                                            />
+                                          ) : comp.color?.hex ? (
+                                            <span
+                                              className="w-6 h-6 rounded flex-shrink-0 border border-gray-200"
+                                              style={{
+                                                backgroundColor: comp.color.hex,
+                                              }}
+                                            />
+                                          ) : null}
+                                          <span className="text-dark-blue-70">
+                                            {groupName ? `${groupName}: ` : ""}
+                                            <span className="text-dark-blue font-medium">
+                                              {compName}
                                             </span>
-                                          </div>
-                                        )
-                                      }
-                                    )}
+                                          </span>
+                                        </div>
+                                      )
+                                    })}
                                   </div>
                                 )}
                               {hasAdvancedConfig && (
@@ -659,13 +642,11 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
           </div>
 
           {/* Summary */}
-          <div className=" mt-2 pt-4">
+          <div className=" mt-2 pt-4 border-t border-gray-200 ">
             <div className="flex flex-col items-end gap-2 text-sm">
               {showVolume && (
                 <div className="flex justify-between w-full max-w-xs">
-                  <span className="text-dark-blue-70">
-                    {t("volume")}
-                  </span>
+                  <span className="text-dark-blue-70">{t("volume")}</span>
                   <span className="text-dark-blue font-medium">
                     {orderItems
                       .reduce((sum, item) => sum + (item.volume || 0), 0)
@@ -683,6 +664,16 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                   {formatPrice(subtotal)}
                 </span>
               </div>
+              {order.total_price_confirmed != null && (
+                <div className="flex justify-between w-full max-w-xs">
+                  <span className="text-dark-blue-70">
+                    {t("confirmed-price")}
+                  </span>
+                  <span className="text-dark-blue font-medium">
+                    {formatPrice(order.total_price_confirmed)}
+                  </span>
+                </div>
+              )}
               {showShipping && (
                 <div className="flex justify-between w-full max-w-xs">
                   <span className="text-dark-blue-70">
@@ -705,8 +696,27 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                 <span className="text-dark-blue font-semibold">
                   {showPvm ? t("total-incl-tax") : t("total").toUpperCase()}
                 </span>
-                <span className="text-dark-blue font-semibold">
-                  {formatPrice(grandTotal)}
+                <span
+                  className={`font-semibold flex items-center gap-1 ${
+                    order.total_price_confirmed != null
+                      ? "text-green-700"
+                      : "text-dark-blue"
+                  }`}
+                >
+                  {order.total_price_confirmed != null && (
+                    <svg
+                      className="h-4 w-4 text-green-600"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                  {formatPrice(order.total_price_confirmed ?? grandTotal)}
                 </span>
               </div>
             </div>
