@@ -438,7 +438,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
     if (visible.length === 0) return null
 
     return (
-      <div>
+      <div className="max-w-xs">
         <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
           {t("dimensions")}
         </h6>
@@ -462,9 +462,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
       <div className="px-4 py-4">
         <div className="space-y-5">
           {renderFabrics()}
-          <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
-            {renderProductDimensions()}
-          </div>
+          {renderProductDimensions()}
         </div>
         {renderAdditionalComponents()}
       </div>

@@ -735,7 +735,7 @@ function GallerySpreadHarmony({
     (pageImages[2] && orientations[pageImages[2].id] === "horizontal")
 
   return (
-    <div className="flex" style={{ height: "80vh", maxHeight: "800px" }}>
+    <div className="flex" style={{ height: "clamp(400px, 60vw, 800px)" }}>
       {/* Main 3 images — bounded by content-container width */}
       <div
         className="flex h-full flex-shrink-0 gap-4"
