@@ -86,12 +86,8 @@ const SofaDrawingPreview = ({
   const isLiveNodes = typeof combination[0]?.findOne === 'function'
 
   // --- SIZE the canvas according to the parent DIV size
-  const [height, setHeight] = useState(
-    parentRef.current ? parentRef.current.offsetHeight : 300
-  )
-  const [width, setWidth] = useState(
-    parentRef.current ? parentRef.current.offsetWidth : 300
-  )
+  const [height, setHeight] = useState(0)
+  const [width, setWidth] = useState(0)
 
   const [metricLayers, setMetricLayers] = useState(false)
 
@@ -100,33 +96,29 @@ const SofaDrawingPreview = ({
     ? getGroupOfGroupsRectWithScale(combination, sofaScale)
     : computeStaticGroupRect(combination, sofaScale)
 
+  // Use ResizeObserver to track container dimensions reliably
   useEffect(() => {
-    handleResize()
-  }, [parentRef])
+    const container = parentRef.current
+    if (!container) return
 
-  const handleResize = () => {
-    if (parentRef.current) {
-      let height = parentRef.current.offsetHeight
-      let width = parentRef.current.offsetWidth
-      setHeight(height)
-      setWidth(width)
-
-      if (isLiveNodes && layer) {
-        drawMetricLinesForShapes()
-        setMetricLayers(true)
+    const updateDimensions = () => {
+      const newWidth = container.offsetWidth
+      const newHeight = container.offsetHeight
+      if (newWidth > 0 && newHeight > 0) {
+        setWidth(newWidth)
+        setHeight(newHeight)
       }
     }
-  }
 
-  useEffect(() => {
-    if (isLiveNodes && layer) {
-      drawMetricLinesForShapes()
-      setMetricLayers(true)
-    } else if (!isLiveNodes) {
-      // Static mode: mark as ready for image export immediately
-      setMetricLayers(true)
-    }
-  }, [combination, layer])
+    // Initial measurement
+    updateDimensions()
+
+    // Observe size changes
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    resizeObserver.observe(container)
+
+    return () => resizeObserver.disconnect()
+  }, [parentRef])
 
   // Calculate distance between groups (if they overlap distance should be negative)
   // Move all groups to center
@@ -230,9 +222,26 @@ const SofaDrawingPreview = ({
     n++
   }
 
+  // Draw metric lines for live Konva nodes when dimensions are ready
+  useEffect(() => {
+    if (width === 0 || height === 0) return
+
+    if (isLiveNodes && layer) {
+      layer.find('.metricLine').forEach((l: any) => l.destroy())
+      drawMetricLinesForGroups(combination, layer, scale, {
+        offsetX: distanceToCenterX,
+        offsetY: distanceToCenterY,
+      })
+      setMetricLayers(true)
+    } else if (!isLiveNodes) {
+      // Static mode: mark as ready for image export immediately
+      setMetricLayers(true)
+    }
+  }, [width, height, combination, layer, isLiveNodes, scale, distanceToCenterX, distanceToCenterY])
+
   useEffect(() => {
     if (metricLayers && onImage != null && stageRef.current) {
-      const uri = stageRef.current.toDataURL()
+      const uri = (stageRef.current as any).toDataURL()
 
       const imageObject = {
         dataURI: uri,
@@ -242,17 +251,11 @@ const SofaDrawingPreview = ({
 
       onImage(imageObject)
     }
-  }, [metricLayers])
+  }, [metricLayers, onImage, groupRect.width, groupRect.height])
 
-  // Metric lines only for live Konva nodes
-  const drawMetricLinesForShapes = () => {
-    if (!isLiveNodes || !layer) return
-    layer.find('.metricLine').forEach(l => l.destroy())
-
-    drawMetricLinesForGroups(combination, layer, scale, {
-      offsetX: distanceToCenterX,
-      offsetY: distanceToCenterY,
-    })
+  // Don't render until we have valid dimensions
+  if (width === 0 || height === 0) {
+    return null
   }
 
   return (

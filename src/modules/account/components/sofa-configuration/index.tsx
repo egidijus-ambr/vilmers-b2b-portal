@@ -171,13 +171,11 @@ function parseSofaSets(item: OrderDetailItem): ParsedSofaSet[] {
 
 interface SofaSetPreviewProps {
   shapes: KonvaShape[]
-  maxWidth?: number
   maxHeight?: number
 }
 
 const SofaSetPreview: React.FC<SofaSetPreviewProps> = ({
   shapes,
-  maxWidth = 400,
   maxHeight = 250,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -207,7 +205,6 @@ const SofaSetPreview: React.FC<SofaSetPreviewProps> = ({
     <div
       ref={containerRef}
       style={{
-        maxWidth,
         height: maxHeight,
         width: "100%",
         position: "relative",
