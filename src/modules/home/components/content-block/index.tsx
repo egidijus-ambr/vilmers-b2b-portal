@@ -23,12 +23,21 @@ function getProfile(
   )
 }
 
-function parseExtraCss(raw: string | null): React.CSSProperties {
-  try {
-    return JSON.parse(raw ?? "{}") as React.CSSProperties
-  } catch {
-    return {}
+function parseExtraCss(raw: unknown): React.CSSProperties {
+  if (!raw) return {}
+  // If already an object, return it directly
+  if (typeof raw === "object" && raw !== null) {
+    return raw as React.CSSProperties
   }
+  // If it's a string, parse it
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as React.CSSProperties
+    } catch {
+      return {}
+    }
+  }
+  return {}
 }
 
 export default function ContentBlock({
@@ -38,6 +47,9 @@ export default function ContentBlock({
 }: ContentBlockProps) {
   const profile = getProfile(data.content_block_profiles, languageCode)
   const extraCss = parseExtraCss(data.extra_css)
+
+  const hasMaxHeight =
+    data.max_height != null || extraCss.maxHeight != null
 
   const sectionStyle: React.CSSProperties = {
     ...(data.default_margins ? { margin: "40px 0" } : { margin: "auto" }),
@@ -50,6 +62,7 @@ export default function ContentBlock({
     ...(data.left_margin && { marginLeft: data.left_margin }),
     ...(data.right_margin && { marginRight: data.right_margin }),
     ...extraCss,
+    ...(hasMaxHeight && { overflow: "hidden" }),
   }
 
   const alignImage = index % 2 === 1 ? "right" : "left"
@@ -69,6 +82,7 @@ export default function ContentBlock({
           mediaMinHeight={data.media_min_height}
           mediaMinWidth={data.media_min_width}
           objectFitCover={data.object_fit_cover}
+          containerMaxHeight={data.max_height ?? extraCss.maxHeight}
         />
       )}
 
@@ -141,11 +155,16 @@ function TextSection({
             className="mb-4 text-xl font-medium small:text-2xl"
             style={textColor ? { color: textColor } : undefined}
           >
-            {name}
+            {name.split("\\n").map((line, i) => (
+              <span key={i}>
+                {line}
+                {i < name.split("\\n").length - 1 && <br />}
+              </span>
+            ))}
           </h3>
         )}
         {description &&
-          description.split("\n").map((line, i) => (
+          description.split("\\n").map((line, i) => (
             <p
               key={i}
               className="text-base font-normal leading-6 text-gray-600"
@@ -189,6 +208,7 @@ function TextAndImage({
   mediaMinHeight,
   mediaMinWidth,
   objectFitCover,
+  containerMaxHeight,
 }: {
   style: string | null
   sectionImage: string | null
@@ -201,13 +221,17 @@ function TextAndImage({
   mediaMinHeight: number | null
   mediaMinWidth: number | null
   objectFitCover: boolean | null
+  containerMaxHeight?: number | string | null
 }) {
   // Text on image (overlay) style
   if (style === "text_on_image") {
     return (
       <div
-        className="relative mx-auto w-full"
-        style={backgroundColor ? { backgroundColor } : undefined}
+        className="relative mx-auto w-full overflow-hidden"
+        style={{
+          ...(backgroundColor && { backgroundColor }),
+          ...(containerMaxHeight && { height: containerMaxHeight }),
+        }}
       >
         {/* Background image */}
         {sectionImage && (
@@ -223,7 +247,7 @@ function TextAndImage({
                 mediaMinHeight,
                 mediaMinWidth,
               }),
-              minHeight: mediaMinHeight ?? 400,
+              ...(!containerMaxHeight && { minHeight: mediaMinHeight ?? 400 }),
             }}
           />
         )}
@@ -236,11 +260,16 @@ function TextAndImage({
                 className="mb-4 text-xl font-medium small:text-2xl"
                 style={textColor ? { color: textColor } : undefined}
               >
-                {sectionName}
+                {sectionName.split("\\n").map((line, i) => (
+                  <span key={i}>
+                    {line}
+                    {i < sectionName.split("\\n").length - 1 && <br />}
+                  </span>
+                ))}
               </h3>
             )}
             {sectionDescription &&
-              sectionDescription.split("\n").map((line, i) => (
+              sectionDescription.split("\\n").map((line, i) => (
                 <p
                   key={i}
                   className="text-base font-normal leading-6"
@@ -412,11 +441,16 @@ function OnlyText({
             className="mb-4 text-xl font-medium small:text-2xl"
             style={textColor ? { color: textColor } : undefined}
           >
-            {sectionName}
+            {sectionName.split("\\n").map((line, i) => (
+              <span key={i}>
+                {line}
+                {i < sectionName.split("\\n").length - 1 && <br />}
+              </span>
+            ))}
           </h3>
         )}
         {sectionDescription &&
-          sectionDescription.split("\n").map((line, i) => (
+          sectionDescription.split("\\n").map((line, i) => (
             <p
               key={i}
               className="text-base font-normal leading-6 text-gray-600"
@@ -444,7 +478,7 @@ function ThreeColumnsTitleLeft({
   textColor: string | null
 }) {
   // Split description into two roughly equal halves for the two text columns
-  const lines = sectionDescription ? sectionDescription.split("\n") : []
+  const lines = sectionDescription ? sectionDescription.split("\\n") : []
   const midpoint = Math.ceil(lines.length / 2)
   const leftLines = lines.slice(0, midpoint)
   const rightLines = lines.slice(midpoint)
@@ -462,7 +496,12 @@ function ThreeColumnsTitleLeft({
               className="text-xs font-medium uppercase tracking-[0.2em] small:text-sm"
               style={textColor ? { color: textColor } : undefined}
             >
-              {sectionName}
+              {sectionName.split("\\n").map((line, i) => (
+                <span key={i}>
+                  {line}
+                  {i < sectionName.split("\\n").length - 1 && <br />}
+                </span>
+              ))}
             </h3>
           )}
         </div>
@@ -510,7 +549,7 @@ function TwoColumnsTitleTopCenter({
   backgroundColor: string | null
   textColor: string | null
 }) {
-  const lines = sectionDescription ? sectionDescription.split("\n") : []
+  const lines = sectionDescription ? sectionDescription.split("\\n") : []
   const midpoint = Math.ceil(lines.length / 2)
   const leftLines = lines.slice(0, midpoint)
   const rightLines = lines.slice(midpoint)
@@ -526,7 +565,12 @@ function TwoColumnsTitleTopCenter({
           className="mb-8 text-center text-xs font-medium uppercase tracking-[0.2em] small:mb-12 small:text-sm"
           style={textColor ? { color: textColor } : undefined}
         >
-          {sectionName}
+          {sectionName.split("\\n").map((line, i) => (
+            <span key={i}>
+              {line}
+              {i < sectionName.split("\\n").length - 1 && <br />}
+            </span>
+          ))}
         </h3>
       )}
 

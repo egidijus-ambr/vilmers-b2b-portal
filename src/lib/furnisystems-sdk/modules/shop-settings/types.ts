@@ -54,7 +54,7 @@ export interface ContentBlock {
   media_min_height: number | null
   media_min_width: number | null
   object_fit_cover: boolean | null
-  extra_css: string | null
+  extra_css: Record<string, unknown> | string | null
 }
 
 export interface ShopSetting {
