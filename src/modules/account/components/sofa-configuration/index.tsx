@@ -416,8 +416,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
     // Dimensions are stored on the "model" / "model-other" additional component
     const modelComponent = additionalComponents.find(
       (c) =>
-        c.dimensions &&
-        c.additional_component_group?.code?.startsWith("model")
+        c.dimensions && c.additional_component_group?.code?.startsWith("model")
     )
     const dims = modelComponent?.dimensions
     if (!dims) return null
@@ -438,14 +437,16 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
     if (visible.length === 0) return null
 
     return (
-      <div className="max-w-xs">
+      <div className="max-w-lg">
         <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
           {t("dimensions")}
         </h6>
         <div className="space-y-1 text-xs">
           {visible.map((d) => (
             <div key={d.label} className="flex items-baseline gap-2">
-              <span className="text-dark-blue-70 whitespace-nowrap">{d.label}</span>
+              <span className="text-dark-blue-70 whitespace-nowrap">
+                {d.label}
+              </span>
               <span className="flex-1 border-b border-dashed border-gray-300" />
               <span className="text-dark-blue font-medium whitespace-nowrap">
                 {d.value} {d.unit}
@@ -494,7 +495,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
 
                 <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
                   {sofaSet.dimensions && (
-                    <div>
+                    <div className="max-w-lg">
                       <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
                         {t("dimensions")}
                       </h6>
