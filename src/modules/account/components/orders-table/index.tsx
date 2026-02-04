@@ -133,6 +133,10 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
   // Check if user is an agent
   const isAgent = customer?.role === "agent" || customer?.role === "admin"
 
+  // Check if order details feature is enabled
+  const isOrderDetailsEnabled =
+    process.env.NEXT_PUBLIC_FEATURE_ORDER_DETAILS === "true"
+
   // Use ordersData if available, otherwise fall back to empty state
   const orders = ordersData?.orders || []
   const currentPage = ordersData?.currentPage || 1
@@ -271,12 +275,19 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
               orders.map((order, index) => (
                 <tr
                   key={order.id}
-                  onClick={() =>
-                    router.push(
-                      `/${languageCode}/account/orders/details/${order.id}`
-                    )
+                  onClick={
+                    isOrderDetailsEnabled
+                      ? () =>
+                          router.push(
+                            `/${languageCode}/account/orders/details/${order.id}`
+                          )
+                      : undefined
                   }
-                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                  className={
+                    isOrderDetailsEnabled
+                      ? "cursor-pointer hover:bg-gray-50 transition-colors"
+                      : "transition-colors"
+                  }
                 >
                   <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900">
                     <div className="font-medium">
