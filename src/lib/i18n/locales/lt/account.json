@@ -102,5 +102,8 @@
   "table-leg-width": "Kojos plotis",
   "shade-height": "Gaubto aukštis",
   "shade-radius": "Gaubto spindulys",
-  "confirmed-price": "Patvirtinta kaina"
+  "confirmed-price": "Patvirtinta kaina",
+  "customer": "Klientas",
+  "location": "Vieta",
+  "shop_location": "Parduotuvė (Vieta)"
 }

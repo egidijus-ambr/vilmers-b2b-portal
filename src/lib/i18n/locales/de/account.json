@@ -102,5 +102,8 @@
   "table-leg-width": "Beinbreite",
   "shade-height": "Schirmhöhe",
   "shade-radius": "Schirmradius",
-  "confirmed-price": "Bestätigter Preis"
+  "confirmed-price": "Bestätigter Preis",
+  "customer": "Kunde",
+  "location": "Standort",
+  "shop_location": "Geschäft (Standort)"
 }

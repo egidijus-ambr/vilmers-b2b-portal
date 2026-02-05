@@ -13,6 +13,8 @@ import {
 } from "@modules/common/components/table-header"
 import { useTranslations, useI18n } from "@lib/i18n"
 import SofaConfigurationDetail from "@modules/account/components/sofa-configuration"
+import { useCustomer } from "@lib/context/customer-context"
+import { BuildingStorefront } from "@medusajs/icons"
 
 interface OrderDetailsProps {
   order: OrderDetail
@@ -39,7 +41,11 @@ const isAdvancedItem = (item: OrderDetailItem): boolean => {
 const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
   const { t } = useTranslations("account")
   const { language } = useI18n()
+  const { customer } = useCustomer()
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
+  // Check if user is an agent or admin
+  const isAgent = customer?.role === "agent" || customer?.role === "admin"
 
   const toggleItemExpand = (itemId: string) => {
     setExpandedItems((prev) => {
@@ -278,14 +284,29 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
               {getCarrierName()}
             </span>
           </div>
-          <div className="flex gap-4">
-            <span className="text-dark-blue-70 min-w-[140px]">
-              {t("payment-method")}
-            </span>
-            <span className="text-dark-blue font-medium">
-              {getPaymentMethodName()}
-            </span>
-          </div>
+          {/* Customer row - only for agents/admins */}
+          {isAgent && (
+            <div className="flex gap-4">
+              <span className="text-dark-blue-70 min-w-[140px]">
+                {t("customer")}
+              </span>
+              <span className="text-dark-blue font-medium">
+                {order.purchased_by?.name || "-"}
+              </span>
+            </div>
+          )}
+          {/* Shop (Location) row - for all users when purchased_subAccount exists */}
+          {order.purchased_subAccount?.name && (
+            <div className="flex gap-4">
+              <span className="text-dark-blue-70 min-w-[140px]">
+                {t("shop_location")}
+              </span>
+              <span className="flex items-center gap-1 text-dark-blue font-medium">
+                <BuildingStorefront className="w-4 h-4" />
+                {order.purchased_subAccount.name}
+              </span>
+            </div>
+          )}
           {order.order_type && (
             <div className="flex gap-4">
               <span className="text-dark-blue-70 min-w-[140px]">
@@ -410,13 +431,16 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
 
       {/* Order Items Table */}
       {orderItems.length > 0 && (
-        <div className="bg-white p-4 sm:p-6">
-          <h3 className="text-lg font-medium text-dark-blue mb-4">
-            {t("order-items")}
-          </h3>
+        <>
           {/* Mobile: card layout */}
-          <div className="small:hidden divide-y divide-gray-100">
-            {orderItems.map((item) => {
+          <div className="small:hidden bg-white">
+            <div className="bg-gold-20 px-4 py-4">
+              <span className="text-sm font-medium text-dark-blue">
+                {t("order-items")}
+              </span>
+            </div>
+            <div className="px-4">
+            {orderItems.map((item, index) => {
               const imageSrc = getItemImage(item)
               const productName = getItemProductName(item)
               const lineTotal = item.price * item.quantity
@@ -424,6 +448,9 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
               const isExpanded = expandedItems.has(item.id)
               return (
                 <React.Fragment key={item.id}>
+                  {index > 0 && (
+                    <div className="border-t border-gray-100" />
+                  )}
                   <div className="flex gap-4 py-4">
                     <div className="w-[100px] h-[100px] flex-shrink-0 bg-gray-100 overflow-hidden">
                       {imageSrc ? (
@@ -510,10 +537,92 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                 </React.Fragment>
               )
             })}
+            </div>
+
+            {/* Summary - Mobile */}
+            <div className="px-4 py-4 border-t border-gray-200">
+              <div className="flex flex-col items-end gap-2 text-sm">
+                {showVolume && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">{t("volume")}</span>
+                    <span className="text-dark-blue font-medium">
+                      {orderItems
+                        .reduce((sum, item) => sum + (item.volume || 0), 0)
+                        .toFixed(2)}{" "}
+                      m³
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between w-full max-w-xs">
+                  <span className="text-dark-blue-70">
+                    {t("subtotal")} ({orderItems.length}{" "}
+                    {t("items").toLowerCase()})
+                  </span>
+                  <span className="text-dark-blue font-medium">
+                    {formatPrice(subtotal)}
+                  </span>
+                </div>
+                {order.total_price_confirmed != null && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">
+                      {t("confirmed-price")}
+                    </span>
+                    <span className="text-dark-blue font-medium">
+                      {formatPrice(order.total_price_confirmed)}
+                    </span>
+                  </div>
+                )}
+                {showShipping && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">
+                      {t("shipping-cost")}
+                    </span>
+                    <span className="text-dark-blue font-medium">
+                      {formatPrice(shippingTotal)}
+                    </span>
+                  </div>
+                )}
+                {showPvm && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">{t("vat")} 21%</span>
+                    <span className="text-dark-blue font-medium">
+                      {formatPrice(vatAmount)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between w-full max-w-xs border-t border-gray-200 pt-2 mt-1">
+                  <span className="text-dark-blue font-semibold">
+                    {showPvm ? t("total-incl-tax") : t("total").toUpperCase()}
+                  </span>
+                  <span
+                    className={`font-semibold flex items-center gap-1 ${
+                      order.total_price_confirmed != null
+                        ? "text-green-700"
+                        : "text-dark-blue"
+                    }`}
+                  >
+                    {order.total_price_confirmed != null && (
+                      <svg
+                        className="h-4 w-4 text-green-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                    {formatPrice(order.total_price_confirmed ?? grandTotal)}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Desktop: table layout */}
-          <div className="hidden small:block overflow-x-auto">
+          <div className="hidden small:block bg-white">
             <table className="w-full text-sm">
               <TableHeader>
                 <TableHeaderCell>{t("order-items")}</TableHeaderCell>
@@ -523,7 +632,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                 <TableHeaderCell align="right">{t("total")}</TableHeaderCell>
               </TableHeader>
               <tbody className="">
-                {orderItems.map((item) => {
+                {orderItems.map((item, index) => {
                   const imageSrc = getItemImage(item)
                   const productName = getItemProductName(item)
                   const lineTotal = item.price * item.quantity
@@ -532,7 +641,14 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                   const colCount = 4 + (showVolume ? 1 : 0)
                   return (
                     <React.Fragment key={item.id}>
-                      <tr className="align-top border-t border-gray-200">
+                      {index > 0 && (
+                        <tr>
+                          <td colSpan={colCount} className="px-4 py-0">
+                            <div className="border-t border-gray-200" />
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="align-top">
                         <td className="px-4 py-4">
                           <div className="flex items-start gap-3">
                             <div className="w-[150px] h-[150px] flex-shrink-0 bg-gray-100 overflow-hidden">
@@ -639,89 +755,89 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                 })}
               </tbody>
             </table>
-          </div>
 
-          {/* Summary */}
-          <div className=" mt-2 pt-4 border-t border-gray-200 ">
-            <div className="flex flex-col items-end gap-2 text-sm">
-              {showVolume && (
-                <div className="flex justify-between w-full max-w-xs">
-                  <span className="text-dark-blue-70">{t("volume")}</span>
-                  <span className="text-dark-blue font-medium">
-                    {orderItems
-                      .reduce((sum, item) => sum + (item.volume || 0), 0)
-                      .toFixed(2)}{" "}
-                    m³
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between w-full max-w-xs">
-                <span className="text-dark-blue-70">
-                  {t("subtotal")} ({orderItems.length}{" "}
-                  {t("items").toLowerCase()})
-                </span>
-                <span className="text-dark-blue font-medium">
-                  {formatPrice(subtotal)}
-                </span>
-              </div>
-              {order.total_price_confirmed != null && (
+            {/* Summary - Desktop */}
+            <div className="px-4 py-4 border-t border-gray-200">
+              <div className="flex flex-col items-end gap-2 text-sm">
+                {showVolume && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">{t("volume")}</span>
+                    <span className="text-dark-blue font-medium">
+                      {orderItems
+                        .reduce((sum, item) => sum + (item.volume || 0), 0)
+                        .toFixed(2)}{" "}
+                      m³
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between w-full max-w-xs">
                   <span className="text-dark-blue-70">
-                    {t("confirmed-price")}
+                    {t("subtotal")} ({orderItems.length}{" "}
+                    {t("items").toLowerCase()})
                   </span>
                   <span className="text-dark-blue font-medium">
-                    {formatPrice(order.total_price_confirmed)}
+                    {formatPrice(subtotal)}
                   </span>
                 </div>
-              )}
-              {showShipping && (
-                <div className="flex justify-between w-full max-w-xs">
-                  <span className="text-dark-blue-70">
-                    {t("shipping-cost")}
+                {order.total_price_confirmed != null && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">
+                      {t("confirmed-price")}
+                    </span>
+                    <span className="text-dark-blue font-medium">
+                      {formatPrice(order.total_price_confirmed)}
+                    </span>
+                  </div>
+                )}
+                {showShipping && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">
+                      {t("shipping-cost")}
+                    </span>
+                    <span className="text-dark-blue font-medium">
+                      {formatPrice(shippingTotal)}
+                    </span>
+                  </div>
+                )}
+                {showPvm && (
+                  <div className="flex justify-between w-full max-w-xs">
+                    <span className="text-dark-blue-70">{t("vat")} 21%</span>
+                    <span className="text-dark-blue font-medium">
+                      {formatPrice(vatAmount)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between w-full max-w-xs border-t border-gray-200 pt-2 mt-1">
+                  <span className="text-dark-blue font-semibold">
+                    {showPvm ? t("total-incl-tax") : t("total").toUpperCase()}
                   </span>
-                  <span className="text-dark-blue font-medium">
-                    {formatPrice(shippingTotal)}
+                  <span
+                    className={`font-semibold flex items-center gap-1 ${
+                      order.total_price_confirmed != null
+                        ? "text-green-700"
+                        : "text-dark-blue"
+                    }`}
+                  >
+                    {order.total_price_confirmed != null && (
+                      <svg
+                        className="h-4 w-4 text-green-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                    {formatPrice(order.total_price_confirmed ?? grandTotal)}
                   </span>
                 </div>
-              )}
-              {showPvm && (
-                <div className="flex justify-between w-full max-w-xs">
-                  <span className="text-dark-blue-70">{t("vat")} 21%</span>
-                  <span className="text-dark-blue font-medium">
-                    {formatPrice(vatAmount)}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between w-full max-w-xs border-t border-gray-200 pt-2 mt-1">
-                <span className="text-dark-blue font-semibold">
-                  {showPvm ? t("total-incl-tax") : t("total").toUpperCase()}
-                </span>
-                <span
-                  className={`font-semibold flex items-center gap-1 ${
-                    order.total_price_confirmed != null
-                      ? "text-green-700"
-                      : "text-dark-blue"
-                  }`}
-                >
-                  {order.total_price_confirmed != null && (
-                    <svg
-                      className="h-4 w-4 text-green-600"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                  {formatPrice(order.total_price_confirmed ?? grandTotal)}
-                </span>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Delivery Address + Invoice Address */}

@@ -102,5 +102,8 @@
   "table-leg-width": "Largeur des pieds",
   "shade-height": "Hauteur abat-jour",
   "shade-radius": "Rayon abat-jour",
-  "confirmed-price": "Prix confirmé"
+  "confirmed-price": "Prix confirmé",
+  "customer": "Client",
+  "location": "Emplacement",
+  "shop_location": "Boutique (Emplacement)"
 }

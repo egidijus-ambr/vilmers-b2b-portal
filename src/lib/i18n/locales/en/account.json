@@ -102,5 +102,8 @@
   "table-leg-width": "Leg width",
   "shade-height": "Shade height",
   "shade-radius": "Shade radius",
-  "confirmed-price": "Confirmed Price"
+  "confirmed-price": "Confirmed Price",
+  "customer": "Customer",
+  "location": "Location",
+  "shop_location": "Shop (Location)"
 }

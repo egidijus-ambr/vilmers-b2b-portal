@@ -13,7 +13,7 @@ interface TableHeaderCellProps {
 export const TableHeader = ({ children }: TableHeaderProps) => {
   return (
     <thead>
-      <tr className="bg-gold-10 h-[72px]">{children}</tr>
+      <tr className="bg-gold-20 h-[72px]">{children}</tr>
     </thead>
   )
 }

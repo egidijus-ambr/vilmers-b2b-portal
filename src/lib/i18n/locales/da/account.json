@@ -102,5 +102,8 @@
   "table-leg-width": "Benbredde",
   "shade-height": "Skærmhøjde",
   "shade-radius": "Skærmradius",
-  "confirmed-price": "Bekræftet pris"
+  "confirmed-price": "Bekræftet pris",
+  "customer": "Kunde",
+  "location": "Placering",
+  "shop_location": "Butik (Placering)"
 }
