@@ -5,6 +5,7 @@ export type ContentBlockType =
   | "only_image"
   | "only_video"
   | "gallery"
+  | "button"
 
 export type ContentBlockStyle =
   | "1_column_title_top"
@@ -12,6 +13,8 @@ export type ContentBlockStyle =
   | "3_columns_title_left"
   | "side_by_side"
   | "text_on_image"
+  | "outline"
+  | "filled"
 
 export type VideoType = "uploaded" | "youtube" | "vimeo"
 
@@ -19,6 +22,7 @@ export interface ContentBlockProfile {
   id: string
   name: string | null
   description: string | null
+  link: string | null
   language: string
 }
 
@@ -55,6 +59,11 @@ export interface ContentBlockData {
   media_min_height: number | null
   media_min_width: number | null
   object_fit_cover: boolean | null
+  link_new_tab: boolean | null
+  page: {
+    id: string
+    page_profiles: { slug: string; language: string }[]
+  } | null
   extra_css: Record<string, unknown> | string | null
 }
 

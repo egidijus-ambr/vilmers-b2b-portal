@@ -52,6 +52,7 @@ export const APP_SHOP_SETTINGS = gql`
           id
           name
           description
+          link
           language
         }
         default_margins
@@ -70,6 +71,14 @@ export const APP_SHOP_SETTINGS = gql`
         media_min_height
         media_min_width
         object_fit_cover
+        link_new_tab
+        page {
+          id
+          page_profiles {
+            slug
+            language
+          }
+        }
         extra_css
       }
     }

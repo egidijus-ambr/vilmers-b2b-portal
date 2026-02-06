@@ -43,6 +43,7 @@ export const FIND_PAGE_BY_CODE = gql`
           id
           name
           description
+          link
           language
         }
         default_margins
@@ -61,6 +62,14 @@ export const FIND_PAGE_BY_CODE = gql`
         media_min_height
         media_min_width
         object_fit_cover
+        link_new_tab
+        page {
+          id
+          page_profiles {
+            slug
+            language
+          }
+        }
         extra_css
       }
     }
@@ -118,6 +127,7 @@ export const FIND_PAGE_BY_SLUG = gql`
           id
           name
           description
+          link
           language
         }
         default_margins
@@ -136,6 +146,14 @@ export const FIND_PAGE_BY_SLUG = gql`
         media_min_height
         media_min_width
         object_fit_cover
+        link_new_tab
+        page {
+          id
+          page_profiles {
+            slug
+            language
+          }
+        }
         extra_css
       }
     }

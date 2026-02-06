@@ -132,6 +132,19 @@ export default function ContentBlock({
       {data.type === "gallery" && (
         <Gallery images={data.gallery_images ?? []} style={data.style} />
       )}
+
+      {data.type === "button" && (
+        <ButtonBlock
+          style={data.style}
+          buttonText={profile?.name ?? null}
+          link={profile?.link ?? null}
+          linkNewTab={data.link_new_tab}
+          page={data.page}
+          languageCode={languageCode}
+          backgroundColor={data.background_color}
+          textColor={data.text_color}
+        />
+      )}
     </section>
   )
 }
@@ -640,6 +653,91 @@ function OnlyVideo({
         videoLoop={videoLoop}
         objectFitCover={objectFitCover}
       />
+    </div>
+  )
+}
+
+/* ─── Button Block ────────────────────────────────────────── */
+
+function ButtonBlock({
+  style,
+  buttonText,
+  link,
+  linkNewTab,
+  page,
+  languageCode,
+  backgroundColor,
+  textColor,
+}: {
+  style: string | null
+  buttonText: string | null
+  link: string | null
+  linkNewTab: boolean | null
+  page: { id: string; page_profiles: { slug: string; language: string }[] } | null
+  languageCode: string
+  backgroundColor: string | null
+  textColor: string | null
+}) {
+  // Resolve href
+  let href: string | null = null
+  let target: string | undefined = undefined
+
+  if (page) {
+    const pageProfile = page.page_profiles.find(
+      (pp) => pp.language === languageCode
+    )
+    if (pageProfile) {
+      href = `/${languageCode}/${pageProfile.slug}`
+    }
+  } else if (link) {
+    href = link
+    if (linkNewTab) {
+      target = "_blank"
+    }
+  }
+
+  const isFilled = style === "filled"
+  const text = buttonText || "Read more"
+
+  const buttonStyle: React.CSSProperties = isFilled
+    ? {
+        backgroundColor: backgroundColor || "#1a1a1a",
+        color: textColor || "#ffffff",
+      }
+    : {
+        color: textColor || "currentColor",
+        borderColor: textColor || "currentColor",
+      }
+
+  const buttonClasses = `inline-flex items-center gap-3 rounded-full px-8 py-4 text-sm tracking-wide transition-opacity hover:opacity-80 ${
+    isFilled ? "" : "border"
+  }`
+
+  const arrow = <ArrowRight size="16" color="currentColor" />
+
+  if (!href) {
+    return (
+      <div className="flex justify-center py-8">
+        <span className={buttonClasses} style={buttonStyle}>
+          {text}
+          {arrow}
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex justify-center py-8">
+      <a
+        href={href}
+        target={target}
+        rel={target === "_blank" ? "noopener noreferrer" : undefined}
+        className={buttonClasses}
+        style={buttonStyle}
+      >
+        {text}
+        {arrow}
+      </a>
     </div>
   )
 }

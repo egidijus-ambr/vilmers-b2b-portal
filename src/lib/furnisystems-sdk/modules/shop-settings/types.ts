@@ -18,6 +18,7 @@ export interface ContentBlockProfile {
   id: string
   name: string | null
   description: string | null
+  link: string | null
   language: string
 }
 
@@ -54,6 +55,8 @@ export interface ContentBlock {
   media_min_height: number | null
   media_min_width: number | null
   object_fit_cover: boolean | null
+  link_new_tab: boolean | null
+  page: { id: string; page_profiles: { slug: string; language: string }[] } | null
   extra_css: Record<string, unknown> | string | null
 }
 
