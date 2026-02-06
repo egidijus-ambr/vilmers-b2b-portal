@@ -1,15 +1,31 @@
 import { sdk } from "@lib/config"
 import { Page } from "@lib/furnisystems-sdk"
+import { unstable_cache } from "next/cache"
+import { revalidateTag } from "next/cache"
+
+const PAGE_CACHE_TAG = "pages"
 
 export const getPageByCode = async (
   code: string,
   language?: string
 ): Promise<Page | null> => {
-  try {
-    const page = await sdk.pages.getPageByCode(code, language)
-    return page
-  } catch (error) {
-    console.error(`Error fetching page with code "${code}":`, error)
-    return null
-  }
+  const fetchPage = unstable_cache(
+    async () => {
+      try {
+        const page = await sdk.pages.getPageByCode(code, language)
+        return page
+      } catch (error) {
+        console.error(`Error fetching page with code "${code}":`, error)
+        return null
+      }
+    },
+    [`page-${code}-${language ?? "default"}`],
+    { tags: [PAGE_CACHE_TAG] }
+  )
+
+  return fetchPage()
+}
+
+export const revalidatePageCache = () => {
+  revalidateTag(PAGE_CACHE_TAG)
 }
