@@ -57,3 +57,8 @@ dump.rdb
 /playwright/.auth
 /tmp/photo-zips
 public/sw.js
+/public
+/public
+
+# Claude Code auto-generated files
+CLAUDE.md
