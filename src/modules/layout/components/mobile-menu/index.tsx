@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signout } from "@lib/data/customer"
-import { useTranslations } from "@lib/i18n"
+import { useTranslations, CompactLanguageSwitcher } from "@lib/i18n"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
 
 interface MobileMenuProps {
@@ -157,6 +157,11 @@ const MobileMenu = ({
               />
               <span>{t("orders")}</span>
             </LocalizedClientLink>
+          </div>
+
+          {/* Language Switcher */}
+          <div className="px-6 py-4 border-t border-ui-border-base">
+            <CompactLanguageSwitcher size="default" dropdownAlign="left" />
           </div>
 
           {/* Logout Button */}
