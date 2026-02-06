@@ -157,8 +157,12 @@ export function LanguageSwitcher({
 // Compact version for mobile/small spaces
 export function CompactLanguageSwitcher({
   className = "",
+  size = "default",
+  dropdownAlign = "right",
 }: {
   className?: string
+  size?: "default" | "small"
+  dropdownAlign?: "left" | "right"
 }) {
   const { language } = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
@@ -186,15 +190,20 @@ export function CompactLanguageSwitcher({
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-16 h-10 text-base font-medium font-['Montserrat']"
+        className={clx(
+          "flex items-center font-medium font-['Montserrat']",
+          size === "small" ? "h-6 text-[10px]" : "w-16 h-10 text-base"
+        )}
         title={languageNames[language]}
       >
-        <span className="text-sm pr-1">{language.toUpperCase()}</span>
+        <span className={clx("pr-1", size === "small" ? "text-[10px]" : "text-sm")}>
+          {language.toUpperCase()}
+        </span>
         <ChevronDown
           className={clx("transition-transform duration-200", {
             "rotate-180": isOpen,
           })}
-          size={16}
+          size={size === "small" ? 12 : 16}
         />
       </button>
 
@@ -205,7 +214,7 @@ export function CompactLanguageSwitcher({
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="absolute right-0 mt-2 w-40 bg-white border  shadow-lg z-20 text-dark-blue">
+          <div className={clx("absolute mt-2 w-40 bg-white border shadow-lg z-20 text-dark-blue", dropdownAlign === "left" ? "left-0" : "right-0")}>
             <div className="py-1">
               {sortedLanguages.map((lang) => (
                 <button

@@ -19,3 +19,7 @@ export interface Page {
 export interface FindPageByCodeResponse {
   findUniquePage: Page | null
 }
+
+export interface FindFirstPageResponse {
+  findFirstPage: Page | null
+}

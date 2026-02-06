@@ -23,3 +23,23 @@ export const getPageByCode = async (
   )
   return cached()
 }
+
+export const getPageBySlug = async (
+  slug: string,
+  language?: string
+): Promise<Page | null> => {
+  const cached = unstable_cache(
+    async () => {
+      try {
+        const page = await sdk.pages.getPageBySlug(slug, language)
+        return page
+      } catch (error) {
+        console.error(`Error fetching page with slug "${slug}":`, error)
+        return null
+      }
+    },
+    [`page-slug-${slug}-${language ?? "default"}`],
+    { tags: [PAGE_CACHE_TAG] }
+  )
+  return cached()
+}

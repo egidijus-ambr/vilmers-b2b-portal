@@ -2,15 +2,14 @@
 
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
-import dynamic from "next/dynamic"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import AccountDropdown from "@modules/layout/components/account-dropdown"
 import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
 import BackButton from "@modules/layout/components/back-button"
+import TopBar from "@modules/layout/components/top-bar"
 import { getNavigationConfig } from "@modules/layout/config/navigation"
 import {
-  CompactLanguageSwitcher,
   supportedLanguages,
   useTranslations,
 } from "@lib/i18n"
@@ -46,6 +45,18 @@ export default function Nav({ customer }: NavProps) {
     (pathSegments.length === 1 &&
       supportedLanguages.includes(pathSegments[0] as any))
 
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    if (!isHomePage) return
+    const handleScroll = () => setIsScrolled(window.scrollY > 50)
+    handleScroll() // check initial position (refresh while scrolled)
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [isHomePage])
+
+  const isTransparent = isHomePage && !isScrolled
+
   const handleMobileMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
@@ -56,31 +67,32 @@ export default function Nav({ customer }: NavProps) {
 
   return (
     <div
-      className={`sticky top-0 inset-x-0 z-50 group ${
-        isHomePage ? "bg-transparent" : "bg-base"
+      className={`sticky top-0 inset-x-0 z-50 group transition-[background-color] duration-200 ${
+        isTransparent ? "bg-transparent" : "bg-base"
       }`}
     >
+      <TopBar />
       <header
-        className={`relative h-[72px] mx-auto border-b duration-200 ${
-          isHomePage
+        className={`relative h-[72px] mx-auto border-b duration-200 transition-[background-color,border-color] ${
+          isTransparent
             ? "bg-transparent border-transparent"
             : "bg-white border-ui-border-base"
         }`}
       >
         <nav
-          className={`w-full px-6 text-xs flex items-center justify-between h-full ${
-            isHomePage ? "text-white" : "text-ui-fg-subtle"
+          className={`w-full px-6 text-xs flex items-center justify-between h-full transition-colors duration-200 ${
+            isTransparent ? "text-white" : "text-ui-fg-subtle"
           }`}
         >
           <div className="flex-1 basis-0 h-full flex items-center">
             {/* Back Button */}
-            <BackButton isHomePage={isHomePage} className="mr-3" />
+            <BackButton isHomePage={isTransparent} className="mr-3" />
 
             {/* Desktop Navigation Menu */}
             <div className="hidden small:flex items-center h-full">
               <NavMenu
                 menuItems={getNavigationConfig(t).menuItems}
-                isHomePage={isHomePage}
+                isHomePage={isTransparent}
                 isInteractive={isClient && isReady}
               />
             </div>
@@ -89,7 +101,7 @@ export default function Nav({ customer }: NavProps) {
             <LocalizedClientLink
               href="/"
               className={`text-xl font-semibold uppercase ${
-                isHomePage
+                isTransparent
                   ? "hover:text-gray-200 text-white"
                   : "hover:text-ui-fg-base"
               }`}
@@ -98,7 +110,7 @@ export default function Nav({ customer }: NavProps) {
               <img
                 src="/images/logo.svg"
                 alt="Store Logo"
-                className={`h-6 ${isHomePage ? "brightness-0 invert" : ""}`}
+                className={`h-6 transition-[filter] duration-200 ${isTransparent ? "brightness-0 invert" : ""}`}
               />
             </LocalizedClientLink>
           </div>
@@ -107,12 +119,12 @@ export default function Nav({ customer }: NavProps) {
             {/* Desktop Account Menu */}
             <div className="hidden small:flex items-center gap-x-6 h-full">
               {isLoggedIn ? (
-                <AccountDropdown customer={customer} isHomePage={isHomePage} />
+                <AccountDropdown customer={customer} isHomePage={isTransparent} />
               ) : (
                 <LocalizedClientLink
                   href="/account"
                   className={`text-base font-medium font-['Montserrat'] px-4 py-2 transition-colors ${
-                    isHomePage ? "text-white " : "text-dark-blue  "
+                    isTransparent ? "text-white " : "text-dark-blue  "
                   }`}
                   data-testid="nav-login-link"
                 >
@@ -120,14 +132,13 @@ export default function Nav({ customer }: NavProps) {
                 </LocalizedClientLink>
               )}
             </div>
-            <CompactLanguageSwitcher />
 
             {/* Mobile Menu Button */}
             <div className="flex small:hidden items-center h-full">
               <MobileMenuButton
                 isOpen={isMobileMenuOpen}
                 onClick={handleMobileMenuToggle}
-                isHomePage={isHomePage}
+                isHomePage={isTransparent}
               />
             </div>
           </div>
