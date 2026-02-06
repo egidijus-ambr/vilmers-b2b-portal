@@ -383,7 +383,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
               >
                 {comp.image?.src ? (
                   <img
-                    src={comp.image.src}
+                    src={comp.image.src_thumbnail || comp.image.src}
                     alt={compName}
                     className="h-16 w-auto max-w-[6rem] small:max-w-none flex-shrink-0 object-contain"
                   />

@@ -82,7 +82,7 @@ export class PagesModule {
             code,
             ...(language ? { language: language.toLowerCase() } : {}),
           },
-          fetchPolicy: "cache-first",
+          fetchPolicy: "network-only",
           errorPolicy: "all",
         }
       )
