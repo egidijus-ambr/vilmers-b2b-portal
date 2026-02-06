@@ -139,7 +139,7 @@ export default function ContentBlock({
           buttonText={profile?.name ?? null}
           link={profile?.link ?? null}
           linkNewTab={data.link_new_tab}
-          page={data.page}
+          page={data.link_page}
           languageCode={languageCode}
           backgroundColor={data.background_color}
           textColor={data.text_color}
@@ -684,7 +684,7 @@ function ButtonBlock({
 
   if (page) {
     const pageProfile = page.page_profiles.find(
-      (pp) => pp.language === languageCode
+      (pp) => pp.language.toLowerCase() === languageCode.toLowerCase()
     )
     if (pageProfile) {
       href = `/${languageCode}/${pageProfile.slug}`

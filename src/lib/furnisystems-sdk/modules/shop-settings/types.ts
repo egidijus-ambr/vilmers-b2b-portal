@@ -29,7 +29,7 @@ export interface ContentBlockImage {
 
 export interface ContentBlock {
   id: string
-  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery"
+  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button"
   style: string | null
   video_link: string | null
   video_type: "uploaded" | "youtube" | "vimeo" | null
@@ -56,7 +56,7 @@ export interface ContentBlock {
   media_min_width: number | null
   object_fit_cover: boolean | null
   link_new_tab: boolean | null
-  page: { id: string; page_profiles: { slug: string; language: string }[] } | null
+  link_page: { id: string; page_profiles: { slug: string; language: string }[] } | null
   extra_css: Record<string, unknown> | string | null
 }
 

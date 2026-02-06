@@ -60,7 +60,7 @@ export interface ContentBlockData {
   media_min_width: number | null
   object_fit_cover: boolean | null
   link_new_tab: boolean | null
-  page: {
+  link_page: {
     id: string
     page_profiles: { slug: string; language: string }[]
   } | null

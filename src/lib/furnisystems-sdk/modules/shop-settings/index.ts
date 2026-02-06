@@ -72,7 +72,7 @@ export const APP_SHOP_SETTINGS = gql`
         media_min_width
         object_fit_cover
         link_new_tab
-        page {
+        link_page {
           id
           page_profiles {
             slug

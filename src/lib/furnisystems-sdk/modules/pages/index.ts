@@ -63,7 +63,7 @@ export const FIND_PAGE_BY_CODE = gql`
         media_min_width
         object_fit_cover
         link_new_tab
-        page {
+        link_page {
           id
           page_profiles {
             slug
@@ -147,7 +147,7 @@ export const FIND_PAGE_BY_SLUG = gql`
         media_min_width
         object_fit_cover
         link_new_tab
-        page {
+        link_page {
           id
           page_profiles {
             slug
