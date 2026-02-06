@@ -7,6 +7,7 @@ import ShopSettingsTest from "@modules/common/components/shop-settings-test"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { getShopSettings } from "@lib/data/shop-settings"
+import { getPageByCode } from "@lib/data/pages"
 
 export const metadata: Metadata = {
   title: "Vilmers - Comfort and Quality with Smart Design",
@@ -58,12 +59,17 @@ export default async function Home(props: {
 
   const { languageCode } = params
 
-  const [{ collections }, shopSettings] = await Promise.all([
+  const [{ collections }, shopSettings, homePage] = await Promise.all([
     listCollections({ fields: "id, handle, title" }),
     getShopSettings(languageCode),
+    getPageByCode("home-page", languageCode),
   ])
 
-  const contentBlocks = (shopSettings?.homepage_content_blocks ?? [])
+  const contentBlocks = (
+    homePage?.content_blocks ??
+    shopSettings?.homepage_content_blocks ??
+    []
+  )
     .slice()
     .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0))
 
