@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { retrieveOrder } from "@lib/data/orders"
 import { OrderDetail } from "@lib/furnisystems-sdk/modules/customer/types"
 import OrderDetailsTemplate from "@modules/account/components/order-details"
-import Breadcrumb from "@modules/common/components/breadcrumb"
+import PageHeader from "@modules/common/components/page-header"
 import { useTranslations } from "@lib/i18n"
 
 const isFeatureEnabled =
@@ -104,7 +104,15 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="w-full" data-testid="order-details-wrapper">
-      <Breadcrumb items={breadcrumbItems} />
+      {/* Negative margins cancel AccountLayout's p-4 sm:p-6 lg:p-8
+          so PageHeader provides the only horizontal padding,
+          matching the category page layout. */}
+      <div className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+        <PageHeader
+          title={t("order-details")}
+          breadcrumbItems={breadcrumbItems}
+        />
+      </div>
       <OrderDetailsTemplate order={order} />
     </div>
   )

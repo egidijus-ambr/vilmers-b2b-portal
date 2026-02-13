@@ -1,85 +1,53 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { getCategoryByHandle, listCategories } from "@lib/data/categories"
-import { listRegions } from "@lib/data/regions"
-import { StoreRegion } from "@medusajs/types"
-import CategoryTemplate from "@modules/categories/templates"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import { getCategoryByPermalink } from "@lib/data/categories"
+import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import CategoryPageTemplate from "@modules/categories/templates"
 
 type Props = {
-  params: Promise<{ category: string[]; countryCode: string }>
-  searchParams: Promise<{
-    sortBy?: SortOptions
-    page?: string
-  }>
-}
-
-export async function generateStaticParams() {
-  const product_categories = await listCategories()
-
-  if (!product_categories) {
-    return []
-  }
-
-  const countryCodes = await listRegions().then((regions: StoreRegion[]) =>
-    regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
-  )
-
-  const categoryHandles = product_categories.map(
-    (category: any) => category.handle
-  )
-
-  const staticParams = countryCodes
-    ?.map((countryCode: string | undefined) =>
-      categoryHandles.map((handle: any) => ({
-        countryCode,
-        category: [handle],
-      }))
-    )
-    .flat()
-
-  return staticParams
+  params: Promise<{ category: string[]; languageCode: string }>
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
+  const permalink = params.category[params.category.length - 1]
+  const language = params.languageCode as SupportedLanguage
+  const validLanguage = supportedLanguages.includes(language) ? language : "en"
+
   try {
-    const productCategory = await getCategoryByHandle(params.category)
+    const category = await getCategoryByPermalink(permalink, validLanguage)
 
-    const title = productCategory.name + " | Medusa Store"
+    if (!category) {
+      return {}
+    }
 
-    const description = productCategory.description ?? `${title} category.`
+    const profile = category.category_profiles?.[0]
+    const metaTitle =
+      profile?.meta_information?.meta_title || profile?.name || "Category"
+    const metaDescription =
+      profile?.meta_information?.meta_description || profile?.description || ""
 
     return {
-      title: `${title} | Medusa Store`,
-      description,
-      alternates: {
-        canonical: `${params.category.join("/")}`,
-      },
+      title: metaTitle,
+      description: metaDescription,
     }
   } catch (error) {
-    notFound()
+    return {}
   }
 }
 
 export default async function CategoryPage(props: Props) {
-  const searchParams = await props.searchParams
   const params = await props.params
-  const { sortBy, page } = searchParams
+  const permalink = params.category[params.category.length - 1]
+  const language = params.languageCode as SupportedLanguage
+  const validLanguage = supportedLanguages.includes(language) ? language : "en"
 
-  const productCategory = await getCategoryByHandle(params.category)
+  const category = await getCategoryByPermalink(permalink, validLanguage)
 
-  if (!productCategory) {
+  if (!category) {
     notFound()
   }
 
-  return (
-    <CategoryTemplate
-      category={productCategory}
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-    />
-  )
+  return <CategoryPageTemplate category={category} language={validLanguage} />
 }

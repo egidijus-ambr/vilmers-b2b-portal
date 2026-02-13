@@ -1,4 +1,4 @@
-import { listCategories } from "@lib/data/categories"
+import { listMenuCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
 import { Text, clx } from "@medusajs/ui"
 

@@ -1,4 +1,6 @@
 import { MenuItem } from "../components/nav-menu-item"
+import { DropdownItem } from "../components/nav-menu-item"
+import { CategoryData } from "@lib/furnisystems-sdk"
 
 // Translation function type
 type TranslationFunction = (key: string) => string
@@ -131,3 +133,84 @@ export const getNavigationConfig = (
     },
   ],
 })
+
+// --- Dynamic Navigation Helpers ---
+
+/** Get the localized name from a category's profiles (first profile's name) */
+function getCategoryName(category: CategoryData): string {
+  const profile = category.category_profiles?.[0]
+  return profile?.name ?? ""
+}
+
+/** Get the permalink from a category's profile meta_information */
+function getCategoryPermalink(category: CategoryData): string | null {
+  const profile = category.category_profiles?.[0]
+  return profile?.meta_information?.permalink ?? null
+}
+
+/** Build a category page href from a permalink */
+function buildCategoryHref(permalink: string | null): string | null {
+  if (!permalink) return null
+  return `/categories/${permalink}`
+}
+
+/**
+ * Recursively convert CategoryData[] to DropdownItem[].
+ * Each category becomes a dropdown item; if it has children, they become a submenu.
+ */
+export function categoriesToDropdownItems(
+  categories: CategoryData[]
+): DropdownItem[] {
+  return categories
+    .filter((cat) => cat.show_in_menu)
+    .map((cat) => {
+      const name = getCategoryName(cat)
+      const permalink = getCategoryPermalink(cat)
+      const href = buildCategoryHref(permalink)
+      const children = cat.child_categories ?? []
+      const visibleChildren = children.filter((c) => c.show_in_menu)
+
+      if (visibleChildren.length > 0) {
+        return {
+          label: name,
+          href,
+          hasSubmenu: true,
+          submenu: {
+            title: name,
+            items: categoriesToDropdownItems(visibleChildren),
+          },
+        }
+      }
+
+      return {
+        label: name,
+        href,
+      }
+    })
+}
+
+/**
+ * Build menu items with dynamic product categories from the database.
+ * Replaces only the "products" menu item; keeps inspiration, about, contact unchanged.
+ */
+export function buildDynamicMenuItems(
+  categories: CategoryData[],
+  t: TranslationFunction
+): MenuItem[] {
+  const staticConfig = getNavigationConfig(t)
+  const dynamicItems = categoriesToDropdownItems(categories)
+
+  return staticConfig.menuItems.map((item) => {
+    if (item.id === "products") {
+      return {
+        ...item,
+        dropdown: {
+          width: "w-auto min-w-48 max-w-64",
+          layout: "single-column" as const,
+          items: dynamicItems,
+        },
+      }
+    }
+    return item
+  })
+}

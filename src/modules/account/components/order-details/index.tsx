@@ -251,11 +251,6 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
 
   return (
     <div className="flex flex-col gap-6" data-testid="order-details-content">
-      {/* Page Title */}
-      <h1 className="text-2xl sm:text-3xl font-medium text-dark-blue">
-        {t("order-details")}
-      </h1>
-
       {/* Order Header Card */}
       <div className="bg-white p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

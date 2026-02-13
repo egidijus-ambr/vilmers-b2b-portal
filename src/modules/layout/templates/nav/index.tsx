@@ -8,7 +8,8 @@ import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
 import BackButton from "@modules/layout/components/back-button"
 import TopBar from "@modules/layout/components/top-bar"
-import { getNavigationConfig } from "@modules/layout/config/navigation"
+import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
+import type { CategoryData } from "@lib/furnisystems-sdk"
 import {
   supportedLanguages,
   useTranslations,
@@ -20,9 +21,10 @@ import NavMenu from "@modules/layout/components/nav-menu"
 
 interface NavProps {
   customer: any
+  categories?: CategoryData[]
 }
 
-export default function Nav({ customer }: NavProps) {
+export default function Nav({ customer, categories }: NavProps) {
   const pathname = usePathname()
   const { t, isReady } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -65,6 +67,14 @@ export default function Nav({ customer }: NavProps) {
     setIsMobileMenuOpen(false)
   }
 
+  // Determine menu items based on feature flag
+  const useProductCatalog =
+    process.env.NEXT_PUBLIC_FEATURE_PRODUCT_CATALOG === "true"
+  const menuItems =
+    useProductCatalog && categories && categories.length > 0
+      ? buildDynamicMenuItems(categories, t)
+      : getNavigationConfig(t).menuItems
+
   return (
     <div
       className={`sticky top-0 inset-x-0 z-50 group transition-[background-color] duration-200 ${
@@ -91,7 +101,7 @@ export default function Nav({ customer }: NavProps) {
             {/* Desktop Navigation Menu */}
             <div className="hidden small:flex items-center h-full">
               <NavMenu
-                menuItems={getNavigationConfig(t).menuItems}
+                menuItems={menuItems}
                 isHomePage={isTransparent}
                 isInteractive={isClient && isReady}
               />

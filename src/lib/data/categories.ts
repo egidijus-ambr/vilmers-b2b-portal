@@ -1,52 +1,25 @@
 import { sdk } from "@lib/config"
-import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
+import { CategoryData } from "@lib/furnisystems-sdk"
 
-export const listCategories = async (query?: Record<string, any>) => {
-  // TODO: Remove this check once the backend supports categories
-  return []
-
-  const next = {
-    ...(await getCacheOptions("categories")),
+export const listMenuCategories = async (
+  language?: string
+): Promise<CategoryData[]> => {
+  try {
+    return await sdk.categories.getMenuCategories(language)
+  } catch (error) {
+    console.error("Error fetching menu categories:", error)
+    return []
   }
-
-  const limit = query?.limit || 100
-
-  return sdk.client
-    .fetch<{ product_categories: HttpTypes.StoreProductCategory[] }>(
-      "/store/product-categories",
-      {
-        query: {
-          fields:
-            "*category_children, *products, *parent_category, *parent_category.parent_category",
-          limit,
-          ...query,
-        },
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ product_categories }) => product_categories)
 }
 
-export const getCategoryByHandle = async (categoryHandle: string[]) => {
-  const handle = `${categoryHandle.join("/")}`
-
-  const next = {
-    ...(await getCacheOptions("categories")),
+export const getCategoryByPermalink = async (
+  permalink: string,
+  language?: string
+): Promise<CategoryData | null> => {
+  try {
+    return await sdk.categories.getCategoryByPermalink(permalink, language)
+  } catch (error) {
+    console.error(`Error fetching category by permalink "${permalink}":`, error)
+    return null
   }
-
-  return sdk.client
-    .fetch<HttpTypes.StoreProductCategoryListResponse>(
-      `/store/product-categories`,
-      {
-        query: {
-          fields: "*category_children, *products",
-          handle,
-        },
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ product_categories }) => product_categories[0])
 }

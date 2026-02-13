@@ -13,6 +13,7 @@ import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import { CustomerProvider } from "@lib/context/customer-context"
 import { ShopSettingsProvider } from "@lib/context/shop-settings-context"
 import TawkToChat from "@modules/common/components/tawk-to-chat"
+import { listMenuCategories } from "@lib/data/categories"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -55,10 +56,13 @@ export default async function PageLayout({
   const language = resolvedParams.languageCode as SupportedLanguage
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
 
+  // Fetch menu categories for navigation
+  const categories = await listMenuCategories(validLanguage)
+
   return (
     <CustomerProvider customer={customer}>
       <ShopSettingsProvider initialShopSettings={shopSettings}>
-        <Nav customer={customer} />
+        <Nav customer={customer} categories={categories} />
         {customer && cart && (
           <CartMismatchBanner customer={customer} cart={cart} />
         )}

@@ -1,96 +1,84 @@
-import { notFound } from "next/navigation"
-import { Suspense } from "react"
+import { CategoryData } from "@lib/furnisystems-sdk"
+import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
+import PageHeader from "@modules/common/components/page-header"
 
-import InteractiveLink from "@modules/common/components/interactive-link"
-import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import PaginatedProducts from "@modules/store/templates/paginated-products"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { HttpTypes } from "@medusajs/types"
+interface CategoryPageTemplateProps {
+  category: CategoryData
+  language: string
+}
 
-export default function CategoryTemplate({
-  category,
-  sortBy,
-  page,
-  countryCode,
-}: {
-  category: HttpTypes.StoreProductCategory
-  sortBy?: SortOptions
-  page?: string
-  countryCode: string
-}) {
-  const pageNumber = page ? parseInt(page) : 1
-  const sort = sortBy || "created_at"
+/** Get the localized name from a category's profiles */
+function getCategoryName(category: CategoryData): string {
+  const profile = category.category_profiles?.[0]
+  return profile?.name ?? ""
+}
 
-  if (!category || !countryCode) notFound()
+/** Get the permalink from a category's profile meta_information */
+function getCategoryPermalink(category: CategoryData): string | null {
+  const profile = category.category_profiles?.[0]
+  return profile?.meta_information?.permalink ?? null
+}
 
-  const parents = [] as HttpTypes.StoreProductCategory[]
+/** Get the description from a category's profile */
+function getCategoryDescription(category: CategoryData): string | null {
+  const profile = category.category_profiles?.[0]
+  return profile?.description ?? null
+}
 
-  const getParents = (category: HttpTypes.StoreProductCategory) => {
-    if (category.parent_category) {
-      parents.push(category.parent_category)
-      getParents(category.parent_category)
-    }
+/**
+ * Build breadcrumb chain from the category's parent_category chain.
+ * Returns: Home → parent's parent → parent → Current (no link)
+ */
+function buildBreadcrumbs(category: CategoryData): BreadcrumbItem[] {
+  const items: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
+
+  // Collect parent chain (walk up parent_category)
+  const parents: CategoryData[] = []
+  let current = category.parent_category
+  while (current) {
+    parents.push(current)
+    current = current.parent_category ?? null
   }
 
-  getParents(category)
+  // Reverse so we go from root down
+  parents.reverse()
+
+  for (const parent of parents) {
+    const name = getCategoryName(parent)
+    const permalink = getCategoryPermalink(parent)
+    items.push({
+      label: name,
+      href: permalink ? `/categories/${permalink}` : null,
+    })
+  }
+
+  // Current category (no link)
+  items.push({
+    label: getCategoryName(category),
+    href: null,
+  })
+
+  return items
+}
+
+export default function CategoryPageTemplate({
+  category,
+  language,
+}: CategoryPageTemplateProps) {
+  const name = getCategoryName(category)
+  const description = getCategoryDescription(category)
+  const breadcrumbs = buildBreadcrumbs(category)
 
   return (
-    <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
-      data-testid="category-container"
-    >
-      <RefinementList sortBy={sort} data-testid="sort-by-container" />
-      <div className="w-full">
-        <div className="flex flex-row mb-8 text-2xl-semi gap-4">
-          {parents &&
-            parents.map((parent) => (
-              <span key={parent.id} className="text-ui-fg-subtle">
-                <LocalizedClientLink
-                  className="mr-4 hover:text-black"
-                  href={`/categories/${parent.handle}`}
-                  data-testid="sort-by-link"
-                >
-                  {parent.name}
-                </LocalizedClientLink>
-                /
-              </span>
-            ))}
-          <h1 data-testid="category-page-title">{category.name}</h1>
-        </div>
-        {category.description && (
-          <div className="mb-8 text-base-regular">
-            <p>{category.description}</p>
-          </div>
-        )}
-        {category.category_children && (
-          <div className="mb-8 text-base-large">
-            <ul className="grid grid-cols-1 gap-2">
-              {category.category_children?.map((c) => (
-                <li key={c.id}>
-                  <InteractiveLink href={`/categories/${c.handle}`}>
-                    {c.name}
-                  </InteractiveLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <Suspense
-          fallback={
-            <SkeletonProductGrid
-              numberOfProducts={category.products?.length ?? 8}
-            />
-          }
-        >
-          <PaginatedProducts
-            sortBy={sort}
-            page={pageNumber}
-            categoryId={category.id}
-            countryCode={countryCode}
-          />
-        </Suspense>
+    <div data-testid="category-container">
+      <PageHeader
+        title={name}
+        description={description}
+        breadcrumbItems={breadcrumbs}
+      />
+
+      <div className="content-container py-6">
+        <div data-testid="category-content-area" />
       </div>
     </div>
   )
