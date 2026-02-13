@@ -27,9 +27,34 @@ export interface ContentBlockImage {
   src: string
 }
 
+export interface ContentBlockLinkedItem {
+  id: string
+  title: string
+  link: string
+  arrangement: number
+  image: ContentBlockImage | null
+}
+
+export interface ContentBlockCategoryTile {
+  id: string
+  arrangement: number
+  category: {
+    id: number
+    image: { id: number; src: string } | null
+    category_profiles: {
+      id: number
+      name: string
+      language: string
+      meta_information: {
+        permalink: string
+      }
+    }[]
+  }
+}
+
 export interface ContentBlock {
   id: string
-  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button"
+  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button" | "photo_links" | "category_tiles"
   style: string | null
   video_link: string | null
   video_type: "uploaded" | "youtube" | "vimeo" | null
@@ -58,6 +83,8 @@ export interface ContentBlock {
   link_new_tab: boolean | null
   link_page: { id: string; page_profiles: { slug: string; language: string }[] } | null
   extra_css: Record<string, unknown> | string | null
+  linked_items?: ContentBlockLinkedItem[]
+  category_tile_items?: ContentBlockCategoryTile[]
 }
 
 export interface ShopSetting {

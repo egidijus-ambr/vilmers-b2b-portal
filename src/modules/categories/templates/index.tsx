@@ -1,10 +1,14 @@
+import { Suspense } from "react"
 import { CategoryData } from "@lib/furnisystems-sdk"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
+import CategoryProductGrid from "@modules/categories/components/category-product-grid"
+import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
 
 interface CategoryPageTemplateProps {
   category: CategoryData
   language: string
+  page: number
 }
 
 /** Get the localized name from a category's profiles */
@@ -64,6 +68,7 @@ function buildBreadcrumbs(category: CategoryData): BreadcrumbItem[] {
 export default function CategoryPageTemplate({
   category,
   language,
+  page,
 }: CategoryPageTemplateProps) {
   const name = getCategoryName(category)
   const description = getCategoryDescription(category)
@@ -78,7 +83,13 @@ export default function CategoryPageTemplate({
       />
 
       <div className="content-container py-6">
-        <div data-testid="category-content-area" />
+        <Suspense fallback={<CategoryProductGridSkeleton />}>
+          <CategoryProductGrid
+            categoryPermalink={getCategoryPermalink(category) || ""}
+            language={language as any}
+            page={page}
+          />
+        </Suspense>
       </div>
     </div>
   )

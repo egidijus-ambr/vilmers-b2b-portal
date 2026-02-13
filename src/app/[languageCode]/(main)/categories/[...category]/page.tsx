@@ -7,6 +7,7 @@ import CategoryPageTemplate from "@modules/categories/templates"
 
 type Props = {
   params: Promise<{ category: string[]; languageCode: string }>
+  searchParams: Promise<{ page?: string }>
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -39,9 +40,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function CategoryPage(props: Props) {
   const params = await props.params
+  const searchParams = await props.searchParams
   const permalink = params.category[params.category.length - 1]
   const language = params.languageCode as SupportedLanguage
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
+  const page = Math.max(1, parseInt(searchParams.page || "1", 10) || 1)
 
   const category = await getCategoryByPermalink(permalink, validLanguage)
 
@@ -49,5 +52,5 @@ export default async function CategoryPage(props: Props) {
     notFound()
   }
 
-  return <CategoryPageTemplate category={category} language={validLanguage} />
+  return <CategoryPageTemplate category={category} language={validLanguage} page={page} />
 }

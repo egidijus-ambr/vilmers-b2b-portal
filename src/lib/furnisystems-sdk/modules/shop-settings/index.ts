@@ -80,6 +80,35 @@ export const APP_SHOP_SETTINGS = gql`
           }
         }
         extra_css
+        linked_items {
+          id
+          title
+          link
+          arrangement
+          image {
+            id
+            src
+          }
+        }
+        category_tile_items {
+          id
+          arrangement
+          category {
+            id
+            image {
+              id
+              src
+            }
+            category_profiles {
+              id
+              name
+              language
+              meta_information {
+                permalink
+              }
+            }
+          }
+        }
       }
     }
   }

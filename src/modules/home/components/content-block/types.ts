@@ -6,6 +6,8 @@ export type ContentBlockType =
   | "only_video"
   | "gallery"
   | "button"
+  | "photo_links"
+  | "category_tiles"
 
 export type ContentBlockStyle =
   | "1_column_title_top"
@@ -29,6 +31,31 @@ export interface ContentBlockProfile {
 export interface ContentBlockImage {
   id: string
   src: string
+}
+
+export interface ContentBlockLinkedItem {
+  id: string
+  title: string
+  link: string
+  arrangement: number
+  image: ContentBlockImage | null
+}
+
+export interface ContentBlockCategoryTile {
+  id: string
+  arrangement: number
+  category: {
+    id: number
+    image: ContentBlockImage | null
+    category_profiles: {
+      id: number
+      name: string
+      language: string
+      meta_information: {
+        permalink: string
+      }
+    }[]
+  }
 }
 
 export interface ContentBlockData {
@@ -65,6 +92,8 @@ export interface ContentBlockData {
     page_profiles: { slug: string; language: string }[]
   } | null
   extra_css: Record<string, unknown> | string | null
+  linked_items?: ContentBlockLinkedItem[]
+  category_tile_items?: ContentBlockCategoryTile[]
 }
 
 export interface ContentBlockProps {

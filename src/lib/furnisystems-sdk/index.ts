@@ -6,6 +6,7 @@ import { ProductPhotosModule } from "./modules/product-photos"
 import { ShopSettingsModule } from "./modules/shop-settings"
 import { PagesModule } from "./modules/pages"
 import { CategoriesModule } from "./modules/categories"
+import { ProductsModule } from "./modules/products"
 
 export class FurnisystemsSDK {
   private client: GraphQLClient
@@ -18,6 +19,7 @@ export class FurnisystemsSDK {
   public shopSettings: ShopSettingsModule
   public pages: PagesModule
   public categories: CategoriesModule
+  public products: ProductsModule
 
   constructor(config: ClientConfig) {
     this.config = config
@@ -30,6 +32,7 @@ export class FurnisystemsSDK {
     this.shopSettings = new ShopSettingsModule(this.client)
     this.pages = new PagesModule(this.client)
     this.categories = new CategoriesModule(this.client)
+    this.products = new ProductsModule(this.client)
   }
 
   // Set authentication headers for all requests
@@ -71,6 +74,7 @@ export * from "./modules/product-photos"
 export * from "./modules/shop-settings"
 export * from "./modules/pages"
 export * from "./modules/categories"
+export * from "./modules/products"
 
 // Default export
 export default FurnisystemsSDK

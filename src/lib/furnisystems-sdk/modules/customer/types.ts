@@ -38,6 +38,7 @@ export interface Customer {
   b2b_company_name?: string
   account_code?: string
   price_listId?: string
+  tags?: { id: number }[]
   fabric_palettes?: FabricPalette[]
   managers?: CustomerManager[]
   spoken_languages?: string[]

@@ -5,6 +5,8 @@ import {
   ContentBlockProps,
   ContentBlockImage,
   ContentBlockStyle,
+  ContentBlockLinkedItem,
+  ContentBlockCategoryTile,
 } from "./types"
 import VideoPlayer from "./video-player"
 import ArrowLeft from "@modules/common/icons/arrow-left"
@@ -143,6 +145,20 @@ export default function ContentBlock({
           languageCode={languageCode}
           backgroundColor={data.background_color}
           textColor={data.text_color}
+        />
+      )}
+
+      {data.type === "photo_links" && (
+        <PhotoLinks
+          items={data.linked_items ?? []}
+          languageCode={languageCode}
+        />
+      )}
+
+      {data.type === "category_tiles" && (
+        <CategoryTiles
+          tiles={data.category_tile_items ?? []}
+          languageCode={languageCode}
         />
       )}
     </section>
@@ -738,6 +754,141 @@ function ButtonBlock({
         {text}
         {arrow}
       </a>
+    </div>
+  )
+}
+
+/* ─── Photo Links ─────────────────────────────────────────── */
+
+function PhotoLinks({
+  items,
+  languageCode,
+}: {
+  items: ContentBlockLinkedItem[]
+  languageCode: string
+}) {
+  if (items.length === 0) return null
+
+  const sorted = [...items].sort((a, b) => a.arrangement - b.arrangement)
+  const count = sorted.length
+
+  return (
+    <div className="content-container">
+      <div
+        className={`grid gap-3 small:gap-4 ${
+          count === 1
+            ? "grid-cols-1"
+            : count === 2
+            ? "grid-cols-2"
+            : count === 3
+            ? "grid-cols-2 small:grid-cols-3"
+            : count === 4
+            ? "grid-cols-2 small:grid-cols-4"
+            : count === 5
+            ? "grid-cols-2 small:grid-cols-5"
+            : "grid-cols-2 small:grid-cols-6"
+        }`}
+      >
+        {sorted.map((item) => (
+          <a
+            key={item.id}
+            href={item.link}
+            className="group relative block overflow-hidden"
+          >
+            <div className="aspect-[3/4] w-full">
+              {item.image?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.image.src}
+                  alt={item.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full bg-gray-200" />
+              )}
+            </div>
+            <div className="py-3">
+              <h4 className="text-sm font-medium uppercase tracking-wider text-dark-blue">
+                {item.title}
+              </h4>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Category Tiles ──────────────────────────────────────── */
+
+function CategoryTiles({
+  tiles,
+  languageCode,
+}: {
+  tiles: ContentBlockCategoryTile[]
+  languageCode: string
+}) {
+  if (tiles.length === 0) return null
+
+  const sorted = [...tiles].sort((a, b) => a.arrangement - b.arrangement)
+  const count = sorted.length
+
+  return (
+    <div className="content-container">
+      <div
+        className={`grid gap-3 small:gap-4 ${
+          count === 1
+            ? "grid-cols-1"
+            : count === 2
+            ? "grid-cols-2"
+            : count === 3
+            ? "grid-cols-2 small:grid-cols-3"
+            : count === 4
+            ? "grid-cols-2 small:grid-cols-4"
+            : count === 5
+            ? "grid-cols-2 small:grid-cols-5"
+            : "grid-cols-2 small:grid-cols-6"
+        }`}
+      >
+        {sorted.map((tile) => {
+          const profile =
+            tile.category.category_profiles.find(
+              (p) =>
+                p.language.toLowerCase() === languageCode.toLowerCase()
+            ) ?? tile.category.category_profiles[0]
+
+          const permalink = profile?.meta_information?.permalink
+          const href = permalink
+            ? `/${languageCode}/categories/${permalink}`
+            : "#"
+
+          return (
+            <a
+              key={tile.id}
+              href={href}
+              className="group relative block overflow-hidden"
+            >
+              <div className="aspect-[3/4] w-full">
+                {tile.category.image?.src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={tile.category.image.src}
+                    alt={profile?.name ?? ""}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gray-200" />
+                )}
+              </div>
+              <div className="py-3">
+                <h4 className="text-sm font-medium uppercase tracking-wider text-dark-blue">
+                  {profile?.name ?? ""}
+                </h4>
+              </div>
+            </a>
+          )
+        })}
+      </div>
     </div>
   )
 }
