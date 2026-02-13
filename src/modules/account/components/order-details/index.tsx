@@ -13,6 +13,7 @@ import {
 } from "@modules/common/components/table-header"
 import { useTranslations, useI18n } from "@lib/i18n"
 import SofaConfigurationDetail from "@modules/account/components/sofa-configuration"
+import InfoRow from "@modules/common/components/info-row"
 import { useCustomer } from "@lib/context/customer-context"
 import { BuildingStorefront } from "@medusajs/icons"
 
@@ -194,54 +195,33 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
 
   const renderAddressCard = (title: string, address?: OrderDetailAddress) => {
     return (
-      <div className="bg-white p-4 sm:p-6">
-        <h3 className="text-lg font-medium text-dark-blue mb-4">{title}</h3>
+      <div className="card">
+        <h3 className="section-title">{title}</h3>
         {!address ? (
           <p className="text-sm text-gray-500">-</p>
         ) : (
           <div className="space-y-3">
             {address.address_1 && (
-              <div className="flex gap-4">
-                <span className="text-sm text-dark-blue-70 min-w-[100px]">
-                  {t("address")}
-                </span>
-                <span className="text-sm text-dark-blue font-medium">
-                  {address.address_1}
-                  {address.address_2 ? `, ${address.address_2}` : ""}
-                  {address.city ? `, ${address.city}` : ""}
-                  {address.state_region ? `, ${address.state_region}` : ""}
-                </span>
-              </div>
+              <InfoRow
+                label={t("address")}
+                value={
+                  <>
+                    {address.address_1}
+                    {address.address_2 ? `, ${address.address_2}` : ""}
+                    {address.city ? `, ${address.city}` : ""}
+                    {address.state_region ? `, ${address.state_region}` : ""}
+                  </>
+                }
+              />
             )}
             {address.postal_code && (
-              <div className="flex gap-4">
-                <span className="text-sm text-dark-blue-70 min-w-[100px]">
-                  {t("zip-code")}
-                </span>
-                <span className="text-sm text-dark-blue font-medium">
-                  {address.postal_code}
-                </span>
-              </div>
+              <InfoRow label={t("zip-code")} value={address.postal_code} />
             )}
             {address.country && (
-              <div className="flex gap-4">
-                <span className="text-sm text-dark-blue-70 min-w-[100px]">
-                  {t("country")}
-                </span>
-                <span className="text-sm text-dark-blue font-medium">
-                  {address.country}
-                </span>
-              </div>
+              <InfoRow label={t("country")} value={address.country} />
             )}
             {address.phone_number && (
-              <div className="flex gap-4">
-                <span className="text-sm text-dark-blue-70 min-w-[100px]">
-                  {t("phone")}
-                </span>
-                <span className="text-sm text-dark-blue font-medium">
-                  {address.phone_number}
-                </span>
-              </div>
+              <InfoRow label={t("phone")} value={address.phone_number} />
             )}
           </div>
         )}
@@ -252,7 +232,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
   return (
     <div className="flex flex-col gap-6" data-testid="order-details-content">
       {/* Order Header Card */}
-      <div className="bg-white p-4 sm:p-6">
+      <div className="card">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <h2 className="text-lg sm:text-xl font-medium text-dark-blue">
@@ -266,57 +246,36 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
       </div>
 
       {/* General Info Card */}
-      <div className="bg-white p-4 sm:p-6">
-        <h3 className="text-lg font-medium text-dark-blue mb-4">
+      <div className="card">
+        <h3 className="section-title">
           {t("general-info")}
         </h3>
         <div className="space-y-3 text-sm">
-          <div className="flex gap-4">
-            <span className="text-dark-blue-70 min-w-[140px]">
-              {t("carrier")}
-            </span>
-            <span className="text-dark-blue font-medium">
-              {getCarrierName()}
-            </span>
-          </div>
+          <InfoRow label={t("carrier")} value={getCarrierName()} />
           {/* Customer row - only for agents/admins */}
           {isAgent && (
-            <div className="flex gap-4">
-              <span className="text-dark-blue-70 min-w-[140px]">
-                {t("customer")}
-              </span>
-              <span className="text-dark-blue font-medium">
-                {order.purchased_by?.name || "-"}
-              </span>
-            </div>
+            <InfoRow label={t("customer")} value={order.purchased_by?.name || "-"} />
           )}
           {/* Shop (Location) row - for all users when purchased_subAccount exists */}
           {order.purchased_subAccount?.name && (
-            <div className="flex gap-4">
-              <span className="text-dark-blue-70 min-w-[140px]">
-                {t("shop_location")}
-              </span>
-              <span className="flex items-center gap-1 text-dark-blue font-medium">
-                <BuildingStorefront className="w-4 h-4" />
-                {order.purchased_subAccount.name}
-              </span>
-            </div>
+            <InfoRow
+              label={t("shop_location")}
+              value={
+                <span className="flex items-center gap-1">
+                  <BuildingStorefront className="w-4 h-4" />
+                  {order.purchased_subAccount.name}
+                </span>
+              }
+            />
           )}
           {order.order_type && (
-            <div className="flex gap-4">
-              <span className="text-dark-blue-70 min-w-[140px]">
-                {t("type")}
-              </span>
-              <span className="text-dark-blue font-medium">
-                {order.order_type}
-              </span>
-            </div>
+            <InfoRow label={t("type")} value={order.order_type} />
           )}
         </div>
       </div>
 
       {/* Follow Your Order Card */}
-      <div className="bg-white p-4 sm:p-6">
+      <div className="card">
         <h3 className="text-lg font-medium text-dark-blue mb-6">
           {t("follow-your-order")}
         </h3>

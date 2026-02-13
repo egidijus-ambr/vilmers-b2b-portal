@@ -159,7 +159,7 @@ const Overview = (): JSX.Element => {
       {/* Limit and Date Row */}
       {/* Header */}
 
-      <h1 className="self-stretch justify-start text-dark-blue text-2xl sm:text-3xl lg:text-4xl font-medium">
+      <h1 className="page-title">
         {customer?.full_name || customer?.name || "User"}
       </h1>
 

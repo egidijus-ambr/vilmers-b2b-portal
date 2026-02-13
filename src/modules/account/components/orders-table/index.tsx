@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableHeaderCell,
 } from "@modules/common/components/table-header"
+import SearchInput from "@modules/common/components/search-input"
 import { listOrdersWithPagination } from "@lib/data/orders"
 
 interface OrdersPageState {
@@ -160,60 +161,14 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
           </div>
 
           {/* Search - Hidden on mobile, shown on desktop */}
-          <div className="hidden md:flex">
-            <div className="relative max-w-md">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-dark-blue"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder={t("search-placeholder")}
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="block w-[368px] pl-10 pr-3 py-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+          <div className="hidden md:flex w-[368px]">
+            <SearchInput value={searchTerm} onChange={handleSearchChange} placeholder={t("search-placeholder")} />
           </div>
         </div>
 
         {/* Search - Shown on mobile below description */}
         <div className="md:hidden mt-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="h-5 w-5 text-dark-blue"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder={t("search-placeholder")}
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+          <SearchInput value={searchTerm} onChange={handleSearchChange} placeholder={t("search-placeholder")} />
         </div>
       </div>
 
@@ -289,7 +244,7 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
                       : "transition-colors"
                   }
                 >
-                  <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900">
+                  <td className="td-cell">
                     <div className="font-medium">
                       {order.display_id || order.id.slice(-8)}
                     </div>
