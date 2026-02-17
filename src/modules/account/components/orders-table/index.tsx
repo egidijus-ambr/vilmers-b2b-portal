@@ -14,6 +14,7 @@ import {
   TableHeaderCell,
 } from "@modules/common/components/table-header"
 import SearchInput from "@modules/common/components/search-input"
+import TablePagination from "@modules/common/components/table-pagination"
 import { listOrdersWithPagination } from "@lib/data/orders"
 
 interface OrdersPageState {
@@ -143,9 +144,6 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
   const currentPage = ordersData?.currentPage || 1
   const totalPages = ordersData?.totalPages || 1
   const totalCount = ordersData?.totalCount || 0
-  const hasNextPage = ordersData?.hasNextPage || false
-  const hasPreviousPage = ordersData?.hasPreviousPage || false
-
   return (
     <div className="bg-white pb-6">
       {/* Header */}
@@ -392,93 +390,14 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Page info */}
-            <div className="text-sm text-gray-600">
-              {totalCount && (
-                <span>
-                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                  {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
-                  orders
-                </span>
-              )}
-            </div>
-
-            {/* Pagination controls */}
-            <div className="flex items-center space-x-1 md:space-x-2">
-              {/* Previous button */}
-              <button
-                onClick={() =>
-                  hasPreviousPage && handlePageChange(currentPage - 1)
-                }
-                disabled={!hasPreviousPage}
-                className={`px-3 py-2 text-xs md:text-sm font-medium rounded transition-colors ${
-                  hasPreviousPage
-                    ? "text-dark-blue hover:bg-gray-100"
-                    : "text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                Previous
-              </button>
-
-              {/* Page numbers - simplified logic */}
-              {(() => {
-                const pages = []
-                const maxPages = Math.min(totalPages, 5)
-
-                let startPage = Math.max(
-                  1,
-                  currentPage - Math.floor(maxPages / 2)
-                )
-                let endPage = Math.min(totalPages, startPage + maxPages - 1)
-
-                // Adjust start if we're near the end
-                if (endPage - startPage + 1 < maxPages) {
-                  startPage = Math.max(1, endPage - maxPages + 1)
-                }
-
-                for (let i = startPage; i <= endPage; i++) {
-                  pages.push(
-                    <button
-                      key={i}
-                      onClick={() => {
-                        console.log(
-                          `Clicking page ${i}, current page is ${currentPage}`
-                        )
-                        handlePageChange(i)
-                      }}
-                      className={`w-10 h-10 md:w-12 md:h-12 rounded-full text-xs md:text-sm font-medium transition-colors ${
-                        currentPage === i
-                          ? "bg-gold-20 text-dark-blue border-2 border-gold-30 font-bold"
-                          : "text-dark-blue hover:bg-gray-100 border border-gray-300"
-                      }`}
-                    >
-                      {i}
-                    </button>
-                  )
-                }
-
-                return pages
-              })()}
-
-              {/* Next button */}
-              <button
-                onClick={() => hasNextPage && handlePageChange(currentPage + 1)}
-                disabled={!hasNextPage}
-                className={`px-3 py-2 text-xs md:text-sm font-medium rounded transition-colors ${
-                  hasNextPage
-                    ? "text-dark-blue hover:bg-gray-100"
-                    : "text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        itemLabel="orders"
+      />
     </div>
   )
 }

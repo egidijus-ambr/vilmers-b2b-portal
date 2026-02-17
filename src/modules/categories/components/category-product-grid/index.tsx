@@ -1,7 +1,7 @@
 import { getCategoryProducts } from "@lib/data/category-products"
 import { SupportedLanguage } from "@lib/i18n"
 import B2BProductCard from "@modules/categories/components/category-product-card"
-import { Pagination } from "@modules/store/components/pagination"
+import ProductPagination from "@modules/store/components/product-pagination"
 
 interface CategoryProductGridProps {
   categoryPermalink: string
@@ -30,6 +30,7 @@ export default async function CategoryProductGrid({
 
   return (
     <div data-testid="category-product-grid">
+      <p className="text-sm text-gray-600 mb-4">Products: {totalCount}</p>
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
         {products.map((container) => (
           <B2BProductCard
@@ -40,9 +41,12 @@ export default async function CategoryProductGrid({
         ))}
       </ul>
       {totalPages > 1 && (
-        <div className="flex justify-center mt-8">
-          <Pagination page={page} totalPages={totalPages} data-testid="product-pagination" />
-        </div>
+        <ProductPagination
+          page={page}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={28}
+        />
       )}
     </div>
   )
