@@ -44,9 +44,10 @@ export const APP_SHOP_SETTINGS = gql`
           id
           src
         }
-        gallery_images {
+        gallery_images(orderBy: { display_order: asc }) {
           id
           src
+          display_order
         }
         content_block_profiles {
           id
@@ -90,22 +91,19 @@ export const APP_SHOP_SETTINGS = gql`
             src
           }
         }
+        config
         category_tile_items {
           id
-          arrangement
-          category {
+          image {
             id
-            image {
-              id
-              src
-            }
-            category_profiles {
-              id
-              name
-              language
-              meta_information {
-                permalink
-              }
+            src
+          }
+          category_profiles {
+            id
+            name
+            language
+            meta_information {
+              permalink
             }
           }
         }

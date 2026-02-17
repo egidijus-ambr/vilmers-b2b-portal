@@ -6,7 +6,7 @@ import {
   ContentBlockImage,
   ContentBlockStyle,
   ContentBlockLinkedItem,
-  ContentBlockCategoryTile,
+  CategoryTileItem,
 } from "./types"
 import VideoPlayer from "./video-player"
 import ArrowLeft from "@modules/common/icons/arrow-left"
@@ -50,8 +50,7 @@ export default function ContentBlock({
   const profile = getProfile(data.content_block_profiles, languageCode)
   const extraCss = parseExtraCss(data.extra_css)
 
-  const hasMaxHeight =
-    data.max_height != null || extraCss.maxHeight != null
+  const hasMaxHeight = data.max_height != null || extraCss.maxHeight != null
 
   const sectionStyle: React.CSSProperties = {
     ...(data.default_margins ? { margin: "40px 0" } : { margin: "auto" }),
@@ -689,7 +688,10 @@ function ButtonBlock({
   buttonText: string | null
   link: string | null
   linkNewTab: boolean | null
-  page: { id: string; page_profiles: { slug: string; language: string }[] } | null
+  page: {
+    id: string
+    page_profiles: { slug: string; language: string }[]
+  } | null
   languageCode: string
   backgroundColor: string | null
   textColor: string | null
@@ -825,13 +827,12 @@ function CategoryTiles({
   tiles,
   languageCode,
 }: {
-  tiles: ContentBlockCategoryTile[]
+  tiles: CategoryTileItem[]
   languageCode: string
 }) {
   if (tiles.length === 0) return null
 
-  const sorted = [...tiles].sort((a, b) => a.arrangement - b.arrangement)
-  const count = sorted.length
+  const count = tiles.length
 
   return (
     <div className="content-container">
@@ -850,12 +851,11 @@ function CategoryTiles({
             : "grid-cols-2 small:grid-cols-6"
         }`}
       >
-        {sorted.map((tile) => {
+        {tiles.map((category) => {
           const profile =
-            tile.category.category_profiles.find(
-              (p) =>
-                p.language.toLowerCase() === languageCode.toLowerCase()
-            ) ?? tile.category.category_profiles[0]
+            category.category_profiles.find(
+              (p) => p.language.toLowerCase() === languageCode.toLowerCase()
+            ) ?? category.category_profiles[0]
 
           const permalink = profile?.meta_information?.permalink
           const href = permalink
@@ -864,15 +864,15 @@ function CategoryTiles({
 
           return (
             <a
-              key={tile.id}
+              key={category.id}
               href={href}
               className="group relative block overflow-hidden"
             >
               <div className="aspect-[3/4] w-full">
-                {tile.category.image?.src ? (
+                {category.image?.src ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={tile.category.image.src}
+                    src={category.image.src}
                     alt={profile?.name ?? ""}
                     className="h-full w-full object-cover"
                   />
@@ -989,11 +989,9 @@ function Gallery({
         <GalleryMasonry pageImages={pages[currentPage] ?? []} />
       ) : (
         <GallerySpreadHarmony
-          pages={pages}
+          pageImages={pages[currentPage] ?? []}
           orientations={orientations}
           allImages={images}
-          currentPage={currentPage}
-          totalPages={totalPages}
         />
       )}
 
@@ -1062,55 +1060,38 @@ function GalleryMasonry({ pageImages }: { pageImages: ContentBlockImage[] }) {
 
 /* ─── Gallery: Spread Harmony ─────────────────────────────── */
 
+function GalleryImage({
+  image,
+  className,
+}: {
+  image: ContentBlockImage
+  className?: string
+}) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={image.src} alt="" className={className} />
+}
+
 function GallerySpreadHarmony({
-  pages,
+  pageImages,
   orientations,
   allImages,
-  currentPage,
-  totalPages,
 }: {
-  pages: ContentBlockImage[][]
+  pageImages: ContentBlockImage[]
   orientations: Record<string, Orientation>
   allImages: ContentBlockImage[]
-  currentPage: number
-  totalPages: number
 }) {
   const [scrollProgress, setScrollProgress] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [groupWidth, setGroupWidth] = useState(0)
-
-  // Measure the width of one image group for precise translateX
-  useEffect(() => {
-    const measure = () => {
-      if (containerRef.current) {
-        const firstGroup =
-          containerRef.current.querySelector('[data-group="0"]')
-        if (firstGroup) {
-          setGroupWidth(firstGroup.getBoundingClientRect().width)
-        }
-      }
-    }
-    measure()
-    window.addEventListener("resize", measure)
-    return () => window.removeEventListener("resize", measure)
-  }, [])
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return
     const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
     const maxScroll = scrollWidth - clientWidth
-    const progress = maxScroll > 0 ? scrollLeft / maxScroll : 0
-    setScrollProgress(progress)
+    setScrollProgress(maxScroll > 0 ? scrollLeft / maxScroll : 0)
   }, [])
 
   const indicatorWidth = allImages.length > 0 ? (1 / allImages.length) * 100 : 0
   const indicatorPosition = scrollProgress * (100 - indicatorWidth)
-
-  // Helper to check if any small image in a group is horizontal
-  const hasHorizontalSmallImage = (groupImages: ContentBlockImage[]) =>
-    (groupImages[1] && orientations[groupImages[1].id] === "horizontal") ||
-    (groupImages[2] && orientations[groupImages[2].id] === "horizontal")
 
   return (
     <>
@@ -1138,10 +1119,8 @@ function GallerySpreadHarmony({
                   : "80vw",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.src}
-                alt=""
+              <GalleryImage
+                image={img}
                 className={
                   isHorizontal ? "h-auto w-full" : "h-full w-full object-cover"
                 }
@@ -1151,7 +1130,7 @@ function GallerySpreadHarmony({
         })}
       </div>
 
-      {/* Scroll progress indicator - mobile only, centered to align with 80vw images */}
+      {/* Scroll progress indicator - mobile only */}
       {allImages.length > 1 && (
         <div className="mt-4 flex justify-center small:hidden">
           <div className="h-0.5 bg-gray-200" style={{ width: "80vw" }}>
@@ -1166,82 +1145,80 @@ function GallerySpreadHarmony({
         </div>
       )}
 
-      {/* Desktop: single continuous strip with translateX navigation */}
+      {/* Desktop */}
       <div
-        className="hidden small:block overflow-hidden"
+        className="hidden small:block"
         style={{ height: "clamp(400px, 60vw, 800px)" }}
       >
-        <div
-          ref={containerRef}
-          className="flex h-full transition-transform duration-500 ease-out"
-          style={{
-            transform: `translateX(-${currentPage * groupWidth}px)`,
-            // Left margin for the first group to align with content-container
-            marginLeft: "max(40px, calc((100vw - 1400px) / 2 + 16px))",
-          }}
-        >
-          {/* Render all image groups in a single continuous strip */}
-          {pages.map((groupImages, groupIndex) => {
-            const anySmallHorizontal = hasHorizontalSmallImage(groupImages)
-
-            return (
-              <div
-                key={groupIndex}
-                data-group={groupIndex}
-                className="flex h-full flex-shrink-0 gap-4 pr-4"
-                style={{
-                  width: "min(1360px, calc(100vw - 24px))",
-                }}
-              >
-                {/* Left — large image */}
-                {groupImages[0] && (
-                  <div
-                    className="h-full flex-shrink-0 overflow-hidden"
-                    style={{ width: "min(670px, 48%)" }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={groupImages[0].src}
-                      alt=""
-                      className="h-full w-full object-cover"
+        <div className="content-container flex h-full gap-4 px-10">
+          {pageImages.length === 2 ? (
+            <>
+              {/* 2-photo layout: horizontal first = 2/3 + 1/3, vertical first = 1/2 + 1/2 */}
+              {pageImages[0] && (
+                <div
+                  className="h-full overflow-hidden"
+                  style={{
+                    width:
+                      orientations[pageImages[0].id] === "horizontal"
+                        ? "66.666%"
+                        : "50%",
+                    flexShrink: 0,
+                  }}
+                >
+                  <GalleryImage
+                    image={pageImages[0]}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+              {pageImages[1] && (
+                <div className="flex h-full flex-1 flex-col gap-4">
+                  <div className="h-1/2 overflow-hidden">
+                    <GalleryImage
+                      image={pageImages[1]}
+                      className="h-full w-full object-contain object-left"
                     />
                   </div>
-                )}
-
-                {/* Right column — two smaller images */}
-                <div className="flex h-full flex-1 flex-col gap-4">
-                  {groupImages[1] && (
-                    <div className="flex flex-1 items-start justify-start overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={groupImages[1].src}
-                        alt=""
-                        className="h-full object-cover"
-                        style={{
-                          maxWidth: anySmallHorizontal ? "100%" : "75%",
-                        }}
-                      />
-                    </div>
-                  )}
-                  {groupImages[2] && (
-                    <div
-                      className={`flex flex-1 items-end overflow-hidden ${
-                        anySmallHorizontal ? "justify-start" : "justify-end"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={groupImages[2].src}
-                        alt=""
-                        className="h-full object-cover"
-                        style={{ maxWidth: "75%" }}
-                      />
-                    </div>
-                  )}
                 </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* 3-photo layout: large left + 2 stacked right */}
+              {pageImages[0] && (
+                <div
+                  className={`h-full overflow-hidden ${
+                    orientations[pageImages[0].id] === "vertical"
+                      ? "w-1/2"
+                      : "flex-1"
+                  }`}
+                >
+                  <GalleryImage
+                    image={pageImages[0]}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+              <div
+                className={`flex h-full flex-col gap-4 ${
+                  orientations[pageImages[0]?.id] === "vertical"
+                    ? "w-1/2"
+                    : "w-[35%]"
+                }`}
+              >
+                {pageImages.slice(1, 3).map((img, i) => (
+                  <div key={img.id ?? i} className="h-1/2 overflow-hidden">
+                    <GalleryImage
+                      image={img}
+                      className={`h-full w-full object-contain ${
+                        i === 0 ? "object-left" : "object-right"
+                      }`}
+                    />
+                  </div>
+                ))}
               </div>
-            )
-          })}
+            </>
+          )}
         </div>
       </div>
     </>

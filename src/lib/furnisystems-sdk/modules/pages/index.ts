@@ -35,9 +35,10 @@ export const FIND_PAGE_BY_CODE = gql`
           id
           src
         }
-        gallery_images {
+        gallery_images(orderBy: { display_order: asc }) {
           id
           src
+          display_order
         }
         content_block_profiles {
           id
@@ -81,22 +82,19 @@ export const FIND_PAGE_BY_CODE = gql`
             src
           }
         }
+        config
         category_tile_items {
           id
-          arrangement
-          category {
+          image {
             id
-            image {
-              id
-              src
-            }
-            category_profiles {
-              id
-              name
-              language
-              meta_information {
-                permalink
-              }
+            src
+          }
+          category_profiles {
+            id
+            name
+            language
+            meta_information {
+              permalink
             }
           }
         }
@@ -148,9 +146,10 @@ export const FIND_PAGE_BY_SLUG = gql`
           id
           src
         }
-        gallery_images {
+        gallery_images(orderBy: { display_order: asc }) {
           id
           src
+          display_order
         }
         content_block_profiles {
           id
@@ -194,22 +193,19 @@ export const FIND_PAGE_BY_SLUG = gql`
             src
           }
         }
+        config
         category_tile_items {
           id
-          arrangement
-          category {
+          image {
             id
-            image {
-              id
-              src
-            }
-            category_profiles {
-              id
-              name
-              language
-              meta_information {
-                permalink
-              }
+            src
+          }
+          category_profiles {
+            id
+            name
+            language
+            meta_information {
+              permalink
             }
           }
         }

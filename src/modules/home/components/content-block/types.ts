@@ -31,6 +31,7 @@ export interface ContentBlockProfile {
 export interface ContentBlockImage {
   id: string
   src: string
+  display_order: number
 }
 
 export interface ContentBlockLinkedItem {
@@ -41,21 +42,17 @@ export interface ContentBlockLinkedItem {
   image: ContentBlockImage | null
 }
 
-export interface ContentBlockCategoryTile {
-  id: string
-  arrangement: number
-  category: {
+export interface CategoryTileItem {
+  id: number
+  image: ContentBlockImage | null
+  category_profiles: {
     id: number
-    image: ContentBlockImage | null
-    category_profiles: {
-      id: number
-      name: string
-      language: string
-      meta_information: {
-        permalink: string
-      }
-    }[]
-  }
+    name: string
+    language: string
+    meta_information: {
+      permalink: string
+    }
+  }[]
 }
 
 export interface ContentBlockData {
@@ -93,7 +90,8 @@ export interface ContentBlockData {
   } | null
   extra_css: Record<string, unknown> | string | null
   linked_items?: ContentBlockLinkedItem[]
-  category_tile_items?: ContentBlockCategoryTile[]
+  config?: Record<string, unknown> | null
+  category_tile_items?: CategoryTileItem[]
 }
 
 export interface ContentBlockProps {

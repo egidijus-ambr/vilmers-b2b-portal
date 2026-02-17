@@ -35,21 +35,17 @@ export interface ContentBlockLinkedItem {
   image: ContentBlockImage | null
 }
 
-export interface ContentBlockCategoryTile {
-  id: string
-  arrangement: number
-  category: {
+export interface CategoryTileItem {
+  id: number
+  image: { id: number; src: string } | null
+  category_profiles: {
     id: number
-    image: { id: number; src: string } | null
-    category_profiles: {
-      id: number
-      name: string
-      language: string
-      meta_information: {
-        permalink: string
-      }
-    }[]
-  }
+    name: string
+    language: string
+    meta_information: {
+      permalink: string
+    }
+  }[]
 }
 
 export interface ContentBlock {
@@ -84,7 +80,8 @@ export interface ContentBlock {
   link_page: { id: string; page_profiles: { slug: string; language: string }[] } | null
   extra_css: Record<string, unknown> | string | null
   linked_items?: ContentBlockLinkedItem[]
-  category_tile_items?: ContentBlockCategoryTile[]
+  config?: Record<string, unknown> | null
+  category_tile_items?: CategoryTileItem[]
 }
 
 export interface ShopSetting {
