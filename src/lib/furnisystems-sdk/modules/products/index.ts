@@ -3,6 +3,7 @@ import { GraphQLClient } from "../../client"
 import {
   CategoryProductsResponse,
   SortedByCategoryPositionResponse,
+  FurnisystemsProductDetail,
 } from "./types"
 
 const PRODUCT_CARD_FRAGMENT = gql`
@@ -31,6 +32,9 @@ const PRODUCT_CARD_FRAGMENT = gql`
         id
         name
         language
+        meta_information {
+          permalink
+        }
       }
     }
     advanced_product {
@@ -53,6 +57,9 @@ const PRODUCT_CARD_FRAGMENT = gql`
         id
         name
         language
+        meta_information {
+          permalink
+        }
       }
     }
   }
@@ -76,6 +83,95 @@ const GET_CATEGORY_PRODUCTS = gql`
       productsCount
       sortedProductContainers {
         ...ProductCardFields
+      }
+    }
+  }
+`
+
+const GET_PRODUCT_BY_PERMALINK = gql`
+  query GetProductByPermalink($permalink: String!, $language: Language) {
+    findFirstProductContainer(
+      where: {
+        OR: [
+          {
+            single_product: {
+              is: {
+                product_profiles: {
+                  some: {
+                    meta_information: {
+                      is: { permalink: { equals: $permalink } }
+                    }
+                    language: { equals: $language }
+                  }
+                }
+              }
+            }
+          }
+          {
+            advanced_product: {
+              is: {
+                advanced_product_profiles: {
+                  some: {
+                    meta_information: {
+                      is: { permalink: { equals: $permalink } }
+                    }
+                    language: { equals: $language }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ) {
+      id
+      type
+      single_product {
+        id
+        product_profiles(where: { language: { equals: $language } }) {
+          name
+          description
+          short_description
+          language
+          meta_information {
+            permalink
+          }
+        }
+        images {
+          id
+          src
+          src_md
+          display_order
+        }
+      }
+      advanced_product {
+        id
+        advanced_product_profiles(
+          where: { language: { equals: $language } }
+        ) {
+          name
+          description
+          language
+          meta_information {
+            permalink
+          }
+        }
+        images {
+          id
+          src
+          src_md
+          display_order
+        }
+      }
+      primary_category {
+        id
+        category_profiles(where: { language: { equals: $language } }) {
+          name
+          language
+          meta_information {
+            permalink
+          }
+        }
       }
     }
   }
@@ -154,6 +250,97 @@ export class ProductsModule {
         productsCount: 0,
         sortedProductContainers: [],
       }
+    }
+  }
+
+  async getProductByPermalink(
+    permalink: string,
+    language?: string
+  ): Promise<FurnisystemsProductDetail | null> {
+    // Raw GraphQL response type (permalink nested under meta_information)
+    type RawProfile = {
+      name: string
+      description: string | null
+      short_description: string | null
+      language: string
+      meta_information: { permalink: string } | null
+    }
+    type RawResponse = {
+      findFirstProductContainer: {
+        id: number
+        type: string
+        single_product: {
+          id: number
+          product_profiles: RawProfile[]
+          images: { id: number; src: string; src_md: string | null; display_order: number }[]
+        } | null
+        advanced_product: {
+          id: number
+          advanced_product_profiles: RawProfile[]
+          images: { id: number; src: string; src_md: string | null; display_order: number }[]
+        } | null
+        primary_category: {
+          id: number
+          category_profiles: {
+            name: string
+            language: string
+            meta_information: { permalink: string } | null
+          }[]
+        } | null
+      } | null
+    }
+
+    try {
+      const response = await this.client.query<RawResponse>(
+        GET_PRODUCT_BY_PERMALINK,
+        {
+          variables: {
+            permalink,
+            ...(language ? { language: language.toLowerCase() } : {}),
+          },
+          fetchPolicy: "no-cache",
+          errorPolicy: "all",
+        }
+      )
+
+      const container = response.findFirstProductContainer
+      if (!container) return null
+
+      // Flatten meta_information.permalink to permalink on profiles
+      const flattenProfiles = (profiles: RawProfile[]) =>
+        profiles.map((p) => ({
+          name: p.name,
+          description: p.description,
+          short_description: p.short_description,
+          language: p.language,
+          permalink: p.meta_information?.permalink ?? "",
+        }))
+
+      return {
+        ...container,
+        single_product: container.single_product
+          ? {
+              ...container.single_product,
+              product_profiles: flattenProfiles(
+                container.single_product.product_profiles
+              ),
+            }
+          : null,
+        advanced_product: container.advanced_product
+          ? {
+              ...container.advanced_product,
+              advanced_product_profiles: flattenProfiles(
+                container.advanced_product.advanced_product_profiles
+              ),
+            }
+          : null,
+      }
+    } catch (error) {
+      console.error(
+        `Error fetching product with permalink "${permalink}":`,
+        error
+      )
+      return null
     }
   }
 }

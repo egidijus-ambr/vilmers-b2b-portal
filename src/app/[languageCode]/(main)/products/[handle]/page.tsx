@@ -1,106 +1,98 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { listProducts } from "@lib/data/products"
-import { getRegion, listRegions } from "@lib/data/regions"
-import ProductTemplate from "@modules/products/templates"
+import { getProductByPermalink } from "@lib/data/furnisystems-products"
+import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
+import ProductTemplate, { ProductPageData } from "@modules/products/templates"
+import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 
 type Props = {
-  params: Promise<{ countryCode: string; handle: string }>
+  params: Promise<{ handle: string; languageCode: string }>
 }
 
-export async function generateStaticParams() {
-  try {
-    const countryCodes = await listRegions().then((regions) =>
-      regions?.map((r) => r.countries?.map((c) => c.iso_2)).flat()
-    )
+function mapFurnisystemsProduct(
+  container: FurnisystemsProductDetail,
+  languageCode: string
+): ProductPageData {
+  const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
 
-    if (!countryCodes) {
-      return []
-    }
+  const profiles = isAdvanced
+    ? container.advanced_product?.advanced_product_profiles ?? []
+    : container.single_product?.product_profiles ?? []
 
-    const promises = countryCodes.map(async (country) => {
-      const { response } = await listProducts({
-        countryCode: country,
-        queryParams: { limit: 100, fields: "handle" },
+  const profile = profiles[0]
+
+  const images = isAdvanced
+    ? container.advanced_product?.images ?? []
+    : container.single_product?.images ?? []
+
+  const sortedImages = [...images].sort(
+    (a, b) => a.display_order - b.display_order
+  )
+  const mainImage = sortedImages[0]
+  const imageUrl = mainImage ? mainImage.src_md || mainImage.src : null
+
+  // Build breadcrumbs (hrefs without language prefix — LocalizedClientLink adds it)
+  const breadcrumbs: BreadcrumbItem[] = [
+    { label: "Home", href: "/" },
+  ]
+
+  if (container.primary_category) {
+    const catProfile = container.primary_category.category_profiles[0]
+    if (catProfile) {
+      const catPermalink = catProfile.meta_information?.permalink
+      breadcrumbs.push({
+        label: catProfile.name,
+        href: catPermalink ? `/categories/${catPermalink}` : "/",
       })
+    }
+  }
 
-      return {
-        country,
-        products: response.products,
-      }
-    })
+  breadcrumbs.push({
+    label: profile?.name ?? "Product",
+    href: null,
+  })
 
-    const countryProducts = await Promise.all(promises)
-
-    return countryProducts
-      .flatMap((countryData) =>
-        countryData.products.map((product) => ({
-          countryCode: countryData.country,
-          handle: product.handle,
-        }))
-      )
-      .filter((param) => param.handle)
-  } catch (error) {
-    console.error(
-      `Failed to generate static paths for product pages: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }.`
-    )
-    return []
+  return {
+    id: String(container.id),
+    title: profile?.name ?? "Product",
+    description: profile?.description ?? null,
+    imageUrl,
+    breadcrumbs,
   }
 }
 
-export async function generateMetadata(props: Props): Promise<Metadata> {
-  const params = await props.params
-  const { handle } = params
-  const region = await getRegion(params.countryCode)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { handle, languageCode } = await params
+  const product = await getProductByPermalink(handle, languageCode)
 
-  if (!region) {
-    notFound()
+  if (!product) {
+    return { title: "Product Not Found" }
   }
 
-  const product = await listProducts({
-    countryCode: params.countryCode,
-    queryParams: { handle },
-  }).then(({ response }) => response.products[0])
+  const isAdvanced = product.type === "ADVANCED_PRODUCT" || !!product.advanced_product
+  const profile = isAdvanced
+    ? product.advanced_product?.advanced_product_profiles?.[0]
+    : product.single_product?.product_profiles?.[0]
+
+  const shortDesc = !isAdvanced
+    ? (product.single_product?.product_profiles?.[0]?.short_description ?? null)
+    : null
+
+  return {
+    title: profile?.name ?? "Product",
+    description: shortDesc ?? profile?.description ?? "",
+  }
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { handle, languageCode } = await params
+  const product = await getProductByPermalink(handle, languageCode)
 
   if (!product) {
     notFound()
   }
 
-  return {
-    title: `${product.title} | Medusa Store`,
-    description: `${product.title}`,
-    openGraph: {
-      title: `${product.title} | Medusa Store`,
-      description: `${product.title}`,
-      images: product.thumbnail ? [product.thumbnail] : [],
-    },
-  }
-}
+  const productData = mapFurnisystemsProduct(product, languageCode)
 
-export default async function ProductPage(props: Props) {
-  const params = await props.params
-  const region = await getRegion(params.countryCode)
-
-  if (!region) {
-    notFound()
-  }
-
-  const pricedProduct = await listProducts({
-    countryCode: params.countryCode,
-    queryParams: { handle: params.handle },
-  }).then(({ response }) => response.products[0])
-
-  if (!pricedProduct) {
-    notFound()
-  }
-
-  return (
-    <ProductTemplate
-      product={pricedProduct}
-      region={region}
-      countryCode={params.countryCode}
-    />
-  )
+  return <ProductTemplate product={productData} />
 }

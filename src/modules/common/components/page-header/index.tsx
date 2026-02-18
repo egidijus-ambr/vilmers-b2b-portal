@@ -3,7 +3,7 @@ import Breadcrumb, {
 } from "@modules/common/components/breadcrumb"
 
 interface PageHeaderProps {
-  title: string
+  title?: string
   description?: string | null
   breadcrumbItems?: BreadcrumbItem[]
   children?: React.ReactNode
@@ -22,12 +22,14 @@ export default function PageHeader({
           <Breadcrumb items={breadcrumbItems} />
         )}
 
-        <h1
-          className="text-2xl sm:text-3xl font-medium text-dark-blue"
-          data-testid="page-header-title"
-        >
-          {title}
-        </h1>
+        {title && (
+          <h1
+            className="text-2xl sm:text-3xl font-medium text-dark-blue"
+            data-testid="page-header-title"
+          >
+            {title}
+          </h1>
+        )}
 
         {description && (
           <p className="mt-4 text-base leading-6 font-normal text-dark-blue max-w-[542px]">

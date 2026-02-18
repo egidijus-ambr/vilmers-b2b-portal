@@ -513,7 +513,7 @@ function ThreeColumnsTitleLeft({
 
   return (
     <div
-      className="content-container px-10 py-10 small:py-16"
+      className="content-container py-10 small:py-16"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className="grid grid-cols-1 gap-8 small:grid-cols-3 small:gap-12">
@@ -584,7 +584,7 @@ function TwoColumnsTitleTopCenter({
 
   return (
     <div
-      className="content-container px-10 py-10 small:py-16"
+      className="content-container py-10 small:py-16"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {/* Centered title */}
@@ -830,26 +830,15 @@ function CategoryTiles({
   tiles: CategoryTileItem[]
   languageCode: string
 }) {
-  if (tiles.length === 0) return null
-
-  const count = tiles.length
+  if (!tiles.length) return null
 
   return (
     <div className="content-container">
       <div
-        className={`grid gap-3 small:gap-4 ${
-          count === 1
-            ? "grid-cols-1"
-            : count === 2
-            ? "grid-cols-2"
-            : count === 3
-            ? "grid-cols-2 small:grid-cols-3"
-            : count === 4
-            ? "grid-cols-2 small:grid-cols-4"
-            : count === 5
-            ? "grid-cols-2 small:grid-cols-5"
-            : "grid-cols-2 small:grid-cols-6"
-        }`}
+        className="grid w-full"
+        style={{
+          gridTemplateColumns: `repeat(${tiles.length}, 1fr)`,
+        }}
       >
         {tiles.map((category) => {
           const profile =
@@ -862,29 +851,32 @@ function CategoryTiles({
             ? `/${languageCode}/categories/${permalink}`
             : "#"
 
+          const imageSrc = category.banners?.[0]?.src || category.image?.src
+
           return (
             <a
               key={category.id}
               href={href}
               className="group relative block overflow-hidden"
             >
-              <div className="aspect-[3/4] w-full">
-                {category.image?.src ? (
+              <div className="h-[600px] w-full">
+                {imageSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={category.image.src}
+                    src={imageSrc}
                     alt={profile?.name ?? ""}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <div className="h-full w-full bg-gray-200" />
                 )}
               </div>
-              <div className="py-3">
-                <h4 className="text-sm font-medium uppercase tracking-wider text-dark-blue">
-                  {profile?.name ?? ""}
-                </h4>
-              </div>
+              {/* Dark gradient overlay at bottom */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[428px] bg-gradient-to-t from-black/60 to-transparent" />
+              {/* Category name */}
+              <span className="absolute bottom-4 left-6 text-sm font-light uppercase tracking-[0.2em] text-white">
+                {profile?.name}
+              </span>
             </a>
           )
         })}
@@ -1150,20 +1142,17 @@ function GallerySpreadHarmony({
         className="hidden small:block"
         style={{ height: "clamp(400px, 60vw, 800px)" }}
       >
-        <div className="content-container flex h-full gap-4 px-10">
+        <div className="content-container flex h-full gap-4">
           {pageImages.length === 2 ? (
             <>
               {/* 2-photo layout: horizontal first = 2/3 + 1/3, vertical first = 1/2 + 1/2 */}
               {pageImages[0] && (
                 <div
-                  className="h-full overflow-hidden"
-                  style={{
-                    width:
-                      orientations[pageImages[0].id] === "horizontal"
-                        ? "66.666%"
-                        : "50%",
-                    flexShrink: 0,
-                  }}
+                  className={`h-full shrink-0 overflow-hidden ${
+                    orientations[pageImages[0].id] === "horizontal"
+                      ? "w-2/3"
+                      : "w-1/2"
+                  }`}
                 >
                   <GalleryImage
                     image={pageImages[0]}
@@ -1172,7 +1161,13 @@ function GallerySpreadHarmony({
                 </div>
               )}
               {pageImages[1] && (
-                <div className="flex h-full flex-1 flex-col gap-4">
+                <div
+                  className={`flex h-full flex-col gap-4 ${
+                    orientations[pageImages[0]?.id] === "horizontal"
+                      ? "w-1/3"
+                      : "w-1/2"
+                  }`}
+                >
                   <div className="h-1/2 overflow-hidden">
                     <GalleryImage
                       image={pageImages[1]}
@@ -1190,7 +1185,7 @@ function GallerySpreadHarmony({
                   className={`h-full overflow-hidden ${
                     orientations[pageImages[0].id] === "vertical"
                       ? "w-1/2"
-                      : "flex-1"
+                      : "w-2/3"
                   }`}
                 >
                   <GalleryImage
@@ -1203,7 +1198,7 @@ function GallerySpreadHarmony({
                 className={`flex h-full flex-col gap-4 ${
                   orientations[pageImages[0]?.id] === "vertical"
                     ? "w-1/2"
-                    : "w-[35%]"
+                    : "w-1/3"
                 }`}
               >
                 {pageImages.slice(1, 3).map((img, i) => (

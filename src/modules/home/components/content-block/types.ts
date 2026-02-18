@@ -45,6 +45,7 @@ export interface ContentBlockLinkedItem {
 export interface CategoryTileItem {
   id: number
   image: ContentBlockImage | null
+  banners: ContentBlockImage[]
   category_profiles: {
     id: number
     name: string

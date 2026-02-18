@@ -2,6 +2,7 @@ import Image from "next/image"
 import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import { formatPrice } from "@lib/util/money"
 import { SupportedLanguage } from "@lib/i18n"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 function extractProductDisplayData(
   container: ProductContainer,
@@ -19,6 +20,7 @@ function extractProductDisplayData(
 
     return {
       name: profile?.name ?? "",
+      handle: profile?.meta_information?.permalink ?? null,
       image: image?.src_md || image?.src || null,
       priceLabel: formatPrice({
         amount: product.price_from,
@@ -30,7 +32,7 @@ function extractProductDisplayData(
 
   // Single product
   const product = container.single_product
-  if (!product) return { name: "", image: null, priceLabel: "", isFromPrice: false }
+  if (!product) return { name: "", handle: null, image: null, priceLabel: "", isFromPrice: false }
 
   const profile = product.product_profiles?.find(
     (p) => p.language === language
@@ -51,6 +53,7 @@ function extractProductDisplayData(
 
   return {
     name: profile?.name ?? "",
+    handle: profile?.meta_information?.permalink ?? null,
     image: image?.src_md || image?.src || null,
     priceLabel: formatPrice({ amount: price, language }),
     isFromPrice: false,
@@ -63,14 +66,17 @@ interface B2BProductCardProps {
 }
 
 export default function B2BProductCard({ container, language }: B2BProductCardProps) {
-  const { name, image, priceLabel, isFromPrice } = extractProductDisplayData(
+  const { name, handle, image, priceLabel, isFromPrice } = extractProductDisplayData(
     container,
     language
   )
 
   return (
     <li className="group">
-      <div className="flex flex-col gap-2">
+      <LocalizedClientLink
+        href={handle ? `/products/${handle}` : null}
+        className="flex flex-col gap-2 no-underline"
+      >
         <div className="relative aspect-[325/380] w-full overflow-hidden bg-gold-10">
           {image ? (
             <Image
@@ -93,7 +99,7 @@ export default function B2BProductCard({ container, language }: B2BProductCardPr
             {priceLabel}
           </p>
         </div>
-      </div>
+      </LocalizedClientLink>
     </li>
   )
 }

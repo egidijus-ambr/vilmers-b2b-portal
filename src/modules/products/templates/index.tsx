@@ -1,84 +1,55 @@
-import React, { Suspense } from "react"
+import React from "react"
+import Image from "next/image"
+import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
+import PageHeader from "@modules/common/components/page-header"
 
-import ImageGallery from "@modules/products/components/image-gallery"
-import ProductActions from "@modules/products/components/product-actions"
-import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
-import ProductTabs from "@modules/products/components/product-tabs"
-import RelatedProducts from "@modules/products/components/related-products"
-import InteriorPhotoGallery from "@modules/products/components/interior-photo-gallery"
-import ProductInfo from "@modules/products/templates/product-info"
-import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
-import { notFound } from "next/navigation"
-import ProductActionsWrapper from "./product-actions-wrapper"
-import { HttpTypes } from "@medusajs/types"
-import { getProductInteriorPhotos } from "@lib/data/product-photos"
-
-type ProductTemplateProps = {
-  product: HttpTypes.StoreProduct
-  region: HttpTypes.StoreRegion
-  countryCode: string
+export type ProductPageData = {
+  id: string
+  title: string
+  description: string | null
+  imageUrl: string | null
+  breadcrumbs: BreadcrumbItem[]
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = async ({
-  product,
-  region,
-  countryCode,
-}) => {
-  if (!product || !product.id) {
-    return notFound()
-  }
+type ProductTemplateProps = {
+  product: ProductPageData
+}
 
-  // Fetch interior photos for this product
-  const interiorPhotos = await getProductInteriorPhotos(product.title || "")
-
+const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
   return (
-    <>
-      <div
-        className="content-container flex flex-col small:flex-row small:items-start py-6 relative"
-        data-testid="product-container"
-      >
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-6">
-          <ProductInfo product={product} />
-          <ProductTabs product={product} />
-        </div>
-        <div className="block w-full relative">
-          <ImageGallery images={product?.images || []} />
-        </div>
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-12">
-          <ProductOnboardingCta />
-          <Suspense
-            fallback={
-              <ProductActions
-                disabled={true}
-                product={product}
-                region={region}
+    <PageHeader breadcrumbItems={product.breadcrumbs}>
+      <div data-testid="product-container" className="flex flex-col md:flex-row gap-8">
+        <div className="md:w-3/5">
+          {product.imageUrl ? (
+            <div className="bg-white p-4">
+              <Image
+                src={product.imageUrl}
+                alt={product.title}
+                width={800}
+                height={800}
+                className="w-full h-auto object-contain"
+                priority
               />
-            }
-          >
-            <ProductActionsWrapper id={product.id} region={region} />
-          </Suspense>
+            </div>
+          ) : (
+            <div className="w-full aspect-square bg-white flex items-center justify-center">
+              <span className="text-gray-400">No image</span>
+            </div>
+          )}
+        </div>
+        <div className="md:w-2/5">
+          <h1 className="text-2xl sm:text-3xl font-medium text-dark-blue mb-4">
+            {product.title}
+          </h1>
+          {product.description && (
+            <div
+              className="text-dark-blue prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
+          )}
         </div>
       </div>
-
-      {/* Interior Photos Gallery */}
-      {interiorPhotos.length > 0 && (
-        <div className="content-container my-16 small:my-32">
-          <InteriorPhotoGallery
-            photos={interiorPhotos}
-            productName={product.title || ""}
-          />
-        </div>
-      )}
-
-      <div
-        className="content-container my-16 small:my-32"
-        data-testid="related-products-container"
-      >
-        <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts product={product} countryCode={countryCode} />
-        </Suspense>
-      </div>
-    </>
+    </PageHeader>
   )
 }
 

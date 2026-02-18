@@ -8,11 +8,16 @@ export const FIND_PAGE_BY_CODE = gql`
       id
       code
       published
+      hero_image {
+        id
+        src
+      }
       page_profiles {
         id
         language
         slug
         title
+        subtitle
         meta_description
       }
       content_blocks(
@@ -86,6 +91,10 @@ export const FIND_PAGE_BY_CODE = gql`
         category_tile_items {
           id
           image {
+            id
+            src
+          }
+          banners {
             id
             src
           }
@@ -119,11 +128,16 @@ export const FIND_PAGE_BY_SLUG = gql`
       id
       code
       published
+      hero_image {
+        id
+        src
+      }
       page_profiles {
         id
         language
         slug
         title
+        subtitle
         meta_description
       }
       content_blocks(
@@ -197,6 +211,10 @@ export const FIND_PAGE_BY_SLUG = gql`
         category_tile_items {
           id
           image {
+            id
+            src
+          }
+          banners {
             id
             src
           }

@@ -11,12 +11,18 @@ export interface ProductProfile {
   id: number
   name: string
   language: string
+  meta_information: {
+    permalink: string
+  }
 }
 
 export interface AdvancedProductProfile {
   id: number
   name: string
   language: string
+  meta_information: {
+    permalink: string
+  }
 }
 
 export interface BasePrice {
@@ -64,4 +70,55 @@ export interface CategoryProductsResponse {
 
 export interface SortedByCategoryPositionResponse {
   sortedByCategoryPositionProductContainers: CategoryProductsResponse
+}
+
+// Product detail types for single product page
+export interface FurnisystemsProductDetail {
+  id: number
+  type: string
+  single_product: {
+    id: number
+    product_profiles: {
+      name: string
+      description: string | null
+      short_description: string | null
+      language: string
+      permalink: string
+    }[]
+    images: {
+      id: number
+      src: string
+      src_md: string | null
+      display_order: number
+    }[]
+  } | null
+  advanced_product: {
+    id: number
+    advanced_product_profiles: {
+      name: string
+      description: string | null
+      language: string
+      permalink: string
+    }[]
+    images: {
+      id: number
+      src: string
+      src_md: string | null
+      display_order: number
+    }[]
+  } | null
+  primary_category: {
+    id: number
+    category_profiles: {
+      name: string
+      language: string
+      meta_information: {
+        permalink: string
+      } | null
+    }[]
+  } | null
+}
+
+export interface FindProductByPermalinkResponse {
+  findFirstProductContainer: FurnisystemsProductDetail | null
 }

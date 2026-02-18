@@ -3,7 +3,7 @@
 import { useCustomer } from "@lib/context/customer-context"
 import { useRouter } from "next/navigation"
 import OrdersTable from "@modules/account/components/orders-table"
-import Breadcrumb from "@modules/common/components/breadcrumb"
+import PageHeader from "@modules/common/components/page-header"
 import { useTranslations } from "@lib/i18n"
 
 export default function OrdersPage() {
@@ -24,7 +24,16 @@ export default function OrdersPage() {
 
   return (
     <div className="w-full" data-testid="orders-page-wrapper">
-      <Breadcrumb items={breadcrumbItems} />
+      {/* Negative margins cancel AccountLayout's p-4 sm:p-6 lg:p-8
+          so PageHeader provides the only horizontal padding,
+          matching the order details page layout. */}
+      <div className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
+        <PageHeader
+          title={t("orders")}
+          description={t("orders-description")}
+          breadcrumbItems={breadcrumbItems}
+        />
+      </div>
       <OrdersTable />
     </div>
   )
