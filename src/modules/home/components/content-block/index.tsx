@@ -1099,7 +1099,7 @@ function GallerySpreadHarmony({
               className="flex-shrink-0 snap-center overflow-hidden"
               style={{
                 width: "80vw",
-                height: "min(80vw, 400px)",
+                height: "min(90vw, 450px)",
               }}
             >
               <GalleryImage
