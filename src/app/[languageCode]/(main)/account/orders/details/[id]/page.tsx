@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { retrieveOrder } from "@lib/data/orders"
 import { OrderDetail } from "@lib/furnisystems-sdk/modules/customer/types"
 import OrderDetailsTemplate from "@modules/account/components/order-details"
+import PageContent from "@modules/common/components/page-content"
 import PageHeader from "@modules/common/components/page-header"
 import { useTranslations } from "@lib/i18n"
 
@@ -68,17 +69,17 @@ export default function OrderDetailsPage() {
 
   if (loading) {
     return (
-      <div className="w-full flex items-center justify-center py-8">
+      <PageContent className="flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-blue"></div>
-      </div>
+      </PageContent>
     )
   }
 
   if (error || !order) {
     return (
-      <div className="w-full" data-testid="order-details-error">
-        <div className="mb-8 flex flex-col gap-y-4">
-          <h1 className="text-2xl font-medium text-dark-blue">
+      <PageContent>
+        <div data-testid="order-details-error" className="mb-8 flex flex-col gap-y-4">
+          <h1 className="page-title">
             {t("order-details")}
           </h1>
           <p className="text-sm text-red-600">
@@ -91,7 +92,7 @@ export default function OrderDetailsPage() {
             {t("back-to-orders")}
           </button>
         </div>
-      </div>
+      </PageContent>
     )
   }
 
@@ -103,13 +104,14 @@ export default function OrderDetailsPage() {
   ]
 
   return (
-    <div className="w-full" data-testid="order-details-wrapper">
+    <>
       <PageHeader
         title={t("order-details")}
         breadcrumbItems={breadcrumbItems}
       />
-
-      <OrderDetailsTemplate order={order} />
-    </div>
+      <PageContent>
+        <OrderDetailsTemplate order={order} />
+      </PageContent>
+    </>
   )
 }

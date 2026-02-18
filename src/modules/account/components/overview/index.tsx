@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
 import { isInternalDomain } from "@lib/utils/internal-domains"
 import PageHeader from "@modules/common/components/page-header"
+import PageContent from "@modules/common/components/page-content"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
@@ -158,10 +159,11 @@ const Overview = (): JSX.Element => {
   return (
     <>
       <PageHeader title={customer?.full_name || customer?.name || "User"} />
-      <div
-        data-testid="overview-page-wrapper"
-        className="flex flex-col gap-10 "
-      >
+      <PageContent>
+        <div
+          data-testid="overview-page-wrapper"
+          className="flex flex-col gap-10"
+        >
         {/* Action Cards and Profile Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
           {/* Action Cards Grid - First on mobile, left side on large screens */}
@@ -220,7 +222,8 @@ const Overview = (): JSX.Element => {
         <div className="space-y-10">
           <OrdersTable pageSize={10} />
         </div>
-      </div>
+        </div>
+      </PageContent>
     </>
   )
 }

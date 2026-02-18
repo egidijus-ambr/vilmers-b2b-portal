@@ -6,27 +6,22 @@ interface PageHeaderProps {
   title?: string
   description?: string | null
   breadcrumbItems?: BreadcrumbItem[]
-  children?: React.ReactNode
 }
 
 export default function PageHeader({
   title,
   description,
   breadcrumbItems,
-  children,
 }: PageHeaderProps) {
   return (
-    <div className="bg-gold-10 w-full">
-      <div className="max-w-[1360px] w-full mx-auto py-8">
+    <div className="bg-gold-10 w-full px-6 large:px-0">
+      <div className="content-container py-8">
         {breadcrumbItems && breadcrumbItems.length > 0 && (
           <Breadcrumb items={breadcrumbItems} />
         )}
 
         {title && (
-          <h1
-            className="text-2xl sm:text-3xl font-medium text-dark-blue"
-            data-testid="page-header-title"
-          >
+          <h1 className="page-title" data-testid="page-header-title">
             {title}
           </h1>
         )}
@@ -36,8 +31,6 @@ export default function PageHeader({
             {description}
           </p>
         )}
-
-        {children}
       </div>
     </div>
   )

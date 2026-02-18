@@ -513,7 +513,7 @@ function ThreeColumnsTitleLeft({
 
   return (
     <div
-      className="content-container py-10 small:py-16"
+      className="content-container py-10 small:py-16 large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className="grid grid-cols-1 gap-8 small:grid-cols-3 small:gap-12">
@@ -584,7 +584,7 @@ function TwoColumnsTitleTopCenter({
 
   return (
     <div
-      className="content-container py-10 small:py-16"
+      className="content-container py-10 small:py-16 large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {/* Centered title */}
@@ -1091,35 +1091,23 @@ function GallerySpreadHarmony({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="no-scrollbar flex snap-x snap-mandatory items-center gap-4 overflow-x-auto px-6 small:hidden"
+        className="no-scrollbar flex snap-x snap-mandatory items-center gap-4 overflow-x-auto small:hidden"
       >
-        {allImages.map((img) => {
-          const orientation = orientations[img.id]
-          const isVertical = orientation === "vertical"
-          const isHorizontal = orientation === "horizontal"
-
-          return (
+        {allImages.map((img) => (
             <div
               key={img.id}
               className="flex-shrink-0 snap-center overflow-hidden"
               style={{
                 width: "80vw",
-                height: isVertical
-                  ? "min(110vw, 500px)"
-                  : isHorizontal
-                  ? "auto"
-                  : "80vw",
+                height: "min(80vw, 400px)",
               }}
             >
               <GalleryImage
                 image={img}
-                className={
-                  isHorizontal ? "h-auto w-full" : "h-full w-full object-cover"
-                }
+                className="h-full w-full object-cover"
               />
             </div>
-          )
-        })}
+        ))}
       </div>
 
       {/* Scroll progress indicator - mobile only */}

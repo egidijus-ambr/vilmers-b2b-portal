@@ -3,6 +3,7 @@
 import { useCustomer } from "@lib/context/customer-context"
 import { useRouter } from "next/navigation"
 import OrdersTable from "@modules/account/components/orders-table"
+import PageContent from "@modules/common/components/page-content"
 import PageHeader from "@modules/common/components/page-header"
 import { useTranslations } from "@lib/i18n"
 
@@ -23,14 +24,15 @@ export default function OrdersPage() {
   ]
 
   return (
-    <div className="w-full" data-testid="orders-page-wrapper">
+    <>
       <PageHeader
         title={t("orders")}
         description={t("orders-description")}
         breadcrumbItems={breadcrumbItems}
       />
-
-      <OrdersTable />
-    </div>
+      <PageContent>
+        <OrdersTable />
+      </PageContent>
+    </>
   )
 }

@@ -167,6 +167,11 @@
     @apply text-2xl sm:text-3xl font-medium text-dark-blue;
   }
 
+  /* Page content wrapper */
+  .page-content {
+    @apply max-w-[1360px] w-full mx-auto px-6 py-6;
+  }
+
   /* Label/value info rows */
   .info-row {
     @apply flex gap-4 text-sm;

@@ -32,7 +32,7 @@ const PageHero = ({
           style={{ backgroundImage: `url('${encodeURI(heroImageSrc)}')` }}
         />
         <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 w-full max-w-[1360px] mx-auto  min-h-[350px] md:min-h-[500px] flex flex-col py-8 ">
+        <div className="relative z-10 w-full max-w-[1360px] mx-auto  min-h-[350px] md:min-h-[500px] flex flex-col py-8 px-6 large:px-0">
           {breadcrumbItems && breadcrumbItems.length > 0 && (
             <Breadcrumb items={breadcrumbItems} variant="light" />
           )}

@@ -75,16 +75,8 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
 
   // Default layout for logged-in users (dashboard)
   return (
-    <div
-      className="min-h-screen  bg-gold-10  pb-20 relative"
-      data-testid="account-page"
-    >
-      {/* Content container */}
-      <div className="flex-1 max-w-[1360px] mx-auto flex flex-col px-6">
-        <div className="grid grid-cols-1">
-          <div className="flex-1">{children}</div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gold-10 pb-20" data-testid="account-page">
+      {children}
     </div>
   )
 }

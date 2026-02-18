@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { CategoryData } from "@lib/furnisystems-sdk"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
+import PageContent from "@modules/common/components/page-content"
 import CategoryProductGrid from "@modules/categories/components/category-product-grid"
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
 
@@ -75,14 +76,13 @@ export default function CategoryPageTemplate({
   const breadcrumbs = buildBreadcrumbs(category)
 
   return (
-    <div data-testid="category-container" className="px-6">
+    <div data-testid="category-container">
       <PageHeader
         title={name}
         description={description}
         breadcrumbItems={breadcrumbs}
       />
-
-      <div className="content-container py-6">
+      <PageContent>
         <Suspense fallback={<CategoryProductGridSkeleton />}>
           <CategoryProductGrid
             categoryPermalink={getCategoryPermalink(category) || ""}
@@ -90,7 +90,7 @@ export default function CategoryPageTemplate({
             page={page}
           />
         </Suspense>
-      </div>
+      </PageContent>
     </div>
   )
 }
