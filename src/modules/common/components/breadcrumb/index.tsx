@@ -10,15 +10,16 @@ export interface BreadcrumbItem {
 
 interface BreadcrumbProps {
   items: BreadcrumbItem[]
+  variant?: "default" | "light"
 }
 
-const ChevronRight = () => (
+const ChevronRight = ({ className }: { className?: string }) => (
   <svg
     width="16"
     height="16"
     viewBox="0 0 16 16"
     fill="none"
-    className="text-gray-400 flex-shrink-0"
+    className={className ?? "text-gray-400 flex-shrink-0"}
   >
     <path
       d="M6 3L11 8L6 13"
@@ -30,9 +31,11 @@ const ChevronRight = () => (
   </svg>
 )
 
-const Breadcrumb = ({ items }: BreadcrumbProps) => {
+const Breadcrumb = ({ items, variant = "default" }: BreadcrumbProps) => {
+  const isLight = variant === "light"
+
   return (
-    <nav aria-label="Breadcrumb" className="mb-6">
+    <nav aria-label="Breadcrumb" className={isLight ? "" : "mb-8"}>
       <ol className="flex items-center flex-wrap gap-3 text-sm">
         {items.map((item, index) => {
           const isLast = index === items.length - 1
@@ -41,18 +44,34 @@ const Breadcrumb = ({ items }: BreadcrumbProps) => {
               {item.href ? (
                 <LocalizedClientLink
                   href={item.href}
-                  className="text-gray-500 hover:text-dark-blue transition-colors"
+                  className={
+                    isLight
+                      ? "text-white/80 hover:text-white transition-colors"
+                      : "text-gray-500 hover:text-dark-blue transition-colors"
+                  }
                 >
                   {item.label}
                 </LocalizedClientLink>
               ) : (
-                <span className="text-dark-blue font-medium">
+                <span
+                  className={
+                    isLight
+                      ? "text-white font-medium"
+                      : "text-dark-blue font-medium"
+                  }
+                >
                   {item.label}
                 </span>
               )}
               {!isLast && (
                 <span aria-hidden="true">
-                  <ChevronRight />
+                  <ChevronRight
+                    className={
+                      isLight
+                        ? "text-white/60 flex-shrink-0"
+                        : "text-gray-400 flex-shrink-0"
+                    }
+                  />
                 </span>
               )}
             </li>

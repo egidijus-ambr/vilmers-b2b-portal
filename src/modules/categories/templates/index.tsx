@@ -75,7 +75,7 @@ export default function CategoryPageTemplate({
   const breadcrumbs = buildBreadcrumbs(category)
 
   return (
-    <div data-testid="category-container">
+    <div data-testid="category-container" className="px-6">
       <PageHeader
         title={name}
         description={description}

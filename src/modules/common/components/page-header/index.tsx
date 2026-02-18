@@ -17,7 +17,7 @@ export default function PageHeader({
 }: PageHeaderProps) {
   return (
     <div className="bg-gold-10 w-full">
-      <div className="max-w-[1440px] w-full mx-auto px-10 sm:px-12 lg:px-14 py-8 sm:py-10">
+      <div className="max-w-[1360px] w-full mx-auto py-8">
         {breadcrumbItems && breadcrumbItems.length > 0 && (
           <Breadcrumb items={breadcrumbItems} />
         )}

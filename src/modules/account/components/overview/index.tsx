@@ -6,6 +6,7 @@ import { getStoreLoginLink, getClaimsLink } from "@lib/data/customer"
 import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
 import { isInternalDomain } from "@lib/utils/internal-domains"
+import PageHeader from "@modules/common/components/page-header"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
@@ -155,73 +156,72 @@ const Overview = (): JSX.Element => {
   }
 
   return (
-    <div data-testid="overview-page-wrapper" className="flex flex-col gap-10">
-      {/* Limit and Date Row */}
-      {/* Header */}
+    <>
+      <PageHeader title={customer?.full_name || customer?.name || "User"} />
+      <div
+        data-testid="overview-page-wrapper"
+        className="flex flex-col gap-10 "
+      >
+        {/* Action Cards and Profile Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          {/* Action Cards Grid - First on mobile, left side on large screens */}
+          <div className="order-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {actionCards.map((card, index) => (
+              <ActionCard
+                key={index}
+                title={card.title}
+                description={card.description}
+                onClick={card.onClick}
+                buttonText={t("check")}
+              />
+            ))}
+          </div>
 
-      <h1 className="page-title">
-        {customer?.full_name || customer?.name || "User"}
-      </h1>
-
-      {/* Action Cards and Profile Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-        {/* Action Cards Grid - First on mobile, left side on large screens */}
-        <div className="order-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {actionCards.map((card, index) => (
-            <ActionCard
-              key={index}
-              title={card.title}
-              description={card.description}
-              onClick={card.onClick}
-              buttonText={t("check")}
-            />
-          ))}
-        </div>
-
-        {/* Manager Profile Card - After action cards on mobile, right side on large screens */}
-        <div className="order-2 lg:col-span-1 w-full h-fit">
-          {customer?.managers && customer.managers.length > 0 ? (
-            (() => {
-              const managerData = customer.managers.find(
-                (m) => m.manager.role === "manager"
-              )?.manager
-              return managerData ? (
-                <ManagerProfileCard manager={managerData} />
-              ) : (
-                <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">
-                  <p className="text-gray-500">{t("no-manager-assigned")}</p>
-                </div>
-              )
-            })()
-          ) : (
-            <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">
-              <p className="text-gray-500">{t("no-manager-assigned")}</p>
-            </div>
-          )}
-        </div>
-      </div>
-      {(customer?.role === "admin" || customer?.role === "agent") && (
-        <div className="space-y-4">
-          <div className="bg-white ">
-            <ActionCard
-              key="product_range_index"
-              title={t("product-range.title")}
-              description={t("product-range.description")}
-              onClick={() =>
-                window.open("https://portal.vilmers.com/", "_blank")
-              }
-              buttonText={t("check")}
-              height="auto"
-            />
+          {/* Manager Profile Card - After action cards on mobile, right side on large screens */}
+          <div className="order-2 lg:col-span-1 w-full h-fit">
+            {customer?.managers && customer.managers.length > 0 ? (
+              (() => {
+                const managerData = customer.managers.find(
+                  (m) => m.manager.role === "manager"
+                )?.manager
+                return managerData ? (
+                  <ManagerProfileCard manager={managerData} />
+                ) : (
+                  <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">
+                    <p className="text-gray-500">{t("no-manager-assigned")}</p>
+                  </div>
+                )
+              })()
+            ) : (
+              <div className="h-[484px] bg-white rounded-lg p-6 flex items-center justify-center">
+                <p className="text-gray-500">{t("no-manager-assigned")}</p>
+              </div>
+            )}
           </div>
         </div>
-      )}
+        {(customer?.role === "admin" || customer?.role === "agent") && (
+          <div className="space-y-4">
+            <div className="bg-white ">
+              <ActionCard
+                key="product_range_index"
+                title={t("product-range.title")}
+                description={t("product-range.description")}
+                onClick={() =>
+                  window.open("https://portal.vilmers.com/", "_blank")
+                }
+                buttonText={t("check")}
+                height="auto"
+              />
+            </div>
+          </div>
+        )}
 
-      {/* Orders Section */}
-      <div className="space-y-10">
-        <OrdersTable pageSize={10} />
+        {/* Orders Section */}
+        <div className="space-y-10">
+          <OrdersTable pageSize={10} />
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 

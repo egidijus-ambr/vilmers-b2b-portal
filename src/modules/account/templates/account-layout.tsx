@@ -80,11 +80,9 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
       data-testid="account-page"
     >
       {/* Content container */}
-      <div className="flex-1 max-w-[1440px] mx-auto flex flex-col">
+      <div className="flex-1 max-w-[1360px] mx-auto flex flex-col px-6">
         <div className="grid grid-cols-1">
-          <div className="flex-1">
-            <div className="p-4 sm:p-6 lg:p-8">{children}</div>
-          </div>
+          <div className="flex-1">{children}</div>
         </div>
       </div>
     </div>

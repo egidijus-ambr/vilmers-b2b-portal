@@ -70,7 +70,7 @@
 
 @layer components {
   .content-container {
-    @apply max-w-[1440px] w-full mx-auto px-6;
+    @apply max-w-[1360px] w-full mx-auto;
   }
 
   .contrast-btn {
@@ -150,20 +150,36 @@
 
 @layer components {
   /* Card containers */
-  .card              { @apply bg-white p-4 sm:p-6; }
-  .card-bordered     { @apply bg-white p-4 sm:p-6 border border-gray-200; }
+  .card {
+    @apply bg-white p-4 sm:p-6;
+  }
+  .card-bordered {
+    @apply bg-white p-4 sm:p-6 border border-gray-200;
+  }
 
   /* Section headers inside cards */
-  .section-title     { @apply text-lg font-medium text-dark-blue mb-4; }
+  .section-title {
+    @apply text-lg font-medium text-dark-blue mb-4;
+  }
 
   /* Page titles */
-  .page-title        { @apply text-2xl sm:text-3xl font-medium text-dark-blue; }
+  .page-title {
+    @apply text-2xl sm:text-3xl font-medium text-dark-blue;
+  }
 
   /* Label/value info rows */
-  .info-row          { @apply flex gap-4 text-sm; }
-  .info-label        { @apply text-dark-blue-70 min-w-[100px] sm:min-w-[140px]; }
-  .info-value        { @apply text-dark-blue font-medium; }
+  .info-row {
+    @apply flex gap-4 text-sm;
+  }
+  .info-label {
+    @apply text-dark-blue-70 min-w-[100px] sm:min-w-[140px];
+  }
+  .info-value {
+    @apply text-dark-blue font-medium;
+  }
 
   /* Table cells (responsive) */
-  .td-cell           { @apply px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900; }
+  .td-cell {
+    @apply px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900;
+  }
 }

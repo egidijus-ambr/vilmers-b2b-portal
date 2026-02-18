@@ -104,15 +104,11 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="w-full" data-testid="order-details-wrapper">
-      {/* Negative margins cancel AccountLayout's p-4 sm:p-6 lg:p-8
-          so PageHeader provides the only horizontal padding,
-          matching the category page layout. */}
-      <div className="-mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8">
-        <PageHeader
-          title={t("order-details")}
-          breadcrumbItems={breadcrumbItems}
-        />
-      </div>
+      <PageHeader
+        title={t("order-details")}
+        breadcrumbItems={breadcrumbItems}
+      />
+
       <OrderDetailsTemplate order={order} />
     </div>
   )
