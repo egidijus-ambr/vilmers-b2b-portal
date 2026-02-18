@@ -19,7 +19,7 @@ type ProductTemplateProps = {
 const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
   return (
     <>
-      <PageHeader title={product.title} breadcrumbItems={product.breadcrumbs} />
+      <PageHeader breadcrumbItems={product.breadcrumbs} />
       <PageContent>
         <div data-testid="product-container" className="flex flex-col md:flex-row gap-8">
           <div className="md:w-3/5">
@@ -41,6 +41,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
             )}
           </div>
           <div className="md:w-2/5">
+            <h1 className="page-title mb-6">{product.title}</h1>
             {product.description && (
               <div
                 className="text-dark-blue prose prose-sm max-w-none"

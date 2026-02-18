@@ -8,15 +8,17 @@ function extractProductDisplayData(
   container: ProductContainer,
   language: SupportedLanguage
 ) {
-  const isAdvanced = container.type === "AdvancedProduct" || !!container.advanced_product
+  const isAdvanced =
+    container.type === "AdvancedProduct" || !!container.advanced_product
 
   if (isAdvanced && container.advanced_product) {
     const product = container.advanced_product
-    const profile = product.advanced_product_profiles?.find(
-      (p) => p.language === language
-    ) || product.advanced_product_profiles?.[0]
-    const image = [...(product.images || [])]
-      .sort((a, b) => a.display_order - b.display_order)[0]
+    const profile =
+      product.advanced_product_profiles?.find((p) => p.language === language) ||
+      product.advanced_product_profiles?.[0]
+    const image = [...(product.images || [])].sort(
+      (a, b) => a.display_order - b.display_order
+    )[0]
 
     return {
       name: profile?.name ?? "",
@@ -32,13 +34,21 @@ function extractProductDisplayData(
 
   // Single product
   const product = container.single_product
-  if (!product) return { name: "", handle: null, image: null, priceLabel: "", isFromPrice: false }
+  if (!product)
+    return {
+      name: "",
+      handle: null,
+      image: null,
+      priceLabel: "",
+      isFromPrice: false,
+    }
 
-  const profile = product.product_profiles?.find(
-    (p) => p.language === language
-  ) || product.product_profiles?.[0]
-  const image = [...(product.images || [])]
-    .sort((a, b) => a.display_order - b.display_order)[0]
+  const profile =
+    product.product_profiles?.find((p) => p.language === language) ||
+    product.product_profiles?.[0]
+  const image = [...(product.images || [])].sort(
+    (a, b) => a.display_order - b.display_order
+  )[0]
 
   // Apply discount if active
   let price = product.price
@@ -65,11 +75,12 @@ interface B2BProductCardProps {
   language: SupportedLanguage
 }
 
-export default function B2BProductCard({ container, language }: B2BProductCardProps) {
-  const { name, handle, image, priceLabel, isFromPrice } = extractProductDisplayData(
-    container,
-    language
-  )
+export default function B2BProductCard({
+  container,
+  language,
+}: B2BProductCardProps) {
+  const { name, handle, image, priceLabel, isFromPrice } =
+    extractProductDisplayData(container, language)
 
   return (
     <li className="group">
@@ -77,7 +88,7 @@ export default function B2BProductCard({ container, language }: B2BProductCardPr
         href={handle ? `/products/${handle}` : null}
         className="flex flex-col gap-2 no-underline"
       >
-        <div className="relative aspect-[325/380] w-full overflow-hidden bg-gold-10">
+        <div className="relative aspect-[325/380] w-full overflow-hidden bg-gold-20">
           {image ? (
             <Image
               src={image}
@@ -93,11 +104,9 @@ export default function B2BProductCard({ container, language }: B2BProductCardPr
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{name}</h3>
-          <p className="text-sm text-gray-700">
-            {isFromPrice && <span className="text-gray-500">From </span>}
-            {priceLabel}
-          </p>
+          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+            {name}
+          </h3>
         </div>
       </LocalizedClientLink>
     </li>

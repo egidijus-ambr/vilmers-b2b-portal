@@ -82,7 +82,7 @@ export const viewport: Viewport = {
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light" suppressHydrationWarning={true}>
-      <body className={montserrat.className}>
+      <body className={`${montserrat.className} bg-gold-10`}>
         <I18nProvider>
           <HtmlLangUpdater />
           <main className="relative">{props.children}</main>

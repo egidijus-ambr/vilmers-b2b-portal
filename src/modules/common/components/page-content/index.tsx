@@ -6,7 +6,7 @@ interface PageContentProps {
 export default function PageContent({ children, className }: PageContentProps) {
   return (
     <div
-      className={`content-container px-6 large:px-0 py-6${
+      className={`content-container px-6 large:px-0 ${
         className ? ` ${className}` : ""
       }`}
     >
