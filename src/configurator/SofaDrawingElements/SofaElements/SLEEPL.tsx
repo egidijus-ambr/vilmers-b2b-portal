@@ -33,8 +33,52 @@ import Konva from 'konva'
 import useImage from 'use-image'
 import Gizmo from '../Gizmo'
 
-// "/svg_icons/arrow-rotate-right-solid.svg"
-// "/svg_icons/trash-solid.svg"
+export const getDefaultSettings = () => {
+  return {
+    dimensions: {
+      width: 200,
+      length: 100,
+      armrestPosition: 'L',
+    },
+    changeableProperties: {
+      width: true,
+      height: true,
+      length: true,
+      armrest_width: true,
+      backrest_width: true,
+
+      mattress_width: true,
+      mattress_length: true,
+
+      // number_of_big_pillows: true,
+      // number_of_small_pillows: true,
+      // spread_of_small_pillows: true,
+      // spread_of_big_pillows: true,
+      // size_of_big_pillow: true,
+      // size_of_pillow: true,
+
+      // extendable_part_length: true,
+      // seat_sections: true,
+      // backrest_sections: true,
+      // extension_type: true,
+      // backrest_type: true,
+    },
+  }
+}
+
+export const getDimensions = ({ shapeWidth, shapeHeight, angle }) => {
+  return {
+    armrestPosition: 'L',
+    connectors: [
+      {
+        type: 'right',
+        x: shapeWidth,
+        y: 0,
+        rotation: 0,
+      },
+    ],
+  }
+}
 
 const SLEEPL = ({
   id,
@@ -93,7 +137,7 @@ const SLEEPL = ({
     },
   ]
   // A function that limits exit of View zone
-  const dragBound = (e) => {
+  const dragBound = e => {
     // ---
     // console.log('incoking drag bound e :>> ', e)
     let pos = e
@@ -118,7 +162,7 @@ const SLEEPL = ({
     return pos
   }
 
-  const onSofaHide = (e) => {
+  const onSofaHide = e => {
     console.log('Trying to hide sofa mechanizm SLEEPL')
     setHideSofa(!hideSofa)
   }
@@ -127,6 +171,10 @@ const SLEEPL = ({
   spaceBetween = spaceBetween < 0 ? 0 : spaceBetween
   const shapeStartingX = shapeArmrestWidth + spaceBetween
 
+  const finalMatressWidht = Math.min(
+    shapeMattressWidth,
+    shapeWidth - shapeArmrestWidth
+  )
   return (
     <Group
       id={id}
@@ -139,7 +187,7 @@ const SLEEPL = ({
       y={yOffset}
       originalWidth={width}
       originalHeight={height}
-      dragBoundFunc={(e) => dragBound(e)}
+      dragBoundFunc={e => dragBound(e)}
       originalSofaForm={originalSofaForm}
       connectors={props.enabled_connectors == false ? [] : connectors}
       rotation={rotation}
@@ -178,14 +226,14 @@ const SLEEPL = ({
             shapeArmrestWidth,
             0,
             shapeWidth - shapeArmrestWidth,
-            shapeHeight,
+            shapeHeight
           )
           ctx.rect(0, 0, shapeArmrestWidth, shapeHeight)
           ctx.rect(
             shapeArmrestWidth,
             0,
             shapeWidth - shapeArmrestWidth,
-            shapeBackrestWidth,
+            shapeBackrestWidth
           )
 
           ctx.fillStrokeShape(shape)
@@ -218,15 +266,15 @@ const SLEEPL = ({
           // Draw shadow
           ctx.moveTo(
             shapeArmrestWidth + SHADOW_WIDTH - 2,
-            shapeBackrestWidth + SHADOW_WIDTH - 2,
+            shapeBackrestWidth + SHADOW_WIDTH - 2
           )
           ctx.lineTo(
             shapeArmrestWidth + SHADOW_WIDTH - 2,
-            shapeHeight * SLEEP_PART_LENGTH_PERCETAGE - 2,
+            shapeHeight * SLEEP_PART_LENGTH_PERCETAGE - 2
           )
           ctx.moveTo(
             shapeArmrestWidth + SHADOW_WIDTH - 2,
-            shapeBackrestWidth + SHADOW_WIDTH - 2,
+            shapeBackrestWidth + SHADOW_WIDTH - 2
           )
           ctx.lineTo(shapeWidth - 2, shapeBackrestWidth + SHADOW_WIDTH - 2)
           // ctx.moveTo(
@@ -267,8 +315,8 @@ const SLEEPL = ({
                 ctx.rect(
                   shapeStartingX,
                   shapeBackrestWidth + SHADOW_WIDTH + 1,
-                  shapeMattressWidth,
-                  shapeMattressLength,
+                  finalMatressWidht,
+                  shapeMattressLength
                 )
 
                 // Center line
@@ -277,14 +325,14 @@ const SLEEPL = ({
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
                 ctx.lineTo(
-                  shapeStartingX + shapeMattressWidth,
+                  shapeStartingX + finalMatressWidht - 2,
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
                 // Triginle left line
                 ctx.moveTo(
@@ -292,14 +340,14 @@ const SLEEPL = ({
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
                 ctx.lineTo(
                   shapeMattressWidth - shapeMattressWidth / 3,
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 2,
+                    shapeMattressLength / 2
                 )
                 // Triginle right line
                 ctx.moveTo(
@@ -307,14 +355,14 @@ const SLEEPL = ({
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 2,
+                    shapeMattressLength / 2
                 )
                 ctx.lineTo(
-                  shapeStartingX + (shapeMattressWidth - 2),
+                  shapeStartingX + (finalMatressWidht - 2),
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
 
                 ctx.fillStrokeShape(shape)
@@ -334,7 +382,8 @@ const SLEEPL = ({
               x={shapeStartingX}
               y={shapeBackrestWidth + SHADOW_WIDTH + 1}
               height={null}
-              width={shapeMattressWidth}
+              value={shapeMattressWidth}
+              width={finalMatressWidht - 2}
             />
           </Group>
         </>
@@ -346,8 +395,8 @@ const SLEEPL = ({
             x={20 + 37 + 37}
             y={20}
             opacity={0.8}
-            onClick={(e) => onSofaHide(id)}
-            onTouchEnd={(e) => onSofaHide(id)}
+            onClick={e => onSofaHide(id)}
+            onTouchEnd={e => onSofaHide(id)}
           >
             <Circle x={0} y={0} radius={17} fill={'white'} />
             <Image
@@ -369,7 +418,7 @@ const SLEEPL = ({
             shapeHeight={shapeHeight}
             shapeWidth={shapeWidth}
           />
-        ),
+        )
       )}
     </Group>
   )

@@ -32,7 +32,9 @@ interface SofaDrawingPreviewProps {
   /** Armrest width overrides per module */
   armrestWidthOverrides?: ArmrestWidthOverride[]
   /** Callback to receive canvas image data URI after rendering */
-  onImage?: ((image: { dataURI: string; width: number; length: number }) => void) | null
+  onImage?:
+    | ((image: { dataURI: string; width: number; length: number }) => void)
+    | null
 }
 
 // Compute bounding box from static shape data (no Konva API needed)
@@ -76,7 +78,7 @@ const SofaDrawingPreview = ({
   armrestWidthOverrides = [],
   onImage = null,
 }: SofaDrawingPreviewProps) => {
-  const stageRef = useRef(null)
+  const stageRef = useRef<any>(null)
   const [layer, setLayer] = useState<any>(null)
   const layerRef = useCallback((node: any) => {
     if (node) setLayer(node)
@@ -86,8 +88,12 @@ const SofaDrawingPreview = ({
   const isLiveNodes = typeof combination[0]?.findOne === 'function'
 
   // --- SIZE the canvas according to the parent DIV size
-  const [height, setHeight] = useState(0)
-  const [width, setWidth] = useState(0)
+  const [height, setHeight] = useState(
+    parentRef.current ? parentRef.current.offsetHeight : 300
+  )
+  const [width, setWidth] = useState(
+    parentRef.current ? parentRef.current.offsetWidth : 300
+  )
 
   const [metricLayers, setMetricLayers] = useState(false)
 
@@ -96,29 +102,33 @@ const SofaDrawingPreview = ({
     ? getGroupOfGroupsRectWithScale(combination, sofaScale)
     : computeStaticGroupRect(combination, sofaScale)
 
-  // Use ResizeObserver to track container dimensions reliably
   useEffect(() => {
-    const container = parentRef.current
-    if (!container) return
+    handleResize()
+  }, [parentRef])
 
-    const updateDimensions = () => {
-      const newWidth = container.offsetWidth
-      const newHeight = container.offsetHeight
-      if (newWidth > 0 && newHeight > 0) {
-        setWidth(newWidth)
-        setHeight(newHeight)
+  const handleResize = () => {
+    if (parentRef.current) {
+      let height = parentRef.current.offsetHeight
+      let width = parentRef.current.offsetWidth
+      setHeight(height)
+      setWidth(width)
+
+      if (isLiveNodes && layer) {
+        drawMetricLinesForShapes()
+        setMetricLayers(true)
       }
     }
+  }
 
-    // Initial measurement
-    updateDimensions()
-
-    // Observe size changes
-    const resizeObserver = new ResizeObserver(updateDimensions)
-    resizeObserver.observe(container)
-
-    return () => resizeObserver.disconnect()
-  }, [parentRef])
+  useEffect(() => {
+    if (isLiveNodes && layer) {
+      drawMetricLinesForShapes()
+      setMetricLayers(true)
+    } else if (!isLiveNodes) {
+      // Static mode: mark as ready for image export immediately
+      setMetricLayers(true)
+    }
+  }, [combination, layer])
 
   // Calculate distance between groups (if they overlap distance should be negative)
   // Move all groups to center
@@ -160,7 +170,7 @@ const SofaDrawingPreview = ({
       if (hasShape) {
         const actualRotation = isLiveNodes
           ? item.rotation()
-          : (item.attrs.rotation || 0)
+          : item.attrs.rotation || 0
 
         const SofaElement = SofaElements[item.attrs.type]
         if (!SofaElement) {
@@ -222,26 +232,9 @@ const SofaDrawingPreview = ({
     n++
   }
 
-  // Draw metric lines for live Konva nodes when dimensions are ready
-  useEffect(() => {
-    if (width === 0 || height === 0) return
-
-    if (isLiveNodes && layer) {
-      layer.find('.metricLine').forEach((l: any) => l.destroy())
-      drawMetricLinesForGroups(combination, layer, scale, {
-        offsetX: distanceToCenterX,
-        offsetY: distanceToCenterY,
-      })
-      setMetricLayers(true)
-    } else if (!isLiveNodes) {
-      // Static mode: mark as ready for image export immediately
-      setMetricLayers(true)
-    }
-  }, [width, height, combination, layer, isLiveNodes, scale, distanceToCenterX, distanceToCenterY])
-
   useEffect(() => {
     if (metricLayers && onImage != null && stageRef.current) {
-      const uri = (stageRef.current as any).toDataURL()
+      const uri = stageRef.current.toDataURL()
 
       const imageObject = {
         dataURI: uri,
@@ -251,11 +244,17 @@ const SofaDrawingPreview = ({
 
       onImage(imageObject)
     }
-  }, [metricLayers, onImage, groupRect.width, groupRect.height])
+  }, [metricLayers])
 
-  // Don't render until we have valid dimensions
-  if (width === 0 || height === 0) {
-    return null
+  // Metric lines only for live Konva nodes
+  const drawMetricLinesForShapes = () => {
+    if (!isLiveNodes || !layer) return
+    layer.find('.metricLine').forEach(l => l.destroy())
+
+    drawMetricLinesForGroups(combination, layer, scale, {
+      offsetX: distanceToCenterX,
+      offsetY: distanceToCenterY,
+    })
   }
 
   return (

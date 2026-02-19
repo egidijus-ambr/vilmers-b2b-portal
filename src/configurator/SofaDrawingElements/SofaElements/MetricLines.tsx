@@ -22,6 +22,7 @@ interface VerticalMetricProps {
   height: number
   fontSize?: number
   position?: 'left' | 'right' | null
+  value?: number
 }
 
 interface HorizontalMetricProps {
@@ -30,6 +31,7 @@ interface HorizontalMetricProps {
   width: number
   height?: number | null
   fontSize?: number
+  value?: number
 }
 
 interface MetricKonvaNodeProps {
@@ -169,6 +171,7 @@ export const HorizontalMetric = ({
   width,
   height,
   fontSize = 12,
+  value,
 }: HorizontalMetricProps) => {
   width = Math.round(width)
   return (
@@ -195,7 +198,7 @@ export const HorizontalMetric = ({
       <Text
         x={width / 2 - 20}
         y={METRIC_SIZE / 2 - 10}
-        text={width + ' cm'}
+        text={(value || width) + ' cm'}
         padding={2}
         fill="black"
         fontSize={fontSize}

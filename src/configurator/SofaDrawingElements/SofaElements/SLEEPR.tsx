@@ -34,6 +34,53 @@ import E from './E'
 import { connect } from 'http2'
 import Gizmo from '../Gizmo'
 
+export const getDefaultSettings = () => {
+  return {
+    dimensions: {
+      width: 200,
+      length: 100,
+      armrestPosition: 'R',
+    },
+    changeableProperties: {
+      width: true,
+      height: true,
+      length: true,
+      armrest_width: true,
+      backrest_width: true,
+
+      mattress_width: true,
+      mattress_length: true,
+
+      // number_of_big_pillows: true,
+      // number_of_small_pillows: true,
+      // spread_of_small_pillows: true,
+      // spread_of_big_pillows: true,
+      // size_of_big_pillow: true,
+      // size_of_pillow: true,
+
+      // extendable_part_length: true,
+      // seat_sections: true,
+      // backrest_sections: true,
+      // extension_type: true,
+      // backrest_type: true,
+    },
+  }
+}
+
+export const getDimensions = ({ shapeWidth, shapeHeight, angle }) => {
+  return {
+    armrestPosition: 'R',
+    connectors: [
+      {
+        type: 'left',
+        x: 0,
+        y: 0,
+        rotation: 0,
+      },
+    ],
+  }
+}
+
 const SLEEPR = ({
   id,
   width,
@@ -93,7 +140,7 @@ const SLEEPR = ({
     },
   ]
   // A function that limits exit of View zone
-  const dragBound = (e) => {
+  const dragBound = e => {
     // ---
     // console.log('incoking drag bound e :>> ', e)
     let pos = e
@@ -118,7 +165,7 @@ const SLEEPR = ({
     return pos
   }
 
-  const onSofaHide = (e) => {
+  const onSofaHide = e => {
     console.log('Trying to hide sofa mechanizm SLEEPL')
     setHideSofa(!hideSofa)
   }
@@ -139,7 +186,7 @@ const SLEEPR = ({
       y={yOffset}
       originalWidth={width}
       originalHeight={height}
-      dragBoundFunc={(e) => dragBound(e)}
+      dragBoundFunc={e => dragBound(e)}
       originalSofaForm={originalSofaForm}
       connectors={props.enabled_connectors == false ? [] : connectors}
       rotation={rotation}
@@ -179,7 +226,7 @@ const SLEEPR = ({
             shapeWidth - shapeArmrestWidth,
             0,
             shapeArmrestWidth,
-            shapeHeight,
+            shapeHeight
           )
           ctx.rect(0, 0, shapeWidth - shapeArmrestWidth, shapeBackrestWidth)
           ctx.fillStrokeShape(shape)
@@ -204,16 +251,16 @@ const SLEEPR = ({
           ctx.moveTo(0 + 2, shapeBackrestWidth + SHADOW_WIDTH - 2)
           ctx.lineTo(
             shapeWidth - shapeArmrestWidth - 2,
-            shapeBackrestWidth + SHADOW_WIDTH - 2,
+            shapeBackrestWidth + SHADOW_WIDTH - 2
           )
 
           ctx.moveTo(
             shapeWidth - shapeArmrestWidth - SHADOW_WIDTH + 2,
-            shapeBackrestWidth + SHADOW_WIDTH - 2,
+            shapeBackrestWidth + SHADOW_WIDTH - 2
           )
           ctx.lineTo(
             shapeWidth - shapeArmrestWidth - SHADOW_WIDTH + 2,
-            shapeHeight - 2,
+            shapeHeight - 2
           )
 
           ctx.fillStrokeShape(shape)
@@ -249,7 +296,7 @@ const SLEEPR = ({
                   shapeStartingX,
                   shapeBackrestWidth + SHADOW_WIDTH + 1,
                   shapeMattressWidth,
-                  shapeMattressLength,
+                  shapeMattressLength
                 )
 
                 // Center line
@@ -258,14 +305,14 @@ const SLEEPR = ({
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
                 ctx.lineTo(
                   shapeStartingX + shapeMattressWidth,
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
                 // Triginle left line
                 ctx.moveTo(
@@ -273,14 +320,14 @@ const SLEEPR = ({
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
                 ctx.lineTo(
                   shapeMattressWidth - shapeMattressWidth / 4,
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 2,
+                    shapeMattressLength / 2
                 )
                 // Triginle right line
                 ctx.moveTo(
@@ -288,14 +335,14 @@ const SLEEPR = ({
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 2,
+                    shapeMattressLength / 2
                 )
                 ctx.lineTo(
                   shapeStartingX + (shapeMattressWidth - 2),
                   shapeBackrestWidth +
                     SHADOW_WIDTH +
                     1 +
-                    shapeMattressLength / 3,
+                    shapeMattressLength / 3
                 )
 
                 ctx.fillStrokeShape(shape)
@@ -306,7 +353,7 @@ const SLEEPR = ({
             />
 
             <VerticalMetric
-              x={shapeStartingX}
+              x={shapeStartingX + 10}
               y={shapeBackrestWidth + SHADOW_WIDTH + 1}
               height={shapeMattressLength}
               width={null}
@@ -327,8 +374,8 @@ const SLEEPR = ({
             x={20 + 37 + 37}
             y={20}
             opacity={0.8}
-            onClick={(e) => onSofaHide(id)}
-            onTouchEnd={(e) => onSofaHide(id)}
+            onClick={e => onSofaHide(id)}
+            onTouchEnd={e => onSofaHide(id)}
           >
             <Circle x={0} y={0} radius={17} fill={'white'} />
             <Image
@@ -344,7 +391,7 @@ const SLEEPR = ({
       {(props.enabled_connectors == false ? [] : connectors)?.map(
         (conn, index) => (
           <Gizmo key={`gizmo-${index}`} settings={conn} />
-        ),
+        )
       )}
     </Group>
   )

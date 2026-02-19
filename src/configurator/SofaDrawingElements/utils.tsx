@@ -497,7 +497,7 @@ export const drawMetricLinesForGroups = (
   groupOfGroups,
   layer,
   scale,
-  params = null,
+  params: { offsetX?: number; offsetY?: number } | null = null,
   fontSize = 12
 ) => {
   const {
