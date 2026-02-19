@@ -1,3 +1,5 @@
+import { ContentBlock } from "../shop-settings/types"
+
 export interface CategoryImage {
   id: number
   src: string
@@ -28,6 +30,7 @@ export interface CategoryData {
   category_profiles: CategoryProfileData[]
   child_categories: CategoryData[]
   parent_category: CategoryData | null
+  content_blocks?: ContentBlock[]
 }
 
 export interface FindManyCategoryResponse {

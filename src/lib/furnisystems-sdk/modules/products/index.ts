@@ -3,6 +3,7 @@ import { GraphQLClient } from "../../client"
 import {
   CategoryProductsResponse,
   SortedByCategoryPositionResponse,
+  SearchProductsResponse,
   FurnisystemsProductDetail,
 } from "./types"
 
@@ -77,6 +78,31 @@ const GET_CATEGORY_PRODUCTS = gql`
       categoryPermalink: $categoryPermalink
       page: $page
       take: $take
+      where: $where
+    ) {
+      numberOfPages
+      productsCount
+      sortedProductContainers {
+        ...ProductCardFields
+      }
+    }
+  }
+`
+
+const SEARCH_PRODUCTS = gql`
+  ${PRODUCT_CARD_FRAGMENT}
+  query SearchProducts(
+    $searchTerm: String!
+    $language: Language!
+    $take: Int!
+    $page: Int!
+    $where: ProductContainerWhereInput
+  ) {
+    sortedBySearchTermPositionProductContainers(
+      searchTerm: $searchTerm
+      language: $language
+      take: $take
+      page: $page
       where: $where
     ) {
       numberOfPages
@@ -243,6 +269,44 @@ export class ProductsModule {
     } catch (error) {
       console.error(
         `Error fetching category products for "${permalink}":`,
+        error
+      )
+      return {
+        numberOfPages: 0,
+        productsCount: 0,
+        sortedProductContainers: [],
+      }
+    }
+  }
+
+  async searchProducts(
+    searchTerm: string,
+    language: string,
+    take?: number,
+    page?: number,
+    where?: any
+  ): Promise<CategoryProductsResponse> {
+    try {
+      const response =
+        await this.client.query<SearchProductsResponse>(
+          SEARCH_PRODUCTS,
+          {
+            variables: {
+              searchTerm,
+              language,
+              take,
+              page,
+              where,
+            },
+            fetchPolicy: "no-cache",
+            errorPolicy: "all",
+          }
+        )
+
+      return response.sortedBySearchTermPositionProductContainers
+    } catch (error) {
+      console.error(
+        `Error searching products for "${searchTerm}":`,
         error
       )
       return {

@@ -92,7 +92,7 @@ export interface ContentBlockData {
   extra_css: Record<string, unknown> | string | null
   linked_items?: ContentBlockLinkedItem[]
   config?: Record<string, unknown> | null
-  category_tile_items?: CategoryTileItem[]
+  categories?: CategoryTileItem[]
 }
 
 export interface ContentBlockProps {

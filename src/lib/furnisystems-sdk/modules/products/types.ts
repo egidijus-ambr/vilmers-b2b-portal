@@ -72,6 +72,10 @@ export interface SortedByCategoryPositionResponse {
   sortedByCategoryPositionProductContainers: CategoryProductsResponse
 }
 
+export interface SearchProductsResponse {
+  sortedBySearchTermPositionProductContainers: CategoryProductsResponse
+}
+
 // Product detail types for single product page
 export interface FurnisystemsProductDetail {
   id: number

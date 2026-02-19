@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import ContentBlock from "@modules/home/components/content-block"
 import PageHero from "@modules/cms/components/page-hero"
 import { getPageBySlug } from "@lib/data/pages"
+import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 
 type Props = {
@@ -42,9 +43,12 @@ export default async function CmsPage(props: Props) {
     (p) => p.language?.toLowerCase() === languageCode.toLowerCase()
   ) ?? page.page_profiles[0]
 
-  const contentBlocks = (page.content_blocks ?? [])
-    .slice()
-    .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0))
+  const contentBlocks = await enrichContentBlocksWithTileCategories(
+    (page.content_blocks ?? [])
+      .slice()
+      .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0)),
+    languageCode
+  )
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: "Home", href: "/" },

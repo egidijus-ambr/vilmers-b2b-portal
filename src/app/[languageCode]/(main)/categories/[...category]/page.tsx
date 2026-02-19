@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { getCategoryByPermalink } from "@lib/data/categories"
+import { getCategoryByPermalink, enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import CategoryPageTemplate from "@modules/categories/templates"
 
@@ -52,5 +52,18 @@ export default async function CategoryPage(props: Props) {
     notFound()
   }
 
-  return <CategoryPageTemplate category={category} language={validLanguage} page={page} />
+  const enrichedContentBlocks = category.content_blocks
+    ? await enrichContentBlocksWithTileCategories(
+        category.content_blocks,
+        validLanguage
+      )
+    : category.content_blocks
+
+  return (
+    <CategoryPageTemplate
+      category={{ ...category, content_blocks: enrichedContentBlocks }}
+      language={validLanguage}
+      page={page}
+    />
+  )
 }

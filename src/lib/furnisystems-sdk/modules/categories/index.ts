@@ -130,6 +130,68 @@ const FIND_CATEGORY_BY_PERMALINK = gql`
         id
         src
       }
+      content_blocks(orderBy: { arrangement: asc }) {
+        id
+        type
+        style
+        video_link
+        video_type
+        video_autoplay
+        video_loop
+        arrangement
+        main_image {
+          id
+          src
+        }
+        gallery_images(orderBy: { display_order: asc }) {
+          id
+          src
+          display_order
+        }
+        content_block_profiles {
+          id
+          name
+          description
+          link
+          language
+        }
+        default_margins
+        max_height
+        max_width
+        min_height
+        min_width
+        top_margin
+        bottom_margin
+        left_margin
+        right_margin
+        background_color
+        text_color
+        media_max_height
+        media_max_width
+        media_min_height
+        media_min_width
+        object_fit_cover
+        link_new_tab
+        link_page {
+          id
+          page_profiles {
+            slug
+            language
+          }
+        }
+        extra_css
+        linked_items {
+          id
+          title
+          link
+          arrangement
+          image {
+            id
+            src
+          }
+        }
+        config
+      }
       category_profiles(
         where: { language: { equals: $language } }
       ) {
@@ -199,6 +261,32 @@ const FIND_CATEGORY_BY_PERMALINK = gql`
   }
 `
 
+const FIND_CATEGORIES_BY_IDS = gql`
+  query FIND_CATEGORIES_BY_IDS($ids: [Int!]!, $language: Language) {
+    findManyCategory(where: { id: { in: $ids } }) {
+      id
+      image {
+        id
+        src
+      }
+      banners {
+        id
+        src
+      }
+      category_profiles(
+        where: { language: { equals: $language } }
+      ) {
+        id
+        name
+        language
+        meta_information {
+          permalink
+        }
+      }
+    }
+  }
+`
+
 export class CategoriesModule {
   constructor(private client: GraphQLClient) {}
 
@@ -217,6 +305,31 @@ export class CategoriesModule {
       return response.findManyCategory ?? []
     } catch (error) {
       console.error("Error fetching menu categories:", error)
+      return []
+    }
+  }
+
+  async getCategoriesByIds(
+    ids: number[],
+    language?: string
+  ): Promise<CategoryData[]> {
+    if (ids.length === 0) return []
+
+    try {
+      const response = await this.client.query<FindManyCategoryResponse>(
+        FIND_CATEGORIES_BY_IDS,
+        {
+          variables: {
+            ids,
+            ...(language ? { language: language.toLowerCase() } : {}),
+          },
+          fetchPolicy: "no-cache",
+          errorPolicy: "all",
+        }
+      )
+      return response.findManyCategory ?? []
+    } catch (error) {
+      console.error("Error fetching categories by IDs:", error)
       return []
     }
   }

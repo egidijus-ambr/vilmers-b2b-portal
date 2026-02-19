@@ -8,6 +8,7 @@ import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
 import BackButton from "@modules/layout/components/back-button"
 import TopBar from "@modules/layout/components/top-bar"
+import SearchModal from "@modules/search/components/search-modal"
 import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
 import type { CategoryData } from "@lib/furnisystems-sdk"
 import {
@@ -29,6 +30,7 @@ export default function Nav({ customer, categories }: NavProps) {
   const { t, isReady } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const { isSessionValid, isSessionLoading } = useSessionValidation()
 
   useEffect(() => {
@@ -126,6 +128,30 @@ export default function Nav({ customer, categories }: NavProps) {
           </div>
 
           <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
+            {/* Desktop Search Button */}
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className={`hidden small:flex items-center justify-center w-10 h-10 transition-colors ${
+                isTransparent ? "text-white hover:text-white/80" : "text-dark-blue hover:text-dark-blue/80"
+              }`}
+              aria-label="Search products"
+              data-testid="nav-search-button"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+
             {/* Desktop Account Menu */}
             <div className="hidden small:flex items-center gap-x-6 h-full">
               {isLoggedIn ? (
@@ -162,6 +188,8 @@ export default function Nav({ customer, categories }: NavProps) {
         onClose={handleMobileMenuClose}
         isLoggedIn={isLoggedIn}
       />
+
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
   )
 }

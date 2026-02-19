@@ -1,125 +1,77 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
+# Set cache cleanup cronjobs
 
-<h1 align="center">
-  Medusa Next.js Starter Template
-</h1>
+Edit your crontab
 
-<p align="center">
-Combine Medusa's modules for your commerce backend with the newest Next.js 15 features for a performant storefront.</p>
+crontab -e
 
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
-  <a href="https://discord.gg/xpCwq3Kfn8">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  </a>
-</p>
+This opens your user's crontab in the default editor. Add a line and save.
 
-### Prerequisites
+Crontab syntax
 
-To use the [Next.js Starter Template](https://medusajs.com/nextjs-commerce/), you should have a Medusa server running locally on port 9000.
-For a quick setup, run:
+┌───────── minute (0-59)
+│ ┌─────── hour (0-23)
+│ │ ┌───── day of month (1-31)
+│ │ │ ┌─── month (1-12)
+│ │ │ │ ┌─ day of week (0-6, 0=Sunday)
+│ │ │ │ │
 
-```shell
-npx create-medusa-app@latest
+- - - - - command
+
+Common schedules
+
+┌──────────────────────┬──────────────┐
+│ Schedule │ Expression │
+├──────────────────────┼──────────────┤
+│ Every day at 3 AM │ 0 3 \* \* _ │
+├──────────────────────┼──────────────┤
+│ Every Sunday at 3 AM │ 0 3 _ _ 0 │
+├──────────────────────┼──────────────┤
+│ Every hour │ 0 _ \* \* _ │
+├──────────────────────┼──────────────┤
+│ Every 15 minutes │ _/15 \* \* \* _ │
+├──────────────────────┼──────────────┤
+│ Mon-Fri at 9 AM │ 0 9 _ \* 1-5 │
+└──────────────────────┴──────────────┘
+
+For your cleanup script
+
+# 1. Open crontab
+
+crontab -e
+
+# 2. Add this line (adjust the path to your project):
+
+```
+0 3 * * * ~/b2b-portal/scripts/cleanup-cache.sh >> /var/log/b2b-cache-cleanup.log 2>&1
 ```
 
-Check out [create-medusa-app docs](https://docs.medusajs.com/learn/installation) for more details and troubleshooting.
+# 3. Save and exit (:wq in vim, Ctrl+O then Ctrl+X in nano)
 
-# Overview
+Useful commands
 
-The Medusa Next.js Starter is built with:
+crontab -l # List your current cron jobs
+crontab -e # Edit your cron jobs
+crontab -r # Remove ALL your cron jobs (careful!)
+sudo crontab -e # Edit root's cron jobs
 
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Typescript](https://www.typescriptlang.org/)
-- [Medusa](https://medusajs.com/)
+Gotchas
 
-Features include:
+- PATH is minimal — cron runs with a limited PATH. Use full paths to commands (/usr/bin/find
+  instead of find), or add PATH=/usr/local/bin:/usr/bin:/bin at the top of your crontab
+- No environment — your .bashrc/.profile is not loaded. If the script needs env vars, set them
+  in the crontab or source them in the script
+- Log output — always redirect output with >> /path/to/log 2>&1, otherwise cron sends it as
+  email (which usually goes nowhere)
+- Permissions — the script must be executable (chmod +x script.sh)
 
-- Full ecommerce support:
-  - Product Detail Page
-  - Product Overview Page
-  - Product Collections
-  - Cart
-  - Checkout with Stripe
-  - User Accounts
-  - Order Details
-- Full Next.js 15 support:
-  - App Router
-  - Next fetching/caching
-  - Server Components
-  - Server Actions
-  - Streaming
-  - Static Pre-Rendering
+Verify it's running
 
-# Quickstart
+# Check cron service is active
 
-### Setting up the environment variables
+systemctl status cron # Debian/Ubuntu
+systemctl status crond # RHEL/CentOS
 
-Navigate into your projects directory and get your environment variables ready:
+# Check cron logs
 
-```shell
-cd nextjs-starter-medusa/
-mv .env.template .env.local
-```
-
-### Install dependencies
-
-Use Yarn to install all dependencies.
-
-```shell
-yarn
-```
-
-### Start developing
-
-You are now ready to start up your project.
-
-```shell
-yarn dev
-```
-
-### Open the code and start customizing
-
-Your site is now running at http://localhost:8000!
-
-# Payment integrations
-
-By default this starter supports the following payment integrations
-
-- [Stripe](https://stripe.com/)
-
-To enable the integrations you need to add the following to your `.env.local` file:
-
-```shell
-NEXT_PUBLIC_STRIPE_KEY=<your-stripe-public-key>
-```
-
-You'll also need to setup the integrations in your Medusa server. See the [Medusa documentation](https://docs.medusajs.com) for more information on how to configure [Stripe](https://docs.medusajs.com/resources/commerce-modules/payment/payment-provider/stripe#main).
-
-# Resources
-
-## Learn more about Medusa
-
-- [Website](https://www.medusajs.com/)
-- [GitHub](https://github.com/medusajs)
-- [Documentation](https://docs.medusajs.com/)
-
-## Learn more about Next.js
-
-- [Website](https://nextjs.org/)
-- [GitHub](https://github.com/vercel/next.js)
-- [Documentation](https://nextjs.org/docs)
+grep CRON /var/log/syslog # Debian/Ubuntu
+grep CRON /var/log/cron # RHEL/CentOS

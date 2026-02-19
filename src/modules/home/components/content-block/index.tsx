@@ -53,7 +53,7 @@ export default function ContentBlock({
   const hasMaxHeight = data.max_height != null || extraCss.maxHeight != null
 
   const sectionStyle: React.CSSProperties = {
-    ...(data.default_margins ? { margin: "40px 0" } : { margin: "auto" }),
+    ...(data.default_margins ? { marginBottom: "40px" } : { margin: "auto" }),
     ...(data.max_height != null && { maxHeight: data.max_height }),
     ...(data.max_width != null && { maxWidth: data.max_width }),
     ...(data.min_height != null && { minHeight: data.min_height }),
@@ -156,7 +156,7 @@ export default function ContentBlock({
 
       {data.type === "category_tiles" && (
         <CategoryTiles
-          tiles={data.category_tile_items ?? []}
+          tiles={data.categories ?? []}
           languageCode={languageCode}
         />
       )}
@@ -1094,19 +1094,16 @@ function GallerySpreadHarmony({
         className="no-scrollbar flex snap-x snap-mandatory items-center gap-4 overflow-x-auto small:hidden"
       >
         {allImages.map((img) => (
-            <div
-              key={img.id}
-              className="flex-shrink-0 snap-center overflow-hidden"
-              style={{
-                width: "80vw",
-                height: "min(90vw, 450px)",
-              }}
-            >
-              <GalleryImage
-                image={img}
-                className="h-full w-full object-cover"
-              />
-            </div>
+          <div
+            key={img.id}
+            className="flex-shrink-0 snap-center overflow-hidden"
+            style={{
+              width: "80vw",
+              height: "min(90vw, 450px)",
+            }}
+          >
+            <GalleryImage image={img} className="h-full w-full object-cover" />
+          </div>
         ))}
       </div>
 

@@ -92,21 +92,6 @@ export const APP_SHOP_SETTINGS = gql`
           }
         }
         config
-        category_tile_items {
-          id
-          image {
-            id
-            src
-          }
-          category_profiles {
-            id
-            name
-            language
-            meta_information {
-              permalink
-            }
-          }
-        }
       }
     }
   }

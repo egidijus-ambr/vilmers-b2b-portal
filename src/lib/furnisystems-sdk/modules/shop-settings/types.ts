@@ -25,6 +25,7 @@ export interface ContentBlockProfile {
 export interface ContentBlockImage {
   id: string
   src: string
+  display_order?: number
 }
 
 export interface ContentBlockLinkedItem {
@@ -38,6 +39,7 @@ export interface ContentBlockLinkedItem {
 export interface CategoryTileItem {
   id: number
   image: { id: number; src: string } | null
+  banners: { id: number; src: string }[]
   category_profiles: {
     id: number
     name: string
@@ -81,7 +83,7 @@ export interface ContentBlock {
   extra_css: Record<string, unknown> | string | null
   linked_items?: ContentBlockLinkedItem[]
   config?: Record<string, unknown> | null
-  category_tile_items?: CategoryTileItem[]
+  categories?: CategoryTileItem[]
 }
 
 export interface ShopSetting {

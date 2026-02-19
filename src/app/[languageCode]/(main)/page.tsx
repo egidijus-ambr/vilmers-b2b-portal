@@ -8,6 +8,7 @@ import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { getShopSettings } from "@lib/data/shop-settings"
 import { getPageByCode } from "@lib/data/pages"
+import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 
 export const metadata: Metadata = {
   title: "Vilmers - Comfort and Quality with Smart Design",
@@ -65,13 +66,16 @@ export default async function Home(props: {
     getPageByCode("home-page", languageCode),
   ])
 
-  const contentBlocks = (
-    homePage?.content_blocks ??
-    shopSettings?.homepage_content_blocks ??
-    []
+  const contentBlocks = await enrichContentBlocksWithTileCategories(
+    (
+      homePage?.content_blocks ??
+      shopSettings?.homepage_content_blocks ??
+      []
+    )
+      .slice()
+      .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0)),
+    languageCode
   )
-    .slice()
-    .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0))
 
   // Always render Hero, make FeaturedProducts conditional
   return (

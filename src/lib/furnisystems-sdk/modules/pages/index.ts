@@ -88,25 +88,6 @@ export const FIND_PAGE_BY_CODE = gql`
           }
         }
         config
-        category_tile_items {
-          id
-          image {
-            id
-            src
-          }
-          banners {
-            id
-            src
-          }
-          category_profiles {
-            id
-            name
-            language
-            meta_information {
-              permalink
-            }
-          }
-        }
       }
     }
   }
@@ -208,25 +189,6 @@ export const FIND_PAGE_BY_SLUG = gql`
           }
         }
         config
-        category_tile_items {
-          id
-          image {
-            id
-            src
-          }
-          banners {
-            id
-            src
-          }
-          category_profiles {
-            id
-            name
-            language
-            meta_information {
-              permalink
-            }
-          }
-        }
       }
     }
   }

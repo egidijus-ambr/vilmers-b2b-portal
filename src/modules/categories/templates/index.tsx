@@ -5,6 +5,7 @@ import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
 import CategoryProductGrid from "@modules/categories/components/category-product-grid"
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
+import ContentBlock from "@modules/home/components/content-block"
 
 interface CategoryPageTemplateProps {
   category: CategoryData
@@ -75,6 +76,10 @@ export default function CategoryPageTemplate({
   const description = getCategoryDescription(category)
   const breadcrumbs = buildBreadcrumbs(category)
 
+  const contentBlocks = (category.content_blocks ?? [])
+    .slice()
+    .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0))
+
   return (
     <div data-testid="category-container">
       <PageHeader
@@ -82,6 +87,18 @@ export default function CategoryPageTemplate({
         description={description}
         breadcrumbItems={breadcrumbs}
       />
+      {contentBlocks.length > 0 && (
+        <div>
+          {contentBlocks.map((block, index) => (
+            <ContentBlock
+              key={block.id}
+              data={block}
+              index={index}
+              languageCode={language}
+            />
+          ))}
+        </div>
+      )}
       <PageContent>
         <Suspense fallback={<CategoryProductGridSkeleton />}>
           <CategoryProductGrid
