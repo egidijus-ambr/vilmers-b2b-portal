@@ -2,7 +2,7 @@
 
 import { ProductPhoto } from "@lib/furnisystems-sdk/modules/product-photos/types"
 import DownloadPhotosButton from "@modules/products/components/download-photos-button"
-import Image from "next/image"
+import Image, { getImageProps } from "next/image"
 import { useState, useEffect, useRef } from "react"
 
 type InteriorPhotoGalleryProps = {
@@ -51,6 +51,18 @@ const InteriorPhotoGallery = ({
     ].join(", ")
   }
 
+  const getPreloadUrl = (photoUrl: string): string => {
+    const { props } = getImageProps({
+      src: photoUrl,
+      alt: "",
+      width: containerWidth || 800,
+      height: Math.round((containerWidth || 800) * 0.75),
+      sizes: getResponsiveSizes(),
+      quality: 85,
+    })
+    return props.src
+  }
+
   if (!photos.length) {
     return (
       <div className="flex items-center justify-center p-8 text-ui-fg-muted">
@@ -73,7 +85,7 @@ const InteriorPhotoGallery = ({
                 // Preload image on hover for faster loading
                 if (index !== selectedImageIndex) {
                   const img = new window.Image()
-                  img.src = photo.url
+                  img.src = getPreloadUrl(photo.url)
                 }
               }}
               className={`
