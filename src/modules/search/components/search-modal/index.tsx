@@ -108,9 +108,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   const navigateToSearch = useCallback(() => {
     if (inputValue.length >= 3) {
-      router.push(
-        `/${languageCode}/search/${encodeURIComponent(inputValue)}`
-      )
+      router.push(`/${languageCode}/search/${encodeURIComponent(inputValue)}`)
       onClose()
     }
   }, [inputValue, languageCode, router, onClose])
@@ -129,24 +127,19 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   return (
     <>
       {/* Backdrop - semi-transparent overlay behind the dropdown, clicking closes search */}
-      <div
-        className="fixed inset-0 bg-black/20 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
 
       {/* Search panel - positioned over the nav header area */}
-      {/* Uses absolute positioning relative to the sticky nav container. */}
-      {/* top-[var(--top-bar-height)] would be ideal but we use a known offset */}
-      {/* The TopBar sits above the header; the header starts after the TopBar. */}
-      {/* Since this component is rendered inside the sticky nav div (sibling of header), */}
-      {/* we position it absolutely to cover the header and expand below it. */}
-      <div className="absolute inset-x-0 top-[var(--top-bar-height,36px)] z-50 bg-white shadow-lg">
+      {/* Uses absolute positioning with top-[32px] to align with the header element */}
+      {/* The TopBar is 36px tall, so the header (72px) starts at top-[32px] */}
+      {/* This positions the search panel to start exactly where the header begins */}
+      <div className="absolute inset-x-0 top-[32px] z-50 bg-white shadow-lg">
         {/* Search input bar - same height as the nav header (72px) */}
-        <div className="h-[72px] flex items-center px-6 gap-4 border-b border-gray-200">
+        <div className="h-[72px] max-w-[1440px] mx-auto flex items-center px-6 gap-4 border-b border-gray-200">
           {/* Search icon */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-gray-400 shrink-0"
+            className="h-5 w-5 text-dark-blue shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -167,7 +160,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t("search-placeholder")}
-            className="flex-1 text-lg border-none outline-none bg-transparent text-dark-blue placeholder-gray-400 focus:ring-0"
+            className="flex-1 text-[16px] border-none outline-none bg-transparent text-dark-blue placeholder-gray-400 focus:ring-0"
             autoFocus
           />
 
@@ -175,7 +168,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <button
             onClick={onClose}
             aria-label="Close search"
-            className="shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="shrink-0 p-2 text-dark-blue hover:text-dark-blue/70 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -196,7 +189,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
         {/* Results dropdown - only appears when user has typed 3+ chars */}
         {debouncedValue.length >= 3 && (
-          <div className="px-6 py-6 border-t border-gray-100 max-h-[70vh] overflow-y-auto">
+          <div className="max-w-[1400px] mx-auto px-6 py-10 border-t border-gray-100 max-h-[70vh] overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <svg
@@ -252,21 +245,24 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 )}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">
-                {t("search-no-results")}
-              </p>
+              <div className="py-4">
+                <h3 className="text-2xl text-dark-blue mb-2">
+                  {t("search-no-results-title")}
+                </h3>
+                <p className="text-gray-500">{t("search-no-results-hint")}</p>
+              </div>
             )}
           </div>
         )}
 
         {/* Hint for minimum characters */}
-        {inputValue.length > 0 && inputValue.length < 3 && debouncedValue.length < 3 && (
-          <div className="px-6 py-4 border-t border-gray-100">
-            <p className="text-sm text-gray-500">
-              {t("search-min-chars")}
-            </p>
-          </div>
-        )}
+        {inputValue.length > 0 &&
+          inputValue.length < 3 &&
+          debouncedValue.length < 3 && (
+            <div className="px-6 py-4 border-t border-gray-100">
+              <p className="text-sm text-gray-500">{t("search-min-chars")}</p>
+            </div>
+          )}
       </div>
     </>
   )

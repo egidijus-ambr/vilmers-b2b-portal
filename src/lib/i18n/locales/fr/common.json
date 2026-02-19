@@ -46,6 +46,8 @@
   "search-explore-more": "Explorer plus",
   "search-min-chars": "Tapez au moins 3 caractères pour rechercher",
   "search-no-results": "Aucun produit trouvé",
+  "search-no-results-hint": "Veuillez essayer d'autres mots-clés ou vérifier l'orthographe pour trouver des résultats pertinents",
+  "search-no-results-title": "Désolé, rien trouvé",
   "search-placeholder": "Rechercher des produits...",
   "search-products-count": "Produits",
   "search-results-for": "Résultats pour",
