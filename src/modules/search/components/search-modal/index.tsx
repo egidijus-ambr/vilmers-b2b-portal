@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useTranslations } from "@lib/i18n/provider"
-import { sdk } from "@lib/config"
+import { quickSearchProducts } from "@lib/data/search-products"
 import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import B2BProductCard from "@modules/categories/components/category-product-card"
 
@@ -47,16 +47,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const fetchResults = async () => {
       setIsLoading(true)
       try {
-        const response = await sdk.products.searchProducts(
-          debouncedValue,
-          language,
-          4,
-          1
-        )
+        const response = await quickSearchProducts(debouncedValue, language)
 
         if (!cancelled) {
-          setResults(response.sortedProductContainers)
-          setProductsCount(response.productsCount)
+          setResults(response.products)
+          setProductsCount(response.totalCount)
         }
       } catch (error) {
         console.error("Search failed:", error)

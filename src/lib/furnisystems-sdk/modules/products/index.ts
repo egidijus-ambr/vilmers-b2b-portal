@@ -172,9 +172,7 @@ const GET_PRODUCT_BY_PERMALINK = gql`
       }
       advanced_product {
         id
-        advanced_product_profiles(
-          where: { language: { equals: $language } }
-        ) {
+        advanced_product_profiles(where: { language: { equals: $language } }) {
           name
           description
           language
@@ -206,7 +204,11 @@ const GET_PRODUCT_BY_PERMALINK = gql`
 export class ProductsModule {
   constructor(private client: GraphQLClient) {}
 
-  buildWhereFilter(language: string, customerTagIds?: number[]) {
+  buildWhereFilter(
+    language: string,
+    customerTagIds?: number[],
+    priceListIds?: number[]
+  ) {
     const where: any = {
       OR: [
         {
@@ -230,12 +232,83 @@ export class ProductsModule {
       ],
     }
 
+    where.AND = []
+
     if (customerTagIds && customerTagIds.length > 0) {
-      where.tags = {
-        some: {
-          id: { in: customerTagIds },
+      where.AND.push({
+        tags: {
+          some: {
+            id: { in: customerTagIds },
+          },
+        },
+      })
+    }
+
+    if (priceListIds && priceListIds.length > 0) {
+      const priceListSelect = {
+        price_listId: {
+          in: priceListIds,
         },
       }
+
+      const priceFilter = {
+        OR: [
+          // Single products always pass through
+          {
+            single_product: {
+              isNot: null,
+            },
+          },
+          // Advanced products must have pricing matching customer's price lists
+          {
+            advanced_product: {
+              is: {
+                OR: [
+                  {
+                    base_prices: {
+                      some: priceListSelect,
+                    },
+                  },
+                  {
+                    sofa_forms: {
+                      some: {
+                        form_price_fabric_category: {
+                          some: priceListSelect,
+                        },
+                      },
+                    },
+                  },
+                  {
+                    advanced_product_price_fabric_category: {
+                      some: priceListSelect,
+                    },
+                  },
+                  {
+                    additional_component_to_advanced_product: {
+                      some: {
+                        price_fabric_category: {
+                          some: priceListSelect,
+                        },
+                      },
+                    },
+                  },
+                  {
+                    additional_component_to_advanced_product: {
+                      some: {
+                        extra_prices: {
+                          some: priceListSelect,
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      }
+
+      where.AND.push(priceFilter)
     }
 
     return where
@@ -248,6 +321,13 @@ export class ProductsModule {
     where?: any
   }): Promise<CategoryProductsResponse> {
     const { permalink, page, perPage = 28, where } = params
+
+    console.log("Fetching category products with:", {
+      permalink,
+      page,
+      perPage,
+      where,
+    })
 
     try {
       const response =
@@ -264,6 +344,7 @@ export class ProductsModule {
             errorPolicy: "all",
           }
         )
+      console.log("Fetched category products response:", response)
 
       return response.sortedByCategoryPositionProductContainers
     } catch (error) {
@@ -286,29 +367,32 @@ export class ProductsModule {
     page?: number,
     where?: any
   ): Promise<CategoryProductsResponse> {
+    console.log("Searching products with:", {
+      searchTerm,
+      language,
+      take,
+      page,
+      where,
+    })
     try {
-      const response =
-        await this.client.query<SearchProductsResponse>(
-          SEARCH_PRODUCTS,
-          {
-            variables: {
-              searchTerm,
-              language,
-              take,
-              page,
-              where,
-            },
-            fetchPolicy: "no-cache",
-            errorPolicy: "all",
-          }
-        )
+      const response = await this.client.query<SearchProductsResponse>(
+        SEARCH_PRODUCTS,
+        {
+          variables: {
+            searchTerm,
+            language,
+            take,
+            page,
+            where,
+          },
+          fetchPolicy: "no-cache",
+          errorPolicy: "all",
+        }
+      )
 
       return response.sortedBySearchTermPositionProductContainers
     } catch (error) {
-      console.error(
-        `Error searching products for "${searchTerm}":`,
-        error
-      )
+      console.error(`Error searching products for "${searchTerm}":`, error)
       return {
         numberOfPages: 0,
         productsCount: 0,
@@ -336,12 +420,22 @@ export class ProductsModule {
         single_product: {
           id: number
           product_profiles: RawProfile[]
-          images: { id: number; src: string; src_md: string | null; display_order: number }[]
+          images: {
+            id: number
+            src: string
+            src_md: string | null
+            display_order: number
+          }[]
         } | null
         advanced_product: {
           id: number
           advanced_product_profiles: RawProfile[]
-          images: { id: number; src: string; src_md: string | null; display_order: number }[]
+          images: {
+            id: number
+            src: string
+            src_md: string | null
+            display_order: number
+          }[]
         } | null
         primary_category: {
           id: number

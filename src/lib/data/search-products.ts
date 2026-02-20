@@ -1,47 +1,21 @@
+"use server"
+
 import { sdk } from "@lib/config"
 import { SupportedLanguage } from "@lib/i18n"
-import { retrieveCustomer } from "./customer"
-import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
-
-function filterByPricelist(
-  containers: ProductContainer[],
-  priceListId?: string
-): ProductContainer[] {
-  if (!priceListId) return containers
-
-  return containers.filter((container) => {
-    // Single products always pass through
-    if (container.type === "SingleProduct" || container.single_product) {
-      return true
-    }
-
-    // Advanced products must have a base_price entry matching the customer's priceListId
-    if (container.advanced_product) {
-      return container.advanced_product.base_prices.some(
-        (bp) => bp.price_listId === parseInt(priceListId)
-      )
-    }
-
-    return true
-  })
-}
+import { getCustomerFilterData } from "./customer"
 
 export async function getSearchProducts(
   searchTerm: string,
   language: SupportedLanguage,
   page: number = 1
 ) {
-  // Get customer data for filtering (null if not authenticated)
-  let customer = null
-  try {
-    customer = await retrieveCustomer()
-  } catch {
-    // Not authenticated — show all products
-  }
-
-  // Build filter based on customer tags
-  const customerTagIds = customer?.tags?.map((t) => t.id)
-  const where = sdk.products.buildWhereFilter(language, customerTagIds)
+  // Build filter based on customer tags and price lists
+  const { customerTagIds, priceListIds } = await getCustomerFilterData()
+  const where = sdk.products.buildWhereFilter(
+    language,
+    customerTagIds,
+    priceListIds
+  )
 
   // Fetch products
   const result = await sdk.products.searchProducts(
@@ -52,16 +26,42 @@ export async function getSearchProducts(
     where
   )
 
-  // Filter advanced products by customer's pricelist
-  const filteredProducts = filterByPricelist(
-    result.sortedProductContainers,
-    customer?.price_listId
-  )
-
   return {
-    products: filteredProducts,
+    products: result.sortedProductContainers,
     totalPages: result.numberOfPages,
     totalCount: result.productsCount,
     currentPage: page,
+  }
+}
+
+export async function quickSearchProducts(
+  searchTerm: string,
+  language: SupportedLanguage
+) {
+  try {
+    const { customerTagIds, priceListIds } = await getCustomerFilterData()
+    const where = sdk.products.buildWhereFilter(
+      language,
+      customerTagIds,
+      priceListIds
+    )
+
+    const result = await sdk.products.searchProducts(
+      searchTerm,
+      language,
+      4,
+      1,
+      where
+    )
+
+    return JSON.parse(
+      JSON.stringify({
+        products: result.sortedProductContainers,
+        totalCount: result.productsCount,
+      })
+    )
+  } catch (error) {
+    console.error("quickSearchProducts failed:", error)
+    return { products: [], totalCount: 0 }
   }
 }

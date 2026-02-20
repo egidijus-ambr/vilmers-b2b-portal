@@ -5,7 +5,7 @@ import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag, unstable_cache, unstable_noStore } from "next/cache"
 import { redirect } from "next/navigation"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -496,4 +496,52 @@ async function performMagicLinkLogin(
   }
 
   redirect(`/${languageCode}/account`)
+}
+
+/**
+ * Get the customer's product filter data (tags and price list IDs).
+ * Used by product queries to filter results server-side.
+ */
+export async function getCustomerFilterData(): Promise<{
+  customerTagIds: number[] | undefined
+  priceListIds: number[]
+}> {
+  let customer = null
+  try {
+    customer = await retrieveCustomer()
+  } catch {
+    // Not authenticated — no filtering
+  }
+
+  const customerTagIds = customer?.tags?.map((t) => t.id)
+  const groupPriceListId = await getGroupPriceListId()
+  const priceListIds = [
+    ...(customer?.price_listId ? [parseInt(customer.price_listId)] : []),
+    ...(groupPriceListId ? [parseInt(groupPriceListId)] : []),
+  ]
+
+  return { customerTagIds, priceListIds }
+}
+
+/**
+ * Get the group price list ID from the JWT token.
+ * This field is set by the backend as customer.customer_group?.price_listId
+ * but is not available via GraphQL - only in the token payload.
+ */
+export async function getGroupPriceListId(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies()
+    const jwtToken = cookieStore.get("_furni_jwt")?.value
+    if (!jwtToken) return null
+
+    const parts = jwtToken.split(".")
+    if (parts.length !== 3) return null
+
+    const payload = JSON.parse(
+      Buffer.from(parts[1], "base64").toString()
+    )
+    return payload.group_price_listId ?? null
+  } catch {
+    return null
+  }
 }
