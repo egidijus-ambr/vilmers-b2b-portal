@@ -43,6 +43,7 @@
   "phone": "Phone",
   "privacy-policy": "Privacy policy",
   "products": "Products",
+  "products-count": "Products: {{count}}",
   "remember-me": "Remember me",
   "search-explore-more": "Explore more",
   "search-min-chars": "Type at least 3 characters to search",
@@ -54,6 +55,10 @@
   "search-results-for": "Results for",
   "send-another-link": "Send another link",
   "send-request": "Send a request",
+  "sort-name-asc": "Name (A-Z)",
+  "sort-name-desc": "Name (Z-A)",
+  "sort-newest": "Newest first",
+  "sort-oldest": "Oldest first",
   "vat-code": "VAT code",
   "vat-code-placeholder": "Enter VAT code"
 }

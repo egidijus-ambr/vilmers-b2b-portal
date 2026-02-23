@@ -42,6 +42,7 @@
   "phone": "Telefonas",
   "privacy-policy": "Privatumo politika",
   "products": "Produktai",
+  "products-count": "Produktai: {{count}}",
   "remember-me": "Prisimink mane",
   "search-explore-more": "Explore more",
   "search-min-chars": "Type at least 3 characters to search",
@@ -53,6 +54,10 @@
   "search-results-for": "Results for",
   "send-another-link": "Siųsti kitą nuorodą",
   "send-request": "Siųsti užklausą",
+  "sort-name-asc": "Pavadinimas (A-Ž)",
+  "sort-name-desc": "Pavadinimas (Ž-A)",
+  "sort-newest": "Naujausi pirmi",
+  "sort-oldest": "Seniausi pirmi",
   "vat-code": "PVM kodas",
   "vat-code-placeholder": "Įveskite PVM kodą"
 }

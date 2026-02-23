@@ -42,6 +42,7 @@
   "phone": "Téléphone",
   "privacy-policy": "Politique de confidentialité",
   "products": "Produits",
+  "products-count": "Produits : {{count}}",
   "remember-me": "Souviens-toi de moi",
   "search-explore-more": "Explorer plus",
   "search-min-chars": "Tapez au moins 3 caractères pour rechercher",
@@ -53,6 +54,10 @@
   "search-results-for": "Résultats pour",
   "send-another-link": "Renvoyer un autre lien",
   "send-request": "Envoyer la demande",
+  "sort-name-asc": "Nom (A-Z)",
+  "sort-name-desc": "Nom (Z-A)",
+  "sort-newest": "Plus récents",
+  "sort-oldest": "Plus anciens",
   "vat-code": "Numéro de TVA",
   "vat-code-placeholder": "Entrez le numéro de TVA"
 }

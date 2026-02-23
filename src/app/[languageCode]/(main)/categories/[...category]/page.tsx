@@ -2,12 +2,15 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { getCategoryByPermalink, enrichContentBlocksWithTileCategories } from "@lib/data/categories"
+import { CategorySortOption, SORT_OPTION_TO_GRAPHQL } from "@lib/furnisystems-sdk/modules/products/types"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import CategoryPageTemplate from "@modules/categories/templates"
 
+const VALID_SORT_OPTIONS = Object.keys(SORT_OPTION_TO_GRAPHQL) as CategorySortOption[]
+
 type Props = {
   params: Promise<{ category: string[]; languageCode: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; sort?: string }>
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -45,6 +48,9 @@ export default async function CategoryPage(props: Props) {
   const language = params.languageCode as SupportedLanguage
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
   const page = Math.max(1, parseInt(searchParams.page || "1", 10) || 1)
+  const sortBy = VALID_SORT_OPTIONS.includes(searchParams.sort as CategorySortOption)
+    ? (searchParams.sort as CategorySortOption)
+    : undefined
 
   const category = await getCategoryByPermalink(permalink, validLanguage)
 
@@ -64,6 +70,7 @@ export default async function CategoryPage(props: Props) {
       category={{ ...category, content_blocks: enrichedContentBlocks }}
       language={validLanguage}
       page={page}
+      sortBy={sortBy}
     />
   )
 }

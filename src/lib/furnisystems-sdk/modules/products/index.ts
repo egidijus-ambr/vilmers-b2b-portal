@@ -73,12 +73,16 @@ const GET_CATEGORY_PRODUCTS = gql`
     $page: Int!
     $take: Int!
     $where: ProductContainerWhereInput
+    $sortBy: CategoryProductSortBy
+    $language: String
   ) {
     sortedByCategoryPositionProductContainers(
       categoryPermalink: $categoryPermalink
       page: $page
       take: $take
       where: $where
+      sortBy: $sortBy
+      language: $language
     ) {
       numberOfPages
       productsCount
@@ -319,15 +323,10 @@ export class ProductsModule {
     page: number
     perPage?: number
     where?: any
+    sortBy?: string
+    language?: string
   }): Promise<CategoryProductsResponse> {
-    const { permalink, page, perPage = 28, where } = params
-
-    console.log("Fetching category products with:", {
-      permalink,
-      page,
-      perPage,
-      where,
-    })
+    const { permalink, page, perPage = 28, where, sortBy, language } = params
 
     try {
       const response =
@@ -339,13 +338,13 @@ export class ProductsModule {
               page,
               take: perPage,
               where,
+              sortBy,
+              language,
             },
             fetchPolicy: "no-cache",
             errorPolicy: "all",
           }
         )
-      console.log("Fetched category products response:", response)
-
       return response.sortedByCategoryPositionProductContainers
     } catch (error) {
       console.error(

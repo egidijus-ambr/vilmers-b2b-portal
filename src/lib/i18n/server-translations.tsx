@@ -48,9 +48,22 @@ export async function getServerT(
   const backendLang = getBackendLanguageCode(lang)
   const translations = await getServerTranslations(backendLang, [namespace])
 
-  return (key: string, fallback?: string) => {
+  return (key: string, options?: string | Record<string, unknown>) => {
     const fullKey = namespace === "common" ? key : `${namespace}:${key}`
-    return translations[key] || translations[fullKey] || fallback || key
+    const raw = translations[key] || translations[fullKey]
+
+    if (!raw) {
+      return (typeof options === "string" ? options : undefined) || key
+    }
+
+    // Interpolate {{variable}} placeholders when options is an object
+    if (options && typeof options === "object") {
+      return raw.replace(/\{\{(\w+)\}\}/g, (_, varName) =>
+        varName in options ? String(options[varName]) : `{{${varName}}}`
+      )
+    }
+
+    return raw
   }
 }
 

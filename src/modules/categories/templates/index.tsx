@@ -1,5 +1,6 @@
 import { Suspense } from "react"
 import { CategoryData } from "@lib/furnisystems-sdk"
+import { CategorySortOption } from "@lib/furnisystems-sdk/modules/products/types"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
@@ -11,6 +12,7 @@ interface CategoryPageTemplateProps {
   category: CategoryData
   language: string
   page: number
+  sortBy?: CategorySortOption
 }
 
 /** Get the localized name from a category's profiles */
@@ -71,6 +73,7 @@ export default function CategoryPageTemplate({
   category,
   language,
   page,
+  sortBy,
 }: CategoryPageTemplateProps) {
   const name = getCategoryName(category)
   const description = getCategoryDescription(category)
@@ -105,6 +108,7 @@ export default function CategoryPageTemplate({
             categoryPermalink={getCategoryPermalink(category) || ""}
             language={language as any}
             page={page}
+            sortBy={sortBy}
           />
         </Suspense>
       </PageContent>

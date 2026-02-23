@@ -43,6 +43,7 @@
   "phone": "Telefon",
   "privacy-policy": "Privatlivspolitik",
   "products": "Produkter",
+  "products-count": "Produkter: {{count}}",
   "remember-me": "Husk mig",
   "search-explore-more": "Explore more",
   "search-min-chars": "Type at least 3 characters to search",
@@ -54,6 +55,10 @@
   "search-results-for": "Results for",
   "send-another-link": "Send endnu et link",
   "send-request": "Send anmodning",
+  "sort-name-asc": "Navn (A-Z)",
+  "sort-name-desc": "Navn (Z-A)",
+  "sort-newest": "Nyeste først",
+  "sort-oldest": "Ældste først",
   "vat-code": "Momsnummer",
   "vat-code-placeholder": "Indtast momsnummer"
 }

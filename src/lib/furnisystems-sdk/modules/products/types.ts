@@ -126,3 +126,14 @@ export interface FurnisystemsProductDetail {
 export interface FindProductByPermalinkResponse {
   findFirstProductContainer: FurnisystemsProductDetail | null
 }
+
+export type CategorySortOption = 'name_asc' | 'name_desc' | 'newest' | 'oldest'
+
+type GraphQLSortBy = 'SVP_DESC' | 'NAME_ASC' | 'NAME_DESC' | 'CREATED_AT_DESC' | 'CREATED_AT_ASC'
+
+export const SORT_OPTION_TO_GRAPHQL: Record<CategorySortOption, GraphQLSortBy> = {
+  name_asc: 'NAME_ASC',
+  name_desc: 'NAME_DESC',
+  newest: 'CREATED_AT_DESC',
+  oldest: 'CREATED_AT_ASC',
+}

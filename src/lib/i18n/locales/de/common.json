@@ -42,6 +42,7 @@
   "phone": "Telefon",
   "privacy-policy": "Datenschutzrichtlinie",
   "products": "Produkte",
+  "products-count": "Produkte: {{count}}",
   "remember-me": "Erinnere dich an mich",
   "search-explore-more": "Mehr entdecken",
   "search-min-chars": "Geben Sie mindestens 3 Zeichen ein, um zu suchen",
@@ -53,6 +54,10 @@
   "search-results-for": "Ergebnisse für",
   "send-another-link": "Einen weiteren Link senden",
   "send-request": "Anfrage senden",
+  "sort-name-asc": "Name (A-Z)",
+  "sort-name-desc": "Name (Z-A)",
+  "sort-newest": "Neueste zuerst",
+  "sort-oldest": "Älteste zuerst",
   "vat-code": "USt-IdNr.",
   "vat-code-placeholder": "USt-IdNr. eingeben"
 }
