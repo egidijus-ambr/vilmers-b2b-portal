@@ -17,6 +17,20 @@ const InteriorPhotoGallery = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [containerWidth, setContainerWidth] = useState(800)
   const containerRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  const isVideo = (photo: ProductPhoto) => photo.mediaType === "video"
+
+  // Find a matching image to use as video thumbnail (same filename, different extension)
+  const getVideoThumbnailUrl = (video: ProductPhoto): string | null => {
+    const nameWithoutExt = video.name.replace(/\.[^/.]+$/, "")
+    const match = photos.find(
+      (p) =>
+        p.mediaType !== "video" &&
+        p.name.replace(/\.[^/.]+$/, "") === nameWithoutExt
+    )
+    return match?.url ?? null
+  }
 
   // Track container size for responsive image sizing
   useEffect(() => {
@@ -83,7 +97,7 @@ const InteriorPhotoGallery = ({
               onClick={() => setSelectedImageIndex(index)}
               onMouseEnter={() => {
                 // Preload image on hover for faster loading
-                if (index !== selectedImageIndex) {
+                if (index !== selectedImageIndex && !isVideo(photo)) {
                   const img = new window.Image()
                   img.src = getPreloadUrl(photo.url)
                 }
@@ -98,16 +112,46 @@ const InteriorPhotoGallery = ({
                 transition-all duration-200 hover:shadow-sm
               `}
             >
-              <Image
-                src={photo.url}
-                alt={`${productName} thumbnail ${index + 1}`}
-                fill
-                className="object-cover transition-opacity duration-200"
-                sizes="(max-width: 640px) 64px, (max-width: 1024px) 80px, 96px"
-                quality={75}
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyLli121fCR+hj9D8ApqOT3rpSABB7cAH0qNKJa2cTFgqLm4Pym9R9sQQgOLCWqP1yM/gx4rl9c3hP/AFWXLjKs6d2jLH9Dgik0hKD5a+EsBdGhU0WhtRvfzDUnJVJVJWxzQlbQjjJF5k8sVxJXKKHUGdKXGV8yTr3D/9k="
-              />
+              {isVideo(photo) ? (
+                <>
+                  {(() => {
+                    const thumbUrl = getVideoThumbnailUrl(photo)
+                    return thumbUrl ? (
+                      <Image
+                        src={thumbUrl}
+                        alt={`${productName} video thumbnail ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 64px, (max-width: 1024px) 80px, 96px"
+                        quality={75}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-ui-bg-subtle" />
+                    )
+                  })()}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="white"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </>
+              ) : (
+                <Image
+                  src={photo.url}
+                  alt={`${productName} thumbnail ${index + 1}`}
+                  fill
+                  className="object-cover transition-opacity duration-200"
+                  sizes="(max-width: 640px) 64px, (max-width: 1024px) 80px, 96px"
+                  quality={75}
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyLli121fCR+hj9D8ApqOT3rpSABB7cAH0qNKJa2cTFgqLm4Pym9R9sQQgOLCWqP1yM/gx4rl9c3hP/AFWXLjKs6d2jLH9Dgik0hKD5a+EsBdGhU0WhtRvfzDUnJVJVJWxzQlbQjjJF5k8sVxJXKKHUGdKXGV8yTr3D/9k="
+                />
+              )}
             </button>
           ))}
 
@@ -122,18 +166,37 @@ const InteriorPhotoGallery = ({
       )}
       <div
         ref={containerRef}
-        className="shadow-elevation-card-rest relative w-full bg-ui-bg-subtle "
+        className="shadow-elevation-card-rest relative w-full bg-ui-bg-subtle"
       >
-        <Image
-          src={photos[selectedImageIndex].url}
-          alt={`${productName} interior photo ${selectedImageIndex + 1}`}
-          width={containerWidth || 800}
-          height={Math.round((containerWidth || 800) * 0.75)} // 4:3 aspect ratio fallback
-          priority={selectedImageIndex === 0}
-          className="w-full h-auto object-contain"
-          sizes={getResponsiveSizes()}
-          quality={85}
-        />
+        {isVideo(photos[selectedImageIndex]) ? (
+          <video
+            ref={videoRef}
+            key={photos[selectedImageIndex].url}
+            src={photos[selectedImageIndex].url}
+            className="w-full h-auto cursor-pointer"
+            onClick={() => {
+              const v = videoRef.current
+              if (v) {
+                v.paused ? v.play() : v.pause()
+              }
+            }}
+            autoPlay
+            muted
+            playsInline
+            preload="metadata"
+          />
+        ) : (
+          <Image
+            src={photos[selectedImageIndex].url}
+            alt={`${productName} interior photo ${selectedImageIndex + 1}`}
+            width={containerWidth || 800}
+            height={Math.round((containerWidth || 800) * 0.75)}
+            priority={selectedImageIndex === 0}
+            className="w-full h-auto object-contain"
+            sizes={getResponsiveSizes()}
+            quality={85}
+          />
+        )}
       </div>
     </div>
   )

@@ -176,8 +176,9 @@ export async function GET(
       )
     }
 
-    // Get product photos
-    const photos = await getProductInteriorPhotos(productName)
+    // Get product photos (filter out videos for ZIP download)
+    const allMedia = await getProductInteriorPhotos(productName)
+    const photos = allMedia.filter((p) => p.mediaType !== "video")
 
     if (!photos.length) {
       return NextResponse.json(

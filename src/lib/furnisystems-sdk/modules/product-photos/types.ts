@@ -24,6 +24,7 @@ export interface ProductPhoto {
   category: "INTERIOR_PHOTOS" | "PRODUCT_PHOTOS"
   combination?: string
   fabric?: string
+  mediaType?: "image" | "video"
 }
 
 export interface ProductPhotosResponse {
