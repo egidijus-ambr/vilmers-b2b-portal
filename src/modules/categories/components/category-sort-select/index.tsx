@@ -9,7 +9,6 @@ import {
 import { useRouter, useSearchParams } from "next/navigation"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import { CategorySortOption } from "@lib/furnisystems-sdk/modules/products/types"
-import { useTranslations } from "@lib/i18n"
 
 const SORT_OPTIONS_KEYS: { value: CategorySortOption; labelKey: string }[] = [
   { value: "name_asc", labelKey: "sort-name-asc" },
@@ -18,14 +17,17 @@ const SORT_OPTIONS_KEYS: { value: CategorySortOption; labelKey: string }[] = [
   { value: "oldest", labelKey: "sort-oldest" },
 ]
 
-export default function CategorySortSelect() {
+interface CategorySortSelectProps {
+  labels: Record<string, string>
+}
+
+export default function CategorySortSelect({ labels }: CategorySortSelectProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { t } = useTranslations("common")
 
   const sortOptions = SORT_OPTIONS_KEYS.map((opt) => ({
     value: opt.value,
-    label: t(opt.labelKey),
+    label: labels[opt.labelKey] || opt.labelKey,
   }))
 
   const currentSort = (searchParams.get("sort") as CategorySortOption) || "name_asc"

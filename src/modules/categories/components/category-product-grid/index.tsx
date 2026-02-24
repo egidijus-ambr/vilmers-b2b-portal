@@ -38,7 +38,12 @@ export default async function CategoryProductGrid({
     <div data-testid="category-product-grid">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-600">{t("products-count", { count: totalCount })}</p>
-        <CategorySortSelect />
+        <CategorySortSelect labels={{
+          "sort-name-asc": t("sort-name-asc"),
+          "sort-name-desc": t("sort-name-desc"),
+          "sort-newest": t("sort-newest"),
+          "sort-oldest": t("sort-oldest"),
+        }} />
       </div>
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
         {products.map((container) => (
