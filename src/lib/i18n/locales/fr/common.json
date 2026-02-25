@@ -58,6 +58,10 @@
   "sort-name-desc": "Nom (Z-A)",
   "sort-newest": "Plus récents",
   "sort-oldest": "Plus anciens",
+  "filter": "Filtres",
+  "clear-filters": "Effacer les filtres",
+  "show-results": "Afficher les résultats",
+  "category": "Catégorie",
   "vat-code": "Numéro de TVA",
   "vat-code-placeholder": "Entrez le numéro de TVA"
 }

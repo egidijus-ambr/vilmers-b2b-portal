@@ -58,6 +58,10 @@
   "sort-name-desc": "Name (Z-A)",
   "sort-newest": "Neueste zuerst",
   "sort-oldest": "Älteste zuerst",
+  "filter": "Filter",
+  "clear-filters": "Filter löschen",
+  "show-results": "Ergebnisse anzeigen",
+  "category": "Kategorie",
   "vat-code": "USt-IdNr.",
   "vat-code-placeholder": "USt-IdNr. eingeben"
 }

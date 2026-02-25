@@ -59,6 +59,10 @@
   "sort-name-desc": "Name (Z-A)",
   "sort-newest": "Newest first",
   "sort-oldest": "Oldest first",
+  "filter": "Filters",
+  "clear-filters": "Clear filters",
+  "show-results": "Show results",
+  "category": "Category",
   "vat-code": "VAT code",
   "vat-code-placeholder": "Enter VAT code"
 }

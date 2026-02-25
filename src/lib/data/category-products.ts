@@ -6,11 +6,26 @@ export async function getCategoryProducts(
   categoryPermalink: string,
   language: string,
   page: number = 1,
-  sortBy?: CategorySortOption
+  sortBy?: CategorySortOption,
+  attrIds: number[] = []
 ) {
   // Build filter based on customer tags and price lists
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
   const where = sdk.products.buildWhereFilter(language, customerTagIds, priceListIds)
+
+  // Add attribute filters (AND logic - product must have ALL selected attributes)
+  if (attrIds.length > 0) {
+    if (!where.AND) where.AND = []
+    for (const attrId of attrIds) {
+      where.AND.push({
+        product_attributes: {
+          some: {
+            productAttributeId: { equals: attrId },
+          },
+        },
+      })
+    }
+  }
 
   const graphqlSortBy = SORT_OPTION_TO_GRAPHQL[sortBy ?? 'name_asc']
 

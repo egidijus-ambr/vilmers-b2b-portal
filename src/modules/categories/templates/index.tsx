@@ -7,12 +7,14 @@ import PageContent from "@modules/common/components/page-content"
 import CategoryProductGrid from "@modules/categories/components/category-product-grid"
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
 import ContentBlock from "@modules/home/components/content-block"
+import { getCategoryFilterFacets } from "@lib/data/category-filters"
 
 interface CategoryPageTemplateProps {
   category: CategoryData
   language: string
   page: number
   sortBy?: CategorySortOption
+  attrs?: string
 }
 
 /** Get the localized name from a category's profiles */
@@ -69,15 +71,25 @@ function buildBreadcrumbs(category: CategoryData): BreadcrumbItem[] {
   return items
 }
 
-export default function CategoryPageTemplate({
+export default async function CategoryPageTemplate({
   category,
   language,
   page,
   sortBy,
+  attrs,
 }: CategoryPageTemplateProps) {
   const name = getCategoryName(category)
   const description = getCategoryDescription(category)
   const breadcrumbs = buildBreadcrumbs(category)
+  const categoryPermalink = getCategoryPermalink(category) || ""
+
+  // Parse attribute IDs from URL and fetch filter facets
+  const attrIds = attrs ? attrs.split(",").map(Number).filter(Boolean) : []
+  const filterFacets = await getCategoryFilterFacets(
+    categoryPermalink,
+    language,
+    attrIds
+  )
 
   const contentBlocks = (category.content_blocks ?? [])
     .slice()
@@ -105,10 +117,13 @@ export default function CategoryPageTemplate({
       <PageContent>
         <Suspense fallback={<CategoryProductGridSkeleton />}>
           <CategoryProductGrid
-            categoryPermalink={getCategoryPermalink(category) || ""}
+            categoryPermalink={categoryPermalink}
             language={language as any}
             page={page}
             sortBy={sortBy}
+            attrIds={attrIds}
+            filterFacets={filterFacets}
+            childCategories={category.child_categories ?? []}
           />
         </Suspense>
       </PageContent>

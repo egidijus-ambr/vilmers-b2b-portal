@@ -9,7 +9,10 @@ interface TablePaginationProps {
   itemLabel?: string
 }
 
-function getPageNumbers(currentPage: number, totalPages: number): (number | "ellipsis")[] {
+function getPageNumbers(
+  currentPage: number,
+  totalPages: number
+): (number | "ellipsis")[] {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1)
   }
@@ -45,7 +48,8 @@ export default function TablePagination({
   totalPages,
   onPageChange,
 }: TablePaginationProps) {
-  if (totalPages <= 1) return null
+  if (totalPages <= 1)
+    return <div className="flex justify-center w-full py-6"></div>
 
   const hasNextPage = currentPage < totalPages
   const hasPreviousPage = currentPage > 1

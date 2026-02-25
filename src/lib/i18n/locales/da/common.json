@@ -59,6 +59,10 @@
   "sort-name-desc": "Navn (Z-A)",
   "sort-newest": "Nyeste først",
   "sort-oldest": "Ældste først",
+  "filter": "Filtre",
+  "clear-filters": "Ryd filtre",
+  "show-results": "Vis resultater",
+  "category": "Kategori",
   "vat-code": "Momsnummer",
   "vat-code-placeholder": "Indtast momsnummer"
 }

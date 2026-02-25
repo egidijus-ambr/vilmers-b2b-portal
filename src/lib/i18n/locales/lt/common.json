@@ -58,6 +58,10 @@
   "sort-name-desc": "Pavadinimas (Ž-A)",
   "sort-newest": "Naujausi pirmi",
   "sort-oldest": "Seniausi pirmi",
+  "filter": "Filtrai",
+  "clear-filters": "Išvalyti filtrus",
+  "show-results": "Rodyti rezultatus",
+  "category": "Kategorija",
   "vat-code": "PVM kodas",
   "vat-code-placeholder": "Įveskite PVM kodą"
 }

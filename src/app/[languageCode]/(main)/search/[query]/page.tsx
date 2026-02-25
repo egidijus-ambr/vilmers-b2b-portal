@@ -59,7 +59,9 @@ export default async function SearchResultsPage(props: Props) {
             className="flex items-center justify-center py-12"
             data-testid="no-products"
           >
-            <p className="text-gray-500 text-base">{t("search-no-results", "No products found")}</p>
+            <p className="text-gray-500 text-base">
+              {t("search-no-results", "No products found")}
+            </p>
           </div>
         </PageContent>
       ) : (
@@ -77,14 +79,13 @@ export default async function SearchResultsPage(props: Props) {
                 />
               ))}
             </ul>
-            {totalPages > 1 && (
-              <ProductPagination
-                page={page}
-                totalPages={totalPages}
-                totalCount={totalCount}
-                pageSize={28}
-              />
-            )}
+
+            <ProductPagination
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={28}
+            />
           </div>
         </PageContent>
       )}

@@ -10,7 +10,7 @@ const VALID_SORT_OPTIONS = Object.keys(SORT_OPTION_TO_GRAPHQL) as CategorySortOp
 
 type Props = {
   params: Promise<{ category: string[]; languageCode: string }>
-  searchParams: Promise<{ page?: string; sort?: string }>
+  searchParams: Promise<{ page?: string; sort?: string; attrs?: string }>
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -71,6 +71,7 @@ export default async function CategoryPage(props: Props) {
       language={validLanguage}
       page={page}
       sortBy={sortBy}
+      attrs={searchParams.attrs}
     />
   )
 }
