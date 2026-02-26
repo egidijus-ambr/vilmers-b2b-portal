@@ -6,20 +6,26 @@ export async function GET(request: NextRequest) {
   const permalink = searchParams.get("permalink") || ""
   const language = searchParams.get("language") || "en"
   const attrs = searchParams.get("attrs")
+  const cats = searchParams.get("cats")
 
   const selectedAttributeIds = attrs
     ? attrs.split(",").map(Number).filter(Boolean)
+    : []
+
+  const selectedCategoryIds = cats
+    ? cats.split(",").map(Number).filter(Boolean)
     : []
 
   try {
     const facets = await getCategoryFilterFacets(
       permalink,
       language,
-      selectedAttributeIds
+      selectedAttributeIds,
+      selectedCategoryIds
     )
     return NextResponse.json(facets)
   } catch (error) {
     console.error("Error fetching filter facets:", error)
-    return NextResponse.json({ attributeGroups: [], totalCount: 0 }, { status: 500 })
+    return NextResponse.json({ attributeGroups: [], childCategories: [], totalCount: 0 }, { status: 500 })
   }
 }

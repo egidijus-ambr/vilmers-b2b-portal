@@ -1,9 +1,12 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
+import { listMenuCategories } from "@lib/data/categories"
 import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
+import type { CategoryData } from "@lib/furnisystems-sdk"
 import ProductTemplate, { ProductPageData } from "@modules/products/templates"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
+import type { ProductPageFeature } from "@modules/products/components/product-features-display"
 
 type Props = {
   params: Promise<{ handle: string; languageCode: string }>
@@ -11,7 +14,8 @@ type Props = {
 
 function mapFurnisystemsProduct(
   container: FurnisystemsProductDetail,
-  languageCode: string
+  languageCode: string,
+  rootCategory?: CategoryData
 ): ProductPageData {
   const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
 
@@ -32,25 +36,64 @@ function mapFurnisystemsProduct(
   const imageUrl = mainImage ? mainImage.src_md || mainImage.src : null
 
   // Build breadcrumbs (hrefs without language prefix — LocalizedClientLink adds it)
-  const breadcrumbs: BreadcrumbItem[] = [
-    { label: "Home", href: "/" },
-  ]
+  const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
 
   if (container.primary_category) {
-    const catProfile = container.primary_category.category_profiles[0]
-    if (catProfile) {
-      const catPermalink = catProfile.meta_information?.permalink
-      breadcrumbs.push({
-        label: catProfile.name,
-        href: catPermalink ? `/categories/${catPermalink}` : "/",
-      })
+    // Walk up the parent chain, collect ancestors
+    const chain: typeof container.primary_category[] = []
+    let current: typeof container.primary_category | null = container.primary_category
+    while (current) {
+      chain.push(current)
+      current = current.parent_category ?? null
+    }
+    // Reverse so it goes root → ... → primary_category
+    chain.reverse()
+
+    // Check if root is already in the chain
+    const hasRoot =
+      rootCategory && chain.some((c) => c.id === rootCategory.id)
+
+    if (!hasRoot && rootCategory) {
+      const rootProfile = rootCategory.category_profiles?.[0]
+      if (rootProfile) {
+        const permalink = rootProfile.meta_information?.permalink
+        breadcrumbs.push({
+          label: rootProfile.name,
+          href: permalink ? `/categories/${permalink}` : null,
+        })
+      }
+    }
+
+    for (const cat of chain) {
+      const catProfile = cat.category_profiles?.[0]
+      if (catProfile) {
+        const permalink = catProfile.meta_information?.permalink
+        breadcrumbs.push({
+          label: catProfile.name,
+          href: permalink ? `/categories/${permalink}` : null,
+        })
+      }
     }
   }
 
-  breadcrumbs.push({
-    label: profile?.name ?? "Product",
-    href: null,
-  })
+  breadcrumbs.push({ label: profile?.name ?? "Product", href: null })
+
+  // Map product features (select correct language profile)
+  const features: ProductPageFeature[] = (container.product_features ?? [])
+    .map(f => {
+      const featureProfile = f.product_feature.product_feature_profiles.find(
+        p => p.language.toLowerCase() === languageCode.toLowerCase()
+      ) ?? f.product_feature.product_feature_profiles[0]
+
+      if (!featureProfile) return null
+
+      return {
+        name: featureProfile.name,
+        description: featureProfile.description ?? null,
+        imageUrl: f.product_feature.photo?.src_xs ?? f.product_feature.photo?.src ?? null,
+      }
+    })
+    .filter((f): f is ProductPageFeature => f !== null)
 
   return {
     id: String(container.id),
@@ -58,6 +101,7 @@ function mapFurnisystemsProduct(
     description: profile?.description ?? null,
     imageUrl,
     breadcrumbs,
+    features,
   }
 }
 
@@ -86,13 +130,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { handle, languageCode } = await params
-  const product = await getProductByPermalink(handle, languageCode)
+  const [product, menuCategories] = await Promise.all([
+    getProductByPermalink(handle, languageCode),
+    listMenuCategories(languageCode),
+  ])
 
   if (!product) {
     notFound()
   }
 
-  const productData = mapFurnisystemsProduct(product, languageCode)
+  const rootCategory = menuCategories.find((c) => c.is_root_category)
+  const productData = mapFurnisystemsProduct(product, languageCode, rootCategory)
 
   return <ProductTemplate product={productData} />
 }

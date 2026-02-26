@@ -5,8 +5,10 @@ import B2BProductCard from "@modules/categories/components/category-product-card
 import CategorySortSelect from "@modules/categories/components/category-sort-select"
 import ProductPagination from "@modules/store/components/product-pagination"
 import ProductFilterModal from "@modules/categories/components/product-filter-modal"
-import type { FilterFacetGroup } from "@lib/furnisystems-sdk/modules/filters/types"
-import type { CategoryData } from "@lib/furnisystems-sdk"
+import type {
+  FilterFacetGroup,
+  FilterFacetCategory,
+} from "@lib/furnisystems-sdk/modules/filters/types"
 
 interface CategoryProductGridProps {
   categoryPermalink: string
@@ -14,8 +16,13 @@ interface CategoryProductGridProps {
   page: number
   sortBy?: CategorySortOption
   attrIds?: number[]
-  filterFacets?: { attributeGroups: FilterFacetGroup[]; totalCount: number }
-  childCategories?: CategoryData[]
+  catIds?: number[]
+  filterFacets?: {
+    attributeGroups: FilterFacetGroup[]
+    childCategories: FilterFacetCategory[]
+    totalCount: number
+  }
+  currentCategoryId?: number
 }
 
 export default async function CategoryProductGrid({
@@ -24,8 +31,9 @@ export default async function CategoryProductGrid({
   page,
   sortBy,
   attrIds,
+  catIds,
   filterFacets,
-  childCategories,
+  currentCategoryId,
 }: CategoryProductGridProps) {
   const t = await getServerT("common", language)
   const { products, totalPages, totalCount } = await getCategoryProducts(
@@ -33,19 +41,25 @@ export default async function CategoryProductGrid({
     language,
     page,
     sortBy,
-    attrIds
+    attrIds,
+    catIds
   )
 
   return (
-    <div data-testid="category-product-grid">
+    <div data-testid="category-product-grid pt-6">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-600">
           {t("products-count", { count: totalCount })}
         </p>
         <div className="flex items-center gap-x-3">
           <ProductFilterModal
-            initialFacets={filterFacets || { attributeGroups: [], totalCount }}
-            childCategories={childCategories || []}
+            initialFacets={
+              filterFacets || {
+                attributeGroups: [],
+                childCategories: [],
+                totalCount,
+              }
+            }
             language={language}
             labels={{
               filter: t("filter"),
@@ -53,6 +67,7 @@ export default async function CategoryProductGrid({
               showResults: t("show-results"),
               category: t("category"),
             }}
+            currentCategoryId={currentCategoryId}
           />
           <CategorySortSelect
             labels={{

@@ -23,6 +23,7 @@ export interface CategoryProfileData {
 export interface CategoryData {
   id: number
   show_in_menu: boolean
+  is_root_category: boolean
   parent_categoryId: number | null
   menu_order: number
   image: CategoryImage | null

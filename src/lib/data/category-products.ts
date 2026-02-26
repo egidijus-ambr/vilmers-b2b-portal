@@ -7,7 +7,8 @@ export async function getCategoryProducts(
   language: string,
   page: number = 1,
   sortBy?: CategorySortOption,
-  attrIds: number[] = []
+  attrIds: number[] = [],
+  catIds: number[] = []
 ) {
   // Build filter based on customer tags and price lists
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
@@ -37,6 +38,7 @@ export async function getCategoryProducts(
     where,
     sortBy: graphqlSortBy,
     language,
+    selectedCategoryIds: catIds.length > 0 ? catIds : undefined,
   })
 
   return {

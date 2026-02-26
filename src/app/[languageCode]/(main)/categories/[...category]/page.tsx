@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { getCategoryByPermalink, enrichContentBlocksWithTileCategories } from "@lib/data/categories"
+import { getCategoryByPermalink, enrichContentBlocksWithTileCategories, listMenuCategories } from "@lib/data/categories"
 import { CategorySortOption, SORT_OPTION_TO_GRAPHQL } from "@lib/furnisystems-sdk/modules/products/types"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import CategoryPageTemplate from "@modules/categories/templates"
@@ -10,7 +10,7 @@ const VALID_SORT_OPTIONS = Object.keys(SORT_OPTION_TO_GRAPHQL) as CategorySortOp
 
 type Props = {
   params: Promise<{ category: string[]; languageCode: string }>
-  searchParams: Promise<{ page?: string; sort?: string; attrs?: string }>
+  searchParams: Promise<{ page?: string; sort?: string; attrs?: string; cats?: string }>
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -65,6 +65,9 @@ export default async function CategoryPage(props: Props) {
       )
     : category.content_blocks
 
+  // Fetch menu categories for breadcrumbs and carousel
+  const menuCategories = await listMenuCategories(validLanguage)
+
   return (
     <CategoryPageTemplate
       category={{ ...category, content_blocks: enrichedContentBlocks }}
@@ -72,6 +75,8 @@ export default async function CategoryPage(props: Props) {
       page={page}
       sortBy={sortBy}
       attrs={searchParams.attrs}
+      cats={searchParams.cats}
+      menuCategories={menuCategories}
     />
   )
 }

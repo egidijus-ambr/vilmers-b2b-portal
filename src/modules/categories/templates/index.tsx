@@ -7,6 +7,7 @@ import PageContent from "@modules/common/components/page-content"
 import CategoryProductGrid from "@modules/categories/components/category-product-grid"
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
 import ContentBlock from "@modules/home/components/content-block"
+import ChildCategoriesCarousel from "@modules/categories/components/child-categories-carousel"
 import { getCategoryFilterFacets } from "@lib/data/category-filters"
 
 interface CategoryPageTemplateProps {
@@ -15,6 +16,8 @@ interface CategoryPageTemplateProps {
   page: number
   sortBy?: CategorySortOption
   attrs?: string
+  cats?: string
+  menuCategories?: CategoryData[]
 }
 
 /** Get the localized name from a category's profiles */
@@ -37,9 +40,12 @@ function getCategoryDescription(category: CategoryData): string | null {
 
 /**
  * Build breadcrumb chain from the category's parent_category chain.
- * Returns: Home → parent's parent → parent → Current (no link)
+ * Returns: Home → [root category if missing] → parent's parent → parent → Current (no link)
  */
-function buildBreadcrumbs(category: CategoryData): BreadcrumbItem[] {
+function buildBreadcrumbs(
+  category: CategoryData,
+  menuCategories?: CategoryData[]
+): BreadcrumbItem[] {
   const items: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
 
   // Collect parent chain (walk up parent_category)
@@ -49,9 +55,24 @@ function buildBreadcrumbs(category: CategoryData): BreadcrumbItem[] {
     parents.push(current)
     current = current.parent_category ?? null
   }
-
-  // Reverse so we go from root down
   parents.reverse()
+
+  // Find root category from menu data
+  const rootCategory = menuCategories?.find((c) => c.is_root_category)
+
+  // If current category is not root and root is not in parent chain, inject it
+  const hasRoot =
+    category.is_root_category ||
+    (rootCategory && parents.some((p) => p.id === rootCategory.id))
+
+  if (!hasRoot && rootCategory) {
+    const name = getCategoryName(rootCategory)
+    const permalink = getCategoryPermalink(rootCategory)
+    items.push({
+      label: name,
+      href: permalink ? `/categories/${permalink}` : null,
+    })
+  }
 
   for (const parent of parents) {
     const name = getCategoryName(parent)
@@ -77,18 +98,22 @@ export default async function CategoryPageTemplate({
   page,
   sortBy,
   attrs,
+  cats,
+  menuCategories,
 }: CategoryPageTemplateProps) {
   const name = getCategoryName(category)
   const description = getCategoryDescription(category)
-  const breadcrumbs = buildBreadcrumbs(category)
+  const breadcrumbs = buildBreadcrumbs(category, menuCategories)
   const categoryPermalink = getCategoryPermalink(category) || ""
 
-  // Parse attribute IDs from URL and fetch filter facets
+  // Parse attribute IDs and category IDs from URL and fetch filter facets
   const attrIds = attrs ? attrs.split(",").map(Number).filter(Boolean) : []
+  const catIds = cats ? cats.split(",").map(Number).filter(Boolean) : []
   const filterFacets = await getCategoryFilterFacets(
     categoryPermalink,
     language,
-    attrIds
+    attrIds,
+    catIds
   )
 
   const contentBlocks = (category.content_blocks ?? [])
@@ -102,31 +127,47 @@ export default async function CategoryPageTemplate({
         description={description}
         breadcrumbItems={breadcrumbs}
       />
-      {contentBlocks.length > 0 && (
-        <div>
-          {contentBlocks.map((block, index) => (
-            <ContentBlock
-              key={block.id}
-              data={block}
-              index={index}
-              languageCode={language}
-            />
-          ))}
-        </div>
-      )}
-      <PageContent>
-        <Suspense fallback={<CategoryProductGridSkeleton />}>
-          <CategoryProductGrid
-            categoryPermalink={categoryPermalink}
-            language={language as any}
-            page={page}
-            sortBy={sortBy}
-            attrIds={attrIds}
-            filterFacets={filterFacets}
-            childCategories={category.child_categories ?? []}
+      <div className="w-full bg-white">
+        {contentBlocks.length > 0 && (
+          <div>
+            {contentBlocks.map((block, index) => (
+              <ContentBlock
+                key={block.id}
+                data={block}
+                index={index}
+                languageCode={language}
+              />
+            ))}
+          </div>
+        )}
+        {category.is_root_category && menuCategories ? (
+          <ChildCategoriesCarousel
+            categories={menuCategories.filter((c) => c.id !== category.id)}
+            language={language}
+            languageCode={language}
           />
-        </Suspense>
-      </PageContent>
+        ) : (category.child_categories?.length ?? 0) > 0 ? (
+          <ChildCategoriesCarousel
+            categories={category.child_categories ?? []}
+            language={language}
+            languageCode={language}
+          />
+        ) : null}
+        <PageContent className="pt-8">
+          <Suspense fallback={<CategoryProductGridSkeleton />}>
+            <CategoryProductGrid
+              categoryPermalink={categoryPermalink}
+              language={language as any}
+              page={page}
+              sortBy={sortBy}
+              attrIds={attrIds}
+              catIds={catIds}
+              filterFacets={filterFacets}
+              currentCategoryId={category.id}
+            />
+          </Suspense>
+        </PageContent>
+      </div>
     </div>
   )
 }

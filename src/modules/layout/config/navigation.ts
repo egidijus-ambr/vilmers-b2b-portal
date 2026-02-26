@@ -192,18 +192,40 @@ export function categoriesToDropdownItems(
 /**
  * Build menu items with dynamic product categories from the database.
  * Replaces only the "products" menu item; keeps inspiration, about, contact unchanged.
+ *
+ * If a category has is_root_category=true, all OTHER root-level categories
+ * become its children in the dropdown alongside its own DB children.
  */
 export function buildDynamicMenuItems(
   categories: CategoryData[],
   t: TranslationFunction
 ): MenuItem[] {
   const staticConfig = getNavigationConfig(t)
-  const dynamicItems = categoriesToDropdownItems(categories)
+
+  const rootCategory = categories.find((cat) => cat.is_root_category)
+
+  let dynamicItems: DropdownItem[]
+
+  if (rootCategory) {
+    const otherCategories = categories.filter(
+      (cat) => cat.id !== rootCategory.id && cat.show_in_menu
+    )
+    const ownChildren = rootCategory.child_categories ?? []
+    const ownVisibleChildren = ownChildren.filter((c) => c.show_in_menu)
+    const ownItems = categoriesToDropdownItems(ownVisibleChildren)
+    const otherItems = categoriesToDropdownItems(otherCategories)
+    dynamicItems = [...ownItems, ...otherItems]
+  } else {
+    dynamicItems = categoriesToDropdownItems(categories)
+  }
 
   return staticConfig.menuItems.map((item) => {
     if (item.id === "products") {
       return {
         ...item,
+        href: rootCategory
+          ? buildCategoryHref(getCategoryPermalink(rootCategory))
+          : null,
         dropdown: {
           width: "w-auto min-w-48 max-w-64",
           layout: "single-column" as const,

@@ -3,6 +3,8 @@ import Image from "next/image"
 import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
+import ProductFeaturesDisplay from "@modules/products/components/product-features-display"
+import type { ProductPageFeature } from "@modules/products/components/product-features-display"
 
 export type ProductPageData = {
   id: string
@@ -10,6 +12,7 @@ export type ProductPageData = {
   description: string | null
   imageUrl: string | null
   breadcrumbs: BreadcrumbItem[]
+  features: ProductPageFeature[]
 }
 
 type ProductTemplateProps = {
@@ -24,7 +27,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
         <div data-testid="product-container" className="flex flex-col md:flex-row gap-8">
           <div className="md:w-3/5">
             {product.imageUrl ? (
-              <div className="card">
+              <div className="card p-0">
                 <Image
                   src={product.imageUrl}
                   alt={product.title}
@@ -48,6 +51,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
                 dangerouslySetInnerHTML={{ __html: product.description }}
               />
             )}
+            <ProductFeaturesDisplay features={product.features} />
           </div>
         </div>
       </PageContent>

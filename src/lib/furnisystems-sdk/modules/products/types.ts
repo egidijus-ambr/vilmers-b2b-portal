@@ -76,6 +76,25 @@ export interface SearchProductsResponse {
   sortedBySearchTermPositionProductContainers: CategoryProductsResponse
 }
 
+// Product feature types
+export interface ProductFeatureProfile {
+  name: string
+  description: string | null
+  language: string
+}
+
+export interface ProductFeaturePhoto {
+  src_xs: string | null
+  src: string
+}
+
+export interface ProductFeatureData {
+  product_feature: {
+    photo: ProductFeaturePhoto | null
+    product_feature_profiles: ProductFeatureProfile[]
+  }
+}
+
 // Product detail types for single product page
 export interface FurnisystemsProductDetail {
   id: number
@@ -113,6 +132,7 @@ export interface FurnisystemsProductDetail {
   } | null
   primary_category: {
     id: number
+    is_root_category?: boolean
     category_profiles: {
       name: string
       language: string
@@ -120,7 +140,30 @@ export interface FurnisystemsProductDetail {
         permalink: string
       } | null
     }[]
+    parent_category?: {
+      id: number
+      is_root_category?: boolean
+      category_profiles: {
+        name: string
+        language: string
+        meta_information: {
+          permalink: string
+        } | null
+      }[]
+      parent_category?: {
+        id: number
+        is_root_category?: boolean
+        category_profiles: {
+          name: string
+          language: string
+          meta_information: {
+            permalink: string
+          } | null
+        }[]
+      } | null
+    } | null
   } | null
+  product_features: ProductFeatureData[] | null
 }
 
 export interface FindProductByPermalinkResponse {

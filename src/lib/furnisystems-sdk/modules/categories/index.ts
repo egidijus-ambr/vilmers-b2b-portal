@@ -17,6 +17,7 @@ const FIND_MENU_CATEGORIES = gql`
     ) {
       id
       show_in_menu
+      is_root_category
       parent_categoryId
       menu_order
       image {
@@ -41,7 +42,7 @@ const FIND_MENU_CATEGORIES = gql`
           meta_description
         }
       }
-      child_categories {
+      child_categories(orderBy: { menu_order: asc }) {
         id
         show_in_menu
         parent_categoryId
@@ -60,7 +61,7 @@ const FIND_MENU_CATEGORIES = gql`
             meta_description
           }
         }
-        child_categories {
+        child_categories(orderBy: { menu_order: asc }) {
           id
           show_in_menu
           parent_categoryId
@@ -79,7 +80,7 @@ const FIND_MENU_CATEGORIES = gql`
               meta_description
             }
           }
-          child_categories {
+          child_categories(orderBy: { menu_order: asc }) {
             id
             show_in_menu
             parent_categoryId
@@ -120,6 +121,7 @@ const FIND_CATEGORY_BY_PERMALINK = gql`
     ) {
       id
       show_in_menu
+      is_root_category
       parent_categoryId
       menu_order
       image {
@@ -242,6 +244,14 @@ const FIND_CATEGORY_BY_PERMALINK = gql`
         id
         show_in_menu
         menu_order
+        image {
+          id
+          src
+        }
+        image_icon {
+          id
+          src
+        }
         category_profiles(
           where: { language: { equals: $language } }
         ) {

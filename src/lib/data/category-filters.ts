@@ -4,7 +4,8 @@ import { getCustomerFilterData } from "./customer"
 export async function getCategoryFilterFacets(
   categoryPermalink: string,
   language: string,
-  selectedAttributeIds: number[] = []
+  selectedAttributeIds: number[] = [],
+  selectedCategoryIds: number[] = []
 ) {
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
   const where = sdk.products.buildWhereFilter(
@@ -17,6 +18,7 @@ export async function getCategoryFilterFacets(
     categoryPermalink,
     language,
     selectedAttributeIds,
+    selectedCategoryIds,
     where,
   })
 }

@@ -34,11 +34,9 @@ export default function ProductPhotosPage() {
     return null // Will redirect
   }
 
-  console.log("Rendering ProductPhotosPage with products:", products)
-
   return (
-    <div className="w-full" data-testid="product-photos-page-wrapper">
-      <div className="w-full">
+    <div className="w-full " data-testid="product-photos-page-wrapper">
+      <div className="w-full mt-6">
         <div className="mb-4 flex flex-col gap-y-2">
           <h1 className="text-2xl-semi">Product Photos</h1>
         </div>
@@ -59,7 +57,7 @@ export default function ProductPhotosPage() {
           {!productsLoading && (
             <div>
               {productsWithPhotos.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
                   {productsWithPhotos.map((product) => (
                     <Link
                       key={product.name}

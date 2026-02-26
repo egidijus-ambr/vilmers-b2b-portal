@@ -27,7 +27,10 @@ export default function ProductPhotosLayout({
 
   return (
     <ProductPhotosProvider>
-      <div className="w-full" data-testid="product-photos-layout-wrapper">
+      <div
+        className="content-container mt-4 px-6 large:px-0"
+        data-testid="product-photos-layout-wrapper"
+      >
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
           {/* Left sidebar navigation - persistent across all product photo pages */}
           <div className="hidden lg:block">

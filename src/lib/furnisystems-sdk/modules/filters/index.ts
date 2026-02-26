@@ -7,12 +7,14 @@ const GET_CATEGORY_FILTER_FACETS = gql`
     $categoryPermalink: String!
     $language: String!
     $selectedAttributeIds: [Int!]
+    $selectedCategoryIds: [Int!]
     $where: ProductContainerWhereInput
   ) {
     categoryFilterFacets(
       categoryPermalink: $categoryPermalink
       language: $language
       selectedAttributeIds: $selectedAttributeIds
+      selectedCategoryIds: $selectedCategoryIds
       where: $where
     ) {
       attributeGroups {
@@ -23,6 +25,11 @@ const GET_CATEGORY_FILTER_FACETS = gql`
           name
           count
         }
+      }
+      childCategories {
+        id
+        name
+        count
       }
       totalCount
     }
@@ -36,9 +43,10 @@ export class FiltersModule {
     categoryPermalink: string
     language: string
     selectedAttributeIds?: number[]
+    selectedCategoryIds?: number[]
     where?: any
   }) {
-    const { categoryPermalink, language, selectedAttributeIds, where } = params
+    const { categoryPermalink, language, selectedAttributeIds, selectedCategoryIds, where } = params
     try {
       const response = await this.client.query<CategoryFilterFacetsResponse>(
         GET_CATEGORY_FILTER_FACETS,
@@ -49,6 +57,9 @@ export class FiltersModule {
             selectedAttributeIds: selectedAttributeIds?.length
               ? selectedAttributeIds
               : null,
+            selectedCategoryIds: selectedCategoryIds?.length
+              ? selectedCategoryIds
+              : null,
             where,
           },
           fetchPolicy: "no-cache",
@@ -58,7 +69,7 @@ export class FiltersModule {
       return response.categoryFilterFacets
     } catch (error) {
       console.error("Error fetching category filter facets:", error)
-      return { attributeGroups: [], totalCount: 0 }
+      return { attributeGroups: [], childCategories: [], totalCount: 0 }
     }
   }
 }

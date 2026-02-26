@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import {
   DropdownContainer,
@@ -54,6 +55,9 @@ export default function NavMenuItem({
   onSubSubmenuLeave,
   triggerClassName,
 }: NavMenuItemProps) {
+  const router = useRouter()
+  const { languageCode } = useParams() as { languageCode: string }
+
   if (item.type === "link") {
     return (
       <LocalizedClientLink
@@ -78,6 +82,7 @@ export default function NavMenuItem({
       >
         <DropdownTrigger
           isOpen={activeDropdown === item.id}
+          onClick={item.href ? () => router.push(`/${languageCode}${item.href}`) : undefined}
           className={
             triggerClassName ||
             `h-full px-4 py-2 text-sm font-medium font-['Montserrat'] whitespace-nowrap ${

@@ -75,6 +75,7 @@ const GET_CATEGORY_PRODUCTS = gql`
     $where: ProductContainerWhereInput
     $sortBy: CategoryProductSortBy
     $language: String
+    $selectedCategoryIds: [Int!]
   ) {
     sortedByCategoryPositionProductContainers(
       categoryPermalink: $categoryPermalink
@@ -83,6 +84,7 @@ const GET_CATEGORY_PRODUCTS = gql`
       where: $where
       sortBy: $sortBy
       language: $language
+      selectedCategoryIds: $selectedCategoryIds
     ) {
       numberOfPages
       productsCount
@@ -193,11 +195,47 @@ const GET_PRODUCT_BY_PERMALINK = gql`
       }
       primary_category {
         id
+        is_root_category
         category_profiles(where: { language: { equals: $language } }) {
           name
           language
           meta_information {
             permalink
+          }
+        }
+        parent_category {
+          id
+          is_root_category
+          category_profiles(where: { language: { equals: $language } }) {
+            name
+            language
+            meta_information {
+              permalink
+            }
+          }
+          parent_category {
+            id
+            is_root_category
+            category_profiles(where: { language: { equals: $language } }) {
+              name
+              language
+              meta_information {
+                permalink
+              }
+            }
+          }
+        }
+      }
+      product_features(orderBy: [{ display_order: asc }]) {
+        product_feature {
+          photo {
+            src_xs
+            src
+          }
+          product_feature_profiles {
+            name
+            description
+            language
           }
         }
       }
@@ -325,8 +363,9 @@ export class ProductsModule {
     where?: any
     sortBy?: string
     language?: string
+    selectedCategoryIds?: number[]
   }): Promise<CategoryProductsResponse> {
-    const { permalink, page, perPage = 28, where, sortBy, language } = params
+    const { permalink, page, perPage = 28, where, sortBy, language, selectedCategoryIds } = params
 
     try {
       const response =
@@ -340,6 +379,7 @@ export class ProductsModule {
               where,
               sortBy,
               language,
+              selectedCategoryIds: selectedCategoryIds?.length ? selectedCategoryIds : null,
             },
             fetchPolicy: "no-cache",
             errorPolicy: "all",
@@ -438,12 +478,44 @@ export class ProductsModule {
         } | null
         primary_category: {
           id: number
+          is_root_category?: boolean
           category_profiles: {
             name: string
             language: string
             meta_information: { permalink: string } | null
           }[]
+          parent_category?: {
+            id: number
+            is_root_category?: boolean
+            category_profiles: {
+              name: string
+              language: string
+              meta_information: { permalink: string } | null
+            }[]
+            parent_category?: {
+              id: number
+              is_root_category?: boolean
+              category_profiles: {
+                name: string
+                language: string
+                meta_information: { permalink: string } | null
+              }[]
+            } | null
+          } | null
         } | null
+        product_features: {
+          product_feature: {
+            photo: {
+              src_xs: string | null
+              src: string
+            } | null
+            product_feature_profiles: {
+              name: string
+              description: string | null
+              language: string
+            }[]
+          }
+        }[] | null
       } | null
     }
 

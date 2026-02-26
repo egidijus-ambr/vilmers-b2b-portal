@@ -53,7 +53,7 @@ export default function ContentBlock({
   const hasMaxHeight = data.max_height != null || extraCss.maxHeight != null
 
   const sectionStyle: React.CSSProperties = {
-    ...(data.default_margins ? { marginBottom: "40px" } : { margin: "auto" }),
+    ...(data.default_margins ? { marginBottom: "20px" } : { margin: "auto" }),
     ...(data.max_height != null && { maxHeight: data.max_height }),
     ...(data.max_width != null && { maxWidth: data.max_width }),
     ...(data.min_height != null && { minHeight: data.min_height }),
@@ -837,7 +837,7 @@ function CategoryTiles({
       <div
         className="grid w-full"
         style={{
-          gridTemplateColumns: `repeat(${tiles.length}, 1fr)`,
+          gridTemplateColumns: `repeat(${tiles.length}, minmax(250px, 1fr))`,
         }}
       >
         {tiles.map((category) => {
@@ -859,7 +859,7 @@ function CategoryTiles({
               href={href}
               className="group relative block overflow-hidden"
             >
-              <div className="h-[600px] w-full">
+              <div className="h-[450px] md:h-[600px] w-full">
                 {imageSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
