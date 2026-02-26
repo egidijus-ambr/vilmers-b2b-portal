@@ -835,7 +835,7 @@ function CategoryTiles({
   return (
     <div className="content-container">
       <div
-        className="grid w-full"
+        className="grid w-full overflow-hidden"
         style={{
           gridTemplateColumns: `repeat(${tiles.length}, minmax(250px, 1fr))`,
         }}
