@@ -1,3 +1,5 @@
+import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
+
 export type ContentBlockType =
   | "text_and_image"
   | "text_and_video"
@@ -8,6 +10,7 @@ export type ContentBlockType =
   | "button"
   | "photo_links"
   | "category_tiles"
+  | "product_grid"
 
 export type ContentBlockStyle =
   | "1_column_title_top"
@@ -93,6 +96,7 @@ export interface ContentBlockData {
   linked_items?: ContentBlockLinkedItem[]
   config?: Record<string, unknown> | null
   categories?: CategoryTileItem[]
+  products?: ProductContainer[]
 }
 
 export interface ContentBlockProps {

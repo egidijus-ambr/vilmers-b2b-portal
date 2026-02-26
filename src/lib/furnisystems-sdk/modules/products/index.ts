@@ -5,6 +5,7 @@ import {
   SortedByCategoryPositionResponse,
   SearchProductsResponse,
   FurnisystemsProductDetail,
+  ProductContainer,
 } from "./types"
 
 const PRODUCT_CARD_FRAGMENT = gql`
@@ -437,6 +438,114 @@ export class ProductsModule {
         productsCount: 0,
         sortedProductContainers: [],
       }
+    }
+  }
+
+  async getNewestProducts(
+    take: number,
+    language: string
+  ): Promise<ProductContainer[]> {
+    try {
+      const response = await this.client.query<{
+        findManyProductContainer: ProductContainer[]
+      }>(
+        gql`
+          ${PRODUCT_CARD_FRAGMENT}
+          query GetNewestProducts($take: Int!, $language: Language) {
+            findManyProductContainer(
+              take: $take
+              orderBy: { createdAt: desc }
+              where: {
+                visible: { equals: true }
+                OR: [
+                  {
+                    single_product: {
+                      is: {
+                        product_profiles: {
+                          some: { language: { equals: $language } }
+                        }
+                      }
+                    }
+                  }
+                  {
+                    advanced_product: {
+                      is: {
+                        advanced_product_profiles: {
+                          some: { language: { equals: $language } }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ) {
+              ...ProductCardFields
+            }
+          }
+        `,
+        {
+          variables: { take, language },
+          fetchPolicy: "no-cache",
+        }
+      )
+      return response?.findManyProductContainer ?? []
+    } catch (error) {
+      console.error("Error fetching newest products:", error)
+      return []
+    }
+  }
+
+  async getProductsByIds(
+    ids: number[],
+    language: string
+  ): Promise<ProductContainer[]> {
+    if (ids.length === 0) return []
+    try {
+      const response = await this.client.query<{
+        findManyProductContainer: ProductContainer[]
+      }>(
+        gql`
+          ${PRODUCT_CARD_FRAGMENT}
+          query GetProductsByIds($ids: [Int!]!, $language: Language) {
+            findManyProductContainer(
+              where: {
+                id: { in: $ids }
+                visible: { equals: true }
+                OR: [
+                  {
+                    single_product: {
+                      is: {
+                        product_profiles: {
+                          some: { language: { equals: $language } }
+                        }
+                      }
+                    }
+                  }
+                  {
+                    advanced_product: {
+                      is: {
+                        advanced_product_profiles: {
+                          some: { language: { equals: $language } }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ) {
+              ...ProductCardFields
+            }
+          }
+        `,
+        {
+          variables: { ids, language },
+          fetchPolicy: "no-cache",
+        }
+      )
+      return response?.findManyProductContainer ?? []
+    } catch (error) {
+      console.error("Error fetching products by IDs:", error)
+      return []
     }
   }
 

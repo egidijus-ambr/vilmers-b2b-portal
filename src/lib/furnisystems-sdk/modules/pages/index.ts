@@ -88,6 +88,9 @@ export const FIND_PAGE_BY_CODE = gql`
           }
         }
         config
+        product_containers {
+          id
+        }
       }
     }
   }
@@ -189,6 +192,9 @@ export const FIND_PAGE_BY_SLUG = gql`
           }
         }
         config
+        product_containers {
+          id
+        }
       }
     }
   }

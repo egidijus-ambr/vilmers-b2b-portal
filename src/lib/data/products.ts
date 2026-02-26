@@ -6,6 +6,7 @@ import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
+import { ContentBlock, ProductContainer } from "@lib/furnisystems-sdk"
 
 export const listProducts = async ({
   pageParam = 1,
@@ -133,4 +134,49 @@ export const listProductsWithSort = async ({
     nextPage,
     queryParams,
   }
+}
+
+export async function enrichContentBlocksWithProducts(
+  blocks: ContentBlock[],
+  language: string
+): Promise<ContentBlock[]> {
+  if (!blocks.some((block) => block.type === "product_grid")) {
+    return blocks
+  }
+
+  // Process each product_grid block
+  const enrichedBlocks = await Promise.all(
+    blocks.map(async (block) => {
+      if (block.type !== "product_grid") {
+        return block
+      }
+
+      const config = block.config as {
+        mode?: string
+        max_products?: number
+      } | null
+      const mode = config?.mode || "newest"
+      const maxProducts = config?.max_products || 8
+
+      let products: ProductContainer[] = []
+
+      if (mode === "newest") {
+        products = await sdk.products.getNewestProducts(maxProducts, language)
+      } else if (mode === "manual") {
+        const productIds = (block.product_containers ?? []).map(
+          (pc) => pc.id
+        )
+        if (productIds.length > 0) {
+          products = await sdk.products.getProductsByIds(productIds, language)
+        }
+      }
+
+      return {
+        ...block,
+        products,
+      }
+    })
+  )
+
+  return enrichedBlocks
 }

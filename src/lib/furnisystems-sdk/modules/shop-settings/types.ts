@@ -1,3 +1,5 @@
+import type { ProductContainer } from '../products/types'
+
 export interface EnabledLanguage {
   id: string
   language: string
@@ -52,7 +54,7 @@ export interface CategoryTileItem {
 
 export interface ContentBlock {
   id: string
-  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button" | "photo_links" | "category_tiles"
+  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button" | "photo_links" | "category_tiles" | "product_grid"
   style: string | null
   video_link: string | null
   video_type: "uploaded" | "youtube" | "vimeo" | null
@@ -84,6 +86,8 @@ export interface ContentBlock {
   linked_items?: ContentBlockLinkedItem[]
   config?: Record<string, unknown> | null
   categories?: CategoryTileItem[]
+  products?: ProductContainer[]
+  product_containers?: { id: number }[]
 }
 
 export interface ShopSetting {

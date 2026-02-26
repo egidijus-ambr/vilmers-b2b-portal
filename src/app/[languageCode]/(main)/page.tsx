@@ -9,6 +9,7 @@ import { getRegion } from "@lib/data/regions"
 import { getShopSettings } from "@lib/data/shop-settings"
 import { getPageByCode } from "@lib/data/pages"
 import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
+import { enrichContentBlocksWithProducts } from "@lib/data/products"
 
 export const metadata: Metadata = {
   title: "Vilmers - Comfort and Quality with Smart Design",
@@ -66,7 +67,7 @@ export default async function Home(props: {
     getPageByCode("home-page", languageCode),
   ])
 
-  const contentBlocks = await enrichContentBlocksWithTileCategories(
+  let contentBlocks = await enrichContentBlocksWithTileCategories(
     (
       homePage?.content_blocks ??
       shopSettings?.homepage_content_blocks ??
@@ -76,6 +77,7 @@ export default async function Home(props: {
       .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0)),
     languageCode
   )
+  contentBlocks = await enrichContentBlocksWithProducts(contentBlocks, languageCode)
 
   // Always render Hero, make FeaturedProducts conditional
   return (

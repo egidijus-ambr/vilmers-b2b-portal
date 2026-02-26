@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { Shape, Group, Rect, Circle, Image, Line } from 'react-konva'
-import { haveIntersection } from '../utils'
+import React, { useCallback, useEffect, useState } from "react"
+import { Shape, Group, Rect, Circle, Image, Line } from "react-konva"
+import { haveIntersection } from "../utils"
 import {
   ANGLE_CORNER_ANGLE,
   ARMS_REST_WIDTH,
@@ -11,21 +11,23 @@ import {
   METRIC_SIZE,
   SHADOW_WIDTH,
   STANDART_PILLOW_SIZE,
-} from './constants'
-import { HorizontalMetric, VerticalMetric } from './MetricLines'
-import Konva from 'konva'
-import PillowComponent from './PillowComponent'
+} from "./constants"
+import { HorizontalMetric, VerticalMetric } from "./MetricLines"
+import Konva from "konva"
+import PillowComponent from "./PillowComponent"
 
-import Gizmo from '../Gizmo'
-import { drawShapeLeft, drawShapeRight } from './ANGLECORNER'
+import Gizmo from "../Gizmo"
+import { drawShapeLeft, drawShapeRight } from "./ANGLECORNER"
 
 export const getDefaultSettings = () => {
   return {
     dimensions: {
       width: 100,
       length: 100,
-      armrestPosition: '',
+      armrestPosition: "",
       angle: 30,
+      corner_part_length: 100,
+
       number_of_big_pillows: 0,
       spread_of_big_pillows: STANDART_PILLOW_SIZE,
       size_of_big_pillow: STANDART_PILLOW_SIZE,
@@ -40,7 +42,7 @@ export const getDefaultSettings = () => {
       armrest_width: true,
       backrest_width: true,
       angle: true,
-      //corner_part_length: true,
+      corner_part_length: true,
 
       number_of_big_pillows: true,
       //number_of_small_pillows: true,
@@ -58,10 +60,10 @@ export const getDefaultSettings = () => {
 
 export const getDimensions = ({ shapeWidth, shapeHeight, angle }) => {
   return {
-    armrestPosition: 'R',
+    armrestPosition: "R",
     connectors: [
       {
-        type: 'left',
+        type: "left",
         x: 0,
         y: 0,
         rotation: 0,
@@ -250,7 +252,7 @@ const ANGLECORNERLCHR = ({
     }
 
     // Check for overlaps and add rotation adjustment if needed
-    const checkForOverlaps = pillows => {
+    const checkForOverlaps = (pillows) => {
       return pillows.map((pillow, index) => {
         let hasOverlap = false
 
@@ -297,7 +299,7 @@ const ANGLECORNERLCHR = ({
       pillowSpacing
     )
 
-    const newPillows = interpolatedPoints.map(pillow => ({
+    const newPillows = interpolatedPoints.map((pillow) => ({
       x: pillow.x,
       y: pillow.y,
       rotation: pillow.rotation,
@@ -321,7 +323,7 @@ const ANGLECORNERLCHR = ({
   })
   const connectors = dimensions.connectors
   // A function that limits exit of View zone
-  const dragBound = e => {
+  const dragBound = (e) => {
     // ---
     // console.log('incoking drag bound e :>> ', e)
     let pos = e
@@ -350,7 +352,7 @@ const ANGLECORNERLCHR = ({
     <Group
       id={id}
       draggable={draggable}
-      name={'sofa_shape_group'}
+      name={"sofa_shape_group"}
       width={shapeWidth}
       height={shapeHeight}
       type="ANGLECORNERLCHR"
@@ -358,7 +360,7 @@ const ANGLECORNERLCHR = ({
       y={y}
       originalWidth={width}
       originalHeight={height}
-      dragBoundFunc={e => dragBound(e)}
+      dragBoundFunc={(e) => dragBound(e)}
       originalSofaForm={originalSofaForm}
       connectors={props.enabled_connectors == false ? [] : connectors}
       rotation={rotation}
@@ -409,7 +411,7 @@ const ANGLECORNERLCHR = ({
         }}
         stroke="black"
         strokeWidth={1}
-        name={'sofa_shape'}
+        name={"sofa_shape"}
         rotation={0}
       />
 
@@ -435,7 +437,7 @@ const ANGLECORNERLCHR = ({
             size={backPillowSize}
             stroke="black"
             strokeWidth={1}
-            fill={'#ddd'}
+            fill={"#ddd"}
           />
         ))}
       </Group>

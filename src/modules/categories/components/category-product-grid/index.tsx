@@ -46,7 +46,7 @@ export default async function CategoryProductGrid({
   )
 
   return (
-    <div data-testid="category-product-grid pt-6">
+    <div data-testid="category-product-grid">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-600">
           {t("products-count", { count: totalCount })}

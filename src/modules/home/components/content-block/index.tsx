@@ -11,6 +11,9 @@ import {
 import VideoPlayer from "./video-player"
 import ArrowLeft from "@modules/common/icons/arrow-left"
 import ArrowRight from "@modules/common/icons/arrow-right"
+import B2BProductCard from "@modules/categories/components/category-product-card"
+import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
+import { SupportedLanguage } from "@lib/i18n"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -158,6 +161,17 @@ export default function ContentBlock({
         <CategoryTiles
           tiles={data.categories ?? []}
           languageCode={languageCode}
+        />
+      )}
+
+      {data.type === "product_grid" && (
+        <ProductGrid
+          products={data.products ?? []}
+          title={profile?.name ?? null}
+          description={profile?.description ?? null}
+          languageCode={languageCode}
+          backgroundColor={data.background_color}
+          textColor={data.text_color}
         />
       )}
     </section>
@@ -513,7 +527,7 @@ function ThreeColumnsTitleLeft({
 
   return (
     <div
-      className="content-container py-10 small:py-16 large:px-0 px-6"
+      className="content-container py-10 small:py-12 large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className="grid grid-cols-1 gap-8 small:grid-cols-3 small:gap-12">
@@ -584,7 +598,7 @@ function TwoColumnsTitleTopCenter({
 
   return (
     <div
-      className="content-container py-10 small:py-16 large:px-0 px-6"
+      className="content-container py-10 small:py-12 large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {/* Centered title */}
@@ -1202,5 +1216,65 @@ function GallerySpreadHarmony({
         </div>
       </div>
     </>
+  )
+}
+
+/* ─── Product Grid ────────────────────────────────────────── */
+
+function ProductGrid({
+  products,
+  title,
+  description,
+  languageCode,
+  backgroundColor,
+  textColor,
+}: {
+  products: ProductContainer[]
+  title: string | null
+  description: string | null
+  languageCode: string
+  backgroundColor: string | null
+  textColor: string | null
+}) {
+  if (products.length === 0 && !title && !description) return null
+
+  return (
+    <div
+      className="content-container py-10 small:py-12  large:px-0 px-6"
+      style={backgroundColor ? { backgroundColor } : undefined}
+    >
+      {title && (
+        <h3
+          className="mb-6 text-left text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm "
+          style={textColor ? { color: textColor } : undefined}
+        >
+          {title.split("\\n").map((line, i) => (
+            <span key={i}>
+              {line}
+              {i < title.split("\\n").length - 1 && <br />}
+            </span>
+          ))}
+        </h3>
+      )}
+      {description && (
+        <p
+          className="mb-8 text-base font-normal leading-6 text-gray-600"
+          style={textColor ? { color: textColor } : undefined}
+        >
+          {description}
+        </p>
+      )}
+      {products.length > 0 && (
+        <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+          {products.map((container) => (
+            <B2BProductCard
+              key={container.id}
+              container={container}
+              language={languageCode as SupportedLanguage}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
