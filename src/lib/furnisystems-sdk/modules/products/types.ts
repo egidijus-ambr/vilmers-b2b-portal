@@ -60,6 +60,13 @@ export interface ProductContainer {
   discount: ProductDiscount | null
   single_product: SingleProduct | null
   advanced_product: AdvancedProduct | null
+  primary_category?: {
+    id: number
+    category_profiles: {
+      name: string
+      language: string
+    }[]
+  } | null
 }
 
 export interface CategoryProductsResponse {

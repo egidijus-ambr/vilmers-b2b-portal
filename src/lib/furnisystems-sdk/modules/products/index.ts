@@ -64,6 +64,13 @@ const PRODUCT_CARD_FRAGMENT = gql`
         }
       }
     }
+    primary_category {
+      id
+      category_profiles {
+        name
+        language
+      }
+    }
   }
 `
 

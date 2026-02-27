@@ -11,6 +11,13 @@ function extractProductDisplayData(
   const isAdvanced =
     container.type === "AdvancedProduct" || !!container.advanced_product
 
+  const categoryName =
+    container.primary_category?.category_profiles?.find(
+      (p) => p.language === language
+    )?.name ??
+    container.primary_category?.category_profiles?.[0]?.name ??
+    null
+
   if (isAdvanced && container.advanced_product) {
     const product = container.advanced_product
     const profile =
@@ -29,6 +36,7 @@ function extractProductDisplayData(
         language,
       }),
       isFromPrice: true,
+      categoryName,
     }
   }
 
@@ -41,6 +49,7 @@ function extractProductDisplayData(
       image: null,
       priceLabel: "",
       isFromPrice: false,
+      categoryName,
     }
 
   const profile =
@@ -67,6 +76,7 @@ function extractProductDisplayData(
     image: image?.src_md || image?.src || null,
     priceLabel: formatPrice({ amount: price, language }),
     isFromPrice: false,
+    categoryName,
   }
 }
 
@@ -79,7 +89,7 @@ export default function B2BProductCard({
   container,
   language,
 }: B2BProductCardProps) {
-  const { name, handle, image, priceLabel, isFromPrice } =
+  const { name, handle, image, priceLabel, isFromPrice, categoryName } =
     extractProductDisplayData(container, language)
 
   return (
@@ -101,6 +111,11 @@ export default function B2BProductCard({
             <div className="flex h-full items-center justify-center text-gray-400">
               No image
             </div>
+          )}
+          {categoryName && (
+            <span className="absolute top-3 left-3 z-10 rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue ">
+              {categoryName}
+            </span>
           )}
         </div>
         <div className="flex flex-col gap-1">
