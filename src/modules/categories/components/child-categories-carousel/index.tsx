@@ -126,7 +126,7 @@ export default function ChildCategoriesCarousel({
                 href={`/${languageCode}/categories/${permalink}`}
                 className="flex shrink-0 snap-start flex-col items-center gap-3 transition-opacity hover:opacity-80"
               >
-                <div className="flex h-[100px] w-[100px] md:h-[162px] md:w-[162px] items-center justify-center overflow-hidden rounded-full bg-gold-10">
+                <div className="flex h-[100px] w-[100px] md:h-[162px] md:w-[162px] items-center justify-center overflow-hidden rounded-full bg-gold-20">
                   {imageSrc ? (
                     <Image
                       src={imageSrc}

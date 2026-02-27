@@ -88,7 +88,7 @@ export default function B2BProductCard({
         href={handle ? `/products/${handle}` : null}
         className="flex flex-col gap-2 no-underline"
       >
-        <div className="relative aspect-[325/380] w-full overflow-hidden bg-gold-10">
+        <div className="relative aspect-[325/380] w-full overflow-hidden bg-gold-20">
           {image ? (
             <Image
               src={image}

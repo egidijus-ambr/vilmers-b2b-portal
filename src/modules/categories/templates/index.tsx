@@ -127,7 +127,7 @@ export default async function CategoryPageTemplate({
         description={description}
         breadcrumbItems={breadcrumbs}
       />
-      <div className="w-full bg-white">
+      <div className="w-full">
         {contentBlocks.length > 0 && (
           <div>
             {contentBlocks.map((block, index) => (
