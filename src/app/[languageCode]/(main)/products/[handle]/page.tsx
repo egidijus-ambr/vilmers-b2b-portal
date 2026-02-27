@@ -32,8 +32,6 @@ function mapFurnisystemsProduct(
   const sortedImages = [...images].sort(
     (a, b) => a.display_order - b.display_order
   )
-  const mainImage = sortedImages[0]
-  const imageUrl = mainImage ? mainImage.src_md || mainImage.src : null
 
   // Build breadcrumbs (hrefs without language prefix — LocalizedClientLink adds it)
   const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
@@ -99,7 +97,8 @@ function mapFurnisystemsProduct(
     id: String(container.id),
     title: profile?.name ?? "Product",
     description: profile?.description ?? null,
-    imageUrl,
+    images: sortedImages,
+    productName: profile?.name?.split(' ')[0] ?? null,
     breadcrumbs,
     features,
   }

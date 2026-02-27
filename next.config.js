@@ -157,6 +157,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "storage.googleapis.com",
       },
+      {
+        protocol: "https",
+        hostname: "sftp-furnisystems.s3.amazonaws.com",
+      },
     ],
   },
 }

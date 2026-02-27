@@ -166,14 +166,14 @@ const InteriorPhotoGallery = ({
       )}
       <div
         ref={containerRef}
-        className="shadow-elevation-card-rest relative w-full bg-ui-bg-subtle"
+        className="relative w-full max-h-[75vh] flex items-start overflow-hidden"
       >
         {isVideo(photos[selectedImageIndex]) ? (
           <video
             ref={videoRef}
             key={photos[selectedImageIndex].url}
             src={photos[selectedImageIndex].url}
-            className="w-full h-auto cursor-pointer"
+            className="w-full h-full max-h-[75vh] object-contain cursor-pointer"
             onClick={() => {
               const v = videoRef.current
               if (v) {
@@ -192,7 +192,7 @@ const InteriorPhotoGallery = ({
             width={containerWidth || 800}
             height={Math.round((containerWidth || 800) * 0.75)}
             priority={selectedImageIndex === 0}
-            className="w-full h-auto object-contain"
+            className="w-full h-full max-h-[75vh] object-contain"
             sizes={getResponsiveSizes()}
             quality={85}
           />
