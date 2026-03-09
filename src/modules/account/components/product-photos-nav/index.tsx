@@ -10,6 +10,13 @@ interface ProductPhotosNavProps {
   currentPath?: string
 }
 
+const isNewPhoto = (dateStr?: string | null): boolean => {
+  if (!dateStr) return false
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  return new Date(dateStr) > thirtyDaysAgo
+}
+
 const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
   const router = useRouter()
   const params = useParams()
@@ -113,8 +120,11 @@ const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="text-base-regular">
+                    <span className="text-base-regular inline-flex items-center gap-1">
                       {formatProductName(product.name)}
+                      {isNewPhoto(product.newest_photo_at) && (
+                        <span className="w-2 h-2 bg-green-500 rounded-full inline-block ml-1" />
+                      )}
                     </span>
                   </div>
                 </button>

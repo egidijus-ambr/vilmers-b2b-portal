@@ -10,6 +10,13 @@ type InteriorPhotoGalleryProps = {
   productName: string
 }
 
+const isNewPhoto = (dateStr?: string | null): boolean => {
+  if (!dateStr) return false
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  return new Date(dateStr) > thirtyDaysAgo
+}
+
 const InteriorPhotoGallery = ({
   photos,
   productName,
@@ -31,6 +38,19 @@ const InteriorPhotoGallery = ({
     )
     return match?.url ?? null
   }
+
+  // Build a set of image URLs that are used as video thumbnails
+  const videoThumbnailUrls = new Set(
+    photos
+      .filter(isVideo)
+      .map(getVideoThumbnailUrl)
+      .filter((url): url is string => Boolean(url))
+  )
+
+  // Filter out images that are used as video thumbnails
+  const displayPhotos = photos.filter(
+    (photo) => !videoThumbnailUrls.has(photo.url)
+  )
 
   // Track container size for responsive image sizing
   useEffect(() => {
@@ -77,7 +97,7 @@ const InteriorPhotoGallery = ({
     return props.src
   }
 
-  if (!photos.length) {
+  if (!displayPhotos.length) {
     return (
       <div className="flex items-center justify-center p-8 text-ui-fg-muted">
         <p>No interior photos available for {productName}</p>
@@ -89,9 +109,9 @@ const InteriorPhotoGallery = ({
     <div className="flex flex-col gap-2">
       {/* Main Image Display */}
       {/* Thumbnails */}
-      {photos.length > 0 && (
+      {displayPhotos.length > 0 && (
         <div className="flex flex-wrap gap-2 pb-0">
-          {photos.map((photo, index) => (
+          {displayPhotos.map((photo, index) => (
             <button
               key={index}
               onClick={() => setSelectedImageIndex(index)}
@@ -152,6 +172,9 @@ const InteriorPhotoGallery = ({
                   blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyLli121fCR+hj9D8ApqOT3rpSABB7cAH0qNKJa2cTFgqLm4Pym9R9sQQgOLCWqP1yM/gx4rl9c3hP/AFWXLjKs6d2jLH9Dgik0hKD5a+EsBdGhU0WhtRvfzDUnJVJVJWxzQlbQjjJF5k8sVxJXKKHUGdKXGV8yTr3D/9k="
                 />
               )}
+              {isNewPhoto(photo.created_at) && (
+                <span className="absolute top-0.5 right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+              )}
             </button>
           ))}
 
@@ -168,11 +191,11 @@ const InteriorPhotoGallery = ({
         ref={containerRef}
         className="relative w-full max-h-[75vh] flex items-start overflow-hidden"
       >
-        {isVideo(photos[selectedImageIndex]) ? (
+        {isVideo(displayPhotos[selectedImageIndex]) ? (
           <video
             ref={videoRef}
-            key={photos[selectedImageIndex].url}
-            src={photos[selectedImageIndex].url}
+            key={displayPhotos[selectedImageIndex].url}
+            src={displayPhotos[selectedImageIndex].url}
             className="w-full h-full max-h-[75vh] object-contain cursor-pointer"
             onClick={() => {
               const v = videoRef.current
@@ -187,7 +210,7 @@ const InteriorPhotoGallery = ({
           />
         ) : (
           <Image
-            src={photos[selectedImageIndex].url}
+            src={displayPhotos[selectedImageIndex].url}
             alt={`${productName} interior photo ${selectedImageIndex + 1}`}
             width={containerWidth || 800}
             height={Math.round((containerWidth || 800) * 0.75)}

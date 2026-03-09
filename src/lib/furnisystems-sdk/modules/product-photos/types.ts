@@ -5,6 +5,7 @@ export interface ProductSummary {
   productPhotos?: number
   interiorPhotos?: number
   first_interior_photo_url?: string
+  newest_photo_at?: string | null
 }
 
 export interface ProductsSummaryResponse {
@@ -25,6 +26,7 @@ export interface ProductPhoto {
   combination?: string
   fabric?: string
   mediaType?: "image" | "video"
+  created_at?: string | null
 }
 
 export interface ProductPhotosResponse {

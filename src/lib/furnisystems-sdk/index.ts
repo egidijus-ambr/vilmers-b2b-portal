@@ -3,6 +3,7 @@ import { ClientConfig } from "./client/types"
 import { CustomerModule } from "./modules/customer"
 import { CartModule } from "./modules/cart"
 import { ProductPhotosModule } from "./modules/product-photos"
+import { ProductCataloguesModule } from "./modules/product-catalogues"
 import { ShopSettingsModule } from "./modules/shop-settings"
 import { PagesModule } from "./modules/pages"
 import { CategoriesModule } from "./modules/categories"
@@ -17,6 +18,7 @@ export class FurnisystemsSDK {
   public customer: CustomerModule
   public cart: CartModule
   public productPhotos: ProductPhotosModule
+  public productCatalogues: ProductCataloguesModule
   public shopSettings: ShopSettingsModule
   public pages: PagesModule
   public categories: CategoriesModule
@@ -31,6 +33,7 @@ export class FurnisystemsSDK {
     this.customer = new CustomerModule(this.client)
     this.cart = new CartModule(this.client)
     this.productPhotos = new ProductPhotosModule(this.config.restApiEndpoint!)
+    this.productCatalogues = new ProductCataloguesModule(this.config.restApiEndpoint!)
     this.shopSettings = new ShopSettingsModule(this.client)
     this.pages = new PagesModule(this.client)
     this.categories = new CategoriesModule(this.client)
@@ -74,6 +77,7 @@ export * from "./client/types"
 export * from "./modules/customer"
 export * from "./modules/cart"
 export * from "./modules/product-photos"
+export * from "./modules/product-catalogues"
 export * from "./modules/shop-settings"
 export * from "./modules/pages"
 export * from "./modules/categories"

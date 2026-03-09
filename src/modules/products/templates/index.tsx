@@ -1,16 +1,18 @@
 import React from "react"
-import Image from "next/image"
 import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
 import ProductFeaturesDisplay from "@modules/products/components/product-features-display"
 import type { ProductPageFeature } from "@modules/products/components/product-features-display"
+import ProductImageGallery from "@modules/products/components/product-image-gallery"
+import type { ProductImage } from "@modules/products/components/product-image-gallery"
 
 export type ProductPageData = {
   id: string
   title: string
   description: string | null
-  imageUrl: string | null
+  images: ProductImage[]
+  productName: string | null
   breadcrumbs: BreadcrumbItem[]
   features: ProductPageFeature[]
 }
@@ -24,24 +26,16 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
     <>
       <PageHeader breadcrumbItems={product.breadcrumbs} />
       <PageContent>
-        <div data-testid="product-container" className="flex flex-col md:flex-row gap-8">
+        <div
+          data-testid="product-container"
+          className="flex flex-col md:flex-row gap-8 mb-8"
+        >
           <div className="md:w-3/5">
-            {product.imageUrl ? (
-              <div className="card p-0">
-                <Image
-                  src={product.imageUrl}
-                  alt={product.title}
-                  width={800}
-                  height={800}
-                  className="w-full h-auto object-contain"
-                  priority
-                />
-              </div>
-            ) : (
-              <div className="w-full aspect-square bg-white flex items-center justify-center">
-                <span className="text-gray-400">No image</span>
-              </div>
-            )}
+            <ProductImageGallery
+              images={product.images}
+              productTitle={product.title}
+              productName={product.productName}
+            />
           </div>
           <div className="md:w-2/5">
             <h1 className="page-title mb-6">{product.title}</h1>
