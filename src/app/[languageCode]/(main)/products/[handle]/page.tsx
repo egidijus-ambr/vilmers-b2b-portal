@@ -121,9 +121,39 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? (product.single_product?.product_profiles?.[0]?.short_description ?? null)
     : null
 
+  const images = isAdvanced
+    ? product.advanced_product?.images ?? []
+    : product.single_product?.images ?? []
+
+  const firstImage = [...images].sort(
+    (a, b) => a.display_order - b.display_order
+  )[0]
+
+  const productTitle = profile?.name ?? "Product"
+
+  const ogImages = firstImage?.src
+    ? [
+        {
+          url: firstImage.src,
+          width: 1200,
+          height: 630,
+          alt: `${productTitle} - Vilmers`,
+        },
+      ]
+    : undefined
+
   return {
-    title: profile?.name ?? "Product",
+    title: productTitle,
     description: shortDesc ?? profile?.description ?? "",
+    ...(ogImages && {
+      openGraph: {
+        images: ogImages,
+      },
+      twitter: {
+        card: "summary_large_image",
+        images: [firstImage.src],
+      },
+    }),
   }
 }
 
