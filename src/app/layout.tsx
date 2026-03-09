@@ -40,7 +40,7 @@ export const metadata: Metadata = {
       "A B2B e-commerce portal for Vilmers customers with offline functionality and easy access.",
     images: [
       {
-        url: "/images/og-image.png",
+        url: "https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png",
         width: 1200,
         height: 630,
         alt: "Vilmers B2B Portal",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     title: "Vilmers B2B Portal",
     description:
       "A B2B e-commerce portal for Vilmers customers with offline functionality and easy access.",
-    images: ["/images/og-image.png"],
+    images: ["https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png"],
   },
   robots: {
     index: true,
