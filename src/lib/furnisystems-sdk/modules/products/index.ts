@@ -129,6 +129,7 @@ const SEARCH_PRODUCTS = gql`
 `
 
 const GET_PRODUCT_BY_PERMALINK = gql`
+  ${PRODUCT_CARD_FRAGMENT}
   query GetProductByPermalink($permalink: String!, $language: Language) {
     findFirstProductContainer(
       where: {
@@ -245,6 +246,13 @@ const GET_PRODUCT_BY_PERMALINK = gql`
             description
             language
           }
+        }
+      }
+      linked_products_as_source(orderBy: [{ display_order: asc }]) {
+        link_type
+        display_order
+        target_product {
+          ...ProductCardFields
         }
       }
     }
@@ -631,6 +639,11 @@ export class ProductsModule {
               language: string
             }[]
           }
+        }[] | null
+        linked_products_as_source: {
+          link_type: string
+          display_order: number
+          target_product: ProductContainer
         }[] | null
       } | null
     }

@@ -3,10 +3,16 @@ import { notFound } from "next/navigation"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories } from "@lib/data/categories"
 import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
+import type { LinkedProductType, ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import type { CategoryData } from "@lib/furnisystems-sdk"
 import ProductTemplate, { ProductPageData } from "@modules/products/templates"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import type { ProductPageFeature } from "@modules/products/components/product-features-display"
+
+export type LinkedProductGroup = {
+  type: LinkedProductType
+  products: ProductContainer[]
+}
 
 type Props = {
   params: Promise<{ handle: string; languageCode: string }>
@@ -93,6 +99,20 @@ function mapFurnisystemsProduct(
     })
     .filter((f): f is ProductPageFeature => f !== null)
 
+  // Group linked products by type
+  const linkedProductGroups: LinkedProductGroup[] = []
+  if (container.linked_products_as_source) {
+    const groupMap = new Map<LinkedProductType, ProductContainer[]>()
+    for (const lp of container.linked_products_as_source) {
+      const type = lp.link_type as LinkedProductType
+      if (!groupMap.has(type)) groupMap.set(type, [])
+      groupMap.get(type)!.push(lp.target_product)
+    }
+    Array.from(groupMap.entries()).forEach(([type, products]) => {
+      linkedProductGroups.push({ type, products })
+    })
+  }
+
   return {
     id: String(container.id),
     title: profile?.name ?? "Product",
@@ -101,6 +121,8 @@ function mapFurnisystemsProduct(
     productName: profile?.name?.split(' ')[0] ?? null,
     breadcrumbs,
     features,
+    linkedProductGroups,
+    languageCode,
   }
 }
 

@@ -14,6 +14,7 @@ import ArrowRight from "@modules/common/icons/arrow-right"
 import B2BProductCard from "@modules/categories/components/category-product-card"
 import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import { SupportedLanguage } from "@lib/i18n"
+import ProductCarouselGrid from "@modules/common/components/product-carousel-grid"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -1265,15 +1266,10 @@ function ProductGrid({
         </p>
       )}
       {products.length > 0 && (
-        <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-          {products.map((container) => (
-            <B2BProductCard
-              key={container.id}
-              container={container}
-              language={languageCode as SupportedLanguage}
-            />
-          ))}
-        </ul>
+        <ProductCarouselGrid
+          products={products}
+          language={languageCode as SupportedLanguage}
+        />
       )}
     </div>
   )

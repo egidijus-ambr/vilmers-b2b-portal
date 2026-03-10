@@ -64,5 +64,8 @@
   "show-results": "Vis resultater",
   "category": "Kategori",
   "vat-code": "Momsnummer",
-  "vat-code-placeholder": "Indtast momsnummer"
+  "vat-code-placeholder": "Indtast momsnummer",
+  "linked-products-ACCESSORY": "Tilbehør",
+  "linked-products-GOES_WELL_WITH": "Passer godt til",
+  "linked-products-ALTERNATIVE": "Alternativer"
 }

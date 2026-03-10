@@ -63,5 +63,8 @@
   "show-results": "Rodyti rezultatus",
   "category": "Kategorija",
   "vat-code": "PVM kodas",
-  "vat-code-placeholder": "Įveskite PVM kodą"
+  "vat-code-placeholder": "Įveskite PVM kodą",
+  "linked-products-ACCESSORY": "Priedai",
+  "linked-products-GOES_WELL_WITH": "Puikiai dera su",
+  "linked-products-ALTERNATIVE": "Alternatyvos"
 }

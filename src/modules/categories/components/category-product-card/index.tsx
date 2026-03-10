@@ -1,8 +1,13 @@
+"use client"
+
 import Image from "next/image"
 import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import { formatPrice } from "@lib/util/money"
 import { SupportedLanguage } from "@lib/i18n"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import PdfCatalogueButton from "@modules/categories/components/pdf-catalogue-button"
+import SelectionCheckbox from "@modules/categories/components/catalog-builder/selection-checkbox"
+import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
 
 function extractProductDisplayData(
   container: ProductContainer,
@@ -92,10 +97,34 @@ export default function B2BProductCard({
   const { name, handle, image, priceLabel, isFromPrice, categoryName } =
     extractProductDisplayData(container, language)
 
+  const catalogBuilder = useCatalogBuilder()
+  const inSelectionMode = !!catalogBuilder?.selectionMode
+  const hasCatalogues = (catalogBuilder?.catalogueMap[name] ?? []).length > 0
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (inSelectionMode && hasCatalogues) {
+      e.preventDefault()
+      e.stopPropagation()
+      catalogBuilder?.toggleProduct(name)
+    }
+  }
+
   return (
-    <li className="group">
+    <li
+      className={`group relative${inSelectionMode ? " cursor-pointer" : ""}`}
+      onClick={handleCardClick}
+    >
+      {/* Top-right overlay: checkbox in selection mode, PDF icon otherwise */}
+      <div className="absolute top-4 right-4 z-10">
+        {inSelectionMode ? (
+          <SelectionCheckbox productName={name} />
+        ) : (
+          <PdfCatalogueButton productName={name} />
+        )}
+      </div>
+
       <LocalizedClientLink
-        href={handle ? `/products/${handle}` : null}
+        href={inSelectionMode ? null : handle ? `/products/${handle}` : null}
         className="flex flex-col gap-2 no-underline"
       >
         <div className="relative aspect-[325/380] w-full overflow-hidden bg-gold-20">

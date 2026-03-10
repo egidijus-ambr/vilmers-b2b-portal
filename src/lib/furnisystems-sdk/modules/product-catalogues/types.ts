@@ -42,3 +42,9 @@ export interface CatalogueCachePopulateResponse {
   stats: CatalogueCachePopulateStats
   status: CatalogueCacheStatus
 }
+
+export interface MergeCataloguesRequest {
+  productNames: string[]
+  language: string
+  units?: string
+}

@@ -3,6 +3,7 @@ import {
   BatchProductCataloguesResponse,
   CatalogueCacheStatusResponse,
   CatalogueCachePopulateResponse,
+  MergeCataloguesRequest,
 } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
 
@@ -131,6 +132,39 @@ export class ProductCataloguesModule {
       }
       throw new NetworkError(
         `Failed to fetch catalogue cache status: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      )
+    }
+  }
+
+  /**
+   * Merge catalogues for multiple products into a single PDF
+   */
+  async mergeCatalogues(params: MergeCataloguesRequest): Promise<Blob> {
+    try {
+      const response = await fetch(
+        `${this.restApiUrl}/s3/product-catalogues/merge`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+        }
+      )
+
+      if (!response.ok) {
+        throw new NetworkError(
+          `Failed to merge catalogues: ${response.status} ${response.statusText}`
+        )
+      }
+
+      return response.blob()
+    } catch (error) {
+      if (error instanceof FurnisystemsError) {
+        throw error
+      }
+      throw new NetworkError(
+        `Failed to merge catalogues: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       )

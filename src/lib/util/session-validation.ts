@@ -82,27 +82,34 @@ export async function validateSession(): Promise<{
  * Cleans up invalid session by removing tokens and clearing cache
  */
 export async function cleanupInvalidSession(): Promise<void> {
+  // Clear auth headers from the SDK client
+  sdk.clearAuthHeaders()
+
+  // Clear Apollo cache to remove any cached data
+  sdk.clearCache()
+
+  // Cookie modifications may fail during Server Component rendering
+  // (only allowed in Server Actions / Route Handlers), so wrap individually
   try {
-    // Clear auth headers from the SDK client
-    sdk.clearAuthHeaders()
-
-    // Clear Apollo cache to remove any cached data
-    sdk.clearCache()
-
-    // Remove auth token from cookies
     await removeAuthToken()
+  } catch {
+    // Cannot modify cookies during render — token will expire naturally
+  }
 
-    // Generate a new cache ID to invalidate cached data
+  try {
     const newCacheId = `${Date.now()}-${Math.random()
       .toString(36)
       .substr(2, 9)}`
     await setCacheId(newCacheId)
+  } catch {
+    // Cannot modify cookies during render
+  }
 
-    // Revalidate customer cache
+  try {
     revalidateTag("customers")
     revalidateTag("carts")
-  } catch (error) {
-    console.error("[cleanupInvalidSession] Error during cleanup:", error)
+  } catch {
+    // Revalidation may fail outside of request context
   }
 }
 

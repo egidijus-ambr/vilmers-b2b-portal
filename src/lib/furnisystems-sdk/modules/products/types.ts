@@ -171,10 +171,20 @@ export interface FurnisystemsProductDetail {
     } | null
   } | null
   product_features: ProductFeatureData[] | null
+  linked_products_as_source: LinkedProductData[] | null
 }
 
 export interface FindProductByPermalinkResponse {
   findFirstProductContainer: FurnisystemsProductDetail | null
+}
+
+// Linked product types
+export type LinkedProductType = 'ACCESSORY' | 'GOES_WELL_WITH' | 'ALTERNATIVE'
+
+export interface LinkedProductData {
+  link_type: LinkedProductType
+  display_order: number
+  target_product: ProductContainer
 }
 
 export type CategorySortOption = 'name_asc' | 'name_desc' | 'newest' | 'oldest'

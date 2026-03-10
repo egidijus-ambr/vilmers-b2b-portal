@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="Layer_1"
+   data-name="Layer 1"
+   viewBox="0 0 18.270001 23.250001"
+   version="1.1"
+   sodipodi:docname="pdf.svg"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   width="18.27"
+   height="23.25"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="32"
+     inkscape:cx="10.984375"
+     inkscape:cy="12.21875"
+     inkscape:window-width="1127"
+     inkscape:window-height="1000"
+     inkscape:window-x="-7"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="Layer_1" />
+  <title
+     id="title1">blank-file</title>
+  <path
+     d="M 0.02,6.7274682 C 0.02008707,6.5345124 0.19806519,6.3842133 0.3975479,6.1862425 L 6.3531802,0.24979071 C 6.4998912,0.09961732 6.6654378,-4.3109344e-4 6.8639804,-5.7869116e-6 H 17.542662 c 0.469562,0 0.728091,0.2468710569116 0.727334,0.7437122969116 l 2e-6,21.76257249 c 7.6e-4,0.50104 -0.249623,0.743714 -0.727336,0.743714 H 0.74178273 C 0.26214327,23.248479 0.02,22.988404 0.02,22.506279 Z M 6.2032717,2.3787381 2.2279145,6.1862425 H 6.2032717 Z M 16.941177,21.895036 V 1.3530586 H 7.5357935 v 5.5087697 c 0,0.3772966 -0.2991237,0.6831555 -0.6681123,0.6831555 H 1.3451191 V 21.895036 Z"
+     id="path1"
+     style="fill:#9a8555;fill-opacity:1;stroke-width:0.187145"
+     sodipodi:nodetypes="ccccccccccccccccccssccc" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Haettenschweiler;-inkscape-font-specification:Haettenschweiler;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#9a8555;fill-opacity:1;stroke:#808080;stroke-width:5"
+     x="21.213203"
+     y="59.927299"
+     id="text1"><tspan
+       id="tspan1"
+       sodipodi:role="line"
+       x="21.213203"
+       y="59.927299" /></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:15;font-family:Montserrat;-inkscape-font-specification:Montserrat;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#9a8555;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-dasharray:none;stroke-opacity:1"
+     x="38.006989"
+     y="58.336308"
+     id="text2"><tspan
+       sodipodi:role="line"
+       id="tspan2"
+       x="38.006989"
+       y="58.336308"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:condensed;line-height:15;font-family:'Agency FB';-inkscape-font-specification:'Agency FB Condensed';stroke:#ffffff;stroke-width:0;stroke-dasharray:none;stroke-opacity:1" /></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0;font-family:Arial;-inkscape-font-specification:Arial;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#9a8555;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     x="27.375"
+     y="56"
+     id="text3"><tspan
+       sodipodi:role="line"
+       id="tspan3"
+       x="27.375"
+       y="56"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Yu Gothic';-inkscape-font-specification:'Yu Gothic'" /></text>
+  <path
+     style="fill:#9a8555;fill-rule:evenodd;stroke:#ffffff;stroke-width:0"
+     d="m 4.7,19.2 v -8 h 1.8 v 0.1 h 0.2 c 0.8001872,0.0086 1.005665,0.40889 1,0.9 v 3 c 7.584e-4,0.633525 -0.031553,0.989044 -1,1 H 5.9 v 3 z m 1.2,-7 h 0.6 c 0.2006774,-3.39e-4 0.2018785,0.08951 0.2,0.2 v 2.8 C 6.69277,15.404133 6.608493,15.406529 6.5,15.4 H 5.9 Z"
+     id="path2"
+     sodipodi:nodetypes="cccccccccccccccccc" />
+  <path
+     style="fill:#9a8555;fill-rule:evenodd;stroke:#ffffff;stroke-width:0"
+     d="m 8.2,19.2 v -7.9 h 2 c 0.888747,-0.0024 0.899663,0.38148 0.9,0.9 v 6.1 c -0.0036,0.53971 -0.0034,0.897072 -0.9,0.9 z m 1.2,-7 H 10 c 0.187388,0.0067 0.200598,0.08924 0.2,0.2 v 5.7 c -0.0033,0.110199 -0.0088,0.192336 -0.2,0.2 H 9.4 Z"
+     id="path2-8"
+     sodipodi:nodetypes="cccccccccccccc" />
+  <path
+     style="fill:#9a8555;fill-rule:evenodd;stroke:#ffffff;stroke-width:0"
+     d="m 11.6,19.2 v -7.9 h 2.8 v 0.9 h -1.6 v 2.7 h 1.4 v 0.8 h -1.4 v 3.5 z"
+     id="path2-5"
+     sodipodi:nodetypes="ccccccccccc" />
+  <metadata
+     id="metadata3">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>blank-file</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

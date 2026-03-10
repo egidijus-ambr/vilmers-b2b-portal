@@ -10,33 +10,41 @@ type ProductFeaturesDisplayProps = {
   features: ProductPageFeature[]
 }
 
-const ProductFeaturesDisplay: React.FC<ProductFeaturesDisplayProps> = ({ features }) => {
+const ProductFeaturesDisplay: React.FC<ProductFeaturesDisplayProps> = ({
+  features,
+}) => {
   if (!features || features.length === 0) {
     return null
   }
 
   return (
-    <div className="flex flex-wrap gap-2 my-4">
-      {features.map((feature, index) => (
-        <div
-          key={index}
-          className="flex flex-col items-center w-20 pb-2"
-          title={feature.description || undefined}
-        >
-          {feature.imageUrl ? (
-            <img
-              src={feature.imageUrl}
-              alt={feature.name}
-              className="w-[60px] h-[60px] sm:w-[50px] sm:h-[50px] object-cover mb-1"
-            />
-          ) : (
-            <div className="w-[60px] h-[60px] sm:w-[50px] sm:h-[50px] bg-gray-100 rounded mb-1" />
-          )}
-          <span className="text-center text-xs font-medium text-dark-blue leading-tight w-full max-w-[80px] break-words hyphens-auto">
-            {feature.name}
-          </span>
-        </div>
-      ))}
+    <div>
+      <h2 className="section-title mb-6">Features</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {features.map((feature, index) => (
+          <div key={index} className="flex flex-row items-start gap-4">
+            <div className="w-[60px] h-[60px] flex-shrink-0 overflow-hidden ">
+              {feature.imageUrl ? (
+                <img
+                  src={feature.imageUrl}
+                  alt={feature.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
+            </div>
+            <div>
+              <span className="block font-bold text-dark-blue text-sm leading-tight mb-1">
+                {feature.name}
+              </span>
+              {feature.description && (
+                <span className="block text-sm text-dark-blue leading-snug">
+                  {feature.description}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
