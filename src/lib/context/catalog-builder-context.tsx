@@ -5,6 +5,9 @@ import { sdk } from "@lib/config"
 import { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/types"
 
 interface CatalogBuilderContextType {
+  // All product names on the page
+  productNames: string[]
+
   // Catalog availability (fetched via batch API on mount)
   catalogueMap: Record<string, CatalogueFile[]> // productName → catalogues
   catalogueLoading: boolean
@@ -14,6 +17,8 @@ interface CatalogBuilderContextType {
   toggleSelectionMode: () => void
   selectedProducts: Set<string>
   toggleProduct: (name: string) => void
+  selectAll: () => void
+  deselectAll: () => void
   clearSelection: () => void
 }
 
@@ -91,6 +96,17 @@ export function CatalogBuilderProvider({
     })
   }
 
+  const selectAll = () => {
+    const withCatalogues = productNames.filter(
+      (name) => (catalogueMap[name] ?? []).length > 0
+    )
+    setSelectedProducts(new Set(withCatalogues))
+  }
+
+  const deselectAll = () => {
+    setSelectedProducts(new Set())
+  }
+
   const clearSelection = () => {
     setSelectedProducts(new Set())
   }
@@ -98,12 +114,15 @@ export function CatalogBuilderProvider({
   return (
     <CatalogBuilderContext.Provider
       value={{
+        productNames,
         catalogueMap,
         catalogueLoading,
         selectionMode,
         toggleSelectionMode,
         selectedProducts,
         toggleProduct,
+        selectAll,
+        deselectAll,
         clearSelection,
       }}
     >

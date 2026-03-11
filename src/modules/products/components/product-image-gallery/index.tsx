@@ -43,6 +43,9 @@ type ProductImageGalleryProps = {
   images: ProductImage[]
   productTitle: string
   productName: string | null
+  showCategoryFilter?: boolean
+  alwaysExpanded?: boolean
+  showPanelHeader?: boolean
 }
 
 const PRODUCT_PHOTOS_CATEGORY = "PRODUCT_PHOTOS"
@@ -58,6 +61,9 @@ const ProductImageGallery = ({
   images,
   productTitle,
   productName,
+  showCategoryFilter = true,
+  alwaysExpanded = false,
+  showPanelHeader = true,
 }: ProductImageGalleryProps) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -68,7 +74,7 @@ const ProductImageGallery = ({
   // API / expanded panel state
   const [apiPhotos, setApiPhotos] = useState<ApiPhoto[]>([])
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false)
-  const [panelExpanded, setPanelExpanded] = useState(false)
+  const [panelExpanded, setPanelExpanded] = useState(alwaysExpanded)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedCombination, setSelectedCombination] = useState<string | null>(
     null
@@ -105,27 +111,39 @@ const ProductImageGallery = ({
     return () => controller.abort()
   }, [productName])
 
+  // Auto-expand panel when alwaysExpanded is set and photos are available
+  useEffect(() => {
+    if (alwaysExpanded && apiPhotos.length > 0) {
+      setPanelExpanded(true)
+    }
+  }, [alwaysExpanded, apiPhotos])
+
   // Auto-select defaults when API photos load
   useEffect(() => {
     if (!apiPhotos.length) return
 
-    // Prefer PRODUCT_PHOTOS category if it exists; otherwise pick the first available
-    const categories = Array.from(
-      new Set(apiPhotos.map((p) => p.category))
-    ).filter((c) => c !== PRODUCT_PHOTOS_CATEGORY)
+    if (!showCategoryFilter) {
+      // Force PRODUCT_PHOTOS only
+      setSelectedCategory(PRODUCT_PHOTOS_CATEGORY)
+    } else {
+      // Existing logic: prefer PRODUCT_PHOTOS, fallback to first available
+      const categories = Array.from(
+        new Set(apiPhotos.map((p) => p.category))
+      ).filter((c) => c !== PRODUCT_PHOTOS_CATEGORY)
 
-    const productPhotosExist = apiPhotos.some(
-      (p) => p.category === PRODUCT_PHOTOS_CATEGORY
-    )
-    const defaultCategory = productPhotosExist
-      ? PRODUCT_PHOTOS_CATEGORY
-      : categories[0] ?? null
+      const productPhotosExist = apiPhotos.some(
+        (p) => p.category === PRODUCT_PHOTOS_CATEGORY
+      )
+      const defaultCategory = productPhotosExist
+        ? PRODUCT_PHOTOS_CATEGORY
+        : categories[0] ?? null
 
-    setSelectedCategory(defaultCategory)
+      setSelectedCategory(defaultCategory)
+    }
     setSelectedCombination(null)
     setSelectedFabric(null)
     setSelectedIndex(0)
-  }, [apiPhotos])
+  }, [apiPhotos, showCategoryFilter])
 
   // Auto-select first combination when category changes
   useEffect(() => {
@@ -476,7 +494,7 @@ const ProductImageGallery = ({
         {/* "More product photos" expandable panel */}
         {apiPhotos.length > 0 && (
           <div className="mt-1">
-            {!panelExpanded ? (
+            {!panelExpanded && !alwaysExpanded ? (
               <button
                 onClick={togglePanel}
                 className="flex items-center gap-2 text-sm font-medium text-dark-blue border border-line rounded px-3 py-2 hover:bg-ui-bg-subtle transition-colors duration-150"
@@ -484,29 +502,31 @@ const ProductImageGallery = ({
                 <SlidersHorizontal className="w-4 h-4" />
                 <span>More product photos</span>
               </button>
-            ) : (
-              <div className="border border-line p-4 flex flex-col gap-4">
-                {/* Panel header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-dark-blue">
-                    <SlidersHorizontal className="w-4 h-4" />
-                    <span>More product photos</span>
+            ) : panelExpanded ? (
+              <div className={alwaysExpanded ? "flex flex-col gap-4" : "border border-line p-4 flex flex-col gap-4"}>
+                {/* Panel header - only show when not alwaysExpanded and showPanelHeader is true */}
+                {!alwaysExpanded && showPanelHeader && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-dark-blue">
+                      <SlidersHorizontal className="w-4 h-4" />
+                      <span>More product photos</span>
+                    </div>
+                    <button
+                      onClick={togglePanel}
+                      className="text-ui-fg-muted hover:text-dark-blue transition-colors duration-150 rounded p-0.5"
+                      aria-label="Close photo panel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={togglePanel}
-                    className="text-ui-fg-muted hover:text-dark-blue transition-colors duration-150 rounded p-0.5"
-                    aria-label="Close photo panel"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                )}
 
                 {isLoadingPhotos ? (
                   <p className="text-sm text-ui-fg-muted">Loading photos...</p>
                 ) : (
                   <>
                     {/* Category chips */}
-                    {allCategories.length > 1 && (
+                    {showCategoryFilter && allCategories.length > 1 && (
                       <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-ui-fg-muted uppercase tracking-wide">
                           Category
@@ -636,7 +656,7 @@ const ProductImageGallery = ({
                   </>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>

@@ -82,6 +82,11 @@
   "no-valid-catalogues": "Aucun des produits sélectionnés n'a de catalogues disponibles",
   "merge-error-generic": "Impossible de générer le catalogue. Veuillez réessayer.",
   "back": "Retour",
+  "select-all": "Tout sélectionner",
+  "deselect-all": "Tout désélectionner",
+  "download-selected": "Télécharger la sélection ({{count}})",
+  "merge-pages": "Fusionner les pages",
+  "uncompressed": "Non compressé",
   "linked-products-ACCESSORY": "Accessoires",
   "linked-products-GOES_WELL_WITH": "Se marie bien avec",
   "linked-products-ALTERNATIVE": "Alternatives"

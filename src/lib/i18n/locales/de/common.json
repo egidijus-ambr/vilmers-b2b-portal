@@ -82,6 +82,11 @@
   "no-valid-catalogues": "Keines der ausgewählten Produkte hat verfügbare Kataloge",
   "merge-error-generic": "Katalog konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
   "back": "Zurück",
+  "select-all": "Alle auswählen",
+  "deselect-all": "Alle abwählen",
+  "download-selected": "Ausgewählte herunterladen ({{count}})",
+  "merge-pages": "Seiten zusammenführen",
+  "uncompressed": "Unkomprimiert",
   "linked-products-ACCESSORY": "Zubehör",
   "linked-products-GOES_WELL_WITH": "Passt gut zu",
   "linked-products-ALTERNATIVE": "Alternativen"

@@ -82,6 +82,11 @@
   "warning-no-units": "\"{{product}}\" — no catalogue in {{units}}",
   "no-valid-catalogues": "None of the selected products have available catalogues",
   "merge-error-generic": "Failed to generate catalogue. Please try again.",
+  "select-all": "Select all",
+  "deselect-all": "Deselect all",
+  "download-selected": "Download selected ({{count}})",
+  "merge-pages": "Merge pages",
+  "uncompressed": "Uncompressed",
   "linked-products-ACCESSORY": "Accessories",
   "linked-products-GOES_WELL_WITH": "Goes well with",
   "linked-products-ALTERNATIVE": "Alternatives"

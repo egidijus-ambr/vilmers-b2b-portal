@@ -43,6 +43,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
               images={product.images}
               productTitle={product.title}
               productName={product.productName}
+              showCategoryFilter={false}
+              alwaysExpanded={true}
+              showPanelHeader={false}
             />
           </div>
           <ProductFeaturesDisplay features={product.features} />
