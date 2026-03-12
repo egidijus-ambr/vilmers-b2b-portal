@@ -86,7 +86,9 @@
   "deselect-all": "Tout désélectionner",
   "download-selected": "Télécharger la sélection ({{count}})",
   "merge-pages": "Fusionner les pages",
+  "split-pages": "Séparer les pages",
   "uncompressed": "Non compressé",
+  "compressed": "Compressé",
   "linked-products-ACCESSORY": "Accessoires",
   "linked-products-GOES_WELL_WITH": "Se marie bien avec",
   "linked-products-ALTERNATIVE": "Alternatives"

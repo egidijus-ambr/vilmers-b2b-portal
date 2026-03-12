@@ -4,13 +4,7 @@ import { FileText } from "lucide-react"
 import { useTranslations } from "@lib/i18n"
 import { useRequiredCatalogBuilder } from "@lib/context/catalog-builder-context"
 
-interface CatalogBuilderToolbarProps {
-  language: string
-}
-
-export default function CatalogBuilderToolbar({
-  language: _language,
-}: CatalogBuilderToolbarProps) {
+export default function CatalogBuilderToolbar() {
   const { t } = useTranslations()
   const { selectionMode, toggleSelectionMode } = useRequiredCatalogBuilder()
 

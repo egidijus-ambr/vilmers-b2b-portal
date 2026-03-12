@@ -1,6 +1,7 @@
 import { gql } from "@apollo/client"
 import { GraphQLClient } from "../../client"
 import {
+  CategoryProductNamesResponse,
   CategoryProductsResponse,
   SortedByCategoryPositionResponse,
   SearchProductsResponse,
@@ -259,6 +260,25 @@ const GET_PRODUCT_BY_PERMALINK = gql`
   }
 `
 
+const GET_CATEGORY_PRODUCT_NAMES = gql`
+  query GetCategoryProductNames(
+    $categoryPermalink: String!
+    $where: ProductContainerWhereInput
+    $language: String!
+    $selectedCategoryIds: [Int!]
+  ) {
+    categoryProductNames(
+      categoryPermalink: $categoryPermalink
+      where: $where
+      language: $language
+      selectedCategoryIds: $selectedCategoryIds
+    ) {
+      names
+      totalCount
+    }
+  }
+`
+
 export class ProductsModule {
   constructor(private client: GraphQLClient) {}
 
@@ -411,6 +431,40 @@ export class ProductsModule {
         numberOfPages: 0,
         productsCount: 0,
         sortedProductContainers: [],
+      }
+    }
+  }
+
+  async getCategoryProductNames(params: {
+    permalink: string
+    where?: any
+    language: string
+    selectedCategoryIds?: number[]
+  }): Promise<CategoryProductNamesResponse> {
+    const { permalink, where, language, selectedCategoryIds } = params
+
+    try {
+      const response = await this.client.query<{
+        categoryProductNames: CategoryProductNamesResponse
+      }>(GET_CATEGORY_PRODUCT_NAMES, {
+        variables: {
+          categoryPermalink: permalink,
+          where,
+          language,
+          selectedCategoryIds: selectedCategoryIds?.length ? selectedCategoryIds : null,
+        },
+        fetchPolicy: "no-cache",
+        errorPolicy: "all",
+      })
+      return response.categoryProductNames
+    } catch (error) {
+      console.error(
+        `Error fetching category product names for "${permalink}":`,
+        error
+      )
+      return {
+        names: [],
+        totalCount: 0,
       }
     }
   }

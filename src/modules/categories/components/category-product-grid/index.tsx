@@ -107,7 +107,10 @@ export default async function CategoryProductGrid({
           <p className="text-gray-500 text-base">No products found</p>
         </div>
       ) : (
-        <CatalogBuilderWrapper productNames={productNames} language={language}>
+        <CatalogBuilderWrapper
+          productNames={productNames}
+          filterKey={`${categoryPermalink}|${(attrIds ?? []).sort().join(",")}|${sortBy ?? ""}|${(catIds ?? []).sort().join(",")}`}
+        >
           <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
             {products.map((container) => (
               <B2BProductCard

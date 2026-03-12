@@ -29,31 +29,27 @@ export default function FloatingCatalogBar() {
     selectAll,
     deselectAll,
     catalogueMap,
-    productNames,
+    allProductNamesLoading,
   } = useRequiredCatalogBuilder()
 
   const [selectedUnits, setSelectedUnits] = useState("CM")
   const [unitsOpen, setUnitsOpen] = useState(false)
+  const [selectedMode, setSelectedMode] = useState<"merge" | "split">("merge")
+  const [modeOpen, setModeOpen] = useState(false)
+  const [compressed, setCompressed] = useState(false)
+  const [compressionOpen, setCompressionOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
-  const unitsRef = useRef<HTMLDivElement>(null)
   const tooltipTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  // Products that have catalogues (for select all)
-  const selectableCount = useMemo(
-    () => productNames.filter((n) => (catalogueMap[n] ?? []).length > 0).length,
-    [productNames, catalogueMap]
-  )
-
-  const allSelected =
-    selectableCount > 0 && selectedProducts.size === selectableCount
-
-  // Validation warnings
+  // Validation warnings for selected products
   const warnings = useMemo<ProductWarning[]>(() => {
     const result: ProductWarning[] = []
     for (const product of Array.from(selectedProducts)) {
       const files = catalogueMap[product] ?? []
       if (files.length === 0) {
+        // Skip warnings for products whose catalogues haven't been fetched yet
+        if (!(product in catalogueMap)) continue
         result.push({ product, kind: "no-catalogue" })
         continue
       }
@@ -81,11 +77,13 @@ export default function FloatingCatalogBar() {
         productNames: Array.from(selectedProducts),
         language: catalogueLanguage,
         units: selectedUnits,
+        mode: selectedMode,
+        compressed,
       })
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.download = "catalog.pdf"
+      link.download = selectedMode === "split" ? "collection.zip" : "catalog.pdf"
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -115,10 +113,20 @@ export default function FloatingCatalogBar() {
       <div className="bg-white rounded-full shadow-lg border border-gray-200 px-2 py-1.5 pointer-events-auto max-w-[95vw] flex flex-wrap items-center justify-center gap-y-1">
         {/* Select all / Deselect all */}
         <button
-          onClick={allSelected ? deselectAll : selectAll}
-          className="px-4 py-2 text-sm font-medium text-white bg-gold hover:bg-gold/90 rounded-full transition-colors whitespace-nowrap"
+          onClick={selectedProducts.size > 0 ? deselectAll : () => selectAll()}
+          disabled={allProductNamesLoading}
+          className="px-4 py-2 text-sm font-medium text-white bg-gold hover:bg-gold/90 rounded-full transition-colors whitespace-nowrap disabled:opacity-70"
         >
-          {allSelected ? t("deselect-all") : t("select-all")}
+          {allProductNamesLoading ? (
+            <span className="flex items-center gap-2">
+              <Spinner size="14" color="white" />
+              {t("select-all")}
+            </span>
+          ) : selectedProducts.size > 0 ? (
+            t("deselect-all")
+          ) : (
+            t("select-all")
+          )}
         </button>
 
         <Divider />
@@ -149,7 +157,7 @@ export default function FloatingCatalogBar() {
           {/* Warning tooltip */}
           {tooltipVisible && hasWarnings && (
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-[80]">
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                 {warnings.map((w) => (
                   <p key={`${w.product}-${w.kind}`}>
                     {getWarningMessage(w)}
@@ -164,7 +172,7 @@ export default function FloatingCatalogBar() {
         <Divider />
 
         {/* Units dropdown */}
-        <div ref={unitsRef} className="relative">
+        <div className="relative">
           <button
             onClick={() => setUnitsOpen(!unitsOpen)}
             className="flex items-center gap-1 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
@@ -196,11 +204,71 @@ export default function FloatingCatalogBar() {
           )}
         </div>
 
-        {/* Placeholder: Merge pages */}
-        <PlaceholderDropdown label={t("merge-pages")} />
+        {/* Merge/Split dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setModeOpen(!modeOpen)}
+            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
+          >
+            {selectedMode === "merge" ? t("merge-pages") : t("split-pages")}
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform ${modeOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {modeOpen && (
+            <div className="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px] z-[80]">
+              {(["merge", "split"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setSelectedMode(m)
+                    setModeOpen(false)
+                  }}
+                  className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                    selectedMode === m
+                      ? "text-gold font-medium"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {m === "merge" ? t("merge-pages") : t("split-pages")}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Placeholder: Uncompressed */}
-        <PlaceholderDropdown label={t("uncompressed")} />
+        {/* Compression dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setCompressionOpen(!compressionOpen)}
+            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
+          >
+            {compressed ? t("compressed") : t("uncompressed")}
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform ${compressionOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {compressionOpen && (
+            <div className="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px] z-[80]">
+              {[false, true].map((c) => (
+                <button
+                  key={String(c)}
+                  onClick={() => {
+                    setCompressed(c)
+                    setCompressionOpen(false)
+                  }}
+                  className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                    compressed === c
+                      ? "text-gold font-medium"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {c ? t("compressed") : t("uncompressed")}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Download button */}
         <button
@@ -239,16 +307,4 @@ export default function FloatingCatalogBar() {
 
 function Divider() {
   return <div className="w-px h-6 bg-gray-200 mx-1" />
-}
-
-function PlaceholderDropdown({ label }: { label: string }) {
-  return (
-    <button
-      disabled
-      className="flex items-center gap-1 px-3 py-2 text-sm text-gray-400 cursor-not-allowed whitespace-nowrap"
-    >
-      {label}
-      <ChevronDown className="w-3.5 h-3.5" />
-    </button>
-  )
 }

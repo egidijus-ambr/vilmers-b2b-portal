@@ -1,27 +1,31 @@
 "use client"
 
-import { CatalogBuilderProvider } from "@lib/context/catalog-builder-context"
 import CatalogBuilderToolbar from "@modules/categories/components/catalog-builder/toolbar"
 import FloatingCatalogBar from "@modules/categories/components/catalog-builder/floating-catalog-bar"
+import PageProductNamesSync from "@modules/categories/components/catalog-builder/page-product-names-sync"
 
 interface CatalogBuilderWrapperProps {
   productNames: string[]
-  language: string
+  filterKey: string
   children: React.ReactNode
 }
 
 export default function CatalogBuilderWrapper({
   productNames,
-  language,
+  filterKey,
   children,
 }: CatalogBuilderWrapperProps) {
   return (
-    <CatalogBuilderProvider productNames={productNames}>
+    <>
+      <PageProductNamesSync
+        productNames={productNames}
+        filterKey={filterKey}
+      />
       <div className="flex items-center mb-4">
-        <CatalogBuilderToolbar language={language} />
+        <CatalogBuilderToolbar />
       </div>
       {children}
       <FloatingCatalogBar />
-    </CatalogBuilderProvider>
+    </>
   )
 }

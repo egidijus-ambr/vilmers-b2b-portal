@@ -75,6 +75,11 @@ export interface CategoryProductsResponse {
   sortedProductContainers: ProductContainer[]
 }
 
+export interface CategoryProductNamesResponse {
+  names: string[]
+  totalCount: number
+}
+
 export interface SortedByCategoryPositionResponse {
   sortedByCategoryPositionProductContainers: CategoryProductsResponse
 }

@@ -47,4 +47,6 @@ export interface MergeCataloguesRequest {
   productNames: string[]
   language: string
   units?: string
+  mode?: "merge" | "split"
+  compressed?: boolean
 }
