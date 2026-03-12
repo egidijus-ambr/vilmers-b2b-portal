@@ -362,8 +362,8 @@ const ProductImageGallery = ({
       <div className="flex flex-col gap-3">
         {/* Main image */}
         <div
-          className="relative w-full bg-white overflow-hidden cursor-zoom-in group"
-          style={{ aspectRatio: "4/3" }}
+          className="relative w-full bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
+          style={{ height: "840px" }}
           onClick={() => {
             const idx = displayImages.indexOf(currentImage)
             openLightbox(Math.max(idx, 0))
@@ -458,7 +458,7 @@ const ProductImageGallery = ({
                   key={image.id}
                   onClick={() => setSelectedIndex(index)}
                   className={[
-                    "relative flex-shrink-0 w-[72px] h-[72px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-white",
+                    "relative flex-shrink-0 w-[280px] h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
                     isSelected
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",
@@ -472,7 +472,7 @@ const ProductImageGallery = ({
                       alt={`${productTitle} thumbnail ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="72px"
+                      sizes="280px"
                       quality={70}
                     />
                   ) : (
@@ -481,7 +481,7 @@ const ProductImageGallery = ({
                       alt={`${productTitle} thumbnail ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="72px"
+                      sizes="280px"
                       quality={70}
                     />
                   )}
@@ -553,6 +553,45 @@ const ProductImageGallery = ({
                       </div>
                     )}
 
+                    {/* Filtered thumbnail grid */}
+                    {filteredApiImages.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {filteredApiImages.map((image, index) => {
+                          const isSelected =
+                            panelExpanded && index === selectedIndex
+                          return (
+                            <button
+                              key={image.id}
+                              onClick={() => setSelectedIndex(index)}
+                              className={[
+                                "relative flex-shrink-0 w-[280px] h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                                isSelected
+                                  ? "border-dark-blue shadow-md"
+                                  : "border-transparent hover:border-line hover:shadow-sm",
+                              ].join(" ")}
+                              aria-label={`View photo ${index + 1}`}
+                              aria-pressed={isSelected}
+                            >
+                              <Image
+                                src={image.thumbnail}
+                                alt={`${productTitle} photo ${index + 1}`}
+                                fill
+                                className="object-cover"
+                                sizes="280px"
+                                quality={70}
+                              />
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      selectedCategory && (
+                        <p className="text-sm text-ui-fg-muted">
+                          No photos available for the selected filters.
+                        </p>
+                      )
+                    )}
+
                     {/* Combination chips — only for PRODUCT_PHOTOS */}
                     {selectedCategory === PRODUCT_PHOTOS_CATEGORY &&
                       availableCombinations.length > 0 && (
@@ -614,45 +653,6 @@ const ProductImageGallery = ({
                           </div>
                         </div>
                       )}
-
-                    {/* Filtered thumbnail grid */}
-                    {filteredApiImages.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {filteredApiImages.map((image, index) => {
-                          const isSelected =
-                            panelExpanded && index === selectedIndex
-                          return (
-                            <button
-                              key={image.id}
-                              onClick={() => setSelectedIndex(index)}
-                              className={[
-                                "relative flex-shrink-0 w-[72px] h-[72px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-white",
-                                isSelected
-                                  ? "border-dark-blue shadow-md"
-                                  : "border-transparent hover:border-line hover:shadow-sm",
-                              ].join(" ")}
-                              aria-label={`View photo ${index + 1}`}
-                              aria-pressed={isSelected}
-                            >
-                              <Image
-                                src={image.thumbnail}
-                                alt={`${productTitle} photo ${index + 1}`}
-                                fill
-                                className="object-cover"
-                                sizes="72px"
-                                quality={70}
-                              />
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      selectedCategory && (
-                        <p className="text-sm text-ui-fg-muted">
-                          No photos available for the selected filters.
-                        </p>
-                      )
-                    )}
                   </>
                 )}
               </div>

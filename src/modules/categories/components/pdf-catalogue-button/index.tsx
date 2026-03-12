@@ -1,30 +1,25 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import Image from "next/image"
 import { useParams } from "next/navigation"
 import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
 import { getCatalogueLanguage } from "@lib/util/catalogue-language"
 import { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/types"
+import { CatalogDownloadIcon } from "@modules/common/icons/catalog-download"
 
 interface PdfCatalogueButtonProps {
   productName: string
 }
 
-async function downloadCatalogue(catalogue: CatalogueFile): Promise<void> {
-  const response = await fetch(catalogue.url)
-  if (!response.ok) {
-    throw new Error(`Failed to download catalogue: ${response.statusText}`)
-  }
-  const blob = await response.blob()
-  const objectUrl = URL.createObjectURL(blob)
+function downloadCatalogue(catalogue: CatalogueFile): void {
   const link = document.createElement("a")
-  link.href = objectUrl
+  link.href = catalogue.url
   link.download = catalogue.filename
+  link.target = "_blank"
+  link.rel = "noopener noreferrer"
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  URL.revokeObjectURL(objectUrl)
 }
 
 export default function PdfCatalogueButton({
@@ -36,7 +31,6 @@ export default function PdfCatalogueButton({
   const languageCode = (params?.languageCode as string) ?? "en"
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [isDownloading, setIsDownloading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const catalogueLanguage = getCatalogueLanguage(languageCode)
@@ -71,21 +65,13 @@ export default function PdfCatalogueButton({
     return null
   }
 
-  const handleSingleDownload = async (
+  const handleSingleDownload = (
     e: React.MouseEvent,
     catalogue: CatalogueFile
   ) => {
     e.preventDefault()
     e.stopPropagation()
-    if (isDownloading) return
-    try {
-      setIsDownloading(true)
-      await downloadCatalogue(catalogue)
-    } catch (err) {
-      console.error("PDF catalogue download failed:", err)
-    } finally {
-      setIsDownloading(false)
-    }
+    downloadCatalogue(catalogue)
   }
 
   const handleButtonClick = (e: React.MouseEvent) => {
@@ -114,18 +100,9 @@ export default function PdfCatalogueButton({
         onClick={handleButtonClick}
         title="Download PDF catalogue"
         aria-label="Download PDF catalogue"
-        className="flex items-center justify-center w-8 h-8 transition-opacity opacity-80 hover:opacity-100"
+        className="flex items-center justify-center w-8 h-8 text-gold transition-opacity opacity-80 hover:opacity-100"
       >
-        {isDownloading ? (
-          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <Image
-            src="/images/svg/pdf.svg"
-            alt="PDF"
-            width={24}
-            height={24}
-          />
-        )}
+        <CatalogDownloadIcon className="w-6 h-6" />
       </button>
 
       {dropdownOpen && matchedCatalogues.length > 1 && (

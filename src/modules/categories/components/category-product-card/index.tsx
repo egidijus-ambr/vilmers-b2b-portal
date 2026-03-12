@@ -115,7 +115,7 @@ export default function B2BProductCard({
       onClick={handleCardClick}
     >
       {/* Top-right overlay: checkbox in selection mode, PDF icon otherwise */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-3 right-3 z-10">
         {inSelectionMode ? (
           <SelectionCheckbox productName={name} />
         ) : (

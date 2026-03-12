@@ -5,6 +5,7 @@ import B2BProductCard from "@modules/categories/components/category-product-card
 import CategorySortSelect from "@modules/categories/components/category-sort-select"
 import ProductPagination from "@modules/store/components/product-pagination"
 import ProductFilterModal from "@modules/categories/components/product-filter-modal"
+import CatalogBuilderToolbar from "@modules/categories/components/catalog-builder/toolbar"
 import CatalogBuilderWrapper from "./catalog-builder-wrapper"
 import type {
   FilterFacetGroup,
@@ -72,6 +73,7 @@ export default async function CategoryProductGrid({
           {t("products-count", { count: totalCount })}
         </p>
         <div className="flex items-center gap-x-3">
+          <CatalogBuilderToolbar />
           <ProductFilterModal
             initialFacets={
               filterFacets || {
