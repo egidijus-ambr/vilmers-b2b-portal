@@ -48,7 +48,9 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
               showPanelHeader={false}
             />
           </div>
+          <hr className="border-t border-gray-300 mb-4" />
           <ProductFeaturesDisplay features={product.features} />
+          <hr className="border-t border-gray-300 mt-8" />
           <LinkedProductsSection
             groups={product.linkedProductGroups}
             languageCode={product.languageCode}

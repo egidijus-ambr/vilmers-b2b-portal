@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Dialog, DialogPanel } from "@headlessui/react"
 import {
   ChevronLeft,
@@ -347,7 +347,13 @@ const ProductImageGallery = ({
     })
   }
 
-  const currentImage = displayImages[selectedIndex] ?? displayImages[0]
+  const lastImageRef = useRef<DisplayImage | null>(null)
+  const rawCurrentImage = displayImages[selectedIndex] ?? displayImages[0]
+  // Keep showing last image during filter transitions to prevent flash
+  if (rawCurrentImage) {
+    lastImageRef.current = rawCurrentImage
+  }
+  const currentImage = rawCurrentImage ?? lastImageRef.current
 
   if (!images.length && !apiPhotos.length) {
     return (
@@ -450,7 +456,10 @@ const ProductImageGallery = ({
 
         {/* Thumbnail strip */}
         {!panelExpanded && displayImages.length > 1 && (
-          <div className="flex flex-wrap gap-2">
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
+          >
             {displayImages.map((image, index) => {
               const isSelected = index === selectedIndex
               return (
@@ -458,7 +467,7 @@ const ProductImageGallery = ({
                   key={image.id}
                   onClick={() => setSelectedIndex(index)}
                   className={[
-                    "relative flex-shrink-0 w-[280px] h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                    "relative w-full h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
                     isSelected
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",
@@ -472,7 +481,7 @@ const ProductImageGallery = ({
                       alt={`${productTitle} thumbnail ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="280px"
+                      sizes="25vw"
                       quality={70}
                     />
                   ) : (
@@ -481,7 +490,7 @@ const ProductImageGallery = ({
                       alt={`${productTitle} thumbnail ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="280px"
+                      sizes="25vw"
                       quality={70}
                     />
                   )}
@@ -555,7 +564,10 @@ const ProductImageGallery = ({
 
                     {/* Filtered thumbnail grid */}
                     {filteredApiImages.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div
+                        className="grid gap-4"
+                        style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
+                      >
                         {filteredApiImages.map((image, index) => {
                           const isSelected =
                             panelExpanded && index === selectedIndex
@@ -564,7 +576,7 @@ const ProductImageGallery = ({
                               key={image.id}
                               onClick={() => setSelectedIndex(index)}
                               className={[
-                                "relative flex-shrink-0 w-[280px] h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                                "relative w-full h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
                                 isSelected
                                   ? "border-dark-blue shadow-md"
                                   : "border-transparent hover:border-line hover:shadow-sm",
@@ -577,7 +589,7 @@ const ProductImageGallery = ({
                                 alt={`${productTitle} photo ${index + 1}`}
                                 fill
                                 className="object-cover"
-                                sizes="280px"
+                                sizes="25vw"
                                 quality={70}
                               />
                             </button>
@@ -612,7 +624,7 @@ const ProductImageGallery = ({
                                   className={[
                                     "px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150",
                                     isActive
-                                      ? "bg-dark-blue text-white"
+                                      ? "bg-[#C5A572] text-white"
                                       : "border border-line text-dark-blue hover:bg-ui-bg-subtle",
                                   ].join(" ")}
                                 >
@@ -642,7 +654,7 @@ const ProductImageGallery = ({
                                   className={[
                                     "px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150",
                                     isActive
-                                      ? "bg-dark-blue text-white"
+                                      ? "bg-[#C5A572] text-white"
                                       : "border border-line text-dark-blue hover:bg-ui-bg-subtle",
                                   ].join(" ")}
                                 >

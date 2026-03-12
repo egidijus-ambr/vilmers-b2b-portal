@@ -24,7 +24,7 @@ export default function LinkedProductsSection({
   if (groups.length === 0) return null
 
   return (
-    <div className="mt-12">
+    <div className="mt-6">
       {groups.map((group) => (
         <div key={group.type} className="mb-10">
           <ProductCarouselGrid
