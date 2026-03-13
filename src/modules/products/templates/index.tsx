@@ -8,6 +8,7 @@ import ProductImageGallery from "@modules/products/components/product-image-gall
 import type { ProductImage } from "@modules/products/components/product-image-gallery"
 import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import LinkedProductsSection from "@modules/products/components/linked-products-section"
+import InteriorGallerySection from "@modules/products/components/interior-gallery-section"
 
 export type ProductPageData = {
   id: string
@@ -51,6 +52,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
           <hr className="border-t border-gray-300 mb-4" />
           <ProductFeaturesDisplay features={product.features} />
           <hr className="border-t border-gray-300 mt-8" />
+          <InteriorGallerySection productName={product.productName} />
           <LinkedProductsSection
             groups={product.linkedProductGroups}
             languageCode={product.languageCode}

@@ -80,6 +80,7 @@ const ProductImageGallery = ({
     null
   )
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null)
+  const [loadedThumbnails, setLoadedThumbnails] = useState<Set<string>>(new Set())
 
   // Fetch additional S3 product photos
   useEffect(() => {
@@ -337,6 +338,10 @@ const ProductImageGallery = ({
     setSelectedIndex(0)
   }
 
+  const handleThumbnailLoaded = useCallback((src: string) => {
+    setLoadedThumbnails((prev) => new Set(prev).add(src))
+  }, [])
+
   const togglePanel = () => {
     setPanelExpanded((prev) => {
       if (prev) {
@@ -479,18 +484,26 @@ const ProductImageGallery = ({
                       src={image.thumbnail}
                       alt={`${productTitle} thumbnail ${index + 1}`}
                       fill
-                      className="object-cover"
+                      className={`object-cover transition-opacity duration-500 ${
+                        loadedThumbnails.has(image.thumbnail) ? "opacity-100" : "opacity-0"
+                      }`}
+                      style={{ transitionDelay: `${index * 100}ms` }}
                       sizes="25vw"
                       quality={70}
+                      onLoad={() => handleThumbnailLoaded(image.thumbnail)}
                     />
                   ) : (
                     <Image
                       src={image.thumbnail}
                       alt={`${productTitle} thumbnail ${index + 1}`}
                       fill
-                      className="object-cover"
+                      className={`object-cover transition-opacity duration-500 ${
+                        loadedThumbnails.has(image.thumbnail) ? "opacity-100" : "opacity-0"
+                      }`}
+                      style={{ transitionDelay: `${index * 100}ms` }}
                       sizes="25vw"
                       quality={70}
+                      onLoad={() => handleThumbnailLoaded(image.thumbnail)}
                     />
                   )}
                 </button>
@@ -530,7 +543,17 @@ const ProductImageGallery = ({
                 )}
 
                 {isLoadingPhotos ? (
-                  <p className="text-sm text-ui-fg-muted">Loading photos...</p>
+                  <div
+                    className="grid gap-4"
+                    style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
+                  >
+                    {Array.from({ length: 8 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className="relative w-full aspect-[4/3] rounded-sm bg-gold-10 animate-pulse"
+                      />
+                    ))}
+                  </div>
                 ) : (
                   <>
                     {/* Category chips */}
@@ -587,9 +610,13 @@ const ProductImageGallery = ({
                                 src={image.thumbnail}
                                 alt={`${productTitle} photo ${index + 1}`}
                                 fill
-                                className="object-cover"
+                                className={`object-cover transition-opacity duration-500 ${
+                                  loadedThumbnails.has(image.thumbnail) ? "opacity-100" : "opacity-0"
+                                }`}
+                                style={{ transitionDelay: `${index * 100}ms` }}
                                 sizes="25vw"
                                 quality={70}
+                                onLoad={() => handleThumbnailLoaded(image.thumbnail)}
                               />
                             </button>
                           )
