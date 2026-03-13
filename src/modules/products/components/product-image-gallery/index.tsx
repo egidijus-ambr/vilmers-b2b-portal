@@ -368,8 +368,7 @@ const ProductImageGallery = ({
       <div className="flex flex-col gap-3">
         {/* Main image */}
         <div
-          className="relative w-full bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
-          style={{ height: "840px" }}
+          className="relative w-full aspect-[4/3] bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
           onClick={() => {
             const idx = displayImages.indexOf(currentImage)
             openLightbox(Math.max(idx, 0))
@@ -467,7 +466,7 @@ const ProductImageGallery = ({
                   key={image.id}
                   onClick={() => setSelectedIndex(index)}
                   className={[
-                    "relative w-full h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                    "relative w-full aspect-[4/3] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
                     isSelected
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",
@@ -576,7 +575,7 @@ const ProductImageGallery = ({
                               key={image.id}
                               onClick={() => setSelectedIndex(index)}
                               className={[
-                                "relative w-full h-[210px] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                                "relative w-full aspect-[4/3] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
                                 isSelected
                                   ? "border-dark-blue shadow-md"
                                   : "border-transparent hover:border-line hover:shadow-sm",
