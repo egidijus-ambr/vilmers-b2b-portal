@@ -202,6 +202,67 @@ const GET_PRODUCT_BY_PERMALINK = gql`
           src_md
           display_order
         }
+        additional_component_to_advanced_product(
+          where: { enabled: { equals: true } }
+        ) {
+          additional_component {
+            id
+            is_wrapper
+            code
+            additional_component_group {
+              id
+              code
+              additional_component_group_profiles(
+                where: { language: { equals: $language } }
+              ) {
+                name
+                language
+              }
+            }
+            additional_component_profiles(
+              where: { language: { equals: $language } }
+            ) {
+              name
+              description
+              language
+            }
+            image {
+              src
+              src_md
+              src_xs
+            }
+            linked_components_source(orderBy: { display_order: asc }) {
+              id
+              link_type
+              display_order
+              target_component {
+                id
+                code
+                additional_component_group {
+                  code
+                  additional_component_group_profiles(
+                    where: { language: { equals: $language } }
+                  ) {
+                    name
+                    language
+                  }
+                }
+                additional_component_profiles(
+                  where: { language: { equals: $language } }
+                ) {
+                  name
+                  description
+                  language
+                }
+                image {
+                  src
+                  src_md
+                  src_xs
+                }
+              }
+            }
+          }
+        }
       }
       primary_category {
         id
@@ -653,6 +714,49 @@ export class ProductsModule {
             src_md: string | null
             display_order: number
           }[]
+          additional_component_to_advanced_product: {
+            additional_component: {
+              id: number
+              is_wrapper: boolean
+              code: string | null
+              additional_component_group: {
+                id: number
+                code: string | null
+                additional_component_group_profiles: {
+                  name: string
+                  language: string
+                }[]
+              }
+              additional_component_profiles: {
+                name: string
+                description: string | null
+                language: string
+              }[]
+              image: { src: string; src_md: string | null; src_xs: string | null } | null
+              linked_components_source: {
+                id: number
+                link_type: string
+                display_order: number
+                target_component: {
+                  id: number
+                  code: string | null
+                  additional_component_group: {
+                    code: string | null
+                    additional_component_group_profiles: {
+                      name: string
+                      language: string
+                    }[]
+                  }
+                  additional_component_profiles: {
+                    name: string
+                    description: string | null
+                    language: string
+                  }[]
+                  image: { src: string; src_md: string | null; src_xs: string | null } | null
+                }
+              }[] | null
+            }
+          }[] | null
         } | null
         primary_category: {
           id: number

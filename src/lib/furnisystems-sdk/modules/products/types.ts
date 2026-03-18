@@ -88,6 +88,59 @@ export interface SearchProductsResponse {
   sortedBySearchTermPositionProductContainers: CategoryProductsResponse
 }
 
+// Additional component types
+export interface ComponentGroupProfile {
+  name: string
+  language: string
+}
+
+export interface ComponentGroupRef {
+  id?: number
+  code: string | null
+  additional_component_group_profiles: ComponentGroupProfile[]
+}
+
+export interface ComponentProfile {
+  name: string
+  description: string | null
+  language: string
+}
+
+export interface ComponentImage {
+  src: string
+  src_md: string | null
+  src_xs: string | null
+}
+
+export interface LinkedComponentTarget {
+  id: number
+  code: string | null
+  additional_component_group: ComponentGroupRef
+  additional_component_profiles: ComponentProfile[]
+  image: ComponentImage | null
+}
+
+export interface LinkedComponentData {
+  id: number
+  link_type: string
+  display_order: number
+  target_component: LinkedComponentTarget
+}
+
+export interface ProductAdditionalComponent {
+  id: number
+  is_wrapper: boolean
+  code: string | null
+  additional_component_group: ComponentGroupRef
+  additional_component_profiles: ComponentProfile[]
+  image: ComponentImage | null
+  linked_components_source: LinkedComponentData[] | null
+}
+
+export interface ProductComponentAssociation {
+  additional_component: ProductAdditionalComponent
+}
+
 // Product feature types
 export interface ProductFeatureProfile {
   name: string
@@ -141,6 +194,7 @@ export interface FurnisystemsProductDetail {
       src_md: string | null
       display_order: number
     }[]
+    additional_component_to_advanced_product?: ProductComponentAssociation[] | null
   } | null
   primary_category: {
     id: number

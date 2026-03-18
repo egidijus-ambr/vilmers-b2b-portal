@@ -9,6 +9,7 @@ import type { ProductImage } from "@modules/products/components/product-image-ga
 import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import LinkedProductsSection from "@modules/products/components/linked-products-section"
 import InteriorGallerySection from "@modules/products/components/interior-gallery-section"
+import ComfortSection, { type ComfortSectionData } from "@modules/products/components/comfort-section"
 
 export type ProductPageData = {
   id: string
@@ -19,6 +20,7 @@ export type ProductPageData = {
   breadcrumbs: BreadcrumbItem[]
   features: ProductPageFeature[]
   linkedProductGroups: { type: string; products: ProductContainer[] }[]
+  comfortData: ComfortSectionData | null
   languageCode: string
 }
 
@@ -51,6 +53,12 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
           </div>
           <hr className="border-t border-gray-300 mb-4" />
           <ProductFeaturesDisplay features={product.features} />
+          {product.comfortData && (
+            <>
+              <hr className="border-t border-gray-300 mt-8 mb-4" />
+              <ComfortSection data={product.comfortData} />
+            </>
+          )}
           <hr className="border-t border-gray-300 mt-8" />
           <InteriorGallerySection productName={product.productName} />
           <LinkedProductsSection

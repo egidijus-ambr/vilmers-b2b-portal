@@ -8,6 +8,7 @@ import type { CategoryData } from "@lib/furnisystems-sdk"
 import ProductTemplate, { ProductPageData } from "@modules/products/templates"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import type { ProductPageFeature } from "@modules/products/components/product-features-display"
+import type { ComfortItemData, ComfortGroupData, ComfortSectionData } from "@modules/products/components/comfort-section"
 
 export type LinkedProductGroup = {
   type: LinkedProductType
@@ -113,6 +114,50 @@ function mapFurnisystemsProduct(
     })
   }
 
+  const DESIGN_COMFORT = 'design-comfort'
+  const SITTING_CUSHION_COMFORT = 'sitting-cushion-comfort'
+
+  let comfortData: ComfortSectionData | null = null
+
+  const componentAssociations = container.advanced_product?.additional_component_to_advanced_product ?? []
+
+  // Find wrapper component in the design-comfort group
+  const comfortWrappers = componentAssociations
+    .map(a => a.additional_component)
+    .filter(c => c.additional_component_group?.code === DESIGN_COMFORT && c.is_wrapper)
+
+  if (comfortWrappers.length > 0) {
+    // Section title from the group (same for all wrappers in design-comfort)
+    const groupName = comfortWrappers[0].additional_component_group
+      ?.additional_component_group_profiles?.[0]?.name ?? 'Comfort'
+    const sectionTitle = groupName.includes(' / ') ? groupName.split(' / ').pop()! : groupName
+
+    const groups: ComfortGroupData[] = comfortWrappers.map(wrapper => {
+      const wrapperProfile = wrapper.additional_component_profiles?.[0]
+      const groupTitle = wrapperProfile?.name ?? ''
+
+      const includedLinks = (wrapper.linked_components_source ?? [])
+        .filter(link => link.link_type === 'INCLUDES' && link.target_component.additional_component_group?.code === SITTING_CUSHION_COMFORT)
+        .sort((a, b) => a.display_order - b.display_order)
+
+      const items: ComfortItemData[] = includedLinks.map(link => {
+        const target = link.target_component
+        const profile = target.additional_component_profiles?.[0]
+        return {
+          name: profile?.name ?? target.code ?? '',
+          description: profile?.description ?? null,
+          imageUrl: target.image?.src_md ?? target.image?.src ?? null,
+        }
+      })
+
+      return { title: groupTitle, items }
+    }).filter(g => g.items.length > 0)
+
+    if (groups.length > 0) {
+      comfortData = { title: sectionTitle, groups }
+    }
+  }
+
   return {
     id: String(container.id),
     title: profile?.name ?? "Product",
@@ -122,6 +167,7 @@ function mapFurnisystemsProduct(
     breadcrumbs,
     features,
     linkedProductGroups,
+    comfortData,
     languageCode,
   }
 }
