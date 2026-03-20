@@ -28,13 +28,13 @@ export default function ComfortSection({ data }: Props) {
         {allItems.map((item, i) => (
           <div key={i} className="flex flex-row gap-6 items-start">
             {item.imageUrl && (
-              <div className="relative w-[323px] min-w-[323px] h-[234px] bg-gray-50 rounded">
+              <div className="w-[323px] min-w-[323px] bg-gray-50 rounded">
                 <Image
                   src={item.imageUrl}
                   alt={item.name}
                   width={323}
-                  height={234}
-                  className="object-contain"
+                  height={323}
+                  className="object-contain w-full h-auto"
                 />
               </div>
             )}
