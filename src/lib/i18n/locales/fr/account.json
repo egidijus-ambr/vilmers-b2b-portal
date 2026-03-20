@@ -57,6 +57,17 @@
   "back-to-orders": "Retour aux commandes",
   "order-not-found": "Commande introuvable",
   "order-load-error": "Impossible de charger les détails de la commande",
+  "fabric-palettes": {
+    "title": "Palette de tissus",
+    "description": "Consultez et gérez votre palette de tissus et sélections de matériaux.",
+    "empty": "Aucune palette de tissus n'est attribuée à votre compte.",
+    "search-placeholder": "Rechercher des tissus...",
+    "no-results": "Aucun tissu ne correspond à votre recherche.",
+    "showing-groups": "Affichage {{from}}-{{to}} sur {{total}} groupes",
+    "sort-name-asc": "Nom A-Z",
+    "sort-name-desc": "Nom Z-A"
+  },
+  "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",
   "breadcrumb-my-profile": "Mon profil",
   "breadcrumb-orders-history": "Historique des commandes",

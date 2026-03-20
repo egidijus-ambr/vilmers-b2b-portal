@@ -157,6 +157,21 @@ const MobileMenu = ({
               />
               <span>{t("orders")}</span>
             </LocalizedClientLink>
+
+            <LocalizedClientLink
+              href="/account/fabric-palettes"
+              className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+              onClick={onClose}
+              data-testid="mobile-menu-fabric-palettes-link"
+            >
+              <Image
+                src="/images/fabric-palettes-icon.svg"
+                alt="Fabric Palette"
+                width={20}
+                height={20}
+              />
+              <span>{t("fabric-palettes")}</span>
+            </LocalizedClientLink>
           </div>
 
           {/* Language Switcher */}

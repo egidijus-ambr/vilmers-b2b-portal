@@ -57,6 +57,17 @@
   "back-to-orders": "Tilbage til ordrer",
   "order-not-found": "Ordre ikke fundet",
   "order-load-error": "Kunne ikke indlæse ordredetaljer",
+  "fabric-palettes": {
+    "title": "Stofpalette",
+    "description": "Se og administrer din stofpalette og materialevalg.",
+    "empty": "Ingen stofpalet er tildelt din konto.",
+    "search-placeholder": "Søg efter stoffer...",
+    "no-results": "Ingen stoffer matcher din søgning.",
+    "showing-groups": "Viser {{from}}-{{to}} af {{total}} grupper",
+    "sort-name-asc": "Navn A-Z",
+    "sort-name-desc": "Navn Z-A"
+  },
+  "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",
   "breadcrumb-my-profile": "Min profil",
   "breadcrumb-orders-history": "Ordrehistorik",

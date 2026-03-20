@@ -4,6 +4,70 @@ export interface FabricPalette {
   id: string
 }
 
+export interface FabricImage {
+  id: number
+  src: string
+  src_thumbnail?: string
+  src_md?: string
+}
+
+export interface FabricDetail {
+  id: number
+  code: string
+  color_name?: string
+  order: number
+  image: FabricImage
+}
+
+export interface FabricGroupProfileDetail {
+  id: number
+  name: string
+  language: string
+  description?: string
+}
+
+export interface FabricFeatureProfileDetail {
+  name: string
+  language: string
+}
+
+export interface FabricFeatureDetail {
+  id: number
+  code?: string
+  photo?: { id: number; src: string }
+  fabric_feature_profiles: FabricFeatureProfileDetail[]
+  fabric_feature_group?: {
+    id: number
+    code?: string
+    fabric_feature_group_profiles: FabricFeatureProfileDetail[]
+  } | null
+}
+
+export interface FabricGroupToFabricFeatureDetail {
+  fabric_feature: FabricFeatureDetail
+}
+
+export interface FabricGroupDetail {
+  id: number
+  fabrics: FabricDetail[]
+  fabric_group_profiles: FabricGroupProfileDetail[]
+  fabric_features?: FabricGroupToFabricFeatureDetail[]
+  fabric_price_category?: { id: number; group_number: number }[]
+}
+
+export interface FabricGroupToPaletteEntry {
+  id: number
+  name?: string
+  fabric_group: FabricGroupDetail
+}
+
+export interface FabricPaletteDetail {
+  id: number
+  name: string
+  code?: string
+  fabric_groups: FabricGroupToPaletteEntry[]
+}
+
 export interface ManagerImage {
   src_md: string
   src: string
@@ -41,6 +105,9 @@ export interface Customer {
   group_price_listId?: string
   tags?: { id: number }[]
   fabric_palettes?: FabricPalette[]
+  customer_group?: {
+    fabric_palettes?: FabricPalette[]
+  }
   managers?: CustomerManager[]
   spoken_languages?: string[]
   is_configurator_enabled?: boolean

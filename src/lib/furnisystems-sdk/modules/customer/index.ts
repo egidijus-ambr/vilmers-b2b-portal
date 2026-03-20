@@ -13,6 +13,7 @@ import {
   RegisterInput,
   OrdersQueryOptions,
   OrdersQueryResult,
+  FabricPaletteDetail,
 } from "./types"
 import { useMutation } from "@apollo/client"
 
@@ -61,6 +62,11 @@ const GET_ME_QUERY = gql`
       }
       fabric_palettes {
         id
+      }
+      customer_group {
+        fabric_palettes {
+          id
+        }
       }
       is_configurator_enabled
       is_claims_enabled
@@ -363,6 +369,127 @@ const GET_CLAIMS_LINK_QUERY = gql`
   }
 `
 
+const GET_FABRIC_PALETTES_QUERY = gql`
+  query GetFabricPalettesDetail {
+    getMe {
+      fabric_palettes {
+        id
+        name
+        code
+        fabric_groups {
+          id
+          name
+          fabric_group {
+            id
+            fabrics {
+              id
+              code
+              color_name
+              order
+              image {
+                id
+                src
+                src_thumbnail
+                src_md
+              }
+            }
+            fabric_group_profiles {
+              id
+              name
+              language
+              description
+            }
+            fabric_features {
+              fabric_feature {
+                id
+                code
+                photo {
+                  id
+                  src
+                }
+                fabric_feature_profiles {
+                  name
+                  language
+                }
+                fabric_feature_group {
+                  id
+                  code
+                  fabric_feature_group_profiles {
+                    name
+                    language
+                  }
+                }
+              }
+            }
+            fabric_price_category {
+              id
+              group_number
+            }
+          }
+        }
+      }
+      customer_group {
+        fabric_palettes {
+          id
+          name
+          code
+          fabric_groups {
+            id
+            name
+            fabric_group {
+              id
+              fabrics {
+                id
+                code
+                color_name
+                order
+                image {
+                  id
+                  src
+                  src_thumbnail
+                  src_md
+                }
+              }
+              fabric_group_profiles {
+                id
+                name
+                language
+                description
+              }
+              fabric_features {
+                fabric_feature {
+                  id
+                  code
+                  photo {
+                    id
+                    src
+                  }
+                  fabric_feature_profiles {
+                    name
+                    language
+                  }
+                  fabric_feature_group {
+                    id
+                    code
+                    fabric_feature_group_profiles {
+                      name
+                      language
+                    }
+                  }
+                }
+              }
+              fabric_price_category {
+                id
+                group_number
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`
+
 export class CustomerModule {
   constructor(private client: GraphQLClient) {}
 
@@ -440,6 +567,11 @@ export class CustomerModule {
           fabric_palettes: {
             id: string
           }[]
+          customer_group?: {
+            fabric_palettes?: {
+              id: string
+            }[]
+          }
           is_configurator_enabled: boolean
           is_claims_enabled: boolean
           role?: string
@@ -477,6 +609,8 @@ export class CustomerModule {
 
       const customerData = response.getMe
 
+      console.log("getMe response:", customerData)
+
       if (!customerData) {
         return null
       }
@@ -496,6 +630,7 @@ export class CustomerModule {
         price_listId: customerData.price_listId,
         tags: customerData.tags,
         fabric_palettes: customerData.fabric_palettes,
+        customer_group: customerData.customer_group,
         managers: customerData.managers,
         is_configurator_enabled: customerData.is_configurator_enabled,
         is_claims_enabled: customerData.is_claims_enabled,
@@ -892,11 +1027,44 @@ export class CustomerModule {
       if (!claimsData?.url) {
         throw new Error("No claims URL received")
       }
-      
+
       return claimsData.url
     } catch (error) {
       console.error("Error fetching claims link:", error)
       throw error
+    }
+  }
+
+  async getFabricPalettes(): Promise<FabricPaletteDetail[]> {
+    try {
+      const response = await this.client.query<{
+        getMe: {
+          fabric_palettes: FabricPaletteDetail[]
+          customer_group?: {
+            fabric_palettes?: FabricPaletteDetail[]
+          }
+        }
+      }>(GET_FABRIC_PALETTES_QUERY, {
+        fetchPolicy: "no-cache",
+        errorPolicy: "all",
+      })
+
+      const directPalettes = response?.getMe?.fabric_palettes ?? []
+      const groupPalettes = response?.getMe?.customer_group?.fabric_palettes ?? []
+
+      // Merge and deduplicate by ID
+      const allPalettes = [...directPalettes]
+      const existingIds = new Set(directPalettes.map(p => p.id))
+      for (const palette of groupPalettes) {
+        if (!existingIds.has(palette.id)) {
+          allPalettes.push(palette)
+        }
+      }
+
+      return allPalettes
+    } catch (error) {
+      console.error("[getFabricPalettes] Error:", error)
+      return []
     }
   }
 

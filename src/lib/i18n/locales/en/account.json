@@ -57,6 +57,17 @@
   "back-to-orders": "Back to Orders",
   "order-not-found": "Order not found",
   "order-load-error": "Failed to load order details",
+  "fabric-palettes": {
+    "title": "Fabric Palette",
+    "description": "View and manage your fabric palette and material selections.",
+    "empty": "No fabric palette assigned to your account.",
+    "search-placeholder": "Search fabrics...",
+    "no-results": "No fabrics match your search.",
+    "showing-groups": "Showing {{from}}-{{to}} of {{total}} groups",
+    "sort-name-asc": "Name A-Z",
+    "sort-name-desc": "Name Z-A"
+  },
+  "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",
   "breadcrumb-my-profile": "My Profile",
   "breadcrumb-orders-history": "Orders History",

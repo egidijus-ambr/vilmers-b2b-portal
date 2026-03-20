@@ -1,0 +1,14 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_fabric_palettes)">
+<path d="M3 6C3 4.34315 4.34315 3 6 3H18C19.6569 3 21 4.34315 21 6V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18V6Z" stroke="#222D37" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3 9H21" stroke="#222D37" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3 15H21" stroke="#222D37" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9 9V21" stroke="#222D37" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15 9V21" stroke="#222D37" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_fabric_palettes">
+<rect width="24" height="24" fill="white"/>
+</clipPath>
+</defs>
+</svg>

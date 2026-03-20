@@ -201,6 +201,20 @@ const Overview = (): JSX.Element => {
             )}
           </div>
         </div>
+        {/* Fabric Palettes Card */}
+        <div className="space-y-4">
+          <div className="bg-white">
+            <ActionCard
+              key="fabric_palettes_index"
+              title={t("fabric-palettes.title")}
+              description={t("fabric-palettes.description")}
+              onClick={() => router.push(`/${languageCode}/account/fabric-palettes`)}
+              buttonText={t("check")}
+              height="auto"
+            />
+          </div>
+        </div>
+
         {(customer?.role === "admin" || customer?.role === "agent") && (
           <div className="space-y-4">
             <div className="bg-white ">

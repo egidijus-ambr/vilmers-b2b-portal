@@ -1,13 +1,7 @@
 "use client"
 
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-} from "@headlessui/react"
 import { useRouter, useSearchParams } from "next/navigation"
-import ChevronDown from "@modules/common/icons/chevron-down"
+import SortSelect from "@modules/common/components/sort-select"
 import { CategorySortOption } from "@lib/furnisystems-sdk/modules/products/types"
 
 const SORT_OPTIONS_KEYS: { value: CategorySortOption; labelKey: string }[] = [
@@ -31,15 +25,14 @@ export default function CategorySortSelect({ labels }: CategorySortSelectProps) 
   }))
 
   const currentSort = (searchParams.get("sort") as CategorySortOption) || "name_asc"
-  const currentOption = sortOptions.find((o) => o.value === currentSort) ?? sortOptions[0]
 
-  const handleChange = (option: { value: CategorySortOption; label: string }) => {
+  const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
 
-    if (option.value === "name_asc") {
+    if (value === "name_asc") {
       params.delete("sort")
     } else {
-      params.set("sort", option.value)
+      params.set("sort", value)
     }
 
     // Reset page when sort changes
@@ -50,24 +43,10 @@ export default function CategorySortSelect({ labels }: CategorySortSelectProps) 
   }
 
   return (
-    <Listbox value={currentOption} onChange={handleChange}>
-      <div className="relative">
-        <ListboxButton className="flex items-center justify-center gap-x-2 h-[56px] border border-gray-300 px-5 text-sm text-gray-700 hover:border-gray-400 transition-colors">
-          <span>{currentOption.label}</span>
-          <ChevronDown size="14" />
-        </ListboxButton>
-        <ListboxOptions className="absolute right-0 mt-1 z-50 bg-white border border-gray-300 shadow-md min-w-[200px]">
-          {sortOptions.map((option) => (
-            <ListboxOption
-              key={option.value}
-              value={option}
-              className="px-5 py-3 text-sm text-gray-700 cursor-pointer hover:bg-gray-100 data-[selected]:font-semibold"
-            >
-              {option.label}
-            </ListboxOption>
-          ))}
-        </ListboxOptions>
-      </div>
-    </Listbox>
+    <SortSelect
+      options={sortOptions}
+      value={currentSort}
+      onChange={handleChange}
+    />
   )
 }

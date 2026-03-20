@@ -57,6 +57,17 @@
   "back-to-orders": "Grįžti į užsakymus",
   "order-not-found": "Užsakymas nerastas",
   "order-load-error": "Nepavyko įkrauti užsakymo informacijos",
+  "fabric-palettes": {
+    "title": "Audinių paletė",
+    "description": "Peržiūrėkite ir valdykite savo audinių paletę ir medžiagų pasirinkimus.",
+    "empty": "Jūsų paskyrai nepriskirta audinių paletė.",
+    "search-placeholder": "Ieškoti audinių...",
+    "no-results": "Nė vienas audinys neatitinka jūsų paieškos.",
+    "showing-groups": "Rodoma {{from}}-{{to}} iš {{total}} grupių",
+    "sort-name-asc": "Pavadinimas A-Z",
+    "sort-name-desc": "Pavadinimas Z-A"
+  },
+  "breadcrumb-fabric-palettes": "Audinių paletė",
   "breadcrumb-home": "Pradžia",
   "breadcrumb-my-profile": "Mano profilis",
   "breadcrumb-orders-history": "Užsakymų istorija",

@@ -57,6 +57,17 @@
   "back-to-orders": "Zurück zu Bestellungen",
   "order-not-found": "Bestellung nicht gefunden",
   "order-load-error": "Bestelldetails konnten nicht geladen werden",
+  "fabric-palettes": {
+    "title": "Stoffpalette",
+    "description": "Sehen und verwalten Sie Ihre Stoffpalette und Materialauswahlen.",
+    "empty": "Ihrem Konto ist keine Stoffpalette zugewiesen.",
+    "search-placeholder": "Stoffe suchen...",
+    "no-results": "Keine Stoffe entsprechen Ihrer Suche.",
+    "showing-groups": "Zeige {{from}}-{{to}} von {{total}} Gruppen",
+    "sort-name-asc": "Name A-Z",
+    "sort-name-desc": "Name Z-A"
+  },
+  "breadcrumb-fabric-palettes": "Stoffpalette",
   "breadcrumb-home": "Startseite",
   "breadcrumb-my-profile": "Mein Profil",
   "breadcrumb-orders-history": "Bestellverlauf",
