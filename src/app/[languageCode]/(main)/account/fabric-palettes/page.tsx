@@ -16,6 +16,7 @@ import {
   FabricGroupDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import FabricGroupInfoModal from "@modules/fabric-palettes/components/fabric-group-info-modal"
+import FabricImageModal from "@modules/fabric-palettes/components/fabric-image-modal"
 import { Info } from 'lucide-react'
 
 export default function FabricPalettesPage() {
@@ -40,6 +41,10 @@ export default function FabricPalettesPage() {
   const [infoGroup, setInfoGroup] = useState<{
     name: string
     data: FabricGroupDetail
+  } | null>(null)
+  const [selectedFabric, setSelectedFabric] = useState<{
+    name: string
+    imageSrc: string
   } | null>(null)
   const PAGE_SIZE = 12
 
@@ -341,7 +346,17 @@ export default function FabricPalettesPage() {
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8">
                         {sortedFabrics.map((fabric) => (
                           <div key={fabric.id} className="flex flex-col gap-2">
-                            <div className="relative aspect-[2/1] overflow-hidden  bg-gold-20 ">
+                            <div
+                              className={`relative aspect-[2/1] overflow-hidden bg-gold-20 ${fabric.image ? "cursor-zoom-in group" : ""}`}
+                              onClick={() => {
+                                if (fabric.image) {
+                                  setSelectedFabric({
+                                    name: fabric.color_name || fabric.code,
+                                    imageSrc: fabric.image.src || fabric.image.src_md || fabric.image.src_thumbnail || '',
+                                  })
+                                }
+                              }}
+                            >
                               {fabric.image && (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -354,6 +369,9 @@ export default function FabricPalettesPage() {
                                   className="h-full w-full object-cover"
                                   loading="lazy"
                                 />
+                              )}
+                              {fabric.image && (
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                               )}
                             </div>
                             <p className="text-sm text-gray-700 truncate">
@@ -386,6 +404,14 @@ export default function FabricPalettesPage() {
           groupName={infoGroup.name}
           groupData={infoGroup.data}
           languageCode={languageCode}
+        />
+      )}
+      {selectedFabric && (
+        <FabricImageModal
+          isOpen={!!selectedFabric}
+          onClose={() => setSelectedFabric(null)}
+          fabricName={selectedFabric.name}
+          imageSrc={selectedFabric.imageSrc}
         />
       )}
     </>
