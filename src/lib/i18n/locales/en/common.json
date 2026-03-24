@@ -42,6 +42,7 @@
   "password": "Password",
   "password-placeholder": "Password",
   "phone": "Phone",
+  "price-category": "Price Category",
   "privacy-policy": "Privacy policy",
   "products": "Products",
   "products-count": "Products: {{count}}",

@@ -42,6 +42,7 @@
   "password": "Adgangskode",
   "password-placeholder": "Adgangskode",
   "phone": "Telefon",
+  "price-category": "Priskategori",
   "privacy-policy": "Privatlivspolitik",
   "products": "Produkter",
   "products-count": "Produkter: {{count}}",

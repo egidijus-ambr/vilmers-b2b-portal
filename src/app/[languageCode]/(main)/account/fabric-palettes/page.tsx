@@ -17,6 +17,7 @@ import {
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import FabricGroupInfoModal from "@modules/fabric-palettes/components/fabric-group-info-modal"
 import FabricImageModal from "@modules/fabric-palettes/components/fabric-image-modal"
+import { groupSelectedFeatures, matchesFeatureSelection, buildFeatureToGroupMap } from "@modules/fabric-palettes/utils/feature-filter-logic"
 import { Info } from 'lucide-react'
 
 export default function FabricPalettesPage() {
@@ -38,6 +39,12 @@ export default function FabricPalettesPage() {
   const [selectedFeatures, setSelectedFeatures] = useState<Set<number>>(
     new Set()
   )
+  const [selectedPriceCategories, setSelectedPriceCategories] = useState<Set<number>>(new Set())
+
+  const featureToGroupMap = useMemo(() => {
+    return buildFeatureToGroupMap(palettes)
+  }, [palettes])
+
   const [infoGroup, setInfoGroup] = useState<{
     name: string
     data: FabricGroupDetail
@@ -130,23 +137,43 @@ export default function FabricPalettesPage() {
   }, [palettes, searchQuery, resolveGroupName])
 
   const featureFilteredPalettes = useMemo(() => {
-    if (selectedFeatures.size === 0) return filteredPalettes
+    if (selectedFeatures.size === 0 && selectedPriceCategories.size === 0)
+      return filteredPalettes
+
+    const grouped = groupSelectedFeatures(selectedFeatures, featureToGroupMap)
+
     return filteredPalettes
       .map((palette) => ({
         ...palette,
         fabric_groups: palette.fabric_groups.filter((entry) => {
-          const groupFeatureIds = new Set(
-            (entry.fabric_group.fabric_features ?? []).map(
-              (ff) => ff.fabric_feature.id
+          // Feature filter (OR within group, AND across groups)
+          if (selectedFeatures.size > 0) {
+            const groupFeatureIds = new Set(
+              (entry.fabric_group.fabric_features ?? []).map(
+                (ff) => ff.fabric_feature.id
+              )
             )
-          )
-          return Array.from(selectedFeatures).every((fId) =>
-            groupFeatureIds.has(fId)
-          )
+            if (!matchesFeatureSelection(groupFeatureIds, grouped)) return false
+          }
+          // Price category filter (OR logic) - unchanged
+          if (selectedPriceCategories.size > 0) {
+            const groupPriceCats = new Set(
+              (entry.fabric_group.fabric_price_category ?? []).map(
+                (pc) => pc.group_number
+              )
+            )
+            if (
+              !Array.from(selectedPriceCategories).some((gn) =>
+                groupPriceCats.has(gn)
+              )
+            )
+              return false
+          }
+          return true
         }),
       }))
       .filter((palette) => palette.fabric_groups.length > 0)
-  }, [filteredPalettes, selectedFeatures])
+  }, [filteredPalettes, selectedFeatures, selectedPriceCategories, featureToGroupMap])
 
   const allFilteredGroups = useMemo(
     () =>
@@ -181,7 +208,7 @@ export default function FabricPalettesPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, sortOrder, selectedFeatures])
+  }, [searchQuery, sortOrder, selectedFeatures, selectedPriceCategories])
 
   const hasContent =
     palettes.length > 0 && palettes.some((p) => p.fabric_groups.length > 0)
@@ -215,7 +242,7 @@ export default function FabricPalettesPage() {
             <p className="text-gray-500">{t("fabric-palettes.no-results")}</p>
           ) : (
             <>
-              <div className="flex items-center justify-between gap-4">
+              <div className="hidden md:flex items-center justify-between gap-4">
                 {totalGroups > 0 && (
                   <p className="text-sm text-gray-600">
                     {t("fabric-palettes.showing-groups", {
@@ -295,12 +322,17 @@ export default function FabricPalettesPage() {
                   <FabricFeatureFilterModal
                     palettes={palettes}
                     selectedFeatures={selectedFeatures}
-                    onApply={setSelectedFeatures}
+                    selectedPriceCategories={selectedPriceCategories}
+                    onApply={(features, priceCategories) => {
+                      setSelectedFeatures(features)
+                      setSelectedPriceCategories(priceCategories)
+                    }}
                     language={backendLang}
                     labels={{
                       filter: tc("filter"),
                       clearAll: tc("clear-filters"),
                       showResults: tc("show-results"),
+                      priceCategory: tc("price-category"),
                     }}
                   />
                   <SortSelect

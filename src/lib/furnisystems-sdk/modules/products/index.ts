@@ -859,6 +859,42 @@ export class ProductsModule {
       return null
     }
   }
+
+  /**
+   * Fetch all configurator data for an advanced product.
+   * Used on-demand when the configurator modal opens.
+   */
+  async getConfiguratorData(
+    productContainerId: number,
+    priceListId: number,
+    language?: string
+  ): Promise<any | null> {
+    const { GET_CONFIGURATOR_DATA } = await import(
+      "@configurator/queries/configurator-queries"
+    )
+
+    try {
+      const response = await this.client.query<{
+        findUniqueProductContainer: any
+      }>(GET_CONFIGURATOR_DATA, {
+        variables: {
+          productContainerId,
+          priceListId,
+          ...(language ? { language: language.toLowerCase() } : {}),
+        },
+        fetchPolicy: "no-cache",
+        errorPolicy: "all",
+      })
+
+      return response.findUniqueProductContainer ?? null
+    } catch (error) {
+      console.error(
+        `Error fetching configurator data for product ${productContainerId}:`,
+        error
+      )
+      return null
+    }
+  }
 }
 
 export * from "./types"

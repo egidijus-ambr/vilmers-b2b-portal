@@ -8,7 +8,7 @@ import X from "@modules/common/icons/x"
 type ModalProps = {
   isOpen: boolean
   close: () => void
-  size?: "small" | "medium" | "large"
+  size?: "small" | "medium" | "large" | "fullscreen"
   search?: boolean
   children: React.ReactNode
   'data-testid'?: string
@@ -59,11 +59,13 @@ const Modal = ({
               <Dialog.Panel
                 data-testid={dataTestId}
                 className={clx(
-                  "flex flex-col justify-start w-full transform p-5 text-left align-middle transition-all max-h-[75vh] h-fit",
+                  "flex flex-col justify-start w-full transform p-5 text-left align-middle transition-all",
                   {
+                    "max-h-[75vh] h-fit": size !== "fullscreen",
                     "max-w-md": size === "small",
                     "max-w-xl": size === "medium",
                     "max-w-3xl": size === "large",
+                    "max-w-[95vw] h-[90vh] overflow-hidden": size === "fullscreen",
                     "bg-transparent shadow-none": search,
                     "bg-white shadow-xl border rounded-rounded": !search,
                   }
@@ -102,8 +104,8 @@ const Description: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   )
 }
 
-const Body: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <div className="flex justify-center">{children}</div>
+const Body: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => {
+  return <div className={clx("flex justify-center", className)}>{children}</div>
 }
 
 const Footer: React.FC<{ children: React.ReactNode }> = ({ children }) => {

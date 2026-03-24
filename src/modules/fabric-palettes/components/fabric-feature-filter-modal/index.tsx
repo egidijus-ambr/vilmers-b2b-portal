@@ -8,13 +8,15 @@ import type {
   FabricPaletteDetail,
   FabricFeatureDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
+import { groupSelectedFeatures, matchesFeatureSelection } from "../../utils/feature-filter-logic"
 
 interface FabricFeatureFilterModalProps {
   palettes: FabricPaletteDetail[]
   selectedFeatures: Set<number>
-  onApply: (selectedFeatureIds: Set<number>) => void
+  selectedPriceCategories: Set<number>
+  onApply: (selectedFeatureIds: Set<number>, selectedPriceCategories: Set<number>) => void
   language: string
-  labels: { filter: string; clearAll: string; showResults: string }
+  labels: { filter: string; clearAll: string; showResults: string; priceCategory: string }
 }
 
 function resolveFeatureName(
@@ -51,17 +53,20 @@ function resolveFeatureGroupName(
 export default function FabricFeatureFilterModal({
   palettes,
   selectedFeatures,
+  selectedPriceCategories,
   onApply,
   language,
   labels,
 }: FabricFeatureFilterModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [pendingFeatures, setPendingFeatures] = useState<Set<number>>(new Set())
+  const [pendingPriceCategories, setPendingPriceCategories] = useState<Set<number>>(new Set())
 
   const openModal = useCallback(() => {
     setPendingFeatures(new Set(selectedFeatures))
+    setPendingPriceCategories(new Set(selectedPriceCategories))
     setIsOpen(true)
-  }, [selectedFeatures])
+  }, [selectedFeatures, selectedPriceCategories])
 
   const closeModal = useCallback(() => {
     setIsOpen(false)
@@ -76,18 +81,31 @@ export default function FabricFeatureFilterModal({
     })
   }, [])
 
+  const togglePriceCategory = useCallback((groupNumber: number) => {
+    setPendingPriceCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupNumber)) {
+        next.delete(groupNumber)
+      } else {
+        next.add(groupNumber)
+      }
+      return next
+    })
+  }, [])
+
   const clearAll = useCallback(() => {
     setPendingFeatures(new Set())
+    setPendingPriceCategories(new Set())
   }, [])
 
   const apply = useCallback(() => {
-    onApply(pendingFeatures)
+    onApply(pendingFeatures, pendingPriceCategories)
     setIsOpen(false)
-  }, [pendingFeatures, onApply])
+  }, [pendingFeatures, pendingPriceCategories, onApply])
 
   // Collect all unique fabric groups across all palettes (dedup by fabric_group.id)
   const allFabricGroups = useMemo(() => {
-    const seen = new Map<number, { featureIds: Set<number> }>()
+    const seen = new Map<number, { featureIds: Set<number>; priceCategoryGroupNumbers: Set<number> }>()
     palettes.forEach((palette) => {
       palette.fabric_groups.forEach((entry) => {
         const group = entry.fabric_group
@@ -98,7 +116,13 @@ export default function FabricFeatureFilterModal({
               featureIds.add(fgf.fabric_feature.id)
             })
           }
-          seen.set(group.id, { featureIds })
+          const priceCategoryGroupNumbers = new Set<number>()
+          if (group.fabric_price_category) {
+            group.fabric_price_category.forEach((pc) => {
+              priceCategoryGroupNumbers.add(pc.group_number)
+            })
+          }
+          seen.set(group.id, { featureIds, priceCategoryGroupNumbers })
         }
       })
     })
@@ -123,17 +147,53 @@ export default function FabricFeatureFilterModal({
     return map
   }, [palettes])
 
-  // Compute feature groups with counts (depends on pendingFeatures for AND-logic counts)
-  const featureGroups = useMemo(() => {
-    // For each feature, count = number of fabric groups that have ALL pendingFeatures AND this feature
-    const pendingArray = Array.from(pendingFeatures)
-    const computeCount = (featureId: number): number => {
+  const featureToGroupMap = useMemo(() => {
+    const map = new Map<number, number | null>()
+    featureMetaMap.forEach((feature, featureId) => {
+      map.set(featureId, feature.fabric_feature_group?.id ?? null)
+    })
+    return map
+  }, [featureMetaMap])
+
+  // Compute price category options with counts
+  const priceCategoryOptions = useMemo(() => {
+    const allGroupNumbers = new Set<number>()
+    allFabricGroups.forEach(({ priceCategoryGroupNumbers }) => {
+      priceCategoryGroupNumbers.forEach((gn) => allGroupNumbers.add(gn))
+    })
+
+    const grouped = groupSelectedFeatures(pendingFeatures, featureToGroupMap)
+
+    const options = Array.from(allGroupNumbers).map((groupNumber) => {
       let count = 0
-      allFabricGroups.forEach(({ featureIds }) => {
-        // Must have all currently pending features
-        const hasAll = pendingArray.every((pid) => featureIds.has(pid))
-        // AND must also have this feature
-        if (hasAll && featureIds.has(featureId)) {
+      allFabricGroups.forEach(({ featureIds, priceCategoryGroupNumbers }) => {
+        const matchesFeatures =
+          pendingFeatures.size === 0 || matchesFeatureSelection(featureIds, grouped)
+        if (matchesFeatures && priceCategoryGroupNumbers.has(groupNumber)) {
+          count++
+        }
+      })
+      return { groupNumber, count }
+    })
+
+    options.sort((a, b) => a.groupNumber - b.groupNumber)
+    return options
+  }, [allFabricGroups, pendingFeatures, featureToGroupMap])
+
+  // Compute feature groups with counts (depends on pendingFeatures for OR-within-group, AND-across-groups counts)
+  const featureGroups = useMemo(() => {
+    const pendingPriceCatsArray = Array.from(pendingPriceCategories)
+    const computeCount = (featureId: number): number => {
+      const hypothetical = new Set(pendingFeatures)
+      hypothetical.add(featureId)
+      const grouped = groupSelectedFeatures(hypothetical, featureToGroupMap)
+      let count = 0
+      allFabricGroups.forEach(({ featureIds, priceCategoryGroupNumbers }) => {
+        const matchesFeatures = matchesFeatureSelection(featureIds, grouped)
+        const matchesPriceCats =
+          pendingPriceCatsArray.length === 0 ||
+          pendingPriceCatsArray.some((pc) => priceCategoryGroupNumbers.has(pc))
+        if (matchesFeatures && matchesPriceCats) {
           count++
         }
       })
@@ -180,18 +240,22 @@ export default function FabricFeatureFilterModal({
     })
 
     return groups
-  }, [allFabricGroups, featureMetaMap, pendingFeatures, language])
+  }, [allFabricGroups, featureMetaMap, pendingFeatures, pendingPriceCategories, featureToGroupMap, language])
 
-  // Total count: fabric groups matching ALL pendingFeatures
   const totalCount = useMemo(() => {
-    const pendingArray = Array.from(pendingFeatures)
+    const pendingPriceCatsArray = Array.from(pendingPriceCategories)
+    const grouped = groupSelectedFeatures(pendingFeatures, featureToGroupMap)
     let count = 0
-    allFabricGroups.forEach(({ featureIds }) => {
-      const hasAll = pendingArray.every((pid) => featureIds.has(pid))
-      if (hasAll) count++
+    allFabricGroups.forEach(({ featureIds, priceCategoryGroupNumbers }) => {
+      const matchesFeatures =
+        pendingFeatures.size === 0 || matchesFeatureSelection(featureIds, grouped)
+      const matchesPriceCats =
+        pendingPriceCatsArray.length === 0 ||
+        pendingPriceCatsArray.some((pc) => priceCategoryGroupNumbers.has(pc))
+      if (matchesFeatures && matchesPriceCats) count++
     })
     return count
-  }, [allFabricGroups, pendingFeatures])
+  }, [allFabricGroups, pendingFeatures, pendingPriceCategories, featureToGroupMap])
 
   return (
     <>
@@ -203,9 +267,9 @@ export default function FabricFeatureFilterModal({
       >
         <FilterIcon />
         <span>{labels.filter}</span>
-        {selectedFeatures.size > 0 && (
+        {(selectedFeatures.size + selectedPriceCategories.size) > 0 && (
           <span className="ml-1 bg-dark-blue text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {selectedFeatures.size}
+            {selectedFeatures.size + selectedPriceCategories.size}
           </span>
         )}
       </button>
@@ -253,6 +317,39 @@ export default function FabricFeatureFilterModal({
 
                   {/* Scrollable content */}
                   <div className="overflow-y-auto flex-1 px-8 py-2 bg-gold-10">
+                    {priceCategoryOptions.length > 0 && (
+                      <div className="border-b border-gray-200 py-5">
+                        <h3 className="text-xs text-dark-blue tracking-[0.2em] uppercase mb-4">
+                          {labels.priceCategory}
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {priceCategoryOptions.map(({ groupNumber, count }) => {
+                            const selected = pendingPriceCategories.has(groupNumber)
+                            const disabled = count === 0 && !selected
+                            return (
+                              <button
+                                key={groupNumber}
+                                onClick={() => togglePriceCategory(groupNumber)}
+                                disabled={disabled}
+                                className={clx(
+                                  "inline-flex items-center px-4 py-2 text-sm rounded-full transition-colors",
+                                  disabled
+                                    ? "bg-gold-10 text-gray-300 cursor-not-allowed border border-gray-200"
+                                    : selected
+                                      ? "bg-dark-blue text-white"
+                                      : "bg-gold-20 text-dark-blue hover:bg-gold-200 border hover:border-gray-400"
+                                )}
+                              >
+                                CAT {groupNumber}
+                                <span className={clx("ml-1.5", disabled ? "text-gray-300" : selected ? "text-gray-300" : "text-gray-400")}>
+                                  ({count})
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
                     {featureGroups.map((group) => (
                       <div
                         key={group.groupId ?? "other"}

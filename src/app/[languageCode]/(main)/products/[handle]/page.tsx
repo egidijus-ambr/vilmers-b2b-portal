@@ -169,6 +169,8 @@ function mapFurnisystemsProduct(
     linkedProductGroups,
     comfortData,
     languageCode,
+    isAdvancedProduct: isAdvanced,
+    productContainerId: container.id,
   }
 }
 
