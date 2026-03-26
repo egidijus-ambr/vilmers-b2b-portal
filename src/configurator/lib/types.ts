@@ -147,7 +147,11 @@ export interface ComponentGroup {
   order: number
   nameOverride?: React.ReactNode | null
   ui_type?: string | null
-  additional_component_group_profiles: { name: string; language: string }[]
+  use_fabric_prices_for_components?: boolean
+  hide_components_without_price?: boolean
+  enable_custom_dimensions_for_components?: boolean
+  enabled_dimensions_in_group?: string[] | null
+  additional_component_group_profiles: { name: string; description?: string | null; language: string }[]
   additional_components: AdditionalComponent[]
 }
 
@@ -158,12 +162,22 @@ export interface AdditionalComponent {
   groupCode?: string
   groupNameOverride?: string
   moduleId?: string
+  additionalComponentGroupId?: number
+  is_wrapper?: boolean
+  component_sku?: string | null
+  conditions?: {
+    onlyWithComponents?: string[]
+    onlyWithComponentsGroup?: string
+  } | null
   dimensions: Record<string, any> | null
   image: { src: string; src_md: string | null; src_xs: string | null } | null
-  additional_component_profiles: { name: string; description: string | null; language: string }[]
+  additional_component_profiles: { name: string; material_name?: string | null; description: string | null; language: string }[]
   price_fabric_category: ComponentPriceFabricCategory[]
   extra_price: number | null
-  extra_prices: { price: number; price_listId: number }[]
+  extra_prices: { price: number; price_listId?: number }[]
+  color?: { id: number; hex: string; background: string | null } | null
+  linked_components_source?: LinkedComponent[] | null
+  metadata?: Record<string, any> | null
 }
 
 export interface ComponentPriceFabricCategory {
@@ -218,6 +232,27 @@ export interface SelectedFabricState {
 
 export interface SelectedFabricCombinationState {
   fabricCombination: FabricCombination | null
+}
+
+export interface LinkedComponent {
+  id: number
+  link_type: string
+  display_order: number
+  target_component: {
+    id: number
+    code: string | null
+    component_sku?: string | null
+    image: { src_thumbnail?: string; src_md: string | null } | null
+    additional_component_profiles: { id: number; name: string; description: string | null; language: string }[]
+  }
+}
+
+export type StepId = 'fabric' | 'armrest-legs' | 'design' | 'threads'
+
+export interface StepDefinition {
+  id: StepId
+  label: string
+  groups: ComponentGroup[]
 }
 
 // --- Cart types ---

@@ -3,7 +3,10 @@
 import React, { useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import FabricDrawer from "./fabric-drawer"
-import type { FabricGroupWithPrice, FabricCombinationOption } from "@configurator/lib/types"
+import type {
+  FabricGroupWithPrice,
+  FabricCombinationOption,
+} from "@configurator/lib/types"
 
 type FabricSelectorProps = {
   fabricGroups: FabricGroupWithPrice[]
@@ -32,7 +35,10 @@ const FabricSelector = ({
   // Get current selection based on mode
   const currentSelection = option
     ? selectedFabric.combinationFabrics?.[option.id]
-    : { fabricGroupObject: selectedFabric.fabricGroupObject, fabricObject: selectedFabric.fabricObject }
+    : {
+        fabricGroupObject: selectedFabric.fabricGroupObject,
+        fabricObject: selectedFabric.fabricObject,
+      }
 
   const selectedGroup = currentSelection?.fabricGroupObject
   const selectedFabricObj = currentSelection?.fabricObject
@@ -48,13 +54,15 @@ const FabricSelector = ({
       {/* Compact clickable row */}
       <button
         onClick={() => setDrawerOpen(true)}
-        className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-gray-400 transition-colors text-left"
+        className="w-full flex items-end gap-3 pr-4 border border-gray-200 hover:border-gray-400 transition-colors text-left"
       >
         {/* Thumbnail */}
-        <div className="w-12 h-12 shrink-0 rounded overflow-hidden bg-gray-50 border">
+        <div className="w-32 h-32 shrink-0 overflow-hidden bg-gray-50 border-r border-gray-200">
           {selectedFabricObj?.image?.src_xs ? (
             <img
-              src={selectedFabricObj.image.src_xs}
+              src={
+                selectedFabricObj.image.src_md ?? selectedFabricObj.image.src_xs
+              }
               alt={selectedFabricObj.color_name ?? selectedFabricObj.code}
               className="w-full h-full object-cover"
             />
@@ -66,9 +74,9 @@ const FabricSelector = ({
         </div>
 
         {/* Text */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pb-2">
           {title && (
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+            <p className="text-lg font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
               {title}
             </p>
           )}
@@ -78,7 +86,8 @@ const FabricSelector = ({
                 {selectedFabricObj.color_name ?? selectedFabricObj.code}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                {groupName}{selectedFabricObj.code ? ` · ${selectedFabricObj.code}` : ""}
+                {groupName}
+                {selectedFabricObj.code ? ` · ${selectedFabricObj.code}` : ""}
               </p>
             </>
           ) : (
@@ -87,7 +96,13 @@ const FabricSelector = ({
         </div>
 
         {/* Chevron */}
-        <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg
+          className="w-4 h-8 text-gray-400 shrink-0 pb-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
       </button>
@@ -105,10 +120,13 @@ const FabricSelector = ({
   )
 }
 
-function getGroupName(group: FabricGroupWithPrice, languageCode: string): string {
-  const profile = group.fabric_group_profiles?.find(
-    (p) => p.language === languageCode
-  ) ?? group.fabric_group_profiles?.[0]
+function getGroupName(
+  group: FabricGroupWithPrice,
+  languageCode: string
+): string {
+  const profile =
+    group.fabric_group_profiles?.find((p) => p.language === languageCode) ??
+    group.fabric_group_profiles?.[0]
   return profile?.name ?? group.code ?? `Group ${group.id}`
 }
 

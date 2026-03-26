@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { sdk } from "@lib/config"
+import { mergeComponentGroups } from "@configurator/lib/component-utils"
 
 /**
  * Hook to lazy-load configurator data when the modal opens.
@@ -39,6 +40,20 @@ export function useConfiguratorData(
         }
 
         dispatch({ type: "SET_PRODUCT_DATA", payload: data })
+
+        // Initialize additional component groups
+        const manufacturerGroups = data.manufacturer?.additional_component_groups ?? []
+        const productAssociations = data.advanced_product?.additional_component_to_advanced_product ?? []
+
+        if (manufacturerGroups.length > 0) {
+          const mergedGroups = mergeComponentGroups(
+            manufacturerGroups,
+            productAssociations,
+            priceListId
+          )
+          dispatch({ type: "SET_COMPONENT_GROUPS", payload: mergedGroups })
+          dispatch({ type: "SET_ORIGINAL_COMPONENT_GROUPS", payload: mergedGroups })
+        }
 
         // Initialize sofa forms with originalDimension
         const sofaForms = (data.advanced_product?.sofa_forms ?? []).map(

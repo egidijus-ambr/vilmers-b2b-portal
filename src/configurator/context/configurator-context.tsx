@@ -32,6 +32,8 @@ export interface ConfiguratorState {
   // Additional components
   additionalComponentGroups: ComponentGroup[]
   selectedAdditionalComponents: SelectedComponent[]
+  originalComponentGroups: ComponentGroup[]
+  currentStep: number
 
   // Price & UI
   totalPrice: number | null
@@ -61,6 +63,8 @@ const initialState: ConfiguratorState = {
 
   additionalComponentGroups: [],
   selectedAdditionalComponents: [],
+  originalComponentGroups: [],
+  currentStep: 0,
 
   totalPrice: null,
   componentsPriceTotal: null,
@@ -84,6 +88,8 @@ type ConfiguratorAction =
   | { type: "SET_FABRIC_COMBINATION"; payload: SelectedFabricCombinationState }
   | { type: "SET_COMPONENT_GROUPS"; payload: ComponentGroup[] }
   | { type: "SET_SELECTED_COMPONENTS"; payload: SelectedComponent[] }
+  | { type: "SET_ORIGINAL_COMPONENT_GROUPS"; payload: ComponentGroup[] }
+  | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_TOTAL_PRICE"; payload: number | null }
   | { type: "SET_COMPONENTS_PRICE"; payload: number | null }
   | { type: "SET_PRICES_PER_MODULE"; payload: Record<string, number> | null }
@@ -116,6 +122,10 @@ function configuratorReducer(
       return { ...state, additionalComponentGroups: action.payload }
     case "SET_SELECTED_COMPONENTS":
       return { ...state, selectedAdditionalComponents: action.payload }
+    case "SET_ORIGINAL_COMPONENT_GROUPS":
+      return { ...state, originalComponentGroups: action.payload }
+    case "SET_CURRENT_STEP":
+      return { ...state, currentStep: action.payload }
     case "SET_TOTAL_PRICE":
       return { ...state, totalPrice: action.payload }
     case "SET_COMPONENTS_PRICE":

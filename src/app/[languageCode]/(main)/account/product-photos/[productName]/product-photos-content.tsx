@@ -10,6 +10,7 @@ import DownloadPhotosButton from "@modules/products/components/download-photos-b
 import { getProductInteriorPhotos } from "@lib/data/product-photos"
 import { ProductPhoto } from "@lib/furnisystems-sdk/modules/product-photos/types"
 import { notFound } from "next/navigation"
+import SkeletonProductPhotosGallery from "@modules/skeletons/components/skeleton-product-photos-gallery"
 
 export default function ProductPhotosContent(): JSX.Element | null {
   const { customer } = useCustomer()
@@ -110,11 +111,7 @@ export default function ProductPhotosContent(): JSX.Element | null {
         </div>
 
         <div className="flex flex-col gap-y-8 w-full">
-          {loading && (
-            <div className="text-center p-8">
-              <p className="text-ui-fg-subtle mt-4">Loading photos...</p>
-            </div>
-          )}
+          {loading && <SkeletonProductPhotosGallery />}
 
           {error && (
             <div className="text-center p-8 bg-red-50 border border-red-200 text-red-700 ">

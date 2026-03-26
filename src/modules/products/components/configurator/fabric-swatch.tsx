@@ -22,7 +22,7 @@ const FabricSwatch = ({ fabric, isSelected, onClick }: FabricSwatchProps) => {
       onClick={onClick}
       title={fabric.color_name ?? fabric.code}
       className={clx(
-        "relative w-12 h-12 rounded border-2 overflow-hidden transition-all hover:scale-110 focus:outline-none",
+        "relative w-12 h-12 border-2 overflow-hidden transition-all hover:scale-110 focus:outline-none",
         {
           "border-[#1e2a3a] ring-1 ring-[#1e2a3a]": isSelected,
           "border-gray-200 hover:border-gray-400": !isSelected,

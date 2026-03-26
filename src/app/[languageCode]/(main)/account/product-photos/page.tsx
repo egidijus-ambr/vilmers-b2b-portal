@@ -7,6 +7,7 @@ import { useTranslations } from "@lib/i18n"
 import { useProductPhotos } from "@lib/context/product-photos-context"
 import Image from "next/image"
 import Link from "next/link"
+import SkeletonProductPhotosGrid from "@modules/skeletons/components/skeleton-product-photos-grid"
 
 const isNewPhoto = (dateStr?: string | null): boolean => {
   if (!dateStr) return false
@@ -49,11 +50,7 @@ export default function ProductPhotosPage() {
         </div>
 
         <div className="flex flex-col gap-y-8 w-full">
-          {productsLoading && (
-            <div className="text-center p-8">
-              <p className="text-ui-fg-subtle">Loading products...</p>
-            </div>
-          )}
+          {productsLoading && <SkeletonProductPhotosGrid />}
 
           {productsError && (
             <div className="text-center p-8 bg-red-50 text-red-700 ">
@@ -83,7 +80,7 @@ export default function ProductPhotosPage() {
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                           />
                           {isNewPhoto(product.newest_photo_at) && (
-                            <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                            <span className="absolute top-2 right-2 text-white text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#a3b19c' }}>
                               New
                             </span>
                           )}

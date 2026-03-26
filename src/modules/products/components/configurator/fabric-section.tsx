@@ -5,7 +5,10 @@ import { useConfigurator } from "@configurator/context/configurator-context"
 import { buildSortedFabricGroups } from "@configurator/lib/group-logic"
 import FabricSelector from "./fabric-selector"
 import FabricCombinationSelector from "./fabric-combination-selector"
-import type { FabricCombination, FabricGroupWithPrice } from "@configurator/lib/types"
+import type {
+  FabricCombination,
+  FabricGroupWithPrice,
+} from "@configurator/lib/types"
 
 type FabricSectionProps = {
   languageCode: string
@@ -33,7 +36,9 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
   const fabricCombinations: FabricCombination[] = useMemo(() => {
     const combos = productData?.advanced_product?.fabricCombinations ?? []
     if (combos.length > 1 && combos[0]?.code) {
-      return [...combos].sort((a, b) => (a.code ?? "").localeCompare(b.code ?? ""))
+      return [...combos].sort((a, b) =>
+        (a.code ?? "").localeCompare(b.code ?? "")
+      )
     }
     return combos
   }, [productData?.advanced_product?.fabricCombinations])
@@ -46,8 +51,11 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
 
     if (hasCombinations) {
       // Auto-select first combination if none selected
-      const currentCombinationId = selectedFabricCombination.fabricCombination?.id
-      const isValid = fabricCombinations.some((c) => c.id === currentCombinationId)
+      const currentCombinationId =
+        selectedFabricCombination.fabricCombination?.id
+      const isValid = fabricCombinations.some(
+        (c) => c.id === currentCombinationId
+      )
 
       if (!isValid) {
         const defaultCombination = fabricCombinations[0]
@@ -116,9 +124,9 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
 
     for (const option of options) {
       // Try to find an existing selection with the same option code
-      const existing = existingValues.find(
-        (v: any) => v.option?.code === option.code
-      ) ?? existingValues[0]
+      const existing =
+        existingValues.find((v: any) => v.option?.code === option.code) ??
+        existingValues[0]
 
       newCombinationFabrics[option.id] = {
         ...existing,
@@ -148,14 +156,17 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
   // --- Render ---
   if (hasCombinations) {
     const combination = selectedFabricCombination.fabricCombination
-    const options = combination?.fabricCombinationOptions ?? (combination as any)?.options ?? []
+    const options =
+      combination?.fabricCombinationOptions ??
+      (combination as any)?.options ??
+      []
     const sortedOptions = [...options].sort((a: any, b: any) =>
       (a.code ?? "").localeCompare(b.code ?? "")
     )
     const showOptionTitles = sortedOptions.length > 1
 
     return (
-      <div className="border rounded-lg p-4 space-y-4">
+      <div className="space-y-4">
         <h3 className="text-sm font-semibold">Fabric Selection</h3>
 
         {/* Combination switcher (only when >1 combination) */}
@@ -190,7 +201,7 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
 
   // No combinations: single fabric selector
   return (
-    <div className="border rounded-lg p-4 space-y-4">
+    <div className="">
       <h3 className="text-sm font-semibold">Fabric Selection</h3>
       <FabricSelector
         fabricGroups={fabricGroups}

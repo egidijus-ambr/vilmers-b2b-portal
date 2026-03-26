@@ -182,20 +182,28 @@ export default function FabricFeatureFilterModal({
 
   // Compute feature groups with counts (depends on pendingFeatures for OR-within-group, AND-across-groups counts)
   const featureGroups = useMemo(() => {
-    const pendingPriceCatsArray = Array.from(pendingPriceCategories)
     const computeCount = (featureId: number): number => {
-      const hypothetical = new Set(pendingFeatures)
-      hypothetical.add(featureId)
-      const grouped = groupSelectedFeatures(hypothetical, featureToGroupMap)
+      const candidateGroupId = featureToGroupMap.get(featureId) ?? null
+
+      // Build cross-group selections (exclude candidate's group)
+      const crossGroupSelections = new Map<number | null, number[]>()
+      pendingFeatures.forEach((fId) => {
+        const gId = featureToGroupMap.get(fId) ?? null
+        if (gId !== candidateGroupId) {
+          if (!crossGroupSelections.has(gId)) crossGroupSelections.set(gId, [])
+          crossGroupSelections.get(gId)!.push(fId)
+        }
+      })
+
+      const pendingPriceCatsArr = Array.from(pendingPriceCategories)
       let count = 0
       allFabricGroups.forEach(({ featureIds, priceCategoryGroupNumbers }) => {
-        const matchesFeatures = matchesFeatureSelection(featureIds, grouped)
+        if (!featureIds.has(featureId)) return
+        if (crossGroupSelections.size > 0 && !matchesFeatureSelection(featureIds, crossGroupSelections)) return
         const matchesPriceCats =
-          pendingPriceCatsArray.length === 0 ||
-          pendingPriceCatsArray.some((pc) => priceCategoryGroupNumbers.has(pc))
-        if (matchesFeatures && matchesPriceCats) {
-          count++
-        }
+          pendingPriceCatsArr.length === 0 ||
+          pendingPriceCatsArr.some((pc) => priceCategoryGroupNumbers.has(pc))
+        if (matchesPriceCats) count++
       })
       return count
     }

@@ -52,6 +52,7 @@ export default function FabricPalettesPage() {
   const [selectedFabric, setSelectedFabric] = useState<{
     name: string
     imageSrc: string
+    groupData: FabricGroupDetail
   } | null>(null)
   const PAGE_SIZE = 12
 
@@ -385,6 +386,7 @@ export default function FabricPalettesPage() {
                                   setSelectedFabric({
                                     name: fabric.color_name || fabric.code,
                                     imageSrc: fabric.image.src || fabric.image.src_md || fabric.image.src_thumbnail || '',
+                                    groupData: entry.fabric_group,
                                   })
                                 }
                               }}
@@ -444,6 +446,8 @@ export default function FabricPalettesPage() {
           onClose={() => setSelectedFabric(null)}
           fabricName={selectedFabric.name}
           imageSrc={selectedFabric.imageSrc}
+          groupData={selectedFabric.groupData}
+          languageCode={backendLang}
         />
       )}
     </>

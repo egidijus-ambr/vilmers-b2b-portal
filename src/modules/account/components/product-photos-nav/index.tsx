@@ -5,6 +5,7 @@ import { useState, useMemo } from "react"
 import { useTranslations } from "@lib/i18n"
 import { useProductPhotos } from "@lib/context/product-photos-context"
 import { ProductSummary } from "@lib/furnisystems-sdk/modules/product-photos/types"
+import SkeletonProductPhotosNav from "@modules/skeletons/components/skeleton-product-photos-nav"
 
 interface ProductPhotosNavProps {
   currentPath?: string
@@ -52,15 +53,7 @@ const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
   }
 
   if (loading) {
-    return (
-      <div className="bg-white p-4 h-fit min-w-[240px]">
-        <div className="text-center py-8">
-          <div className="text-base-regular text-gray-500">
-            Loading products...
-          </div>
-        </div>
-      </div>
-    )
+    return <SkeletonProductPhotosNav />
   }
 
   if (error) {
@@ -123,7 +116,12 @@ const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
                     <span className="text-base-regular inline-flex items-center gap-1">
                       {formatProductName(product.name)}
                       {isNewPhoto(product.newest_photo_at) && (
-                        <span className="w-2 h-2 bg-green-500 rounded-full inline-block ml-1" />
+                        <span
+                          className="text-white text-[10px] font-semibold px-1.5 py-1 rounded-full leading-none"
+                          style={{ backgroundColor: "#a3b19c" }}
+                        >
+                          New
+                        </span>
                       )}
                     </span>
                   </div>

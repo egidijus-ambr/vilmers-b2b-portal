@@ -1,8 +1,8 @@
 "use client"
 
-import React from "react"
-import { clx } from "@medusajs/ui"
+import React, { useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
+import FabricCombinationDrawer from "./fabric-combination-drawer"
 import type { FabricCombination } from "@configurator/lib/types"
 
 type FabricCombinationSelectorProps = {
@@ -10,17 +10,15 @@ type FabricCombinationSelectorProps = {
   languageCode: string
 }
 
-/**
- * Horizontal selector to switch between fabric combinations.
- * Only shown when there are multiple combinations (>1).
- * Each combination shows its name and optional image.
- */
 const FabricCombinationSelector = ({
   fabricCombinations,
   languageCode,
 }: FabricCombinationSelectorProps) => {
   const { state, dispatch } = useConfigurator()
   const selectedId = state.selectedFabricCombination.fabricCombination?.id ?? null
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const selectedCombination = fabricCombinations.find((c) => c.id === selectedId) ?? fabricCombinations[0]
 
   const handleSelect = (combination: FabricCombination) => {
     dispatch({
@@ -37,38 +35,54 @@ const FabricCombinationSelector = ({
   }
 
   return (
-    <div className="space-y-2">
-      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        Fabric combination
-      </h4>
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {fabricCombinations.map((combination) => {
-          const isSelected = selectedId === combination.id
-          return (
-            <button
-              key={combination.id}
-              onClick={() => handleSelect(combination)}
-              className={clx(
-                "shrink-0 flex items-center gap-2 px-3 py-2 rounded border transition-colors text-sm",
-                {
-                  "bg-[#1e2a3a] text-white border-[#1e2a3a]": isSelected,
-                  "bg-white text-gray-700 border-gray-300 hover:border-gray-500": !isSelected,
-                }
-              )}
-            >
-              {combination.image?.src_md && (
-                <img
-                  src={combination.image.src_md}
-                  alt={getName(combination)}
-                  className="w-8 h-8 rounded object-cover"
-                />
-              )}
-              <span>{getName(combination)}</span>
-            </button>
-          )
-        })}
+    <>
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Fabric combination
+        </h4>
+
+        {/* Compact row — shows selected combination image full-width */}
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="w-full text-left border border-gray-200 hover:border-gray-400 transition-colors overflow-hidden"
+        >
+          {/* Selected combination image */}
+          {selectedCombination?.image?.src_md ? (
+            <div className="w-full aspect-[16/9] bg-gray-50">
+              <img
+                src={selectedCombination.image.src_md}
+                alt={getName(selectedCombination)}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="w-full aspect-[16/9] bg-gray-100 flex items-center justify-center">
+              <span className="text-xs text-gray-400">No image</span>
+            </div>
+          )}
+
+          {/* Label row */}
+          <div className="flex items-center justify-between px-3 py-2">
+            <span className="text-sm font-medium text-gray-900">
+              {selectedCombination ? getName(selectedCombination) : "Select combination..."}
+            </span>
+            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </button>
       </div>
-    </div>
+
+      {/* Drawer */}
+      <FabricCombinationDrawer
+        isOpen={drawerOpen}
+        close={() => setDrawerOpen(false)}
+        fabricCombinations={fabricCombinations}
+        selectedId={selectedId}
+        onSelect={handleSelect}
+        getName={getName}
+      />
+    </>
   )
 }
 

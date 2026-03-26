@@ -21,7 +21,7 @@ const FabricDrawerCard = ({ fabric, isSelected, onClick }: FabricDrawerCardProps
     <button
       onClick={onClick}
       className={clx(
-        "relative w-full text-left rounded overflow-hidden transition-all focus:outline-none",
+        "relative w-full text-left overflow-hidden transition-all focus:outline-none",
         {
           "ring-2 ring-[#1e2a3a]": isSelected,
           "hover:ring-1 hover:ring-gray-300": !isSelected,

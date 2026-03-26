@@ -173,7 +173,7 @@ const InteriorPhotoGallery = ({
                 />
               )}
               {isNewPhoto(photo.created_at) && (
-                <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-green-500 rounded-full inline-block ml-1" />
+                <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full inline-block ml-1" style={{ backgroundColor: '#a3b19c' }} />
               )}
             </button>
           ))}

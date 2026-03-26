@@ -76,7 +76,7 @@ export default async function PageLayout({
         )}
         {children}
         <Footer language={validLanguage} />
-        <TawkToChat />
+        {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
       </ShopSettingsProvider>
     </CustomerProvider>
   )
