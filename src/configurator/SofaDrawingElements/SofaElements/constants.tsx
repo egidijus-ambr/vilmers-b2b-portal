@@ -1,6 +1,6 @@
 // --- The lines ---
 export const METRIC_SIZE = 60
-export const MAIN_METRIC_COLOR = '#D3D3D3'
+export const MAIN_METRIC_COLOR = "#D3D3D3"
 
 // -- Shape sizes
 export const ARMS_REST_WIDTH = 22
@@ -26,14 +26,14 @@ export const INSIDE_BACKREST_MARGIN_PERCENTAGE = 0.15
 
 // -- Shape Colors
 // export const MAIN_SHAPE_COLOR = '#D3D3D3'
-export const MAIN_SHAPE_COLOR = '#e2e1e0'
-export const TABLE_COLOR = '#b2b0b0'
-export const BED_FORM_COLOR = '#fff'
+export const MAIN_SHAPE_COLOR = "#EBE7DD" // gold-20
+export const TABLE_COLOR = "#b2b0b0"
+export const BED_FORM_COLOR = "#fff"
 
-export const MAIN_SHAPE_SHADOW_COLOR = 'rgba(0, 0, 0, 0.10)'
+export const MAIN_SHAPE_SHADOW_COLOR = "rgba(0, 0, 0, 0.10)"
 export const SHADOW_WIDTH = 6
-export const GREEN_SHAPE_COLOR = 'rgb(144, 238, 144, 0.5)'
-export const RED_SHAPE_COLOR = 'rgb(255,0,0, 0.5)'
+export const GREEN_SHAPE_COLOR = "rgb(144, 238, 144, 0.5)"
+export const RED_SHAPE_COLOR = "rgb(255,0,0, 0.5)"
 
 // ----  Rounded stuff
 export const ANGLE_RADIUS = 0.25

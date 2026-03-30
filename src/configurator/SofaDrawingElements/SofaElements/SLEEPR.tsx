@@ -238,20 +238,20 @@ const SLEEPR = ({
 
       <Shape
         // --- Drawing shadows, on top of shape
-        offsetX={shapeWidth / 2}
-        offsetY={shapeHeight / 2}
+        // offsetX={shapeWidth / 2}
+        // offsetY={shapeHeight / 2}
         // We need to set x, y, origin in center
-        x={shapeWidth / 2 + shapeOffsetFix}
-        y={shapeHeight / 2 - shapeOffsetFix}
+        x={0}
+        y={0}
         //----
         fill={MAIN_SHAPE_COLOR}
         sceneFunc={(ctx, shape) => {
           ctx.beginPath()
           // Draw shadow
-          ctx.moveTo(0 + 2, shapeBackrestWidth + SHADOW_WIDTH - 2)
+          ctx.moveTo(0, shapeBackrestWidth + SHADOW_WIDTH + 2)
           ctx.lineTo(
             shapeWidth - shapeArmrestWidth - 2,
-            shapeBackrestWidth + SHADOW_WIDTH - 2
+            shapeBackrestWidth + SHADOW_WIDTH + 2
           )
 
           ctx.moveTo(
@@ -260,7 +260,7 @@ const SLEEPR = ({
           )
           ctx.lineTo(
             shapeWidth - shapeArmrestWidth - SHADOW_WIDTH + 2,
-            shapeHeight - 2
+            shapeHeight
           )
 
           ctx.fillStrokeShape(shape)
@@ -359,10 +359,11 @@ const SLEEPR = ({
               width={null}
             />
             <HorizontalMetric
-              x={shapeStartingX}
+              x={shapeStartingX + 3}
               y={shapeBackrestWidth + SHADOW_WIDTH + 1}
               height={null}
-              width={shapeMattressWidth}
+              value={shapeMattressWidth}
+              width={shapeMattressWidth - 3}
             />
           </Group>
         </>

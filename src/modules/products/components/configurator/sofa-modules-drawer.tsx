@@ -32,7 +32,9 @@ const GROUPS_ORDER = [
 ]
 
 function getModuleGroup(sofaForm: SofaFormExtended): string {
-  return (sofaForm.metadata as Record<string, any> | null)?.group ?? "Other modules"
+  return (
+    (sofaForm.metadata as Record<string, any> | null)?.group ?? "Other modules"
+  )
 }
 
 // =============================================
@@ -49,30 +51,42 @@ interface ModulePreviewProps {
  */
 function ModulePreviewInner({ sofaForm }: ModulePreviewProps) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Stage, Layer } = require("react-konva") as typeof import("react-konva")
+  const { Stage, Layer } =
+    require("react-konva") as typeof import("react-konva")
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const SofaElements = require("@configurator/SofaDrawingElements/SofaElements") as Record<
-    string,
-    React.ComponentType<any>
-  >
+  const SofaElements =
+    require("@configurator/SofaDrawingElements/SofaElements") as Record<
+      string,
+      React.ComponentType<any>
+    >
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { VerticalMetric, HorizontalMetric } =
+    require("@configurator/SofaDrawingElements/SofaElements/MetricLines") as {
+      VerticalMetric: React.ComponentType<any>
+      HorizontalMetric: React.ComponentType<any>
+    }
 
   const SofaElement = SofaElements[sofaForm.type]
 
   const dims = sofaForm.dimensions
-  const scale = 0.5
+  const scale = 0.65
+  const metricSpace = 45 // space for dimension arrows (METRIC_SIZE=60 + small margin)
 
   const rawW = dims.width ?? 100
   const rawH = dims.length ?? dims.height ?? 100
+  const extraH = dims.extendable_part_length ?? 0
 
-  // Add padding for armrests on both sides
+  // Stage sized to fit element + metric arrows on left/top + extendable part below
   const armW = dims.armrest_width ?? 22
-  const stageW = Math.round((rawW + armW * 2 + 40) * scale)
-  const stageH = Math.round((rawH + 50) * scale)
+  const stageW = Math.round((rawW + armW * 2 + metricSpace + 30) * scale)
+  const stageH = Math.round((rawH + extraH + metricSpace + 10) * scale)
 
   if (!SofaElement) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
-        <span className="text-[10px] text-gray-400 font-mono">{sofaForm.type}</span>
+        <span className="text-[10px] text-gray-400 font-mono">
+          {sofaForm.type}
+        </span>
       </div>
     )
   }
@@ -84,13 +98,13 @@ function ModulePreviewInner({ sofaForm }: ModulePreviewProps) {
       scaleX={scale}
       scaleY={scale}
       listening={false}
-      style={{ margin: "auto", display: "block" }}
+      style={{ display: "block" }}
     >
       <Layer>
         <SofaElement
           id={sofaForm.id.toString()}
-          x={armW + 20}
-          y={20}
+          x={metricSpace + armW}
+          y={metricSpace}
           width={rawW}
           height={rawH}
           draggable={false}
@@ -123,6 +137,21 @@ function ModulePreviewInner({ sofaForm }: ModulePreviewProps) {
           backrestType={dims.backrest_type}
           coveredSide={dims.covered_side}
         />
+        {/* Dimension arrows rendered directly with larger font */}
+        <VerticalMetric
+          x={metricSpace + armW - 50}
+          y={metricSpace}
+          height={rawH}
+          width={null}
+          fontSize={18}
+        />
+        <HorizontalMetric
+          x={metricSpace + armW}
+          y={metricSpace - 50}
+          width={rawW}
+          height={null}
+          fontSize={18}
+        />
       </Layer>
     </Stage>
   )
@@ -144,42 +173,29 @@ interface ModuleCardProps {
 
 function ModuleCard({ sofaForm, onAdd }: ModuleCardProps) {
   const dims = sofaForm.dimensions
-  const widthLabel = dims.width != null ? String(dims.width) : null
-  const lengthLabel =
-    dims.length != null
-      ? String(dims.length)
-      : dims.height != null
-      ? String(dims.height)
-      : null
-  const dimensionText =
-    widthLabel && lengthLabel
-      ? `${widthLabel} × ${lengthLabel} cm`
-      : widthLabel
-      ? `W: ${widthLabel} cm`
-      : null
 
   // Card width matches Konva stage width so preview fits perfectly
   const rawW = dims.width ?? 100
   const armW = dims.armrest_width ?? 22
-  const scale = 0.5
-  const previewWidth = Math.round((rawW + armW * 2 + 40) * scale)
-  const cardWidth = Math.max(previewWidth, 110)
+  const scale = 0.65
+  const metricSpace = 45
+  const cardWidth = Math.max(Math.round((rawW + armW * 2 + metricSpace + 30) * scale), 100)
 
   return (
-    <div style={{ width: cardWidth }} className="flex flex-col overflow-hidden bg-white flex-shrink-0">
+    <div
+      style={{ width: cardWidth }}
+      className="flex flex-col overflow-hidden bg-white flex-shrink-0"
+    >
       {/* Shape preview area — height adapts to module size */}
-      <div className="flex-1 min-h-[60px] bg-gray-50 flex items-start justify-center overflow-hidden">
+      <div className="flex-1 min-h-[60px] flex items-start overflow-hidden">
         <ModulePreview sofaForm={sofaForm} />
       </div>
 
-      {/* Info + action */}
-      <div className="px-2 pt-1.5 pb-2 flex flex-col gap-0.5">
+      {/* Info + action — pinned to bottom so names align across row */}
+      <div className="mt-auto px-2 pt-1.5 pb-2 flex flex-col gap-0.5">
         <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2">
           {sofaForm.name}
         </p>
-{dimensionText && (
-          <p className="text-[10px] text-gray-500 leading-tight">{dimensionText}</p>
-        )}
         <button
           onClick={onAdd}
           className="mt-1.5 w-full text-xs font-medium border border-[#1e2a3a] text-[#1e2a3a] hover:bg-[#1e2a3a] hover:text-white transition-colors py-1 px-2"
@@ -234,13 +250,13 @@ const SofaModulesDrawer = ({
             (a.dimensions.length ?? a.dimensions.height ?? 0) -
             (b.dimensions.length ?? b.dimensions.height ?? 0)
           if (lDiff !== 0) return lDiff
-          if (a.code && b.code) return a.code.localeCompare(b.code, undefined, { numeric: true })
+          if (a.code && b.code)
+            return a.code.localeCompare(b.code, undefined, { numeric: true })
           return a.type.localeCompare(b.type)
         }),
       }))
       .sort(
-        (a, b) =>
-          GROUPS_ORDER.indexOf(a.group) - GROUPS_ORDER.indexOf(b.group)
+        (a, b) => GROUPS_ORDER.indexOf(a.group) - GROUPS_ORDER.indexOf(b.group)
       )
   }, [filteredForms])
 
@@ -326,7 +342,7 @@ const SofaModulesDrawer = ({
                       moduleGroups.map(({ group, items }) => (
                         <div key={group}>
                           {showGroupHeaders && (
-                            <div className="flex items-center justify-between pt-4 pb-2 border-b border-gray-200 mb-3">
+                            <div className="flex items-center justify-between pt-4 pb-2 border-b border-gold mb-3">
                               <span className="text-sm font-semibold text-gray-700">
                                 {group}
                               </span>
@@ -336,7 +352,7 @@ const SofaModulesDrawer = ({
                             </div>
                           )}
 
-                          <div className="flex flex-wrap items-start gap-3 mb-2">
+                          <div className="flex flex-wrap items-stretch gap-3 mb-2">
                             {items.map((sofaForm) => (
                               <ModuleCard
                                 key={sofaForm.id}

@@ -42,7 +42,10 @@ export const getDefaultSettings = () => {
     dimensions: {
       width: 200,
       length: 100,
+      height: 50,
       armrestPosition: 'LR',
+      armrest_width: 10,
+      backrest_width: 20,
     },
     changeableProperties: {
       width: true,
@@ -105,7 +108,7 @@ const AUFULLMANYPILLOWSQ = ({
   sizeOfPillow = null, // Width of pillow in cm
   sizeOfBigPillow = null, // Width of pillow in cm
   extensionType = 'STANDART',
-  coveredSide = true,
+  coveredSide = false,
   coveredSideOverride = null,
   ...props
 }) => {

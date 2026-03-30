@@ -35,7 +35,7 @@ import { ArrowComponent } from './ArrowComponent'
 export const getDefaultSettings = () => {
   return {
     dimensions: {
-      width: 200,
+      width: 120,
       length: 100,
       armrestPosition: '',
     },

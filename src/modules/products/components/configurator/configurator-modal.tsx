@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import Modal from "@modules/common/components/modal"
+import ResponsiveDialog from "@modules/common/components/responsive-dialog"
 import { ConfiguratorProvider } from "@configurator/context/configurator-context"
 import ConfiguratorContent from "./configurator-content"
 
@@ -25,15 +25,16 @@ const ConfiguratorModal = ({
   if (!isAdvancedProduct) return null
 
   return (
-    <Modal
+    <ResponsiveDialog
       isOpen={isOpen}
-      close={close}
-      size="fullscreen"
+      onClose={close}
+      title="Product Configurator"
+      className="bg-white"
+      size="full"
       data-testid="configurator-modal"
     >
       <ConfiguratorProvider>
-        <Modal.Title>Product Configurator</Modal.Title>
-        <div className="flex-1 overflow-y-auto mt-4">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <ConfiguratorContent
             productContainerId={productContainerId}
             languageCode={languageCode}
@@ -42,7 +43,7 @@ const ConfiguratorModal = ({
           />
         </div>
       </ConfiguratorProvider>
-    </Modal>
+    </ResponsiveDialog>
   )
 }
 

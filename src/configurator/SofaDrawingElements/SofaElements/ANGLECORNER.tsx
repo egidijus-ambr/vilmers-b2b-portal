@@ -32,7 +32,7 @@ import Gizmo from '../Gizmo'
 export const drawShapeLeft = (
   ctx,
   shape,
-  { shapeWidth, shapeHeight, shapeBackrestWidth, connectionAngle },
+  { shapeWidth, shapeHeight, shapeBackrestWidth, connectionAngle }
 ) => {
   ctx.beginPath()
   ctx.moveTo(0, 0)
@@ -55,7 +55,7 @@ export const drawShapeLeft = (
 export const drawShapeRight = (
   ctx,
   shape,
-  { shapeWidth, shapeHeight, shapeBackrestWidth, connectionAngle },
+  { shapeWidth, shapeHeight, shapeBackrestWidth, connectionAngle }
 ) => {
   ctx.beginPath()
   ctx.moveTo(0, 0)
@@ -64,7 +64,7 @@ export const drawShapeRight = (
   ctx.lineTo(shapeWidth, 0)
   ctx.lineTo(
     shapeWidth - shapeBackrestWidth * Math.tan(angle),
-    shapeBackrestWidth,
+    shapeBackrestWidth
   )
   //ctx.lineTo(shapeWidth, shapeBackrestWidth)
   ctx.lineTo(0, shapeBackrestWidth)
@@ -74,7 +74,7 @@ export const drawShapeRight = (
   ctx.moveTo(0, shapeBackrestWidth)
   ctx.lineTo(
     shapeWidth - shapeBackrestWidth * Math.tan(angle),
-    shapeBackrestWidth,
+    shapeBackrestWidth
   )
   ctx.lineTo(shapeWidth - shapeHeight * Math.tan(angle), shapeHeight)
 
@@ -90,6 +90,7 @@ export const getDefaultSettings = () => {
       length: 110,
       armrestPosition: '',
       angle: 35,
+
       number_of_big_pillows: 1,
     },
     changeableProperties: {
@@ -216,7 +217,7 @@ const ANGLECORNER = ({
   const connectors = dimensions.connectors
 
   // A function that limits exit of View zone
-  const dragBound = (e) => {
+  const dragBound = e => {
     // ---
     // console.log('incoking drag bound e :>> ', e)
     let pos = e
@@ -253,7 +254,7 @@ const ANGLECORNER = ({
       y={yOffset}
       originalWidth={width}
       originalHeight={height}
-      dragBoundFunc={(e) => dragBound(e)}
+      dragBoundFunc={e => dragBound(e)}
       originalSofaForm={originalSofaForm}
       connectors={props.enabled_connectors == false ? [] : connectors}
       rotation={rotation}
@@ -334,7 +335,9 @@ const ANGLECORNER = ({
         strokeWidth={SHADOW_WIDTH}
       /> */}
       {(props.enabled_connectors == false ? [] : connectors)?.map(
-        (conn, index) => <Gizmo key={`gizmo-${index}`} settings={conn} />,
+        (conn, index) => (
+          <Gizmo key={`gizmo-${index}`} settings={conn} />
+        )
       )}
     </Group>
   )

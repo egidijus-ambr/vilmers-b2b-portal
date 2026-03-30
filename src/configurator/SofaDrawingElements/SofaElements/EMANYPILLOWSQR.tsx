@@ -37,8 +37,9 @@ export const getDefaultSettings = () => {
   return {
     dimensions: {
       width: 100,
-      length: 200,
+      length: 100,
       armrestPosition: 'R',
+      armrestWidth: 10,
     },
     changeableProperties: {
       width: true,

@@ -39,9 +39,10 @@ export const getDefaultSettings = () => {
       width: 100,
       length: 100,
       armrestPosition: '',
+      backrest_width: BACK_REST_WIDTH,
       corner_radius: 0,
-
-      number_of_big_pillows: 2,
+      //corner_part_length: 0,
+      number_of_big_pillows: 0,
       number_of_small_pillows: 0,
       spread_of_small_pillows: 60,
       spread_of_big_pillows: 60,
@@ -57,7 +58,7 @@ export const getDefaultSettings = () => {
       // seat_depth: false,
       armrest_width: false,
       backrest_width: true,
-      corner_cut_length: true,
+      corner_part_length: true,
 
       number_of_big_pillows: true,
       // number_of_small_pillows: true,
@@ -139,7 +140,10 @@ const CORNERCUTL = ({
   const shapeBackrestWidth = backrestWidth ?? BACK_REST_WIDTH
 
   // === CORNER PART ====
-  const cornerPartLength = props.cornerPartLength ?? null
+  const cornerPartLength = Math.max(
+    props.cornerPartLength ?? width,
+    backrestWidth ?? BACK_REST_WIDTH
+  )
 
   let pillowSize = sizeOfPillow ?? STANDART_PILLOW_SIZE
   let backPillowSize = sizeOfBigPillow ?? BACKREST_PILLOW_SIZE

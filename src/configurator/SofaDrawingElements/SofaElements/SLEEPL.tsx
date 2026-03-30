@@ -253,12 +253,9 @@ const SLEEPL = ({
       />
 
       <Shape
-        // --- Drawing shadows, on top of shape
-        offsetX={shapeWidth / 2}
-        offsetY={shapeHeight / 2}
         // We need to set x, y, origin in center
-        x={shapeWidth / 2 + shapeOffsetFix}
-        y={shapeHeight / 2 - shapeOffsetFix}
+        x={0}
+        y={0}
         //----
         fill={MAIN_SHAPE_COLOR}
         sceneFunc={(ctx, shape) => {
@@ -266,17 +263,14 @@ const SLEEPL = ({
           // Draw shadow
           ctx.moveTo(
             shapeArmrestWidth + SHADOW_WIDTH - 2,
-            shapeBackrestWidth + SHADOW_WIDTH - 2
+            shapeBackrestWidth + SHADOW_WIDTH
           )
-          ctx.lineTo(
-            shapeArmrestWidth + SHADOW_WIDTH - 2,
-            shapeHeight * SLEEP_PART_LENGTH_PERCETAGE - 2
-          )
+          ctx.lineTo(shapeArmrestWidth + SHADOW_WIDTH - 2, shapeHeight)
           ctx.moveTo(
             shapeArmrestWidth + SHADOW_WIDTH - 2,
-            shapeBackrestWidth + SHADOW_WIDTH - 2
+            shapeBackrestWidth + SHADOW_WIDTH + 2
           )
-          ctx.lineTo(shapeWidth - 2, shapeBackrestWidth + SHADOW_WIDTH - 2)
+          ctx.lineTo(shapeWidth - 2, shapeBackrestWidth + SHADOW_WIDTH + 2)
           // ctx.moveTo(
           //   shapeWidth - SHADOW_WIDTH + 2,
           //   BACK_REST_WIDTH + SHADOW_WIDTH,
@@ -383,7 +377,7 @@ const SLEEPL = ({
               y={shapeBackrestWidth + SHADOW_WIDTH + 1}
               height={null}
               value={shapeMattressWidth}
-              width={finalMatressWidht - 2}
+              width={finalMatressWidht - 4}
             />
           </Group>
         </>

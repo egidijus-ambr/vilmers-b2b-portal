@@ -36,9 +36,10 @@ import { ArrowComponent } from './ArrowComponent'
 export const getDefaultSettings = () => {
   return {
     dimensions: {
-      width: 200,
+      width: 100,
       length: 100,
       armrestPosition: 'L',
+      armrestWidth: 10,
     },
     changeableProperties: {
       width: true,

@@ -37,7 +37,7 @@ export const getDefaultSettings = () => {
       width: 100,
       length: 100,
       armrestPosition: '',
-      corner_radius: 0,
+      corner_radius: 50,
       angle: 90,
 
       number_of_big_pillows: 0,
@@ -46,8 +46,8 @@ export const getDefaultSettings = () => {
       spread_of_big_pillows: 60,
       size_of_big_pillow: STANDART_PILLOW_SIZE,
       size_of_pillow: STANDART_PILLOW_SIZE,
-      seat_sections: 2,
-      backrest_sections: 2,
+      seat_sections: 1,
+      backrest_sections: 1,
     },
     changeableProperties: {
       //width: true,

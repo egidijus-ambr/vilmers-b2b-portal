@@ -77,6 +77,7 @@ export const getDefaultSettings = () => {
       width: 100,
       length: 100,
       armrestPosition: '',
+      corner_part_length: 100,
       angle: 80,
       number_of_big_pillows: 1,
       spread_of_big_pillows: STANDART_PILLOW_SIZE,

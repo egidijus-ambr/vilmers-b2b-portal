@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import type { SofaFormExtended } from "@configurator/lib/types"
 
@@ -41,76 +41,26 @@ const SofaStageContainer = ({
   const [showGrid, setShowGrid] = useState(false)
   const [showInstructions, setShowInstructions] = useState(true)
 
-  // --- Canvas dimensions
-  const [canvasWidth, setCanvasWidth] = useState(760)
-  const [canvasHeight, setCanvasHeight] = useState(600)
-
-  // --- Scale
-  const [scale, setScale] = useState(1)
+  // --- Scale (user-controlled via zoom buttons only)
+  const [scale, setScale] = useState(0.7)
   const scaleStep = 0.1
 
-  // Detect small-height viewports (e.g. scaled laptop displays)
-  const [isSmallViewport, setIsSmallViewport] = useState(false)
-
-  useEffect(() => {
-    const checkViewport = () => {
-      setIsSmallViewport(window.innerHeight < 900)
-    }
-    checkViewport()
-    window.addEventListener("resize", checkViewport)
-    return () => window.removeEventListener("resize", checkViewport)
-  }, [])
-
-  // Measure canvas width from container ref
-  useEffect(() => {
-    if (stageCanvasRef.current) {
-      setCanvasWidth(stageCanvasRef.current.offsetWidth)
-    }
-  }, [stageCanvasRef])
-
-  // Apply small-viewport adjustments
-  useEffect(() => {
-    if (isSmallViewport) {
-      setCanvasHeight(350)
-      setScale(0.8)
-    }
-  }, [isSmallViewport])
-
-  // Adjust scale and height for narrow canvases (mobile)
-  useEffect(() => {
-    if (canvasWidth < 700) {
-      setCanvasHeight(400)
-      setScale(0.6)
-    }
-  }, [canvasWidth])
-
   const increaseScale = useCallback(() => {
-    setScale((prev) => (prev < 2 ? Math.round((prev + scaleStep) * 10) / 10 : prev))
+    setScale((prev) =>
+      prev < 2 ? Math.round((prev + scaleStep) * 10) / 10 : prev
+    )
   }, [])
 
   const decreaseScale = useCallback(() => {
-    setScale((prev) => (prev > 0.3 ? Math.round((prev - scaleStep) * 10) / 10 : prev))
+    setScale((prev) =>
+      prev > 0.3 ? Math.round((prev - scaleStep) * 10) / 10 : prev
+    )
   }, [])
 
-  // Auto-scale when shapes are added/removed on small viewports
-  useEffect(() => {
-    if (!isSmallViewport) return
-    const count = sofaShapes.length
-
-    setScale((prev) => {
-      let next = prev
-      if (count > 3 && prev > 0.5) next = Math.round((prev - scaleStep) * 10) / 10
-      if (count > 5 && prev > 0.4) next = Math.round((prev - scaleStep) * 10) / 10
-      if (count < 6 && prev < 0.5) next = Math.round((prev + scaleStep) * 10) / 10
-      if (count < 4 && prev < 0.6) next = Math.round((prev + scaleStep) * 10) / 10
-      return next
-    })
-  }, [sofaShapes.length, isSmallViewport])
-
   return (
-    <div className="flex w-full">
-      {/* --- Left toolbar --- */}
-      <div className="flex flex-col items-center justify-end gap-2 pb-3 px-1 border-r border-[#e7e9ea] shrink-0 w-10 lg:w-12">
+    <div className="flex flex-row w-full overflow-hidden">
+      {/* --- Toolbar: horizontal bottom on small screens, vertical left on md+ --- */}
+      <div className="flex  flex-col items-center justify-center md:justify-end gap-2 py-2 md:py-0 md:pb-3 px-1 border-r border-[#e7e9ea] shrink-0 md:w-12">
         {/* Toggle delete buttons */}
         <ToolbarButton
           title="Toggle shape buttons"
@@ -118,7 +68,13 @@ const SofaStageContainer = ({
           onClick={() => setShowButtons((v) => !v)}
         >
           {/* Radio button circle icon */}
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+          <svg
+            className="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+          >
             <circle cx="12" cy="12" r="9" />
             <circle cx="12" cy="12" r="4" fill="currentColor" />
           </svg>
@@ -131,8 +87,18 @@ const SofaStageContainer = ({
           onClick={() => setShowArrows((v) => !v)}
         >
           {/* Ruler / square foot icon */}
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h18v18H3zM3 9h4M3 15h4M9 3v4M15 3v4" />
+          <svg
+            className="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 3h18v18H3zM3 9h4M3 15h4M9 3v4M15 3v4"
+            />
           </svg>
         </ToolbarButton>
 
@@ -144,13 +110,33 @@ const SofaStageContainer = ({
         >
           {showGrid ? (
             /* Grid on */
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18" />
+            <svg
+              className="w-5 h-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"
+              />
             </svg>
           ) : (
             /* Grid off */
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18M3 3l18 18" />
+            <svg
+              className="w-5 h-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18M3 3l18 18"
+              />
             </svg>
           )}
         </ToolbarButton>
@@ -162,8 +148,18 @@ const SofaStageContainer = ({
           alwaysBlue
           onClick={increaseScale}
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+          <svg
+            className="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 5v14M5 12h14"
+            />
           </svg>
         </ToolbarButton>
 
@@ -174,7 +170,13 @@ const SofaStageContainer = ({
           alwaysBlue
           onClick={decreaseScale}
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
           </svg>
         </ToolbarButton>
@@ -183,8 +185,7 @@ const SofaStageContainer = ({
       {/* --- Drawing canvas area --- */}
       <div
         ref={stageCanvasRef}
-        className="flex-1 relative"
-        style={{ minHeight: `${canvasHeight}px`, background: "none" }}
+        className="flex-1 min-w-0 relative h-[250px] md:h-[400px] overflow-hidden"
       >
         <SofaDrawingStage
           parentRef={stageCanvasRef}
@@ -199,16 +200,26 @@ const SofaStageContainer = ({
 
         {/* Instruction overlay when canvas is empty */}
         {sofaShapes.length < 1 && (
-          <div className="absolute top-1/4 left-[10%] lg:left-[35%] z-[3] text-center">
+          <div className="absolute inset-0 z-[3] flex items-center justify-center text-center">
             {showInstructions ? (
-              <div className="relative border border-gray-400 rounded-3xl p-6 lg:p-8 w-[280px] lg:w-[380px] bg-white/80 shadow-sm">
+              <div className="relative border border-gray-100 p-6 lg:p-8 w-[280px] lg:w-[380px] bg-white/80 shadow-sm">
                 {/* Close button */}
                 <button
                   onClick={() => setShowInstructions(false)}
                   className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-50 transition-colors rounded"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
                 <img
@@ -217,7 +228,8 @@ const SofaStageContainer = ({
                   className="w-[220px] lg:w-[320px] mx-auto"
                 />
                 <p className="text-sm text-gray-600 mt-2">
-                  Drag sofa modules onto the canvas to compose your configuration.
+                  Drag sofa modules onto the canvas to compose your
+                  configuration.
                 </p>
               </div>
             ) : (
@@ -230,7 +242,10 @@ const SofaStageContainer = ({
 
         {/* Scale person silhouette for reference */}
         {sofaShapes.length > 0 && showButtons && (
-          <div className="absolute bottom-0 w-full text-center pointer-events-none z-[1]" style={{ marginRight: "70px" }}>
+          <div
+            className="absolute bottom-0 w-full text-center pointer-events-none z-[1]"
+            style={{ marginRight: "70px" }}
+          >
             <img
               src="/zmogeliukas.png"
               alt="Scale reference"

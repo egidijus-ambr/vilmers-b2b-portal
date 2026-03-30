@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { Stage, Layer, Rect, Group, Circle, Image as KonvaImage } from "react-konva"
 import useImage from "use-image"
 import Konva from "konva"
@@ -366,7 +366,7 @@ const SofaDrawingStage = ({
 
   // ---- Canvas sizing ----
   const [height, setHeight] = useState(
-    parentRef.current ? parentRef.current.offsetHeight : 0
+    parentRef.current ? parentRef.current.offsetHeight : 400
   )
   const [width, setWidth] = useState(
     parentRef.current ? parentRef.current.offsetWidth : 0
@@ -391,22 +391,22 @@ const SofaDrawingStage = ({
   const [dragStartPosition, setDragStartPosition] = useState<any>(null)
   let dropzoneObject: any = null
 
-  // ---- Resize handling ----
+  // ---- Track container size (width varies by layout, height by breakpoint) ----
   useEffect(() => {
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    const el = parentRef.current
+    if (!el) return
 
-  useEffect(() => {
-    handleResize()
-  }, [parentRef])
-
-  const handleResize = () => {
-    if (parentRef.current) {
-      setHeight(parentRef.current.offsetHeight)
-      setWidth(parentRef.current.offsetWidth)
+    const update = () => {
+      setWidth(el.offsetWidth)
+      if (el.offsetHeight > 0) setHeight(el.offsetHeight)
     }
-  }
+
+    const observer = new ResizeObserver(() => update())
+    observer.observe(el)
+    update()
+
+    return () => observer.disconnect()
+  }, [])
 
   // ---- Notify parent of combination changes ----
   useEffect(() => {
@@ -451,38 +451,41 @@ const SofaDrawingStage = ({
     }
   }
 
-  // ---- Compute initial positions for shapes ----
-  let itemsWithOffsets: any[] = []
-  for (const item of sofaShapes) {
-    itemsWithOffsets.push({
-      id: item.id,
-      x: (item.sofaForm as any)?.xOriginal ?? 50 * scale,
-      y: (item.sofaForm as any)?.yOriginal ?? 50 * scale,
-      width: item.sofaForm ? item.sofaForm.dimensions.width : 50,
-      height: item.sofaForm ? item.sofaForm.dimensions.length ?? item.sofaForm.dimensions.height : 50,
-      draggable: true,
-      verticalMetric: false,
-      horizontalMetric: false,
-      rotation: (item.sofaForm as any)?.rotationOriginal ?? 0,
-      sofaForm: item.sofaForm ?? null,
-    })
-  }
-
-  // ---- Adjust positions to avoid initial collisions ----
-  const getAdjustedXYCoordinates = (sofaObject: any, numberOfCalls = 0): { x: number; y: number } => {
-    const tempBoxRect = {
-      x: sofaObject.x,
-      y: sofaObject.y,
-      width: sofaObject.width,
-      height: sofaObject.height,
-      rotation: 0,
+  // ---- Compute initial positions for shapes (memoized to avoid O(n²) Konva DOM walks) ----
+  const modifiedSofaShapes = useMemo(() => {
+    const itemsWithOffsets: any[] = []
+    for (const item of sofaShapes) {
+      itemsWithOffsets.push({
+        id: item.id,
+        x: (item.sofaForm as any)?.xOriginal ?? 50 * scale,
+        y: (item.sofaForm as any)?.yOriginal ?? 50 * scale,
+        width: item.sofaForm ? item.sofaForm.dimensions.width : 50,
+        height: item.sofaForm ? item.sofaForm.dimensions.length ?? item.sofaForm.dimensions.height : 50,
+        draggable: true,
+        verticalMetric: false,
+        horizontalMetric: false,
+        rotation: (item.sofaForm as any)?.rotationOriginal ?? 0,
+        sofaForm: item.sofaForm ?? null,
+      })
     }
 
-    let targetAlreadyExists = false
-    let targetIntersection = false
-    let existingXY: { x: number; y: number } | undefined
+    // Without the Konva layer we cannot check collisions — return raw positions.
+    if (!layer) return itemsWithOffsets
 
-    if (layer) {
+    // ---- Adjust positions to avoid initial collisions ----
+    const getAdjustedXYCoordinates = (sofaObject: any, numberOfCalls = 0): { x: number; y: number } => {
+      const tempBoxRect = {
+        x: sofaObject.x,
+        y: sofaObject.y,
+        width: sofaObject.width,
+        height: sofaObject.height,
+        rotation: 0,
+      }
+
+      let targetAlreadyExists = false
+      let targetIntersection = false
+      let existingXY: { x: number; y: number } | undefined
+
       getSofaShapesInLayer(layer).forEach((group: any) => {
         if (group.attrs.id === sofaObject.id) {
           targetAlreadyExists = true
@@ -494,45 +497,42 @@ const SofaDrawingStage = ({
           targetIntersection = true
         }
       })
+
+      const stageWidth = width
+      const stageHeight = height
+      let xStep = 40 * scale
+      let yStep = 0
+
+      if (sofaObject.x * scale + xStep + sofaObject.width * scale > stageWidth) {
+        xStep = 0
+        yStep = 40 * scale
+      }
+      if (sofaObject.y * scale + yStep + sofaObject.height * scale > stageHeight) {
+        xStep = 0
+        yStep = 0
+      }
+
+      if (numberOfCalls > 100) {
+        return { x: sofaObject.x, y: sofaObject.y }
+      }
+
+      if (targetIntersection && !targetAlreadyExists) {
+        return getAdjustedXYCoordinates(
+          { ...sofaObject, x: sofaObject.x + xStep, y: sofaObject.y + yStep },
+          numberOfCalls + 1
+        )
+      } else if (targetAlreadyExists && existingXY) {
+        return existingXY
+      } else {
+        return { x: sofaObject.x + xStep, y: sofaObject.y + yStep }
+      }
     }
 
-    const stageWidth = width
-    const stageHeight = height
-    let xStep = 40 * scale
-    let yStep = 0
-
-    if (sofaObject.x * scale + xStep + sofaObject.width * scale > stageWidth) {
-      xStep = 0
-      yStep = 40 * scale
-    }
-    if (sofaObject.y * scale + yStep + sofaObject.height * scale > stageHeight) {
-      xStep = 0
-      yStep = 0
-    }
-
-    if (numberOfCalls > 100) {
-      return { x: sofaObject.x, y: sofaObject.y }
-    }
-
-    if (targetIntersection && !targetAlreadyExists) {
-      return getAdjustedXYCoordinates(
-        { ...sofaObject, x: sofaObject.x + xStep, y: sofaObject.y + yStep },
-        numberOfCalls + 1
-      )
-    } else if (targetAlreadyExists && existingXY) {
-      return existingXY
-    } else {
-      return { x: sofaObject.x + xStep, y: sofaObject.y + yStep }
-    }
-  }
-
-  const modifiedSofaShapes: any[] = []
-  if (layer) {
-    itemsWithOffsets.forEach(sofaObject => {
+    return itemsWithOffsets.map(sofaObject => {
       const newXY = getAdjustedXYCoordinates(sofaObject)
-      modifiedSofaShapes.push({ ...sofaObject, x: newXY.x, y: newXY.y })
+      return { ...sofaObject, x: newXY.x, y: newXY.y }
     })
-  }
+  }, [sofaShapes, layer, scale, width, height])
 
   // ---- Drop zone generation ----
   const generateAllAvailableDropZones = (layer: any, target: any) => {
@@ -628,7 +628,7 @@ const SofaDrawingStage = ({
   }
 
   // ---- Delete handler ----
-  const onDelete = (_e: any) => {
+  const onDelete = useCallback((_e: any) => {
     if (!activeSofaShape || !layer) return
     layer.findOne(".action_buttons")?.visible(false)
     disconnectShape(activeSofaShape)
@@ -638,7 +638,7 @@ const SofaDrawingStage = ({
     setConnectedGroupsInStage(connectedGroups)
     setActiveSofaShape(null)
     onSofaDelete(deletedId)
-  }
+  }, [activeSofaShape, layer, scale, onSofaDelete])
 
   // ---- Click handler ----
   const handleClick = (e: any) => {
@@ -842,21 +842,19 @@ const SofaDrawingStage = ({
   }
 
   // ---- Metric lines update ----
-  const updateMetricLines = () => {
+  // Accepts optional pre-computed groups to avoid a redundant generateConnectedGroupsWithScale call.
+  const updateMetricLines = (preComputedGroups?: any[][]) => {
     if (!layer) return
     if (showArrows) {
-      const connectedGroups = generateConnectedGroupsWithScale(
-        layer,
-        scale,
-        dragTargetShape
-      )
+      const connectedGroups = preComputedGroups
+        ?? generateConnectedGroupsWithScale(layer, scale, dragTargetShape)
       layer.find(".metricLine").forEach((l: any) => l.destroy())
 
-      if (dragTargetShape) {
-        connectedGroups.push([dragTargetShape])
-      }
+      const groupsToRender = dragTargetShape
+        ? [...connectedGroups, [dragTargetShape]]
+        : connectedGroups
 
-      connectedGroups.forEach((groupOfGroups: any[]) => {
+      groupsToRender.forEach((groupOfGroups: any[]) => {
         drawMetricLinesForGroups(groupOfGroups, layer, scale)
       })
     } else {
@@ -865,13 +863,17 @@ const SofaDrawingStage = ({
   }
 
   // ---- Effects for metric lines ----
+  // sofaShapes is intentionally NOT in deps here: metric-line updates after a shape change are
+  // already triggered by connectedGroupsInStage changing in the effect below.
   useEffect(() => {
     if (layer) {
       updateMetricLines()
     }
-  }, [showArrows, scale, sofaShapes, dragTargetShape, connectedGroupsInStage])
+  }, [showArrows, scale, dragTargetShape, connectedGroupsInStage])
 
   // ---- Effect for connected groups on shape changes ----
+  // generateConnectedGroupsWithScale is called exactly once per sofaShapes change here.
+  // The metric-lines effect above will fire automatically when connectedGroupsInStage updates.
   useEffect(() => {
     if (layer) {
       const connectedGroups = generateConnectedGroupsWithScale(layer, scale, null)
@@ -956,25 +958,23 @@ const SofaDrawingStage = ({
   }
 
   // ============================================================
-  // Build rendered elements
+  // Build rendered elements (memoized — only recreated when shapes, positions, or display
+  // props change; stable keys prevent full unmount/remount on every add).
   // ============================================================
-  const modifiedElements: React.ReactNode[] = []
-  let n = 0
+  const modifiedElements = useMemo(() => {
+    const elements: React.ReactNode[] = []
 
-  for (const item of modifiedSofaShapes) {
-    if (item.sofaForm != null) {
+    for (const item of modifiedSofaShapes) {
+      if (item.sofaForm == null) continue
       const SofaElement = sofaShapeElements[item.sofaForm.type]
-      if (!SofaElement) {
-        n++
-        continue
-      }
+      if (!SofaElement) continue
 
       const dims = item.sofaForm.dimensions
 
-      modifiedElements.push(
+      elements.push(
         <SofaElement
+          key={item.id}
           id={item.id}
-          key={n}
           x={item.x}
           y={item.y}
           width={item.width}
@@ -1014,8 +1014,9 @@ const SofaDrawingStage = ({
         />
       )
     }
-    n++
-  }
+
+    return elements
+  }, [modifiedSofaShapes, layer, onDelete, showButtons, width, height])
 
   // ============================================================
   // Render

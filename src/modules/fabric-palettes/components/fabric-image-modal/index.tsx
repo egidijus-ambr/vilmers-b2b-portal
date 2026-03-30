@@ -1,8 +1,7 @@
 "use client"
 
-import { Fragment, useMemo } from "react"
-import { Dialog, Transition } from "@headlessui/react"
-import X from "@modules/common/icons/x"
+import { useMemo } from "react"
+import ResponsiveDialog from "@modules/common/components/responsive-dialog"
 import type {
   FabricGroupDetail,
   FabricFeatureDetail,
@@ -124,123 +123,79 @@ export default function FabricImageModal({
   }, [withoutPhoto, languageCode])
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[75]" onClose={onClose}>
-        {/* Backdrop */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-opacity-75 backdrop-blur-md h-screen" />
-        </Transition.Child>
+    <ResponsiveDialog isOpen={isOpen} onClose={onClose} title={fabricName}>
+      {/* Content: Image + Details */}
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+        {/* Image */}
+        <div className="flex-1 min-h-[40vh] md:min-h-0 flex items-center justify-center overflow-hidden bg-gold-20">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageSrc}
+            alt={fabricName}
+            className="w-full h-full object-cover"
+          />
+        </div>
 
-        <div className="fixed inset-0 overflow-y-hidden">
-          <div className="flex min-h-full h-full justify-center p-0 md:p-4 text-center items-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="flex flex-col w-full h-full md:h-auto md:max-w-5xl md:max-h-[90vh] transform text-left align-middle transition-all bg-gold-10 md:shadow-xl md:border md:rounded-rounded">
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 md:px-8 py-4 border-b border-gray-200 flex-shrink-0">
-                  <Dialog.Title className="text-lg md:text-xl text-dark-blue font-medium truncate">
-                    {fabricName}
-                  </Dialog.Title>
-                  <button
-                    onClick={onClose}
-                    className="text-dark-blue hover:opacity-70 transition-opacity ml-4 flex-shrink-0"
+        {/* Details Panel */}
+        <div className="w-full md:w-80 lg:w-96 flex-shrink-0 md:overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200 p-6">
+          {/* Group Name */}
+          {resolvedGroupName && (
+            <h3 className="text-xl font-semibold text-dark-blue">
+              {resolvedGroupName}
+            </h3>
+          )}
+          {/* Price Category */}
+          {priceCategory && (
+            <p className="text-sm text-dark-blue/70 mt-1">
+              {priceCategory}
+            </p>
+          )}
+
+          {/* Feature Grid */}
+          {featureGroups.length > 0 && (
+            <div className="grid grid-cols-2 gap-x-8 gap-y-5 mt-6">
+              {featureGroups.map((group) =>
+                group.features.map((feature) => (
+                  <div key={feature.id} className="flex flex-col gap-0.5">
+                    <span className="text-xs font-semibold text-dark-blue tracking-wide uppercase">
+                      {group.groupName}
+                    </span>
+                    <span className="text-sm text-dark-blue">
+                      {resolveFeatureName(feature, languageCode)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Characteristics with photos */}
+          {featuresWithPhoto.length > 0 && (
+            <div className="flex flex-wrap gap-4 mt-6">
+              {featuresWithPhoto.map((feature) => {
+                const photo = (feature as any)?.photo
+                const name = resolveFeatureName(feature, languageCode)
+                return (
+                  <div
+                    key={feature.id}
+                    className="flex flex-col items-center gap-1"
                   >
-                    <X size={24} />
-                  </button>
-                </div>
-
-                {/* Content: Image + Details */}
-                <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-                  {/* Image */}
-                  <div className="flex-1 min-h-[40vh] md:min-h-0 flex items-center justify-center overflow-hidden bg-gold-20">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={imageSrc}
-                      alt={fabricName}
-                      className="w-full h-full object-cover"
+                      src={photo?.src ?? photo}
+                      alt={name}
+                      className="w-10 h-10 object-contain"
                     />
+                    <span className="text-xs text-dark-blue text-center">
+                      {name}
+                    </span>
                   </div>
-
-                  {/* Details Panel */}
-                  <div className="w-full md:w-80 lg:w-96 flex-shrink-0 md:overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200 p-6">
-                    {/* Group Name */}
-                    {resolvedGroupName && (
-                      <h3 className="text-xl font-semibold text-dark-blue">
-                        {resolvedGroupName}
-                      </h3>
-                    )}
-                    {/* Price Category */}
-                    {priceCategory && (
-                      <p className="text-sm text-dark-blue/70 mt-1">
-                        {priceCategory}
-                      </p>
-                    )}
-
-                    {/* Feature Grid */}
-                    {featureGroups.length > 0 && (
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-5 mt-6">
-                        {featureGroups.map((group) =>
-                          group.features.map((feature) => (
-                            <div key={feature.id} className="flex flex-col gap-0.5">
-                              <span className="text-xs font-semibold text-dark-blue tracking-wide uppercase">
-                                {group.groupName}
-                              </span>
-                              <span className="text-sm text-dark-blue">
-                                {resolveFeatureName(feature, languageCode)}
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-
-                    {/* Characteristics with photos */}
-                    {featuresWithPhoto.length > 0 && (
-                      <div className="flex flex-wrap gap-4 mt-6">
-                        {featuresWithPhoto.map((feature) => {
-                          const photo = (feature as any)?.photo
-                          const name = resolveFeatureName(feature, languageCode)
-                          return (
-                            <div
-                              key={feature.id}
-                              className="flex flex-col items-center gap-1"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={photo?.src ?? photo}
-                                alt={name}
-                                className="w-10 h-10 object-contain"
-                              />
-                              <span className="text-xs text-dark-blue text-center">
-                                {name}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+    </ResponsiveDialog>
   )
 }

@@ -16,13 +16,18 @@ const PriceFooter = ({ currency = "EUR", onAddToCart }: PriceFooterProps) => {
   const displayPrice = totalPrice != null ? totalPrice * quantity : null
 
   return (
-    <div className="sticky bottom-0 mt-4 border-t bg-white pt-4 pb-2 flex items-center justify-between gap-4">
+    <div className="sticky bottom-0 mt-4 border-t bg-white pt-4 pb-2 flex items-center justify-between gap-4 px-4 md:px-6 py-6">
       <div className="flex items-center gap-4">
         {/* Quantity selector */}
         <div className="flex items-center border rounded">
           <button
             className="px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-40"
-            onClick={() => dispatch({ type: "SET_QUANTITY", payload: Math.max(1, quantity - 1) })}
+            onClick={() =>
+              dispatch({
+                type: "SET_QUANTITY",
+                payload: Math.max(1, quantity - 1),
+              })
+            }
             disabled={quantity <= 1}
           >
             -
@@ -32,7 +37,9 @@ const PriceFooter = ({ currency = "EUR", onAddToCart }: PriceFooterProps) => {
           </span>
           <button
             className="px-3 py-2 text-sm hover:bg-gray-50"
-            onClick={() => dispatch({ type: "SET_QUANTITY", payload: quantity + 1 })}
+            onClick={() =>
+              dispatch({ type: "SET_QUANTITY", payload: quantity + 1 })
+            }
           >
             +
           </button>

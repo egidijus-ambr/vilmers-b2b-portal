@@ -91,11 +91,11 @@ const ConfiguratorContent = ({
   const isSofa = productData.advanced_product?.advanced_product_type === "SOFA"
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-y-auto md:overflow-hidden">
       {/* Main content area — 2 panel layout */}
-      <div className="flex flex-1 gap-6 overflow-hidden">
+      <div className="flex flex-col md:flex-row md:flex-1 gap-6 md:overflow-hidden px-4 md:px-6 py-6">
         {/* Left panel: Shape selection + canvas */}
-        <div className="w-full md:w-2/3 overflow-y-auto pr-2">
+        <div className="w-full md:w-2/3 md:overflow-hidden md:pr-2">
           {isSofa ? (
             <SofaShapeSection languageCode={languageCode} />
           ) : (
@@ -106,7 +106,7 @@ const ConfiguratorContent = ({
         </div>
 
         {/* Right panel: Stepper + Step Content */}
-        <div className="w-full md:w-1/3 overflow-y-auto pl-2 space-y-6">
+        <div className="w-full md:w-1/3 md:overflow-y-auto md:pl-2 space-y-6">
           {/* Stepper navigation */}
           {steps.length > 1 && (
             <ConfiguratorStepper
