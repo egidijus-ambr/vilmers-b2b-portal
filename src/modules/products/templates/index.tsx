@@ -10,6 +10,7 @@ import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/ty
 import LinkedProductsSection from "@modules/products/components/linked-products-section"
 import InteriorGallerySection from "@modules/products/components/interior-gallery-section"
 import ComfortSection, { type ComfortSectionData } from "@modules/products/components/comfort-section"
+import ConfiguratorButton from "@modules/products/components/configurator/configurator-button"
 
 export type ProductPageData = {
   id: string
@@ -22,6 +23,8 @@ export type ProductPageData = {
   linkedProductGroups: { type: string; products: ProductContainer[] }[]
   comfortData: ComfortSectionData | null
   languageCode: string
+  isAdvancedProduct: boolean
+  productContainerId: number
 }
 
 type ProductTemplateProps = {
@@ -34,7 +37,14 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
       <PageHeader breadcrumbItems={product.breadcrumbs} />
       <PageContent>
         <div data-testid="product-container">
-          <h1 className="page-title mb-4">{product.title}</h1>
+          <div className="flex items-start justify-between mb-4">
+            <h1 className="page-title">{product.title}</h1>
+            <ConfiguratorButton
+              productContainerId={product.productContainerId}
+              isAdvancedProduct={product.isAdvancedProduct}
+              languageCode={product.languageCode}
+            />
+          </div>
           {product.description && (
             <div
               className="text-dark-blue prose prose-sm mb-6 md:w-1/2"
