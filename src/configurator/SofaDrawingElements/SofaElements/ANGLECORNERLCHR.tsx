@@ -434,9 +434,6 @@ const ANGLECORNERLCHR = ({
             y={pillow.y}
             rotation={pillow.rotation}
             size={backPillowSize}
-            stroke="black"
-            strokeWidth={1}
-            fill={'#ddd'}
           />
         ))}
       </Group>

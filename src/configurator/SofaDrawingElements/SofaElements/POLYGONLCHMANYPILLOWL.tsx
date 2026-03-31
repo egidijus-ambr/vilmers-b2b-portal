@@ -29,6 +29,9 @@ import {
   POLYGON_LCH_CUT_PERCENTAGE,
   SHADOW_WIDTH,
   STANDART_PILLOW_SIZE,
+  PILLOW_FILL_COLOR,
+  PILLOW_STROKE_COLOR,
+  PILLOW_STROKE_WIDTH,
 } from './constants'
 import { HorizontalMetric, VerticalMetric } from './MetricLines'
 import Konva from 'konva'
@@ -365,9 +368,9 @@ const POLYGONLCHMANYPILLOWL = ({
               tension={0.3}
               closed
               // stroke="green"
-              stroke="black"
-              strokeWidth={1}
-              fill={'#ddd'}
+              stroke={PILLOW_STROKE_COLOR}
+              strokeWidth={PILLOW_STROKE_WIDTH}
+              fill={PILLOW_FILL_COLOR}
             />
           )
         })}

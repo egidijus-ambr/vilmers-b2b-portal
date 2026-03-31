@@ -1,5 +1,6 @@
 import React from 'react'
 import { Line } from 'react-konva'
+import { PILLOW_FILL_COLOR, PILLOW_STROKE_COLOR, PILLOW_STROKE_WIDTH, PILLOW_OPACITY } from './constants'
 
 interface PillowComponentProps {
   x: number
@@ -10,6 +11,7 @@ interface PillowComponentProps {
   strokeWidth?: number
   fill?: string
   tension?: number
+  opacity?: number
 }
 
 const PillowComponent: React.FC<PillowComponentProps> = ({
@@ -17,10 +19,11 @@ const PillowComponent: React.FC<PillowComponentProps> = ({
   y,
   rotation,
   size,
-  stroke = 'black',
-  strokeWidth = 1,
-  fill = '#ddd',
+  stroke = PILLOW_STROKE_COLOR,
+  strokeWidth = PILLOW_STROKE_WIDTH,
+  fill = PILLOW_FILL_COLOR,
   tension = 0.3,
+  opacity = PILLOW_OPACITY,
 }) => {
   return (
     <Line
@@ -34,6 +37,7 @@ const PillowComponent: React.FC<PillowComponentProps> = ({
       stroke={stroke}
       strokeWidth={strokeWidth}
       fill={fill}
+      opacity={opacity}
     />
   )
 }

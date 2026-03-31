@@ -25,6 +25,9 @@ import {
   MAIN_SHAPE_SHADOW_COLOR,
   METRIC_SIZE,
   OTK_ARMSREST_LENGTH_PERCETAGE,
+  PILLOW_FILL_COLOR,
+  PILLOW_STROKE_COLOR,
+  PILLOW_STROKE_WIDTH,
   SHADOW_WIDTH,
   STANDART_PILLOW_SIZE,
 } from './constants'
@@ -530,9 +533,9 @@ const OTKCMANYPILLOWL = ({
               tension={0.3}
               closed
               // stroke="green"
-              stroke="black"
-              strokeWidth={1}
-              fill={'#ddd'}
+              stroke={PILLOW_STROKE_COLOR}
+              strokeWidth={PILLOW_STROKE_WIDTH}
+              fill={PILLOW_FILL_COLOR}
             />
           )
         })}

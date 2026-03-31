@@ -23,6 +23,9 @@ import {
   MAIN_SHAPE_COLOR,
   MAIN_SHAPE_SHADOW_COLOR,
   METRIC_SIZE,
+  PILLOW_FILL_COLOR,
+  PILLOW_STROKE_COLOR,
+  PILLOW_STROKE_WIDTH,
   SHADOW_WIDTH,
   STANDART_PILLOW_SIZE,
 } from './constants'
@@ -360,9 +363,9 @@ const EMANYPILLOWSQ = ({
           ]}
           tension={0.3}
           closed
-          stroke="black"
-          strokeWidth={1}
-          fill={'#ddd'}
+          stroke={PILLOW_STROKE_COLOR}
+          strokeWidth={PILLOW_STROKE_WIDTH}
+          fill={PILLOW_FILL_COLOR}
         />
       ))}
 
@@ -387,9 +390,9 @@ const EMANYPILLOWSQ = ({
           ]}
           tension={0.3}
           closed
-          stroke="black"
-          strokeWidth={1}
-          fill={'#ddd'}
+          stroke={PILLOW_STROKE_COLOR}
+          strokeWidth={PILLOW_STROKE_WIDTH}
+          fill={PILLOW_FILL_COLOR}
         />
       ))}
 

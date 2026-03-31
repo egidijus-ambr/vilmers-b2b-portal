@@ -359,9 +359,6 @@ const CORNERL = ({
             y={pillow.y}
             rotation={pillow.rotation}
             size={backPillowSize}
-            stroke="black"
-            strokeWidth={1}
-            fill="#ddd"
             tension={0.3}
           />
         )

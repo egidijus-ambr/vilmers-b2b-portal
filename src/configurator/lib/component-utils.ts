@@ -192,11 +192,15 @@ export function getStepsForProduct(
     if (stepId === "fabric") continue
     const groups = stepGroups.get(stepId)
     if (groups && groups.length > 0) {
-      steps.push({
-        id: stepId,
-        label: STEP_LABELS[stepId],
-        groups: groups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-      })
+      const sortedGroups = groups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      const groupNames = sortedGroups
+        .map((g) => g.additional_component_group_profiles?.[0]?.name)
+        .filter(Boolean)
+      const label =
+        groupNames.length > 0
+          ? [...new Set(groupNames)].join(" & ")
+          : STEP_LABELS[stepId]
+      steps.push({ id: stepId, label, groups: sortedGroups })
     }
   }
 
