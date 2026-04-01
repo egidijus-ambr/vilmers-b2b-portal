@@ -27,6 +27,7 @@ export function useDynamicGroups(
     selectedAdditionalComponents,
     selectedFabric,
     additionalComponentGroups,
+    sofaForms,
   } = state
 
   const prevGroupsRef = useRef<ComponentGroup[]>([])
@@ -66,7 +67,8 @@ export function useDynamicGroups(
       originalGroups,
       sofaCombinations,
       selectedAdditionalComponents,
-      translateFn
+      translateFn,
+      sofaForms
     )
 
     if (!isEqual(updated, additionalComponentGroups)) {

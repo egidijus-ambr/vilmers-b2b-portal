@@ -122,7 +122,8 @@ export function computeArmrestAndLegsGroups(
   originalGroups: ComponentGroup[],
   sofaCombinations: any[][],
   selectedComponents: SelectedComponent[],
-  translateFn: (key: string) => string
+  translateFn: (key: string) => string,
+  sofaForms?: any[]
 ): ComponentGroup[] {
   const armrestsGroup = originalGroups.find((g) => g.code === "armrest")
   if (!armrestsGroup) return currentGroups
@@ -273,11 +274,74 @@ export function computeArmrestAndLegsGroups(
         modified.push(originalLegsGroup)
       }
     }
-  } else {
-    // Single module or no armrests — keep original legs group
+  } else if (modelWithArmrestInUse.length === 1) {
+    // Single armrest module — keep original legs group
     const originalLegsGroup = originalGroups.find((g) => g.code === "legs")
     if (originalLegsGroup && !modified.some((g) => g.code === "legs")) {
       modified.push(originalLegsGroup)
+    }
+  } else {
+    // No armrest modules — check for additionalLegs fallback
+    const originalLegsGroup = originalGroups.find((g) => g.code === "legs")
+
+    if (originalLegsGroup) {
+      // Check if any module has additionalLegs metadata
+      const hasAdditionalLegs = sofaCombinations.some((sofaSet) =>
+        sofaSet.some(
+          (module) => module?.attrs?.originalSofaForm?.metadata?.additionalLegs
+        )
+      )
+
+      if (hasAdditionalLegs && sofaForms && sofaForms.length > 0) {
+        // Find the sofa form with the most legs in metadata
+        const formWithMostLegs = sofaForms
+          .filter((form: any) => form.metadata?.legs?.length > 0)
+          .reduce((best: any, current: any) => {
+            const currentCount = current.metadata?.legs?.length ?? 0
+            const bestCount = best?.metadata?.legs?.length ?? 0
+            return currentCount > bestCount ? current : best
+          }, null)
+
+        if (formWithMostLegs) {
+          let supportedLegCodes: string[] = formWithMostLegs.metadata.legs.map(
+            (leg: any) => leg.code ?? leg
+          )
+
+          // If form has armrests_legs_map, filter by first non-A000 armrest
+          if (formWithMostLegs.metadata?.armrests_legs_map) {
+            const firstArmrestCode = Object.keys(
+              formWithMostLegs.metadata.armrests_legs_map
+            ).find((code: string) => !code.includes(":A000"))
+
+            if (firstArmrestCode) {
+              const firstArmrestLegs =
+                formWithMostLegs.metadata.armrests_legs_map[firstArmrestCode] ?? []
+              supportedLegCodes = supportedLegCodes.filter((code: string) =>
+                firstArmrestLegs.includes(code)
+              )
+            }
+          }
+
+          // Filter the legs group to only supported legs
+          const filteredLegsGroup: ComponentGroup = {
+            ...originalLegsGroup,
+            additional_components: originalLegsGroup.additional_components.filter(
+              (component) => supportedLegCodes.includes(component.code)
+            ),
+          }
+          modified.push(filteredLegsGroup)
+        } else {
+          // No form with legs metadata — keep original
+          if (!modified.some((g) => g.code === "legs")) {
+            modified.push(originalLegsGroup)
+          }
+        }
+      } else {
+        // No additionalLegs flag — keep original legs group
+        if (!modified.some((g) => g.code === "legs")) {
+          modified.push(originalLegsGroup)
+        }
+      }
     }
   }
 
