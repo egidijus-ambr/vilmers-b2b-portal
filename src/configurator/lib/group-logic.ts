@@ -268,10 +268,40 @@ export function computeArmrestAndLegsGroups(
           })
       }
     } else {
-      // All armrests share the same legs — keep original legs group
+      // All armrests share the same legs — filter by intersection of all selected armrests
       const originalLegsGroup = originalGroups.find((g) => g.code === "legs")
       if (originalLegsGroup && !modified.some((g) => g.code === "legs")) {
-        modified.push(originalLegsGroup)
+        // Collect compatible legs for each selected armrest
+        const legsPerArmrest: string[][] = []
+        for (const armrest of selectedArmrests) {
+          const moduleCode = armrest.groupCode?.split("armrest-")[1]
+          const model = modelWithArmrestInUse.find((m) => m.code === moduleCode)
+          const armrestLegs = model?.armrests_legs_map?.[armrest.code]
+          if (armrestLegs && armrestLegs.length > 0) {
+            legsPerArmrest.push(armrestLegs)
+          }
+        }
+
+        if (legsPerArmrest.length > 0) {
+          // Intersect: only legs common to ALL selected armrests
+          let commonLegs = legsPerArmrest[0]
+          for (let i = 1; i < legsPerArmrest.length; i++) {
+            commonLegs = commonLegs.filter((code) =>
+              legsPerArmrest[i].includes(code)
+            )
+          }
+
+          const filteredLegsGroup: ComponentGroup = {
+            ...originalLegsGroup,
+            additional_components: originalLegsGroup.additional_components.filter(
+              (component) => commonLegs.includes(component.code)
+            ),
+          }
+          modified.push(filteredLegsGroup)
+        } else {
+          // No armrests_legs_map data — keep original unfiltered
+          modified.push(originalLegsGroup)
+        }
       }
     }
   } else if (modelWithArmrestInUse.length === 1) {
