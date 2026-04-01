@@ -217,7 +217,8 @@ const STEP_LABELS: Record<StepId, string> = {
  */
 export function getStepsForProduct(
   componentGroups: ComponentGroup[],
-  selectedComponents: SelectedComponent[]
+  selectedComponents: SelectedComponent[],
+  sofaCombinations?: any[][]
 ): StepDefinition[] {
   // Categorize groups into steps
   const stepGroups = new Map<StepId, ComponentGroup[]>()
@@ -229,7 +230,7 @@ export function getStepsForProduct(
     if (group.ui_type === "hidden") continue
 
     // Check if group has >1 valid component
-    const validComponents = getValidComponents(group, selectedComponents)
+    const validComponents = getValidComponents(group, selectedComponents, sofaCombinations)
     if (validComponents.length <= 1) continue
 
     if (!stepGroups.has(stepId)) {

@@ -18,7 +18,7 @@ const ComponentSection = ({ groups, languageCode }: ComponentSectionProps) => {
   const visibleGroups = groups
     .filter((group) => {
       if (group.ui_type === "hidden") return false
-      const valid = getValidComponents(group, state.selectedAdditionalComponents)
+      const valid = getValidComponents(group, state.selectedAdditionalComponents, state.sofaCombinations)
       return valid.length > 1
     })
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -36,7 +36,8 @@ const ComponentSection = ({ groups, languageCode }: ComponentSectionProps) => {
       {visibleGroups.map((group) => {
         const validComponents = getValidComponents(
           group,
-          state.selectedAdditionalComponents
+          state.selectedAdditionalComponents,
+          state.sofaCombinations
         )
         return (
           <ComponentSelector

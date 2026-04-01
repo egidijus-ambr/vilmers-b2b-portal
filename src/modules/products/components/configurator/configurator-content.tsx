@@ -52,9 +52,10 @@ const ConfiguratorContent = ({
     () =>
       getStepsForProduct(
         state.additionalComponentGroups,
-        state.selectedAdditionalComponents
+        state.selectedAdditionalComponents,
+        state.sofaCombinations
       ),
-    [state.additionalComponentGroups, state.selectedAdditionalComponents]
+    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations]
   )
 
   const currentStep = Math.min(state.currentStep, Math.max(steps.length - 1, 0))
