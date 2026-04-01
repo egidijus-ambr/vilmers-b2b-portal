@@ -1,8 +1,10 @@
 "use client"
 
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import type { SofaFormExtended } from "@configurator/lib/types"
+import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
+import { setNewSize } from "@configurator/lib/sofa-shape-utils"
 import SofaModulesSelector from "./sofa-modules-selector"
 import SofaStageContainer from "./sofa-stage-container"
 
@@ -43,6 +45,39 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
     },
     [dispatch]
   )
+
+  // Update sofa module dimensions when armrest selection changes
+  useEffect(() => {
+    const overrides = getArmrestOverides(state.selectedAdditionalComponents)
+    if (overrides.length === 0) return
+
+    setDropables((prev) => {
+      if (prev.length === 0) return prev
+
+      let hasChanges = false
+      const updated = prev.map((dropable) => {
+        const override =
+          overrides.find((o: any) => o.moduleId === dropable.id) ??
+          overrides.find((o: any) => !o.moduleId)
+        if (!override) return dropable
+
+        if (dropable.sofaForm.dimensions.armrest_width === override.armrestWidth) {
+          return dropable
+        }
+
+        const clonedSofaForm = {
+          ...dropable.sofaForm,
+          dimensions: { ...dropable.sofaForm.dimensions },
+          originalDimension: { ...dropable.sofaForm.originalDimension },
+        }
+        setNewSize(clonedSofaForm, override.armrestWidth)
+        hasChanges = true
+        return { ...dropable, sofaForm: clonedSofaForm }
+      })
+
+      return hasChanges ? updated : prev
+    })
+  }, [state.selectedAdditionalComponents])
 
   if (sofaForms.length === 0) {
     return (
