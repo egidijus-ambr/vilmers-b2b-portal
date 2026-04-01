@@ -2,9 +2,9 @@
 
 import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
-import { useCustomer } from "@lib/context/customer-context"
 import { sdk } from "@lib/config"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
+import { useCustomerPaletteIds } from "../lib/palette-utils"
 
 /**
  * Hook to lazy-load configurator data when the modal opens.
@@ -17,7 +17,8 @@ export function useConfiguratorData(
   isOpen: boolean
 ) {
   const { dispatch } = useConfigurator()
-  const { customer } = useCustomer()
+  const paletteIds = useCustomerPaletteIds()
+  const paletteKey = paletteIds.join(",")
 
   useEffect(() => {
     if (!isOpen || !productContainerId) return
@@ -28,11 +29,6 @@ export function useConfiguratorData(
       dispatch({ type: "SET_LOADING", payload: true })
 
       try {
-        // Resolve palette IDs from customer + customer group
-        const customerPalettes = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-        const groupPalettes = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-        const paletteIds = Array.from(new Set([...customerPalettes, ...groupPalettes]))
-
         const data = await sdk.products.getConfiguratorData(
           productContainerId!,
           priceListId,
@@ -89,5 +85,5 @@ export function useConfiguratorData(
     return () => {
       cancelled = true
     }
-  }, [isOpen, productContainerId, priceListId, language, dispatch, customer])
+  }, [isOpen, productContainerId, priceListId, language, dispatch, paletteKey])
 }

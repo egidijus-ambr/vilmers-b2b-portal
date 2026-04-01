@@ -3,9 +3,9 @@
 import React, { useMemo, useState, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { useConfigurator } from "@configurator/context/configurator-context"
-import { useCustomer } from "@lib/context/customer-context"
 import FabricDrawerCard from "./fabric-drawer-card"
 import type { FabricGroupWithPrice, FabricCombinationOption } from "@configurator/lib/types"
+import { useCustomerPaletteIds, getGroupName } from "@configurator/lib/palette-utils"
 
 type FabricDrawerProps = {
   isOpen: boolean
@@ -34,12 +34,7 @@ const FabricDrawer = ({
   const { selectedFabric } = state
   const [searchValue, setSearchValue] = useState("")
 
-  const { customer } = useCustomer()
-  const customerPaletteIds = useMemo(() => {
-    const direct = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-    const group = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-    return Array.from(new Set([...direct, ...group]))
-  }, [customer])
+  const customerPaletteIds = useCustomerPaletteIds()
 
   // Current selected fabric id for highlighting
   const selectedFabricId = option
@@ -225,27 +220,6 @@ const FabricDrawer = ({
       </Dialog>
     </Transition>
   )
-}
-
-function getGroupName(
-  group: FabricGroupWithPrice,
-  languageCode: string,
-  customerPaletteIds?: number[]
-): string {
-  // Check palette name override first
-  if (customerPaletteIds?.length && group.fabric_palettes?.length) {
-    for (const paletteId of customerPaletteIds) {
-      const match = group.fabric_palettes.find(
-        (fp) => fp.fabric_palette.id === paletteId && fp.name
-      )
-      if (match) return match.name!
-    }
-  }
-
-  const profile =
-    group.fabric_group_profiles?.find((p) => p.language === languageCode) ??
-    group.fabric_group_profiles?.[0]
-  return profile?.name ?? group.code ?? `Group ${group.id}`
 }
 
 export default FabricDrawer
