@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useMemo } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
+import { useCustomer } from "@lib/context/customer-context"
 import FabricDrawer from "./fabric-drawer"
 import type {
   FabricGroupWithPrice,
@@ -31,6 +32,12 @@ const FabricSelector = ({
   const { state } = useConfigurator()
   const { selectedFabric } = state
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { customer } = useCustomer()
+  const customerPaletteIds = useMemo(() => {
+    const direct = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+    const group = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+    return [...new Set([...direct, ...group])]
+  }, [customer])
 
   // Get current selection based on mode
   const currentSelection = option
@@ -44,7 +51,7 @@ const FabricSelector = ({
   const selectedFabricObj = currentSelection?.fabricObject
 
   const groupName = selectedGroup
-    ? getGroupName(selectedGroup, languageCode)
+    ? getGroupName(selectedGroup, languageCode, customerPaletteIds)
     : null
 
   const drawerTitle = title ?? "Fabric"
@@ -122,8 +129,19 @@ const FabricSelector = ({
 
 function getGroupName(
   group: FabricGroupWithPrice,
-  languageCode: string
+  languageCode: string,
+  customerPaletteIds?: number[]
 ): string {
+  // Check palette name override first
+  if (customerPaletteIds?.length && group.fabric_palettes?.length) {
+    for (const paletteId of customerPaletteIds) {
+      const match = group.fabric_palettes.find(
+        (fp) => fp.fabric_palette.id === paletteId && fp.name
+      )
+      if (match) return match.name!
+    }
+  }
+
   const profile =
     group.fabric_group_profiles?.find((p) => p.language === languageCode) ??
     group.fabric_group_profiles?.[0]
