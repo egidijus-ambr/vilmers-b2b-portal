@@ -124,6 +124,7 @@ export interface FabricGroup {
   code: string
   fabrics: Fabric[]
   fabric_group_profiles: { name: string; language: string }[]
+  fabric_palettes?: FabricGroupPalette[]
 }
 
 export interface FabricGroupWithPrice extends FabricGroup {
@@ -137,6 +138,13 @@ export interface Fabric {
   color_name: string | null
   order: number
   image: { src: string; src_md: string | null; src_xs: string | null } | null
+}
+
+export interface FabricGroupPalette {
+  name: string | null
+  fabric_palette: {
+    id: number
+  }
 }
 
 // --- Additional component types ---
