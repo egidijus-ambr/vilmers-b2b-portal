@@ -38,7 +38,7 @@ const FabricDrawer = ({
   const customerPaletteIds = useMemo(() => {
     const direct = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
     const group = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-    return [...new Set([...direct, ...group])]
+    return Array.from(new Set([...direct, ...group]))
   }, [customer])
 
   // Current selected fabric id for highlighting

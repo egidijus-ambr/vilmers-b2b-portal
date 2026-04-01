@@ -31,7 +31,7 @@ export function useConfiguratorData(
         // Resolve palette IDs from customer + customer group
         const customerPalettes = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
         const groupPalettes = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-        const paletteIds = [...new Set([...customerPalettes, ...groupPalettes])]
+        const paletteIds = Array.from(new Set([...customerPalettes, ...groupPalettes]))
 
         const data = await sdk.products.getConfiguratorData(
           productContainerId!,
