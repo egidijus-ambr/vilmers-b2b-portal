@@ -3,6 +3,7 @@
 import React, { useMemo, useState, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { useConfigurator } from "@configurator/context/configurator-context"
+import { useCustomer } from "@lib/context/customer-context"
 import FabricDrawerCard from "./fabric-drawer-card"
 import type { FabricGroupWithPrice, FabricCombinationOption } from "@configurator/lib/types"
 
@@ -33,6 +34,13 @@ const FabricDrawer = ({
   const { selectedFabric } = state
   const [searchValue, setSearchValue] = useState("")
 
+  const { customer } = useCustomer()
+  const customerPaletteIds = useMemo(() => {
+    const direct = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+    const group = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+    return [...new Set([...direct, ...group])]
+  }, [customer])
+
   // Current selected fabric id for highlighting
   const selectedFabricId = option
     ? selectedFabric.combinationFabrics?.[option.id]?.fabricObject?.id ?? null
@@ -47,10 +55,14 @@ const FabricDrawer = ({
 
     return fabricGroups
       .map((group) => {
-        const groupName = getGroupName(group, languageCode)
+        const groupName = getGroupName(group, languageCode, customerPaletteIds)
+        const originalName = getGroupName(group, languageCode)
 
-        // If group name matches, return all fabrics
-        if (groupName.toLowerCase().includes(query)) {
+        // If group name (override or original) matches, return all fabrics
+        if (
+          groupName.toLowerCase().includes(query) ||
+          originalName.toLowerCase().includes(query)
+        ) {
           return group
         }
 
@@ -66,7 +78,7 @@ const FabricDrawer = ({
         return { ...group, fabrics: matchingFabrics }
       })
       .filter(Boolean) as FabricGroupWithPrice[]
-  }, [fabricGroups, searchValue, languageCode])
+  }, [fabricGroups, searchValue, languageCode, customerPaletteIds])
 
   const handleFabricSelect = (fabric: any, fabricGroup: FabricGroupWithPrice) => {
     if (option) {
@@ -162,7 +174,7 @@ const FabricDrawer = ({
                   {/* Scrollable fabric list */}
                   <div className="flex-1 overflow-y-auto px-6 pb-6">
                     {filteredGroups.map((fabricGroup) => {
-                      const groupName = getGroupName(fabricGroup, languageCode)
+                      const groupName = getGroupName(fabricGroup, languageCode, customerPaletteIds)
                       const catNumber = fabricGroup.form_price_fabric_category?.group_number
 
                       // Sort fabrics by color_name
@@ -215,10 +227,24 @@ const FabricDrawer = ({
   )
 }
 
-function getGroupName(group: FabricGroupWithPrice, languageCode: string): string {
-  const profile = group.fabric_group_profiles?.find(
-    (p) => p.language === languageCode
-  ) ?? group.fabric_group_profiles?.[0]
+function getGroupName(
+  group: FabricGroupWithPrice,
+  languageCode: string,
+  customerPaletteIds?: number[]
+): string {
+  // Check palette name override first
+  if (customerPaletteIds?.length && group.fabric_palettes?.length) {
+    for (const paletteId of customerPaletteIds) {
+      const match = group.fabric_palettes.find(
+        (fp) => fp.fabric_palette.id === paletteId && fp.name
+      )
+      if (match) return match.name!
+    }
+  }
+
+  const profile =
+    group.fabric_group_profiles?.find((p) => p.language === languageCode) ??
+    group.fabric_group_profiles?.[0]
   return profile?.name ?? group.code ?? `Group ${group.id}`
 }
 
