@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
+import { useCustomer } from "@lib/context/customer-context"
 import { sdk } from "@lib/config"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
 
@@ -16,6 +17,7 @@ export function useConfiguratorData(
   isOpen: boolean
 ) {
   const { dispatch } = useConfigurator()
+  const { customer } = useCustomer()
 
   useEffect(() => {
     if (!isOpen || !productContainerId) return
@@ -26,10 +28,16 @@ export function useConfiguratorData(
       dispatch({ type: "SET_LOADING", payload: true })
 
       try {
+        // Resolve palette IDs from customer + customer group
+        const customerPalettes = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+        const groupPalettes = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+        const paletteIds = [...new Set([...customerPalettes, ...groupPalettes])]
+
         const data = await sdk.products.getConfiguratorData(
           productContainerId!,
           priceListId,
-          language
+          language,
+          paletteIds
         )
 
         if (cancelled) return
@@ -81,5 +89,5 @@ export function useConfiguratorData(
     return () => {
       cancelled = true
     }
-  }, [isOpen, productContainerId, priceListId, language, dispatch])
+  }, [isOpen, productContainerId, priceListId, language, dispatch, customer])
 }
