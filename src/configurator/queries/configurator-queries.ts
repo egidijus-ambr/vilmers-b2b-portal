@@ -17,6 +17,7 @@ export const GET_CONFIGURATOR_DATA = gql`
     $productContainerId: Int!
     $priceListId: Int!
     $language: Language
+    $fabricWhere: FabricGroupWhereInput
   ) {
     findUniqueProductContainer(where: { id: $productContainerId }) {
       id
@@ -295,7 +296,7 @@ export const GET_CONFIGURATOR_DATA = gql`
         fabric_price_category {
           id
           group_number
-          fabric_groups {
+          fabric_groups(where: $fabricWhere) {
             id
             code
             fabric_group_profiles(
@@ -304,6 +305,12 @@ export const GET_CONFIGURATOR_DATA = gql`
               id
               name
               language
+            }
+            fabric_palettes {
+              name
+              fabric_palette {
+                id
+              }
             }
             fabrics {
               id
