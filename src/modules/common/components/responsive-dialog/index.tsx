@@ -28,7 +28,7 @@ export default function ResponsiveDialog({
 }: ResponsiveDialogProps) {
   const sizeClasses =
     size === "full"
-      ? "md:max-w-[95vw] md:h-[93vh]"
+      ? "md:max-w-[1446px] md:h-[93vh]"
       : "md:max-w-5xl md:max-h-[90vh]"
   return (
     <Transition appear show={isOpen} as={Fragment}>
