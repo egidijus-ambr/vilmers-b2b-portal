@@ -86,7 +86,8 @@ export function mergeComponentGroups(
  */
 export function getValidComponents(
   group: ComponentGroup,
-  selectedComponents: SelectedComponent[]
+  selectedComponents: SelectedComponent[],
+  sofaCombinations?: any[][]
 ): AdditionalComponent[] {
   // Filter out components hidden in configuration (customer preselected / locked)
   let filtered = group.additional_components.filter((component: any) => {
@@ -108,6 +109,60 @@ export function getValidComponents(
 
     return selectedInGroup.every((code) => onlyWithComponents.includes(code))
   })
+
+  // Filter by sofa module metadata (generic metadata[groupCode] filtering)
+  // For each sofa module, check if metadata has a key matching this group's code.
+  // If so, only show components whose code is in the metadata array.
+  // Combines across modules using intersection (default) or union.
+  // Skip groups already handled by specialized logic (armrests, legs, threads).
+  if (sofaCombinations && sofaCombinations.length > 0) {
+    const isSpecializedGroup =
+      group.code.startsWith("armrest") ||
+      group.code.startsWith("legs") ||
+      group.code === "legs" ||
+      group.code.startsWith("threads")
+
+    if (!isSpecializedGroup) {
+      let supportedCodes: string[] | undefined
+
+      for (const sofaSet of sofaCombinations) {
+        for (const module of sofaSet) {
+          const metadata = module?.attrs?.originalSofaForm?.metadata
+          const moduleSupportedComponents = metadata?.[group.code]
+
+          if (!moduleSupportedComponents || !Array.isArray(moduleSupportedComponents)) continue
+
+          const moduleCodes: string[] = moduleSupportedComponents.map(
+            (c: any) => c.code ?? c
+          )
+
+          if (supportedCodes === undefined) {
+            supportedCodes = [...moduleCodes]
+          } else {
+            const operation = metadata?.["operation_" + group.code]
+
+            if (operation === "union") {
+              const combined = [...supportedCodes, ...moduleCodes]
+              supportedCodes = combined.filter(
+                (code, index) => combined.indexOf(code) === index
+              )
+            } else {
+              // Intersection (default): keep only codes present in both
+              supportedCodes = supportedCodes.filter((code) =>
+                moduleCodes.includes(code)
+              )
+            }
+          }
+        }
+      }
+
+      if (supportedCodes !== undefined) {
+        filtered = filtered.filter((component) =>
+          supportedCodes!.includes(component.code)
+        )
+      }
+    }
+  }
 
   // Filter by price if hide_components_without_price
   if (group.hide_components_without_price) {
