@@ -867,11 +867,24 @@ export class ProductsModule {
   async getConfiguratorData(
     productContainerId: number,
     priceListId: number,
-    language?: string
+    language?: string,
+    paletteIds?: number[]
   ): Promise<any | null> {
     const { GET_CONFIGURATOR_DATA } = await import(
       "@configurator/queries/configurator-queries"
     )
+
+    const fabricWhere = {
+      fabric_palettes: {
+        some: {
+          fabric_palette: {
+            is: {
+              id: { in: paletteIds ?? [] },
+            },
+          },
+        },
+      },
+    }
 
     try {
       const response = await this.client.query<{
@@ -881,6 +894,7 @@ export class ProductsModule {
           productContainerId,
           priceListId,
           ...(language ? { language: language.toLowerCase() } : {}),
+          fabricWhere,
         },
         fetchPolicy: "no-cache",
         errorPolicy: "all",
