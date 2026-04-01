@@ -83,6 +83,8 @@ export interface SofaFormMetadata {
   armrestsConditions?: string[]
   legs?: string[]
   armrests_legs_map?: Record<string, string[]>
+  additionalLegs?: boolean
+  [key: string]: any
 }
 
 export interface FormPriceFabricCategory {
