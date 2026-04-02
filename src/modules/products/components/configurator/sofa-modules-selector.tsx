@@ -9,13 +9,20 @@ type SofaModulesSelectorProps = {
   sofaForms: SofaFormExtended[]
   onAddForm: (sofaForm: SofaFormExtended) => void
   languageCode: string
+  armrestWidthOverride?: number
 }
 
 // =============================================
 // Konva preview — client-side only
 // =============================================
 
-function SelectorPreviewInner({ sofaForm }: { sofaForm: SofaFormExtended }) {
+function SelectorPreviewInner({
+  sofaForm,
+  armrestWidthOverride,
+}: {
+  sofaForm: SofaFormExtended
+  armrestWidthOverride?: number
+}) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Stage, Layer } =
     require("react-konva") as typeof import("react-konva")
@@ -31,7 +38,7 @@ function SelectorPreviewInner({ sofaForm }: { sofaForm: SofaFormExtended }) {
   const rawW = dims.width ?? 100
   const rawH = dims.length ?? dims.height ?? 100
   const extraH = dims.extendable_part_length ?? 0
-  const armW = dims.armrest_width ?? 22
+  const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
   const padding = 10
   const totalW = rawW + armW * 2 + padding * 2
   const totalH = rawH + extraH + padding * 2
@@ -71,7 +78,7 @@ function SelectorPreviewInner({ sofaForm }: { sofaForm: SofaFormExtended }) {
           scale={fitScale}
           stageWidth={stageW}
           stageHeight={stageH}
-          armrestWidth={dims.armrest_width}
+          armrestWidth={armrestWidthOverride ?? dims.armrest_width}
           backrestWidth={dims.backrest_width}
           mattressWidth={dims.mattress_width}
           mattressLength={dims.mattress_length}
@@ -99,7 +106,10 @@ function SelectorPreviewInner({ sofaForm }: { sofaForm: SofaFormExtended }) {
   )
 }
 
-const SelectorPreview = dynamic(() => Promise.resolve(SelectorPreviewInner), {
+const SelectorPreview = dynamic<{
+  sofaForm: SofaFormExtended
+  armrestWidthOverride?: number
+}>(() => Promise.resolve(SelectorPreviewInner), {
   ssr: false,
 })
 
@@ -111,6 +121,7 @@ const SofaModulesSelector = ({
   sofaForms,
   onAddForm,
   languageCode,
+  armrestWidthOverride,
 }: SofaModulesSelectorProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -156,7 +167,7 @@ const SofaModulesSelector = ({
                 title={form.name}
               >
                 <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
-                  <SelectorPreview sofaForm={form} />
+                  <SelectorPreview sofaForm={form} armrestWidthOverride={armrestWidthOverride} />
                 </div>
                 <p className="text-[9px] text-gray-600 text-center leading-tight line-clamp-1 w-full">
                   {form.name}
@@ -195,6 +206,7 @@ const SofaModulesSelector = ({
         sofaForms={sofaForms}
         onAddForm={onAddForm}
         languageCode={languageCode}
+        armrestWidthOverride={armrestWidthOverride}
       />
     </>
   )

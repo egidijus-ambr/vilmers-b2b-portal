@@ -5,6 +5,7 @@ import { useConfigurator } from "@configurator/context/configurator-context"
 import type { SofaFormExtended } from "@configurator/lib/types"
 import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
 import { setNewSize } from "@configurator/lib/sofa-shape-utils"
+import { getDefaultArmrestWidth } from "@configurator/lib/group-logic"
 import SofaModulesSelector from "./sofa-modules-selector"
 import SofaStageContainer from "./sofa-stage-container"
 
@@ -26,13 +27,38 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
   const { state, dispatch } = useConfigurator()
   const { sofaForms } = state
 
+  // Compute effective armrest width: selected armrest's width > default armrest's width > null
+  const effectiveArmrestWidth = React.useMemo(() => {
+    // Check if any selected component has armrest_width
+    const selectedArmWidth = state.selectedAdditionalComponents.find(
+      (c) => c.dimensions?.armrest_width != null
+    )?.dimensions?.armrest_width as number | undefined
+
+    if (selectedArmWidth != null) return selectedArmWidth
+
+    // Fall back to default armrest component's width
+    return getDefaultArmrestWidth(state.additionalComponentGroups) ?? undefined
+  }, [state.selectedAdditionalComponents, state.additionalComponentGroups])
+
   // Local state for shapes currently on the canvas
   const [dropables, setDropables] = useState<Dropable[]>([])
 
   const addSofaToStage = useCallback((sofaForm: SofaFormExtended) => {
     const id = Date.now().toString()
-    setDropables((prev) => [...prev, { id, sofaForm }])
-  }, [])
+
+    // Apply current armrest width to the new module
+    let adjustedForm = sofaForm
+    if (effectiveArmrestWidth != null) {
+      adjustedForm = {
+        ...sofaForm,
+        dimensions: { ...sofaForm.dimensions },
+        originalDimension: { ...sofaForm.originalDimension },
+      }
+      setNewSize(adjustedForm, effectiveArmrestWidth)
+    }
+
+    setDropables((prev) => [...prev, { id, sofaForm: adjustedForm }])
+  }, [effectiveArmrestWidth])
 
   const onSofaDelete = useCallback((id: string) => {
     setDropables((prev) => prev.filter((d) => d.id !== id))
@@ -94,6 +120,7 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
         sofaForms={sofaForms}
         onAddForm={addSofaToStage}
         languageCode={languageCode}
+        armrestWidthOverride={effectiveArmrestWidth}
       />
 
       {/* Interactive Konva stage with toolbar controls */}

@@ -15,6 +15,7 @@ type SofaModulesDrawerProps = {
   sofaForms: SofaFormExtended[]
   onAddForm: (sofaForm: SofaFormExtended) => void
   languageCode: string
+  armrestWidthOverride?: number
 }
 
 // =============================================
@@ -43,13 +44,14 @@ function getModuleGroup(sofaForm: SofaFormExtended): string {
 
 interface ModulePreviewProps {
   sofaForm: SofaFormExtended
+  armrestWidthOverride?: number
 }
 
 /**
  * Inner component that uses react-konva directly.
  * Wrapped with dynamic({ ssr: false }) below so Konva never runs on the server.
  */
-function ModulePreviewInner({ sofaForm }: ModulePreviewProps) {
+function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewProps) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Stage, Layer } =
     require("react-konva") as typeof import("react-konva")
@@ -77,7 +79,7 @@ function ModulePreviewInner({ sofaForm }: ModulePreviewProps) {
   const extraH = dims.extendable_part_length ?? 0
 
   // Stage sized to fit element + metric arrows on left/top + extendable part below
-  const armW = dims.armrest_width ?? 22
+  const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
   const stageW = Math.round((rawW + armW * 2 + metricSpace + 30) * scale)
   const stageH = Math.round((rawH + extraH + metricSpace + 10) * scale)
 
@@ -114,7 +116,7 @@ function ModulePreviewInner({ sofaForm }: ModulePreviewProps) {
           scale={scale}
           stageWidth={stageW}
           stageHeight={stageH}
-          armrestWidth={dims.armrest_width}
+          armrestWidth={armrestWidthOverride ?? dims.armrest_width}
           backrestWidth={dims.backrest_width}
           mattressWidth={dims.mattress_width}
           mattressLength={dims.mattress_length}
@@ -158,9 +160,10 @@ function ModulePreviewInner({ sofaForm }: ModulePreviewProps) {
 }
 
 // Disable SSR — Konva requires browser DOM
-const ModulePreview = dynamic(() => Promise.resolve(ModulePreviewInner), {
-  ssr: false,
-})
+const ModulePreview = dynamic<ModulePreviewProps>(
+  () => Promise.resolve(ModulePreviewInner),
+  { ssr: false }
+)
 
 // =============================================
 // Module card
@@ -169,14 +172,15 @@ const ModulePreview = dynamic(() => Promise.resolve(ModulePreviewInner), {
 interface ModuleCardProps {
   sofaForm: SofaFormExtended
   onAdd: () => void
+  armrestWidthOverride?: number
 }
 
-function ModuleCard({ sofaForm, onAdd }: ModuleCardProps) {
+function ModuleCard({ sofaForm, onAdd, armrestWidthOverride }: ModuleCardProps) {
   const dims = sofaForm.dimensions
 
   // Card width matches Konva stage width so preview fits perfectly
   const rawW = dims.width ?? 100
-  const armW = dims.armrest_width ?? 22
+  const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
   const scale = 0.65
   const metricSpace = 45
   const cardWidth = Math.max(Math.round((rawW + armW * 2 + metricSpace + 30) * scale), 100)
@@ -188,7 +192,7 @@ function ModuleCard({ sofaForm, onAdd }: ModuleCardProps) {
     >
       {/* Shape preview area — height adapts to module size */}
       <div className="flex-1 min-h-[60px] flex items-start overflow-hidden">
-        <ModulePreview sofaForm={sofaForm} />
+        <ModulePreview sofaForm={sofaForm} armrestWidthOverride={armrestWidthOverride} />
       </div>
 
       {/* Info + action — pinned to bottom so names align across row */}
@@ -216,6 +220,7 @@ const SofaModulesDrawer = ({
   close,
   sofaForms,
   onAddForm,
+  armrestWidthOverride,
 }: SofaModulesDrawerProps) => {
   const [searchValue, setSearchValue] = useState("")
 
@@ -358,6 +363,7 @@ const SofaModulesDrawer = ({
                                 key={sofaForm.id}
                                 sofaForm={sofaForm}
                                 onAdd={() => onAddForm(sofaForm)}
+                                armrestWidthOverride={armrestWidthOverride}
                               />
                             ))}
                           </div>
