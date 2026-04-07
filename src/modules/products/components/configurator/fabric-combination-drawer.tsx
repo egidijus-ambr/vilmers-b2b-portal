@@ -56,7 +56,7 @@ const FabricCombinationDrawer = ({
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="w-screen max-w-[500px] bg-white shadow-xl flex flex-col">
+                <Dialog.Panel className="w-screen max-w-[500px] bg-gold-20 shadow-xl flex flex-col">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">
@@ -109,7 +109,7 @@ const FabricCombinationDrawer = ({
                             "px-3 py-2 flex items-center justify-between",
                             {
                               "bg-[#1e2a3a] text-white": isSelected,
-                              "bg-white text-gray-700": !isSelected,
+                              "bg-gold-20 text-gray-700": !isSelected,
                             }
                           )}>
                             <span className="text-sm font-medium">{name}</span>

@@ -16,10 +16,10 @@ const PriceFooter = ({ currency = "EUR", onAddToCart }: PriceFooterProps) => {
   const displayPrice = totalPrice != null ? totalPrice * quantity : null
 
   return (
-    <div className="sticky bottom-0 mt-4 border-t bg-white pt-4 pb-2 flex items-center justify-between gap-4 px-4 md:px-6 py-6">
+    <div className="sticky bottom-0 mt-4 border-t bg-gold-20 pt-4 pb-4 flex items-center justify-between  px-6 ">
       <div className="flex items-center gap-4">
         {/* Quantity selector */}
-        <div className="flex items-center border rounded">
+        <div className="flex items-center border rounded border-gold">
           <button
             className="px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-40"
             onClick={() =>
@@ -59,7 +59,7 @@ const PriceFooter = ({ currency = "EUR", onAddToCart }: PriceFooterProps) => {
 
       {/* Add to cart */}
       <button
-        className="bg-[#1e2a3a] text-white px-8 py-3 rounded text-sm font-medium hover:bg-[#2a3a4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-[#1e2a3a] text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-[#2a3a4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={onAddToCart}
         disabled={totalPrice == null || totalPrice <= 0}
       >

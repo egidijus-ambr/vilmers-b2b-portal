@@ -2,7 +2,10 @@
 
 import React from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
-import { getComponentName, getGroupName } from "@configurator/lib/component-utils"
+import {
+  getComponentName,
+  getGroupName,
+} from "@configurator/lib/component-utils"
 import type {
   FabricGroupWithPrice,
   Fabric,
@@ -122,11 +125,12 @@ const FabricCard: React.FC<FabricCardProps> = ({
   groupName,
   optionLabel,
 }) => {
-  const imgSrc = fabric.image?.src_xs || fabric.image?.src_md || fabric.image?.src
+  const imgSrc =
+    fabric.image?.src_xs || fabric.image?.src_md || fabric.image?.src
   const { t } = useTranslations("account")
 
   return (
-    <div className="flex bg-white rounded border border-gray-100 overflow-hidden">
+    <div className="flex bg-gold-20 rounded border border-gray-100 overflow-hidden">
       {imgSrc && (
         <img
           src={imgSrc}
@@ -168,11 +172,15 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
 
   const backendLang = getBackendLanguageCode(languageCode as any)
 
-  const { selectedFabric, selectedAdditionalComponents, additionalComponentGroups, sofaCombinations, productData } =
-    state
+  const {
+    selectedFabric,
+    selectedAdditionalComponents,
+    additionalComponentGroups,
+    sofaCombinations,
+    productData,
+  } = state
 
-  const isSofa =
-    productData?.advanced_product?.advanced_product_type === "SOFA"
+  const isSofa = productData?.advanced_product?.advanced_product_type === "SOFA"
 
   // --- Determine fabric visibility ---
   const hasSingleFabric =
@@ -264,12 +272,14 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
               (g: ComponentGroup) => g.code === comp.groupCode
             )
             const compName = getComponentName(comp, backendLang)
-            const groupName = group ? getGroupName(group, backendLang) : comp.groupCode
+            const groupName = group
+              ? getGroupName(group, backendLang)
+              : comp.groupCode
 
             return (
               <div
                 key={`${comp.id}-${idx}`}
-                className="flex bg-white rounded border border-gray-100 overflow-hidden"
+                className="flex bg-gold-20 rounded border border-gray-100 overflow-hidden"
               >
                 {comp.image?.src ? (
                   <img
@@ -358,7 +368,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
 
   if (isSofa) {
     return (
-      <div className="px-4 py-4">
+      <div className=" py-4">
         <div className="space-y-5">
           {renderFabrics()}
           <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
@@ -372,7 +382,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
   }
 
   return (
-    <div className="px-4 py-4">
+    <div className=" py-4">
       <div className="space-y-5">{renderFabrics()}</div>
       {renderAdditionalComponents()}
     </div>

@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { sdk } from "@lib/config"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
+import { buildSortedFabricGroups } from "@configurator/lib/group-logic"
 import { useCustomerPaletteIds } from "../lib/palette-utils"
 
 /**
@@ -70,6 +71,56 @@ export function useConfiguratorData(
           })
         )
         dispatch({ type: "SET_SOFA_FORMS", payload: sofaForms })
+
+        // Auto-select the first fabric so prices are available on step 0
+        const fabricGroups = buildSortedFabricGroups(
+          data.manufacturer?.fabric_price_category ?? []
+        )
+
+        if (fabricGroups.length > 0) {
+          const fabricCombinations = data.advanced_product?.fabricCombinations ?? []
+
+          if (fabricCombinations.length > 0) {
+            const defaultCombination = fabricCombinations[0]
+            dispatch({
+              type: "SET_FABRIC_COMBINATION",
+              payload: { fabricCombination: defaultCombination },
+            })
+
+            const defaultGroup = fabricGroups[0]
+            const defaultFabric = defaultGroup?.fabrics?.[0] ?? null
+            const options = defaultCombination.fabricCombinationOptions ?? []
+            const initialCombinationFabrics: Record<string, any> = {}
+            for (const option of options) {
+              initialCombinationFabrics[option.id] = {
+                fabricGroupObject: defaultGroup,
+                fabricObject: defaultFabric,
+                option,
+              }
+            }
+            dispatch({
+              type: "SET_FABRIC",
+              payload: {
+                fabricGroupObject: defaultGroup,
+                fabricObject: defaultFabric,
+                combinationFabrics: initialCombinationFabrics,
+              },
+            })
+          } else {
+            const defaultGroup = fabricGroups[0]
+            const defaultFabric = defaultGroup?.fabrics?.[0] ?? null
+            if (defaultGroup && defaultFabric) {
+              dispatch({
+                type: "SET_FABRIC",
+                payload: {
+                  fabricGroupObject: defaultGroup,
+                  fabricObject: defaultFabric,
+                  combinationFabrics: null,
+                },
+              })
+            }
+          }
+        }
       } catch (error) {
         if (cancelled) return
         console.error("Error loading configurator data:", error)

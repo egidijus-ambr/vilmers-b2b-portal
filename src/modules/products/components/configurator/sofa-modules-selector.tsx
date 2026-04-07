@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import dynamic from "next/dynamic"
 import type { SofaFormExtended } from "@configurator/lib/types"
+import { useConfigurator } from "@configurator/context/configurator-context"
 import SofaModulesDrawer from "./sofa-modules-drawer"
 
 type SofaModulesSelectorProps = {
@@ -124,6 +125,9 @@ const SofaModulesSelector = ({
   armrestWidthOverride,
 }: SofaModulesSelectorProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { state } = useConfigurator()
+  const selectedFabric = state.selectedFabric
+  const currency = state.productData?.manufacturer?.currency ?? "EUR"
 
   const previewForms = [...sofaForms]
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -139,8 +143,8 @@ const SofaModulesSelector = ({
         className="w-full flex gap-3 pr-4 border border-gray-200 hover:border-gray-400 transition-colors text-left"
       >
         {/* Label block */}
-        <div className="w-48 shrink-0 h-28 flex flex-col justify-end pb-2 pl-3 border-r border-gray-200 bg-gray-50">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+        <div className="w-48 shrink-0 h-28 flex flex-col justify-end pb-2 pl-3 border-r border-gray-200 bg-gold-20">
+          <p className="text-xs font-semibold text-gold uppercase tracking-wide mb-0.5">
             Sofa Modules
           </p>
           <p className="text-sm font-medium text-gray-900">
@@ -154,7 +158,8 @@ const SofaModulesSelector = ({
           <div
             className="absolute inset-y-0 right-0 w-32 pointer-events-none z-10"
             style={{
-              background: "linear-gradient(to right, transparent, white)",
+              background:
+                "linear-gradient(to right, transparent, var(--color-gold-10))",
             }}
           />
 
@@ -167,7 +172,10 @@ const SofaModulesSelector = ({
                 title={form.name}
               >
                 <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
-                  <SelectorPreview sofaForm={form} armrestWidthOverride={armrestWidthOverride} />
+                  <SelectorPreview
+                    sofaForm={form}
+                    armrestWidthOverride={armrestWidthOverride}
+                  />
                 </div>
                 <p className="text-[9px] text-gray-600 text-center leading-tight line-clamp-1 w-full">
                   {form.name}
@@ -207,6 +215,8 @@ const SofaModulesSelector = ({
         onAddForm={onAddForm}
         languageCode={languageCode}
         armrestWidthOverride={armrestWidthOverride}
+        selectedFabric={selectedFabric}
+        currency={currency}
       />
     </>
   )

@@ -26,7 +26,10 @@ const ConfiguratorStepper = ({
           const isLocked = canNavigateToStep ? !canNavigateToStep(index) : false
 
           return (
-            <div key={step.id} className="flex-1 flex flex-col items-center relative">
+            <div
+              key={step.id}
+              className="flex-1 flex flex-col items-center relative"
+            >
               {/* Circle */}
               <button
                 onClick={() => !isLocked && onStepChange(index)}
@@ -34,15 +37,27 @@ const ConfiguratorStepper = ({
                 className={clx(
                   "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors z-10",
                   {
-                    "bg-[#1e2a3a] text-white": (isActive || isCompleted) && !isLocked,
-                    "bg-gray-200 text-gray-500": (!isActive && !isCompleted) || isLocked,
-                    "cursor-not-allowed opacity-50": isLocked,
+                    "bg-[#1e2a3a] text-white":
+                      (isActive || isCompleted) && !isLocked,
+                    "bg-gold-20 text-gray-500":
+                      (!isActive && !isCompleted) || isLocked,
+                    "cursor-not-allowed": isLocked,
                   }
                 )}
               >
                 {isCompleted ? (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 ) : (
                   index + 1
@@ -69,7 +84,7 @@ const ConfiguratorStepper = ({
                     "absolute top-4 h-px left-[calc(50%+16px)] right-[calc(-50%+16px)]",
                     {
                       "bg-[#1e2a3a]": index < currentStep,
-                      "bg-gray-200": index >= currentStep,
+                      "bg-gold-20": index >= currentStep,
                     }
                   )}
                 />

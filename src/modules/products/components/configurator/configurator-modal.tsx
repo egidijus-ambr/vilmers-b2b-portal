@@ -29,7 +29,7 @@ const ConfiguratorModal = ({
       isOpen={isOpen}
       onClose={close}
       title="Product Configurator"
-      className="bg-white"
+      className="bg-gold-10"
       size="full"
       data-testid="configurator-modal"
     >

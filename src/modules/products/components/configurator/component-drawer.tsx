@@ -90,7 +90,7 @@ const ComponentDrawer = ({
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="w-screen max-w-[700px] bg-white shadow-xl flex flex-col">
+                <Dialog.Panel className="w-screen max-w-[700px] bg-gold-20 shadow-xl flex flex-col">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">

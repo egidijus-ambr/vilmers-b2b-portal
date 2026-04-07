@@ -8,6 +8,8 @@ import { useConfiguratorData } from "@configurator/hooks/use-configurator-data"
 import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price"
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { getStepsForProduct } from "@configurator/lib/component-utils"
+import { useCustomer } from "@lib/context/customer-context"
+import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
 import FabricSection from "./fabric-section"
 import ComponentSection from "./component-section"
 import ConfiguratorStepper from "./configurator-stepper"
@@ -34,9 +36,17 @@ type ConfiguratorContentProps = {
 const ConfiguratorContent = ({
   productContainerId,
   languageCode,
-  priceListId,
+  priceListId: priceListIdProp,
   isOpen,
 }: ConfiguratorContentProps) => {
+  const { customer } = useCustomer()
+  const paletteIds = useCustomerPaletteIds()
+
+  // Use customer's price list instead of hardcoded default
+  const priceListId = customer?.price_listId
+    ? Number(customer.price_listId)
+    : priceListIdProp
+
   // Load data on-demand when modal opens
   useConfiguratorData(productContainerId, priceListId, languageCode, isOpen)
 
@@ -137,6 +147,61 @@ const ConfiguratorContent = ({
             />
           )}
 
+          {/* Debug info */}
+          <details className="text-[11px] border border-dashed border-gray-300 bg-gray-50/50">
+            <summary className="px-3 py-1.5 cursor-pointer text-gray-400 hover:text-gray-600 select-none font-mono">
+              Debug Info
+            </summary>
+            <div className="px-3 pb-2 space-y-1.5 font-mono text-gray-500">
+              <div>
+                <span className="text-gray-400">Palette IDs:</span>{" "}
+                {paletteIds.length > 0 ? paletteIds.join(", ") : <span className="text-red-400">none</span>}
+              </div>
+              <div>
+                <span className="text-gray-400">Customer palettes:</span>{" "}
+                {customer?.fabric_palettes?.map(p => p.id).join(", ") || <span className="text-red-400">none</span>}
+              </div>
+              <div>
+                <span className="text-gray-400">Group palettes:</span>{" "}
+                {customer?.customer_group?.fabric_palettes?.map(p => p.id).join(", ") || <span className="text-red-400">none</span>}
+              </div>
+              <div>
+                <span className="text-gray-400">Price List ID:</span>{" "}
+                {priceListId}
+                <span className="text-gray-400 ml-2">(customer: {customer?.price_listId ?? "none"})</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Selected fabric:</span>{" "}
+                {state.selectedFabric.fabricGroupObject
+                  ? `CAT ${state.selectedFabric.fabricGroupObject.form_price_fabric_category?.group_number}`
+                  : <span className="text-red-400">none</span>}
+                {state.selectedFabric.fabricObject && (
+                  <span className="text-gray-400"> ({state.selectedFabric.fabricObject.code})</span>
+                )}
+              </div>
+              <div>
+                <span className="text-gray-400">Components:</span>{" "}
+                {state.selectedAdditionalComponents.length > 0
+                  ? state.selectedAdditionalComponents.map(c => c.code || c.id).join(", ")
+                  : <span className="text-red-400">none</span>}
+              </div>
+              <div>
+                <span className="text-gray-400">Modules:</span>{" "}
+                {state.sofaForms.length} total,{" "}
+                {state.sofaForms.filter(f => f.form_price_fabric_category?.length > 0).length} with prices for PL {priceListId},{" "}
+                {state.sofaForms.filter(f => f.form_price_fabric_category?.length === 0).length} without
+              </div>
+              <div>
+                <span className="text-gray-400">Sofa modules on canvas:</span>{" "}
+                {state.sofaCombinations.reduce((sum, group) => sum + group.length, 0)}
+              </div>
+              <div>
+                <span className="text-gray-400">Total price:</span>{" "}
+                {state.totalPrice != null ? state.totalPrice : <span className="text-red-400">null</span>}
+              </div>
+            </div>
+          </details>
+
           {/* Step content */}
           {currentStepDef?.id === "sofa-modules" ? (
             <div className="space-y-4">
@@ -174,7 +239,7 @@ const ConfiguratorContent = ({
                       payload: currentStep - 1,
                     })
                   }
-                  className="text-sm text-gray-600 hover:text-gray-900 px-4 py-2 border border-gray-300"
+                  className="text-sm text-gray-600 hover:text-gray-900 px-8 py-3 rounded-full border border-gray-300 font-medium transition-colors"
                 >
                   ← {steps[currentStep - 1]?.label}
                 </button>
@@ -192,10 +257,10 @@ const ConfiguratorContent = ({
                   }
                   disabled={!canNavigateToStep(currentStep + 1)}
                   className={clx(
-                    "text-sm px-6 py-2.5 font-medium",
+                    "text-sm px-8 py-3 rounded-full font-medium transition-colors",
                     canNavigateToStep(currentStep + 1)
                       ? "text-white bg-[#1e2a3a] hover:bg-[#2a3a4a]"
-                      : "text-gray-400 bg-gray-200 cursor-not-allowed"
+                      : "text-gray-400 bg-gold-20 cursor-not-allowed"
                   )}
                 >
                   {steps[currentStep + 1]?.label} →

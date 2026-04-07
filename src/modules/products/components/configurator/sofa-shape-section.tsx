@@ -43,22 +43,25 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
   // Local state for shapes currently on the canvas
   const [dropables, setDropables] = useState<Dropable[]>([])
 
-  const addSofaToStage = useCallback((sofaForm: SofaFormExtended) => {
-    const id = Date.now().toString()
+  const addSofaToStage = useCallback(
+    (sofaForm: SofaFormExtended) => {
+      const id = Date.now().toString()
 
-    // Apply current armrest width to the new module
-    let adjustedForm = sofaForm
-    if (effectiveArmrestWidth != null) {
-      adjustedForm = {
-        ...sofaForm,
-        dimensions: { ...sofaForm.dimensions },
-        originalDimension: { ...sofaForm.originalDimension },
+      // Apply current armrest width to the new module
+      let adjustedForm = sofaForm
+      if (effectiveArmrestWidth != null) {
+        adjustedForm = {
+          ...sofaForm,
+          dimensions: { ...sofaForm.dimensions },
+          originalDimension: { ...sofaForm.originalDimension },
+        }
+        setNewSize(adjustedForm, effectiveArmrestWidth)
       }
-      setNewSize(adjustedForm, effectiveArmrestWidth)
-    }
 
-    setDropables((prev) => [...prev, { id, sofaForm: adjustedForm }])
-  }, [effectiveArmrestWidth])
+      setDropables((prev) => [...prev, { id, sofaForm: adjustedForm }])
+    },
+    [effectiveArmrestWidth]
+  )
 
   const onSofaDelete = useCallback((id: string) => {
     setDropables((prev) => prev.filter((d) => d.id !== id))
@@ -87,7 +90,9 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
           overrides.find((o: any) => !o.moduleId)
         if (!override) return dropable
 
-        if (dropable.sofaForm.dimensions.armrest_width === override.armrestWidth) {
+        if (
+          dropable.sofaForm.dimensions.armrest_width === override.armrestWidth
+        ) {
           return dropable
         }
 
@@ -124,7 +129,7 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
       />
 
       {/* Interactive Konva stage with toolbar controls */}
-      <div className="bg-white mx-auto max-w-4xl">
+      <div className="bg-gold-10 mx-auto m-0">
         <SofaStageContainer
           sofaShapes={dropables}
           onSofaDelete={onSofaDelete}

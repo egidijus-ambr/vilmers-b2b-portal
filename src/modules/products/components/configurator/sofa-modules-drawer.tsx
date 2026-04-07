@@ -3,7 +3,8 @@
 import React, { Fragment, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import { Dialog, Transition } from "@headlessui/react"
-import type { SofaFormExtended } from "@configurator/lib/types"
+import type { SofaFormExtended, SelectedFabricState } from "@configurator/lib/types"
+import { getPriceFromPriceCategories, priceFormatter } from "@configurator/lib/price-utils"
 
 // =============================================
 // Types
@@ -16,6 +17,8 @@ type SofaModulesDrawerProps = {
   onAddForm: (sofaForm: SofaFormExtended) => void
   languageCode: string
   armrestWidthOverride?: number
+  selectedFabric: SelectedFabricState
+  currency?: string
 }
 
 // =============================================
@@ -173,9 +176,12 @@ interface ModuleCardProps {
   sofaForm: SofaFormExtended
   onAdd: () => void
   armrestWidthOverride?: number
+  selectedFabric: SelectedFabricState
+  currency?: string
 }
 
-function ModuleCard({ sofaForm, onAdd, armrestWidthOverride }: ModuleCardProps) {
+function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, currency }: ModuleCardProps) {
+  const price = getPriceFromPriceCategories(selectedFabric, sofaForm.form_price_fabric_category)
   const dims = sofaForm.dimensions
 
   // Card width matches Konva stage width so preview fits perfectly
@@ -188,7 +194,7 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride }: ModuleCardProps) 
   return (
     <div
       style={{ width: cardWidth }}
-      className="flex flex-col overflow-hidden bg-white flex-shrink-0"
+      className="flex flex-col overflow-hidden bg-gold-20 flex-shrink-0"
     >
       {/* Shape preview area — height adapts to module size */}
       <div className="flex-1 min-h-[60px] flex items-start overflow-hidden">
@@ -200,6 +206,9 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride }: ModuleCardProps) 
         <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2">
           {sofaForm.name}
         </p>
+        {price != null && price > 0 && (
+          <p className="text-xs text-gray-500">{priceFormatter(price, currency)}</p>
+        )}
         <button
           onClick={onAdd}
           className="mt-1.5 w-full text-xs font-medium border border-[#1e2a3a] text-[#1e2a3a] hover:bg-[#1e2a3a] hover:text-white transition-colors py-1 px-2"
@@ -221,19 +230,35 @@ const SofaModulesDrawer = ({
   sofaForms,
   onAddForm,
   armrestWidthOverride,
+  selectedFabric,
+  currency,
 }: SofaModulesDrawerProps) => {
   const [searchValue, setSearchValue] = useState("")
 
-  // Filter by search query against name or code
+  // Filter by search query against name or code, and by price availability
   const filteredForms = useMemo(() => {
     const query = searchValue.toLowerCase().trim()
-    if (!query) return sofaForms
-    return sofaForms.filter(
-      (f) =>
-        f.name.toLowerCase().includes(query) ||
-        (f.code?.toLowerCase().includes(query) ?? false)
-    )
-  }, [sofaForms, searchValue])
+    let forms = sofaForms
+
+    // Filter by search
+    if (query) {
+      forms = forms.filter(
+        (f) =>
+          f.name.toLowerCase().includes(query) ||
+          (f.code?.toLowerCase().includes(query) ?? false)
+      )
+    }
+
+    // Filter out modules without a price for the selected fabric
+    if (selectedFabric.fabricGroupObject) {
+      forms = forms.filter((f) => {
+        const price = getPriceFromPriceCategories(selectedFabric, f.form_price_fabric_category)
+        return price != null && price > 0
+      })
+    }
+
+    return forms
+  }, [sofaForms, searchValue, selectedFabric])
 
   // Group and sort modules
   const moduleGroups = useMemo(() => {
@@ -299,7 +324,7 @@ const SofaModulesDrawer = ({
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="w-screen max-w-[700px] bg-white shadow-xl flex flex-col">
+                <Dialog.Panel className="w-screen max-w-[700px] bg-gold-20 shadow-xl flex flex-col">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">
@@ -364,6 +389,8 @@ const SofaModulesDrawer = ({
                                 sofaForm={sofaForm}
                                 onAdd={() => onAddForm(sofaForm)}
                                 armrestWidthOverride={armrestWidthOverride}
+                                selectedFabric={selectedFabric}
+                                currency={currency}
                               />
                             ))}
                           </div>
