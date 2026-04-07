@@ -12,8 +12,8 @@ interface ResponsiveDialogProps {
   children: React.ReactNode
   /** Additional classes for the Dialog.Panel (e.g., "bg-white" to override default bg-gold-10) */
   className?: string
-  /** "default" = md:max-w-5xl, "full" = almost full screen with padding on desktop */
-  size?: "default" | "full"
+  /** "medium" = md:max-w-2xl, "default" = md:max-w-5xl, "full" = almost full screen */
+  size?: "medium" | "default" | "full"
   "data-testid"?: string
 }
 
@@ -29,7 +29,9 @@ export default function ResponsiveDialog({
   const sizeClasses =
     size === "full"
       ? "md:max-w-[1446px] md:h-[93vh]"
-      : "md:max-w-5xl md:max-h-[90vh]"
+      : size === "medium"
+        ? "md:max-w-2xl md:max-h-[80vh]"
+        : "md:max-w-5xl md:max-h-[90vh]"
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-[75]" onClose={onClose}>

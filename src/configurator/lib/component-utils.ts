@@ -203,12 +203,13 @@ export function categorizeStep(groupCode: string): StepId {
   return "design"
 }
 
-const STEP_ORDER: StepId[] = ["fabric", "armrest-legs", "design", "threads"]
+const STEP_ORDER: StepId[] = ["sofa-modules", "fabric", "threads", "armrest-legs", "design"]
 const STEP_LABELS: Record<StepId, string> = {
+  "sofa-modules": "Sofa Modules",
   fabric: "Fabrics",
+  threads: "Threads",
   "armrest-legs": "Armrest & Legs",
   design: "Design & Comfort",
-  threads: "Threads",
 }
 
 /**
@@ -218,7 +219,8 @@ const STEP_LABELS: Record<StepId, string> = {
 export function getStepsForProduct(
   componentGroups: ComponentGroup[],
   selectedComponents: SelectedComponent[],
-  sofaCombinations?: any[][]
+  sofaCombinations?: any[][],
+  isSofa?: boolean
 ): StepDefinition[] {
   // Categorize groups into steps
   const stepGroups = new Map<StepId, ComponentGroup[]>()
@@ -240,12 +242,16 @@ export function getStepsForProduct(
   }
 
   // Build ordered steps
-  const steps: StepDefinition[] = [
-    { id: "fabric", label: STEP_LABELS.fabric, groups: [] },
-  ]
+  const steps: StepDefinition[] = []
+
+  if (isSofa) {
+    steps.push({ id: "sofa-modules", label: STEP_LABELS["sofa-modules"], groups: [] })
+  }
+
+  steps.push({ id: "fabric", label: STEP_LABELS.fabric, groups: [] })
 
   for (const stepId of STEP_ORDER) {
-    if (stepId === "fabric") continue
+    if (stepId === "fabric" || stepId === "sofa-modules") continue
     const groups = stepGroups.get(stepId)
     if (groups && groups.length > 0) {
       const sortedGroups = groups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))

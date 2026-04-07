@@ -8,31 +8,35 @@ type ConfiguratorStepperProps = {
   steps: StepDefinition[]
   currentStep: number
   onStepChange: (index: number) => void
+  canNavigateToStep?: (index: number) => boolean
 }
 
 const ConfiguratorStepper = ({
   steps,
   currentStep,
   onStepChange,
+  canNavigateToStep,
 }: ConfiguratorStepperProps) => {
   return (
     <div className="w-full">
-      {/* Top row: circles + connector lines */}
-      <div className="flex items-center">
+      <div className="flex">
         {steps.map((step, index) => {
           const isActive = index === currentStep
           const isCompleted = index < currentStep
+          const isLocked = canNavigateToStep ? !canNavigateToStep(index) : false
 
           return (
-            <React.Fragment key={step.id}>
-              {/* Step circle */}
+            <div key={step.id} className="flex-1 flex flex-col items-center relative">
+              {/* Circle */}
               <button
-                onClick={() => onStepChange(index)}
+                onClick={() => !isLocked && onStepChange(index)}
+                disabled={isLocked}
                 className={clx(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors",
+                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors z-10",
                   {
-                    "bg-[#1e2a3a] text-white": isActive || isCompleted,
-                    "bg-gray-200 text-gray-500": !isActive && !isCompleted,
+                    "bg-[#1e2a3a] text-white": (isActive || isCompleted) && !isLocked,
+                    "bg-gray-200 text-gray-500": (!isActive && !isCompleted) || isLocked,
+                    "cursor-not-allowed opacity-50": isLocked,
                   }
                 )}
               >
@@ -45,47 +49,32 @@ const ConfiguratorStepper = ({
                 )}
               </button>
 
-              {/* Connector line (not after last) */}
+              {/* Label */}
+              <span
+                className={clx(
+                  "mt-1.5 text-[10px] leading-tight text-center px-0.5",
+                  {
+                    "text-gray-900 font-semibold": isActive,
+                    "text-gray-400": !isActive,
+                  }
+                )}
+              >
+                {step.label}
+              </span>
+
+              {/* Connector line to next step */}
               {index < steps.length - 1 && (
                 <div
-                  className={clx("flex-1 h-px mx-2", {
-                    "bg-[#1e2a3a]": index < currentStep,
-                    "bg-gray-200": index >= currentStep,
-                  })}
-                />
-              )}
-            </React.Fragment>
-          )
-        })}
-      </div>
-
-      {/* Bottom row: labels aligned under circles */}
-      <div className="flex mt-1.5">
-        {steps.map((step, index) => {
-          const isActive = index === currentStep
-
-          return (
-            <React.Fragment key={step.id}>
-              {/* Label — same width as circle */}
-              <div className="w-8 shrink-0 flex justify-center">
-                <span
                   className={clx(
-                    "text-[10px] leading-tight text-center whitespace-nowrap",
+                    "absolute top-4 h-px left-[calc(50%+16px)] right-[calc(-50%+16px)]",
                     {
-                      "text-gray-900 font-semibold": isActive,
-                      "text-gray-400": !isActive,
+                      "bg-[#1e2a3a]": index < currentStep,
+                      "bg-gray-200": index >= currentStep,
                     }
                   )}
-                >
-                  {step.label}
-                </span>
-              </div>
-
-              {/* Spacer matching connector line */}
-              {index < steps.length - 1 && (
-                <div className="flex-1 mx-2" />
+                />
               )}
-            </React.Fragment>
+            </div>
           )
         })}
       </div>

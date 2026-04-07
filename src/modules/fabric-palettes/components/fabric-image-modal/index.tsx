@@ -1,11 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
 import ResponsiveDialog from "@modules/common/components/responsive-dialog"
-import type {
-  FabricGroupDetail,
-  FabricFeatureDetail,
-} from "@lib/furnisystems-sdk/modules/customer/types"
+import type { FabricGroupDetail } from "@lib/furnisystems-sdk/modules/customer/types"
+import { useFabricGroupDetails } from "../../hooks/use-fabric-group-details"
+import { resolveProfile } from "../../utils/fabric-profile-helpers"
+import {
+  FabricTextFeaturesGrid,
+  FabricCharacteristicsDisplay,
+} from "../fabric-feature-display"
 
 interface FabricImageModalProps {
   isOpen: boolean
@@ -16,37 +18,6 @@ interface FabricImageModalProps {
   languageCode: string
 }
 
-function resolveProfile<T extends { language: string }>(
-  profiles: T[] | undefined | null,
-  languageCode: string
-): T | undefined {
-  if (!profiles || profiles.length === 0) return undefined
-  return (
-    profiles.find((p) => p.language === languageCode) ?? profiles[0]
-  )
-}
-
-function resolveFeatureName(
-  feature: FabricFeatureDetail,
-  languageCode: string
-): string {
-  const profile = resolveProfile(feature.fabric_feature_profiles, languageCode)
-  if (profile) return profile.name
-  return feature.code ?? String(feature.id)
-}
-
-function resolveFeatureGroupName(
-  group: NonNullable<FabricFeatureDetail["fabric_feature_group"]>,
-  languageCode: string
-): string {
-  const profile = resolveProfile(
-    group.fabric_feature_group_profiles,
-    languageCode
-  )
-  if (profile) return profile.name
-  return group.code ?? String(group.id)
-}
-
 export default function FabricImageModal({
   isOpen,
   onClose,
@@ -55,72 +26,13 @@ export default function FabricImageModal({
   groupData,
   languageCode,
 }: FabricImageModalProps) {
-  const priceCategory = useMemo(() => {
-    const categories = (groupData as any)?.fabric_price_category
-    if (Array.isArray(categories) && categories.length > 0) {
-      const first = categories[0]
-      const groupNumber =
-        first?.group_number ?? first?.number ?? first?.name ?? null
-      if (groupNumber !== null && groupNumber !== undefined) {
-        return `CAT ${groupNumber}`
-      }
-    }
-    return null
-  }, [groupData])
+  const { priceCategory, featuresWithPhoto, featureGroups } =
+    useFabricGroupDetails(groupData, languageCode)
 
-  const resolvedGroupName = useMemo(() => {
+  const resolvedGroupName = (() => {
     const profile = resolveProfile(groupData.fabric_group_profiles, languageCode)
     return (profile as any)?.name ?? null
-  }, [groupData, languageCode])
-
-  const { featuresWithPhoto, withoutPhoto } = useMemo(() => {
-    const features = groupData.fabric_features ?? []
-    const featuresWithPhoto: FabricFeatureDetail[] = []
-    const withoutPhoto: FabricFeatureDetail[] = []
-
-    features.forEach(({ fabric_feature }) => {
-      const photo = (fabric_feature as any)?.photo
-      if (photo) {
-        featuresWithPhoto.push(fabric_feature)
-      } else {
-        withoutPhoto.push(fabric_feature)
-      }
-    })
-
-    return { featuresWithPhoto, withoutPhoto }
-  }, [groupData.fabric_features])
-
-  const featureGroups = useMemo(() => {
-    type GroupEntry = {
-      groupId: number | null
-      groupName: string
-      features: FabricFeatureDetail[]
-    }
-    const groupMap = new Map<number | null, GroupEntry>()
-
-    withoutPhoto.forEach((feature) => {
-      const fgroup = feature.fabric_feature_group ?? null
-      const groupId = fgroup ? fgroup.id : null
-      const gName = fgroup
-        ? resolveFeatureGroupName(fgroup, languageCode)
-        : "Other"
-
-      if (!groupMap.has(groupId)) {
-        groupMap.set(groupId, { groupId, groupName: gName, features: [] })
-      }
-      groupMap.get(groupId)!.features.push(feature)
-    })
-
-    const groups = Array.from(groupMap.values())
-    // Named groups first, "Other" last
-    groups.sort((a, b) => {
-      if (a.groupId === null) return 1
-      if (b.groupId === null) return -1
-      return a.groupName.localeCompare(b.groupName)
-    })
-
-    return groups
-  }, [withoutPhoto, languageCode])
+  })()
 
   return (
     <ResponsiveDialog isOpen={isOpen} onClose={onClose} title={fabricName}>
@@ -146,54 +58,23 @@ export default function FabricImageModal({
           )}
           {/* Price Category */}
           {priceCategory && (
-            <p className="text-sm text-dark-blue/70 mt-1">
+            <p className="text-sm text-gold tracking-wider uppercase mt-1">
               {priceCategory}
             </p>
           )}
 
-          {/* Feature Grid */}
-          {featureGroups.length > 0 && (
-            <div className="grid grid-cols-2 gap-x-8 gap-y-5 mt-6">
-              {featureGroups.map((group) =>
-                group.features.map((feature) => (
-                  <div key={feature.id} className="flex flex-col gap-0.5">
-                    <span className="text-xs font-semibold text-dark-blue tracking-wide uppercase">
-                      {group.groupName}
-                    </span>
-                    <span className="text-sm text-dark-blue">
-                      {resolveFeatureName(feature, languageCode)}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+          <FabricTextFeaturesGrid
+            featureGroups={featureGroups}
+            languageCode={languageCode}
+            className="mt-6"
+          />
 
-          {/* Characteristics with photos */}
-          {featuresWithPhoto.length > 0 && (
-            <div className="flex flex-wrap gap-4 mt-6">
-              {featuresWithPhoto.map((feature) => {
-                const photo = (feature as any)?.photo
-                const name = resolveFeatureName(feature, languageCode)
-                return (
-                  <div
-                    key={feature.id}
-                    className="flex flex-col items-center gap-1"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo?.src ?? photo}
-                      alt={name}
-                      className="w-10 h-10 object-contain"
-                    />
-                    <span className="text-xs text-dark-blue text-center">
-                      {name}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          <FabricCharacteristicsDisplay
+            features={featuresWithPhoto}
+            languageCode={languageCode}
+            showHeading
+            className="mt-6"
+          />
         </div>
       </div>
     </ResponsiveDialog>

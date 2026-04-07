@@ -9,6 +9,7 @@ import type {
   FabricFeatureDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import { groupSelectedFeatures, matchesFeatureSelection } from "../../utils/feature-filter-logic"
+import { resolveFeatureName, resolveFeatureGroupName } from "../../utils/fabric-profile-helpers"
 
 interface FabricFeatureFilterModalProps {
   palettes: FabricPaletteDetail[]
@@ -17,37 +18,6 @@ interface FabricFeatureFilterModalProps {
   onApply: (selectedFeatureIds: Set<number>, selectedPriceCategories: Set<number>) => void
   language: string
   labels: { filter: string; clearAll: string; showResults: string; priceCategory: string }
-}
-
-function resolveFeatureName(
-  feature: FabricFeatureDetail,
-  language: string
-): string {
-  if (feature.fabric_feature_profiles && feature.fabric_feature_profiles.length > 0) {
-    const match = feature.fabric_feature_profiles.find(
-      (p) => p.language === language
-    )
-    const profile = match ?? feature.fabric_feature_profiles[0]
-    return profile.name
-  }
-  return feature.code ?? String(feature.id)
-}
-
-function resolveFeatureGroupName(
-  group: NonNullable<FabricFeatureDetail["fabric_feature_group"]>,
-  language: string
-): string {
-  if (
-    group.fabric_feature_group_profiles &&
-    group.fabric_feature_group_profiles.length > 0
-  ) {
-    const match = group.fabric_feature_group_profiles.find(
-      (p) => p.language === language
-    )
-    const profile = match ?? group.fabric_feature_group_profiles[0]
-    return profile.name
-  }
-  return group.code ?? String(group.id)
 }
 
 export default function FabricFeatureFilterModal({
