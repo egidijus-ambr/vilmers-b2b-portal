@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef } from "react"
+import React, { useCallback, useRef, useState } from "react"
 import SofaDrawingPreview from "@configurator/SofaDrawingElements/SofaDrawingPreview"
 import { useTranslations } from "@lib/i18n"
 
@@ -8,7 +8,7 @@ import { useTranslations } from "@lib/i18n"
 // Types
 // =============================================
 
-interface SofaSetCardProps {
+type SofaSetCardProps = {
   /** Array of Konva nodes for one connected group */
   combination: any[]
   /** Zero-based index of this set */
@@ -85,7 +85,13 @@ function extractSetData(combination: any[]): {
 
 const SofaSetCard = ({ combination, setIndex, totalSets }: SofaSetCardProps) => {
   const { t } = useTranslations("account")
-  const drawingRef = useRef<HTMLDivElement>(null)
+  const [drawingEl, setDrawingEl] = useState<HTMLDivElement | null>(null)
+  const drawingRef = useRef<HTMLDivElement | null>(null)
+
+  const drawingCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    drawingRef.current = node
+    setDrawingEl(node)
+  }, [])
 
   const { dimensions, parts } = extractSetData(combination)
 
@@ -99,14 +105,14 @@ const SofaSetCard = ({ combination, setIndex, totalSets }: SofaSetCardProps) => 
   return (
     <div className="border border-gray-100 rounded-lg p-3">
       {totalSets > 1 && (
-        <p className="text-[11px] font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
+        <p className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
           {t("set")} {setIndex + 1}
         </p>
       )}
       <div className="flex gap-4">
         {/* Drawing */}
-        <div ref={drawingRef} className="flex-1 min-h-[120px] bg-gray-50 rounded">
-          {drawingRef.current && (
+        <div ref={drawingCallbackRef} className="flex-1 min-h-[120px] bg-gray-50 rounded">
+          {drawingEl && (
             <SofaDrawingPreview
               combination={combination}
               parentRef={drawingRef as React.RefObject<HTMLElement>}
