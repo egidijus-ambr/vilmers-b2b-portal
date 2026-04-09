@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import SofaSetCard from "./sofa-set-card"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import {
   getComponentName,
@@ -28,66 +29,6 @@ type ConfigurationSummaryProps = {
 // =============================================
 
 const EXCLUDED_GROUP_CODES = ["shooting", "threads-type", "market", "direction"]
-
-interface AggregateDimensions {
-  width: number
-  length: number
-  height: number
-  armrest_width: number
-}
-
-interface SofaPart {
-  name: string
-}
-
-function extractSofaData(sofaCombinations: any[][]): {
-  dimensions: AggregateDimensions
-  parts: SofaPart[]
-} {
-  let totalWidth = 0
-  let maxLength = 0
-  let firstHeight = 0
-  let firstArmrestWidth = 0
-  let heightSet = false
-  let armrestSet = false
-  const parts: SofaPart[] = []
-
-  for (const combo of sofaCombinations) {
-    for (const node of combo) {
-      const sofaForm = node?.attrs?.originalSofaForm
-      if (!sofaForm) continue
-
-      const dims = sofaForm.dimensions
-      if (dims) {
-        totalWidth += dims.width || 0
-        if ((dims.length || 0) > maxLength) maxLength = dims.length || 0
-        if (!heightSet) {
-          firstHeight = dims.height || 0
-          heightSet = true
-        }
-        if (!armrestSet) {
-          firstArmrestWidth = dims.armrest_width || 0
-          armrestSet = true
-        }
-      }
-
-      const partName = sofaForm.name || sofaForm.code
-      if (partName) {
-        parts.push({ name: partName })
-      }
-    }
-  }
-
-  return {
-    dimensions: {
-      width: totalWidth,
-      length: maxLength,
-      height: firstHeight,
-      armrest_width: firstArmrestWidth,
-    },
-    parts,
-  }
-}
 
 function getFabricGroupName(
   fabricGroupObject: FabricGroupWithPrice,
@@ -206,12 +147,6 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
   // Early return: nothing selected yet
   if (!hasFabrics && !hasComponents) return null
 
-  // --- Sofa data ---
-  const sofaData =
-    isSofa && sofaCombinations && sofaCombinations.length > 0
-      ? extractSofaData(sofaCombinations)
-      : null
-
   // ==============================
   // Renderers
   // ==============================
@@ -307,57 +242,19 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
     )
   }
 
-  const renderDimensions = () => {
-    if (!sofaData) return null
-
-    const { dimensions } = sofaData
-    const rows: { label: string; value: number }[] = [
-      { label: t("width"), value: dimensions.width },
-      { label: t("length"), value: dimensions.length },
-      { label: t("height"), value: dimensions.height },
-      { label: t("armrest-width"), value: dimensions.armrest_width },
-    ].filter((r) => r.value > 0)
-
-    if (rows.length === 0) return null
+  const renderSofaSets = () => {
+    if (!isSofa || !sofaCombinations || sofaCombinations.length === 0) return null
 
     return (
-      <div className="max-w-lg">
-        <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
-          {t("dimensions")}
-        </h6>
-        <div className="space-y-1 text-xs">
-          {rows.map((row) => (
-            <div key={row.label} className="flex items-baseline gap-2">
-              <span className="text-dark-blue-70 whitespace-nowrap">
-                {row.label}
-              </span>
-              <span className="flex-1 border-b border-dashed border-gray-300" />
-              <span className="text-dark-blue font-medium whitespace-nowrap">
-                {row.value} cm
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  const renderParts = () => {
-    if (!sofaData || sofaData.parts.length === 0) return null
-
-    return (
-      <div>
-        <h6 className="text-xs font-semibold text-dark-blue-70 uppercase tracking-wide mb-2">
-          {t("parts")}
-        </h6>
-        <ul className="text-xs text-dark-blue space-y-1">
-          {sofaData.parts.map((part, idx) => (
-            <li key={idx} className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-dark-blue-70 flex-shrink-0" />
-              {part.name}
-            </li>
-          ))}
-        </ul>
+      <div className="space-y-3">
+        {sofaCombinations.map((combination, index) => (
+          <SofaSetCard
+            key={index}
+            combination={combination}
+            setIndex={index}
+            totalSets={sofaCombinations.length}
+          />
+        ))}
       </div>
     )
   }
@@ -368,13 +265,10 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
 
   if (isSofa) {
     return (
-      <div className=" py-4">
+      <div className="py-4">
         <div className="space-y-5">
           {renderFabrics()}
-          <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
-            {renderDimensions()}
-            {renderParts()}
-          </div>
+          {renderSofaSets()}
         </div>
         {renderAdditionalComponents()}
       </div>
@@ -382,7 +276,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
   }
 
   return (
-    <div className=" py-4">
+    <div className="py-4">
       <div className="space-y-5">{renderFabrics()}</div>
       {renderAdditionalComponents()}
     </div>
