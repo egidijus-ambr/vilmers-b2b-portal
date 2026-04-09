@@ -8,6 +8,8 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import PdfCatalogueButton from "@modules/categories/components/pdf-catalogue-button"
 import SelectionCheckbox from "@modules/categories/components/catalog-builder/selection-checkbox"
 import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
+import { useCustomer } from "@lib/context/customer-context"
+import { getCustomerMarket } from "@lib/util/customer-market"
 
 function extractProductDisplayData(
   container: ProductContainer,
@@ -100,6 +102,10 @@ export default function B2BProductCard({
   const catalogBuilder = useCatalogBuilder()
   const inSelectionMode = !!catalogBuilder?.selectionMode
   const hasCatalogues = (catalogBuilder?.catalogueMap[name] ?? []).length > 0
+  const { customer } = useCustomer()
+  const customerMarket = getCustomerMarket(customer)
+  const catalogues = catalogBuilder?.catalogueMap[name] ?? []
+  const marketCodes = Array.from(new Set(catalogues.map((c) => c.market)))
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (inSelectionMode && hasCatalogues) {
@@ -145,6 +151,22 @@ export default function B2BProductCard({
             <span className="absolute top-3 left-3 z-10 rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue ">
               {categoryName}
             </span>
+          )}
+          {inSelectionMode && marketCodes.length > 0 && (
+            <div className="absolute bottom-3 left-3 z-10 flex flex-wrap gap-1">
+              {marketCodes.map((code) => (
+                <span
+                  key={code}
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    customerMarket && code === customerMarket
+                      ? "bg-gold text-white"
+                      : "bg-white/80 text-gray-600 border border-gray-300"
+                  }`}
+                >
+                  {code}
+                </span>
+              ))}
+            </div>
           )}
         </div>
         <div className="flex flex-col gap-1">

@@ -12,10 +12,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import * as SofaElements from './SofaElements'
-import {
-  getGroupOfGroupsRectWithScale,
-  drawMetricLinesForGroups,
-} from './utils'
+import { drawMetricLinesForGroups } from './utils'
 
 interface ArmrestWidthOverride {
   armrestWidth: number
@@ -35,10 +32,14 @@ interface SofaDrawingPreviewProps {
   onImage?:
     | ((image: { dataURI: string; width: number; length: number }) => void)
     | null
+  /** Padding around content for metric lines/arrows. Defaults: 110 for live nodes, 40 for static */
+  metricPadding?: number
 }
 
-// Compute bounding box from static shape data (no Konva API needed)
-function computeStaticGroupRect(shapes: any[], sofaScale: number) {
+// Compute bounding box from shape attrs (works for both live Konva nodes and static data).
+// Uses attrs.x/y (local coordinates) rather than getClientRect() (screen coordinates)
+// so the result is in the same coordinate space as the rendering code.
+function computeGroupRectFromAttrs(shapes: any[], sofaScale: number) {
   let minX = Infinity
   let maxX = -Infinity
   let minY = Infinity
@@ -47,8 +48,17 @@ function computeStaticGroupRect(shapes: any[], sofaScale: number) {
   for (const shape of shapes) {
     const x = shape.attrs?.x || 0
     const y = shape.attrs?.y || 0
-    const w = shape.attrs?.originalWidth || shape.attrs?.width || 0
-    const h = shape.attrs?.originalHeight || shape.attrs?.height || 0
+    let w = shape.attrs?.originalWidth || shape.attrs?.width || 0
+    let h = shape.attrs?.originalHeight || shape.attrs?.height || 0
+
+    // Account for rotation — rotated 90/270 swaps width and height
+    const rotation =
+      (typeof shape.rotation === 'function' ? shape.rotation() : shape.attrs?.rotation) || 0
+    const normalizedRotation = ((rotation % 360) + 360) % 360
+    if (normalizedRotation === 90 || normalizedRotation === 270) {
+      ;[w, h] = [h, w]
+    }
+
     minX = Math.min(minX, x)
     minY = Math.min(minY, y)
     maxX = Math.max(maxX, x + w)
@@ -77,6 +87,7 @@ const SofaDrawingPreview = ({
   sofaScale = 1,
   armrestWidthOverrides = [],
   onImage = null,
+  metricPadding,
 }: SofaDrawingPreviewProps) => {
   const stageRef = useRef<any>(null)
   const [layer, setLayer] = useState<any>(null)
@@ -97,10 +108,8 @@ const SofaDrawingPreview = ({
 
   const [metricLayers, setMetricLayers] = useState(false)
 
-  // Compute bounding box — use Konva API for live nodes, static calc otherwise
-  const groupRect = isLiveNodes
-    ? getGroupOfGroupsRectWithScale(combination, sofaScale)
-    : computeStaticGroupRect(combination, sofaScale)
+  // Compute bounding box from attrs (local coordinates) — consistent with rendering
+  const groupRect = computeGroupRectFromAttrs(combination, sofaScale)
 
   useEffect(() => {
     handleResize()
@@ -134,7 +143,7 @@ const SofaDrawingPreview = ({
   // Move all groups to center
   const centerX = width / 2
   const centerY = height / 2
-  const additionalBound = isLiveNodes ? 110 : 40 // Less padding for static (no metric arrows)
+  const additionalBound = metricPadding ?? (isLiveNodes ? 110 : 40)
 
   let distanceToCenterX = centerX - groupRect.center.x
   let distanceToCenterY = centerY - groupRect.center.y

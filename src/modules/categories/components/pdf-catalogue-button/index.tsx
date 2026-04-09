@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { useParams } from "next/navigation"
 import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
-import { getCatalogueLanguage } from "@lib/util/catalogue-language"
+import { useCustomer } from "@lib/context/customer-context"
+import { getCustomerMarket } from "@lib/util/customer-market"
 import { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/types"
 import { CatalogDownloadIcon } from "@modules/common/icons/catalog-download"
 
@@ -27,22 +27,18 @@ export default function PdfCatalogueButton({
 }: PdfCatalogueButtonProps) {
   const context = useCatalogBuilder()
   const catalogueMap = context?.catalogueMap ?? {}
-  const params = useParams()
-  const languageCode = (params?.languageCode as string) ?? "en"
+  const { customer } = useCustomer()
+  const customerMarket = getCustomerMarket(customer)
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const catalogueLanguage = getCatalogueLanguage(languageCode)
-
   const allCatalogues = catalogueMap[productName] ?? []
-  const languageMatches = allCatalogues.filter(
-    (c) => c.language === catalogueLanguage
-  )
+  const marketMatches = customerMarket
+    ? allCatalogues.filter((c) => c.market === customerMarket)
+    : []
   const matchedCatalogues =
-    languageMatches.length > 0
-      ? languageMatches
-      : allCatalogues.filter((c) => c.language === "EN")
+    marketMatches.length > 0 ? marketMatches : allCatalogues
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -116,9 +112,7 @@ export default function PdfCatalogueButton({
               onClick={(e) => handleDropdownOptionClick(e, catalogue)}
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap"
             >
-              {catalogue.unitsLabel
-                ? `${catalogue.unitsLabel} (${catalogue.units})`
-                : catalogue.filename}
+              {catalogue.market ?? catalogue.filename}
             </button>
           ))}
         </div>

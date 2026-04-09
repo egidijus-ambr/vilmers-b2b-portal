@@ -111,11 +111,15 @@ const SofaSetCard = ({ combination, setIndex, totalSets }: SofaSetCardProps) => 
       )}
       <div className="flex gap-4">
         {/* Drawing */}
-        <div ref={drawingCallbackRef} className="flex-1 min-h-[120px] bg-gray-50 rounded">
+        <div
+          ref={drawingCallbackRef}
+          className="flex-1 min-h-[200px] bg-gray-50 rounded"
+        >
           {drawingEl && (
             <SofaDrawingPreview
               combination={combination}
               parentRef={drawingRef as React.RefObject<HTMLElement>}
+              metricPadding={50}
             />
           )}
         </div>

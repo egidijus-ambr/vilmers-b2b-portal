@@ -124,6 +124,12 @@ export interface Customer {
   b2b_company_address?: {
     country: string
   }
+  additional_components?: {
+    additionalComponent: {
+      code?: string
+      additional_component_group?: { code?: string }
+    }
+  }[]
 }
 
 export interface Order extends BaseEntity {

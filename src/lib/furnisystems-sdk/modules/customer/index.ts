@@ -97,6 +97,14 @@ const GET_ME_QUERY = gql`
           }
         }
       }
+      additional_components {
+        additionalComponent {
+          code
+          additional_component_group {
+            code
+          }
+        }
+      }
     }
   }
 `
@@ -601,6 +609,14 @@ export class CustomerModule {
               }
             }
           }[]
+          additional_components?: {
+            additionalComponent: {
+              code?: string
+              additional_component_group?: {
+                code?: string
+              }
+            }
+          }[]
         }
       }>(GET_ME_QUERY, {
         fetchPolicy: "no-cache", // Always fetch fresh data, never use cache
@@ -637,6 +653,7 @@ export class CustomerModule {
         role: customerData.role,
         b2b_company_address: customerData.b2b_company_address,
         name: customerData.name || "",
+        additional_components: customerData.additional_components,
         customer_account: customerData?.customer_accounts?.[0]
           ? {
               id: customerData.customer_accounts[0].id,

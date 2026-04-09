@@ -1,9 +1,7 @@
 export interface CatalogueFile {
   url: string
   filename: string
-  language: string
-  units: string
-  unitsLabel: string
+  market: string
   category: string
 }
 
@@ -45,8 +43,7 @@ export interface CatalogueCachePopulateResponse {
 
 export interface MergeCataloguesRequest {
   productNames: string[]
-  language: string
-  units?: string
+  market: string
   mode?: "merge" | "split"
   compressed?: boolean
 }

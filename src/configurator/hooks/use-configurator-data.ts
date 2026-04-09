@@ -49,10 +49,19 @@ export function useConfiguratorData(
         // Initialize additional component groups
         const manufacturerGroups = data.manufacturer?.additional_component_groups ?? []
         const productAssociations = data.advanced_product?.additional_component_to_advanced_product ?? []
+        const productGroupAssociations = data.advanced_product?.additional_component_group_to_advanced_product ?? []
 
-        if (manufacturerGroups.length > 0) {
+        // Filter to only groups associated with this product
+        const enabledGroupIds = new Set(
+          productGroupAssociations.map((a: any) => a.additional_component_group?.id).filter(Boolean)
+        )
+        const filteredManufacturerGroups = enabledGroupIds.size > 0
+          ? manufacturerGroups.filter((g: any) => enabledGroupIds.has(g.id))
+          : manufacturerGroups
+
+        if (filteredManufacturerGroups.length > 0) {
           const mergedGroups = mergeComponentGroups(
-            manufacturerGroups,
+            filteredManufacturerGroups,
             productAssociations,
             priceListId
           )

@@ -189,6 +189,15 @@ export const GET_CONFIGURATOR_DATA = gql`
           }
         }
 
+        # Group-level associations (which groups are enabled for this product)
+        additional_component_group_to_advanced_product(
+          where: { enabled: { equals: true } }
+        ) {
+          additional_component_group {
+            id
+          }
+        }
+
         # Dimensions
         dimensions {
           id

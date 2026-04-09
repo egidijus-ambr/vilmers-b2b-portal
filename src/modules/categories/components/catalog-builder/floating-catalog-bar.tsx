@@ -2,14 +2,14 @@
 
 import { useMemo, useRef, useState } from "react"
 import { X, ChevronDown } from "lucide-react"
-import { useParams } from "next/navigation"
 import { useTranslations } from "@lib/i18n"
 import { useRequiredCatalogBuilder } from "@lib/context/catalog-builder-context"
-import { getCatalogueLanguage } from "@lib/util/catalogue-language"
+import { useCustomer } from "@lib/context/customer-context"
+import { getCustomerMarket } from "@lib/util/customer-market"
 import { sdk } from "@lib/config"
 import Spinner from "@modules/common/icons/spinner"
 
-type WarningKind = "no-catalogue" | "no-language" | "no-units"
+type WarningKind = "no-catalogue" | "no-market"
 
 interface ProductWarning {
   product: string
@@ -18,9 +18,6 @@ interface ProductWarning {
 
 export default function FloatingCatalogBar() {
   const { t } = useTranslations()
-  const params = useParams()
-  const language = (params?.languageCode as string) ?? "en"
-  const catalogueLanguage = getCatalogueLanguage(language)
 
   const {
     selectionMode,
@@ -32,8 +29,9 @@ export default function FloatingCatalogBar() {
     allProductNamesLoading,
   } = useRequiredCatalogBuilder()
 
-  const [selectedUnits, setSelectedUnits] = useState("CM")
-  const [unitsOpen, setUnitsOpen] = useState(false)
+  const { customer } = useCustomer()
+  const customerMarket = getCustomerMarket(customer)
+
   const [selectedMode, setSelectedMode] = useState<"merge" | "split">("merge")
   const [modeOpen, setModeOpen] = useState(false)
   const [compressed, setCompressed] = useState(false)
@@ -53,18 +51,15 @@ export default function FloatingCatalogBar() {
         result.push({ product, kind: "no-catalogue" })
         continue
       }
-      const forLang = files.filter((f) => f.language === catalogueLanguage)
-      if (forLang.length === 0) {
-        result.push({ product, kind: "no-language" })
-        continue
-      }
-      const forUnits = forLang.filter((f) => f.units === selectedUnits)
-      if (forUnits.length === 0) {
-        result.push({ product, kind: "no-units" })
+      if (customerMarket) {
+        const forMarket = files.filter((f) => f.market === customerMarket)
+        if (forMarket.length === 0) {
+          result.push({ product, kind: "no-market" })
+        }
       }
     }
     return result
-  }, [catalogueMap, selectedProducts, catalogueLanguage, selectedUnits])
+  }, [catalogueMap, selectedProducts, customerMarket])
 
   const hasWarnings = warnings.length > 0
 
@@ -75,8 +70,7 @@ export default function FloatingCatalogBar() {
     try {
       const blob = await sdk.productCatalogues.mergeCatalogues({
         productNames: Array.from(selectedProducts),
-        language: catalogueLanguage,
-        units: selectedUnits,
+        market: customerMarket ?? "EN",
         mode: selectedMode,
         compressed,
       })
@@ -98,12 +92,10 @@ export default function FloatingCatalogBar() {
   function getWarningMessage(w: ProductWarning): string {
     if (w.kind === "no-catalogue")
       return t("warning-no-catalogue", { product: w.product })
-    if (w.kind === "no-language")
-      return t("warning-no-language", {
-        product: w.product,
-        language: catalogueLanguage,
-      })
-    return t("warning-no-units", { product: w.product, units: selectedUnits })
+    return t("warning-no-market", {
+      product: w.product,
+      market: customerMarket ?? "",
+    })
   }
 
   if (!selectionMode) return null
@@ -170,39 +162,6 @@ export default function FloatingCatalogBar() {
         </div>
 
         <Divider />
-
-        {/* Units dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setUnitsOpen(!unitsOpen)}
-            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
-          >
-            {selectedUnits.toLowerCase()}
-            <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform ${unitsOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-          {unitsOpen && (
-            <div className="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[80px] z-[80]">
-              {["CM", "IN"].map((unit) => (
-                <button
-                  key={unit}
-                  onClick={() => {
-                    setSelectedUnits(unit)
-                    setUnitsOpen(false)
-                  }}
-                  className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                    selectedUnits === unit
-                      ? "text-gold font-medium"
-                      : "text-gray-700"
-                  }`}
-                >
-                  {unit.toLowerCase()}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Merge/Split dropdown */}
         <div className="relative">
