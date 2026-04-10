@@ -32,7 +32,8 @@ export function useDynamicGroups(
 
   const prevGroupsRef = useRef<ComponentGroup[]>([])
 
-  // Initialize default component selections when groups change
+  // Sync selected components when groups change: add defaults for new groups,
+  // remove stale selections for groups that no longer exist
   useEffect(() => {
     if (
       additionalComponentGroups.length > 0 &&
@@ -40,19 +41,30 @@ export function useDynamicGroups(
     ) {
       prevGroupsRef.current = additionalComponentGroups
 
-      // Only select defaults for groups that don't already have a selection
-      const existingGroupCodes = new Set(
-        selectedAdditionalComponents.map((c) => c.groupCode)
+      const validGroupCodes = new Set(
+        additionalComponentGroups.map((g) => g.code)
       )
+
+      // Remove selected components for groups that no longer exist
+      const cleaned = selectedAdditionalComponents.filter((c) =>
+        validGroupCodes.has(c.groupCode)
+      )
+
+      // Add defaults for new groups that don't have a selection
+      const existingGroupCodes = new Set(cleaned.map((c) => c.groupCode))
       const newGroups = additionalComponentGroups.filter(
         (g) => !existingGroupCodes.has(g.code)
       )
 
-      if (newGroups.length > 0) {
-        const newDefaults = selectDefaultComponents(newGroups)
+      const newDefaults = newGroups.length > 0
+        ? selectDefaultComponents(newGroups)
+        : []
+
+      const updated = [...cleaned, ...newDefaults]
+      if (!isEqual(updated, selectedAdditionalComponents)) {
         dispatch({
           type: "SET_SELECTED_COMPONENTS",
-          payload: [...selectedAdditionalComponents, ...newDefaults],
+          payload: updated,
         })
       }
     }

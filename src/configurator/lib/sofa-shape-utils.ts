@@ -54,8 +54,8 @@ export const setNewSize = (
     armsCount = 1
   }
 
-  // 16 is the default armrest width used in the original storefront
-  const sizeWithoutArmrests = shape.originalDimension.width - armsCount * 16
+  const defaultArmrestWidth = shape.dimensions.armrest_width ?? 16
+  const sizeWithoutArmrests = shape.originalDimension.width - armsCount * defaultArmrestWidth
   shape.dimensions.width = sizeWithoutArmrests + armsCount * armrestWidth
   shape.dimensions.armrest_width = armrestWidth
 }

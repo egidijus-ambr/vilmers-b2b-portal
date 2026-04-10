@@ -16,6 +16,7 @@ import {
   TABLE_COLOR,
 } from "@configurator/SofaDrawingElements/SofaElements/constants"
 import type { SofaFormExtended } from "@configurator/lib/types"
+import { useConfigurator } from "@configurator/context/configurator-context"
 
 import {
   A2L, A2R, A3L, A3R,
@@ -288,15 +289,16 @@ function generateConnectedGroupsWithScale(
 
   const finalGroupedGroups = recursiveGroupMatchingFunction(groupedGroups)
 
-  // Order each group left-to-right
-  const correctOrder = finalGroupedGroups.map((group: any[]) => {
-    const orderedGroup: any[] = []
+  // Order each group left-to-right; split out unconnected modules as separate groups
+  const correctOrder = finalGroupedGroups.flatMap((group: any[]) => {
+    if (group.length <= 1) return [group]
+
     const first = group.find((g: any) => {
       return g.attrs.connected?.right && !g.attrs.connected?.left
     })
-    if (!first) return group
+    if (!first) return [group]
 
-    orderedGroup.push(first)
+    const orderedGroup: any[] = [first]
     let current = first
     while (current) {
       const next = group.find(
@@ -308,10 +310,12 @@ function generateConnectedGroupsWithScale(
     }
 
     if (orderedGroup.length !== group.length) {
-      console.error("ERROR: ORDERING GROUP")
-      return group
+      // Some modules overlap the connected chain but aren't part of it.
+      // Separate them into individual groups so they don't break ordering.
+      const unconnected = group.filter((g) => !orderedGroup.includes(g))
+      return [orderedGroup, ...unconnected.map((m) => [m])]
     }
-    return orderedGroup
+    return [orderedGroup]
   })
 
   return correctOrder
@@ -451,6 +455,19 @@ const SofaDrawingStage = ({
     }
   }
 
+  // Compute armrest width overrides from selected additional components
+  const { state: configuratorState } = useConfigurator()
+  const armrestWidthArray = useMemo(() => {
+    return (configuratorState?.selectedAdditionalComponents ?? [])
+      .filter((component: any) => component?.dimensions?.armrest_width != null)
+      .map((component: any) => ({
+        id: component.id,
+        groupCode: component.groupCode,
+        armrestWidth: component.dimensions.armrest_width,
+        coveredSide: component.dimensions?.covered_side,
+      }))
+  }, [configuratorState?.selectedAdditionalComponents])
+
   // ---- Compute initial positions for shapes (memoized to avoid O(n²) Konva DOM walks) ----
   const modifiedSofaShapes = useMemo(() => {
     const itemsWithOffsets: any[] = []
@@ -469,68 +486,99 @@ const SofaDrawingStage = ({
       })
     }
 
-    // Without the Konva layer we cannot check collisions — return raw positions.
-    if (!layer) return itemsWithOffsets
-
     // ---- Adjust positions to avoid initial collisions ----
-    const getAdjustedXYCoordinates = (sofaObject: any, numberOfCalls = 0): { x: number; y: number } => {
-      const tempBoxRect = {
-        x: sofaObject.x,
-        y: sofaObject.y,
-        width: sofaObject.width,
-        height: sofaObject.height,
-        rotation: 0,
-      }
 
-      let targetAlreadyExists = false
-      let targetIntersection = false
-      let existingXY: { x: number; y: number } | undefined
+    // Track positions of already-placed items for batch collision detection
+    const placedItems: Array<{ x: number; y: number; width: number; height: number }> = []
 
-      getSofaShapesInLayer(layer).forEach((group: any) => {
-        if (group.attrs.id === sofaObject.id) {
-          targetAlreadyExists = true
-          existingXY = { x: group.attrs.x, y: group.attrs.y }
-          return
-        }
-        const grouptRec = group.getClientRect()
-        if (Konva.Util.haveIntersection(tempBoxRect, grouptRec)) {
-          targetIntersection = true
-        }
-      })
-
-      const stageWidth = width
-      const stageHeight = height
-      let xStep = 40 * scale
-      let yStep = 0
-
-      if (sofaObject.x * scale + xStep + sofaObject.width * scale > stageWidth) {
-        xStep = 0
-        yStep = 40 * scale
-      }
-      if (sofaObject.y * scale + yStep + sofaObject.height * scale > stageHeight) {
-        xStep = 0
-        yStep = 0
-      }
-
-      if (numberOfCalls > 100) {
-        return { x: sofaObject.x, y: sofaObject.y }
-      }
-
-      if (targetIntersection && !targetAlreadyExists) {
-        return getAdjustedXYCoordinates(
-          { ...sofaObject, x: sofaObject.x + xStep, y: sofaObject.y + yStep },
-          numberOfCalls + 1
-        )
-      } else if (targetAlreadyExists && existingXY) {
-        return existingXY
-      } else {
-        return { x: sofaObject.x + xStep, y: sofaObject.y + yStep }
-      }
+    // Simple rect intersection check (no Konva dependency)
+    const rectsOverlap = (
+      r1: { x: number; y: number; width: number; height: number },
+      r2: { x: number; y: number; width: number; height: number }
+    ) => {
+      return !(
+        r1.x + r1.width <= r2.x ||
+        r2.x + r2.width <= r1.x ||
+        r1.y + r1.height <= r2.y ||
+        r2.y + r2.height <= r1.y
+      )
     }
 
-    return itemsWithOffsets.map(sofaObject => {
-      const newXY = getAdjustedXYCoordinates(sofaObject)
-      return { ...sofaObject, x: newXY.x, y: newXY.y }
+    return itemsWithOffsets.map((sofaObject) => {
+      // Check if this shape already exists on the Konva layer
+      const existingShape = layer
+        ? getSofaShapesInLayer(layer).find(
+            (group: any) => group.attrs.id === sofaObject.id
+          )
+        : null
+
+      if (existingShape) {
+        // Already rendered — keep its current position
+        const pos = { x: existingShape.attrs.x, y: existingShape.attrs.y }
+        placedItems.push({
+          x: pos.x,
+          y: pos.y,
+          width: sofaObject.width,
+          height: sofaObject.height,
+        })
+        return { ...sofaObject, x: pos.x, y: pos.y }
+      }
+
+      // New module — find non-overlapping position
+      let candidateX = sofaObject.x
+      let candidateY = sofaObject.y
+      const startX = candidateX
+      const stageW = width / scale  // Convert stage dimensions to match item coordinate space
+      const stageH = height / scale
+
+      // Collect existing rects from Konva layer
+      const layerRects: Array<{ x: number; y: number; width: number; height: number }> = []
+      if (layer) {
+        getSofaShapesInLayer(layer).forEach((group: any) => {
+          const rect = group.getClientRect()
+          layerRects.push({
+            x: rect.x / scale,
+            y: rect.y / scale,
+            width: rect.width / scale,
+            height: rect.height / scale,
+          })
+        })
+      }
+
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const candidate = {
+          x: candidateX,
+          y: candidateY,
+          width: sofaObject.width,
+          height: sofaObject.height,
+        }
+
+        const hasOverlap =
+          placedItems.some((placed) => rectsOverlap(candidate, placed)) ||
+          layerRects.some((rect) => rectsOverlap(candidate, rect))
+
+        if (!hasOverlap) break
+
+        // Shift right
+        candidateX += 80
+        // If going off-screen, wrap to next row
+        if (candidateX + sofaObject.width > stageW) {
+          candidateX = startX
+          candidateY += 80
+        }
+        // If also going off-screen vertically, stop trying
+        if (candidateY + sofaObject.height > stageH) {
+          break
+        }
+      }
+
+      placedItems.push({
+        x: candidateX,
+        y: candidateY,
+        width: sofaObject.width,
+        height: sofaObject.height,
+      })
+      return { ...sofaObject, x: candidateX, y: candidateY }
     })
   }, [sofaShapes, layer, scale, width, height])
 
@@ -871,15 +919,15 @@ const SofaDrawingStage = ({
     }
   }, [showArrows, scale, dragTargetShape, connectedGroupsInStage])
 
-  // ---- Effect for connected groups on shape changes ----
-  // generateConnectedGroupsWithScale is called exactly once per sofaShapes change here.
+  // ---- Effect for connected groups on shape or armrest changes ----
+  // generateConnectedGroupsWithScale is called when shapes or armrest widths change.
   // The metric-lines effect above will fire automatically when connectedGroupsInStage updates.
   useEffect(() => {
     if (layer) {
       const connectedGroups = generateConnectedGroupsWithScale(layer, scale, null)
       setConnectedGroupsInStage(connectedGroups)
     }
-  }, [sofaShapes, layer])
+  }, [sofaShapes, layer, armrestWidthArray])
 
   // ---- Grid drawing ----
   const gridStepSize = 40
@@ -971,6 +1019,11 @@ const SofaDrawingStage = ({
 
       const dims = item.sofaForm.dimensions
 
+      // Find matching armrest override for this module
+      const armrestOverride = armrestWidthArray.find((component: any) =>
+        component.groupCode?.endsWith(item.sofaForm?.code)
+      )
+
       elements.push(
         <SofaElement
           key={item.id}
@@ -989,6 +1042,7 @@ const SofaDrawingStage = ({
           stageHeight={height}
           originalSofaForm={item.sofaForm}
           armrestWidth={dims.armrest_width}
+          armrestWidthOverride={armrestOverride?.armrestWidth}
           backrestWidth={dims.backrest_width}
           mattressWidth={dims.mattress_width}
           mattressLength={dims.mattress_length}
@@ -1016,7 +1070,7 @@ const SofaDrawingStage = ({
     }
 
     return elements
-  }, [modifiedSofaShapes, layer, onDelete, showButtons, width, height])
+  }, [modifiedSofaShapes, layer, onDelete, showButtons, width, height, armrestWidthArray])
 
   // ============================================================
   // Render

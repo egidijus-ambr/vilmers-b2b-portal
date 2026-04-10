@@ -11,6 +11,7 @@ type SofaModulesSelectorProps = {
   onAddForm: (sofaForm: SofaFormExtended) => void
   languageCode: string
   armrestWidthOverride?: number
+  armrestName?: string
 }
 
 // =============================================
@@ -79,7 +80,8 @@ function SelectorPreviewInner({
           scale={fitScale}
           stageWidth={stageW}
           stageHeight={stageH}
-          armrestWidth={armrestWidthOverride ?? dims.armrest_width}
+          armrestWidth={dims.armrest_width}
+          armrestWidthOverride={armrestWidthOverride}
           backrestWidth={dims.backrest_width}
           mattressWidth={dims.mattress_width}
           mattressLength={dims.mattress_length}
@@ -123,6 +125,7 @@ const SofaModulesSelector = ({
   onAddForm,
   languageCode,
   armrestWidthOverride,
+  armrestName,
 }: SofaModulesSelectorProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { state } = useConfigurator()
@@ -215,6 +218,7 @@ const SofaModulesSelector = ({
         onAddForm={onAddForm}
         languageCode={languageCode}
         armrestWidthOverride={armrestWidthOverride}
+        armrestName={armrestName}
         selectedFabric={selectedFabric}
         currency={currency}
       />

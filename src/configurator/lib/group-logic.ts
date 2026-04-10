@@ -383,17 +383,22 @@ export function computeArmrestAndLegsGroups(
  */
 export function getDefaultArmrestWidth(
   additionalComponentGroups: ComponentGroup[]
-): number | null {
+): { width: number; name: string } | null {
   const armrestGroup = additionalComponentGroups.find(
     (g) => g.code === "armrest"
   )
   if (!armrestGroup || !armrestGroup.additional_components.length) return null
 
-  const defaultComponent =
-    armrestGroup.additional_components.find((c) => c.isDefault) ??
-    armrestGroup.additional_components[0]
+  // Pick the first armrest with width > 0 to avoid "covered side" (width 0) options
+  const component = armrestGroup.additional_components.find(
+    (c) => (c.dimensions?.armrest_width ?? 0) > 0
+  ) ?? armrestGroup.additional_components[0]
 
-  return defaultComponent?.dimensions?.armrest_width ?? null
+  const width = component?.dimensions?.armrest_width ?? null
+  if (width == null) return null
+
+  const name = component?.additional_component_profiles?.[0]?.name ?? component?.code ?? ""
+  return { width, name }
 }
 
 /**
@@ -434,19 +439,29 @@ export function buildSortedFabricGroups(
 }
 
 /**
- * Select the first (default) component from each group.
- * Used when initializing or resetting the configurator.
+ * Select the default component from each group.
+ * For armrest groups, picks the first component with armrest_width > 0
+ * to avoid selecting "covered side" (width 0) options.
  */
 export function selectDefaultComponents(
   componentGroups: ComponentGroup[]
 ): SelectedComponent[] {
   const selected: SelectedComponent[] = []
   for (const group of componentGroups) {
-    const first = group.additional_components?.[0]
-    if (first) {
+    let component = group.additional_components?.[0]
+
+    // For armrest groups, prefer the first component with a positive width
+    if (group.code.startsWith("armrest") && group.additional_components?.length) {
+      component =
+        group.additional_components.find(
+          (c) => (c.dimensions?.armrest_width ?? 0) > 0
+        ) ?? component
+    }
+
+    if (component) {
       selected.push({
-        ...first,
-        groupCode: first.groupCode ?? group.code,
+        ...component,
+        groupCode: component.groupCode ?? group.code,
       })
     }
   }

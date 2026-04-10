@@ -48,21 +48,42 @@ function computeGroupRectFromAttrs(shapes: any[], sofaScale: number) {
   for (const shape of shapes) {
     const x = shape.attrs?.x || 0
     const y = shape.attrs?.y || 0
-    let w = shape.attrs?.originalWidth || shape.attrs?.width || 0
-    let h = shape.attrs?.originalHeight || shape.attrs?.height || 0
+    const w = shape.attrs?.originalWidth || shape.attrs?.width || 0
+    const extendablePartLength = shape.attrs?.originalSofaForm?.dimensions?.extendable_part_length || 0
+    const h = (shape.attrs?.originalHeight || shape.attrs?.height || 0) + extendablePartLength
 
-    // Account for rotation — rotated 90/270 swaps width and height
+    // Konva rotates around the Group's (x,y) position (top-left corner).
+    // This shifts the visual bounds in screen space — adjust accordingly.
     const rotation =
       (typeof shape.rotation === 'function' ? shape.rotation() : shape.attrs?.rotation) || 0
     const normalizedRotation = ((rotation % 360) + 360) % 360
-    if (normalizedRotation === 90 || normalizedRotation === 270) {
-      ;[w, h] = [h, w]
+
+    let ax = x
+    let ay = y
+    let dw = w
+    let dh = h
+
+    switch (normalizedRotation) {
+      case 90:
+        ax = x - h
+        dw = h
+        dh = w
+        break
+      case 180:
+        ax = x - w
+        ay = y - h
+        break
+      case 270:
+        ay = y - w
+        dw = h
+        dh = w
+        break
     }
 
-    minX = Math.min(minX, x)
-    minY = Math.min(minY, y)
-    maxX = Math.max(maxX, x + w)
-    maxY = Math.max(maxY, y + h)
+    minX = Math.min(minX, ax)
+    minY = Math.min(minY, ay)
+    maxX = Math.max(maxX, ax + dw)
+    maxY = Math.max(maxY, ay + dh)
   }
 
   const width = Math.round((maxX - minX) / sofaScale)

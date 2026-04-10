@@ -58,7 +58,15 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
       )
 
       if (!isValid) {
-        const defaultCombination = fabricCombinations[0]
+        const defaultCombination = [...fabricCombinations].sort((a, b) => {
+          if (a.code == null && b.code == null) return 0
+          if (a.code == null) return 1
+          if (b.code == null) return -1
+          const aNum = Number(a.code)
+          const bNum = Number(b.code)
+          if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
+          return a.code.localeCompare(b.code)
+        })[0] ?? fabricCombinations[0]
         dispatch({
           type: "SET_FABRIC_COMBINATION",
           payload: { fabricCombination: defaultCombination },

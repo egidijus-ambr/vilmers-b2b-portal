@@ -1,10 +1,8 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import type { SofaFormExtended } from "@configurator/lib/types"
-import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
-import { setNewSize } from "@configurator/lib/sofa-shape-utils"
 import { getDefaultArmrestWidth } from "@configurator/lib/group-logic"
 import SofaModulesSelector from "./sofa-modules-selector"
 import SofaStageContainer from "./sofa-stage-container"
@@ -27,18 +25,21 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
   const { state, dispatch } = useConfigurator()
   const { sofaForms } = state
 
-  // Compute effective armrest width: selected armrest's width > default armrest's width > null
-  const effectiveArmrestWidth = React.useMemo(() => {
+  const defaultArmrest = React.useMemo(() => {
     // Check if any selected component has armrest_width
-    const selectedArmWidth = state.selectedAdditionalComponents.find(
-      (c) => c.dimensions?.armrest_width != null
-    )?.dimensions?.armrest_width as number | undefined
+    const selectedArm = state.selectedAdditionalComponents.find(
+      (c) => c.dimensions?.armrest_width != null && c.dimensions.armrest_width > 0
+    )
+    if (selectedArm && selectedArm.dimensions) {
+      const name = selectedArm.additional_component_profiles?.[0]?.name ?? selectedArm.code ?? ""
+      return { width: selectedArm.dimensions.armrest_width as number, name }
+    }
+    // Fall back to original (unmodified) groups — dynamic groups remove the base
+    // "armrest" group when no modules are on canvas, so we need the original
+    return getDefaultArmrestWidth(state.originalComponentGroups)
+  }, [state.selectedAdditionalComponents, state.originalComponentGroups])
 
-    if (selectedArmWidth != null) return selectedArmWidth
-
-    // Fall back to default armrest component's width
-    return getDefaultArmrestWidth(state.additionalComponentGroups) ?? undefined
-  }, [state.selectedAdditionalComponents, state.additionalComponentGroups])
+  const effectiveArmrestWidth = defaultArmrest?.width ?? undefined
 
   // Local state for shapes currently on the canvas
   const [dropables, setDropables] = useState<Dropable[]>([])
@@ -46,21 +47,9 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
   const addSofaToStage = useCallback(
     (sofaForm: SofaFormExtended) => {
       const id = Date.now().toString()
-
-      // Apply current armrest width to the new module
-      let adjustedForm = sofaForm
-      if (effectiveArmrestWidth != null) {
-        adjustedForm = {
-          ...sofaForm,
-          dimensions: { ...sofaForm.dimensions },
-          originalDimension: { ...sofaForm.originalDimension },
-        }
-        setNewSize(adjustedForm, effectiveArmrestWidth)
-      }
-
-      setDropables((prev) => [...prev, { id, sofaForm: adjustedForm }])
+      setDropables((prev) => [...prev, { id, sofaForm }])
     },
-    [effectiveArmrestWidth]
+    []
   )
 
   const onSofaDelete = useCallback((id: string) => {
@@ -74,41 +63,6 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
     },
     [dispatch]
   )
-
-  // Update sofa module dimensions when armrest selection changes
-  useEffect(() => {
-    const overrides = getArmrestOverides(state.selectedAdditionalComponents)
-    if (overrides.length === 0) return
-
-    setDropables((prev) => {
-      if (prev.length === 0) return prev
-
-      let hasChanges = false
-      const updated = prev.map((dropable) => {
-        const override =
-          overrides.find((o: any) => o.moduleId === dropable.id) ??
-          overrides.find((o: any) => !o.moduleId)
-        if (!override) return dropable
-
-        if (
-          dropable.sofaForm.dimensions.armrest_width === override.armrestWidth
-        ) {
-          return dropable
-        }
-
-        const clonedSofaForm = {
-          ...dropable.sofaForm,
-          dimensions: { ...dropable.sofaForm.dimensions },
-          originalDimension: { ...dropable.sofaForm.originalDimension },
-        }
-        setNewSize(clonedSofaForm, override.armrestWidth)
-        hasChanges = true
-        return { ...dropable, sofaForm: clonedSofaForm }
-      })
-
-      return hasChanges ? updated : prev
-    })
-  }, [state.selectedAdditionalComponents])
 
   if (sofaForms.length === 0) {
     return (
@@ -126,6 +80,7 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
         onAddForm={addSofaToStage}
         languageCode={languageCode}
         armrestWidthOverride={effectiveArmrestWidth}
+        armrestName={defaultArmrest?.name}
       />
 
       {/* Interactive Konva stage with toolbar controls */}

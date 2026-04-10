@@ -17,6 +17,7 @@ type SofaModulesDrawerProps = {
   onAddForm: (sofaForm: SofaFormExtended) => void
   languageCode: string
   armrestWidthOverride?: number
+  armrestName?: string
   selectedFabric: SelectedFabricState
   currency?: string
 }
@@ -81,9 +82,14 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
   const rawH = dims.length ?? dims.height ?? 100
   const extraH = dims.extendable_part_length ?? 0
 
+  // Compute adjusted width: original width + armrest difference
+  const originalArmW = dims.armrest_width ?? 22
+  const armW = armrestWidthOverride ?? originalArmW
+  const armDiff = armW - originalArmW
+  const adjustedW = rawW + armDiff
+
   // Stage sized to fit element + metric arrows on left/top + extendable part below
-  const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
-  const stageW = Math.round((rawW + armW * 2 + metricSpace + 30) * scale)
+  const stageW = Math.round((adjustedW + armW * 2 + metricSpace + 30) * scale)
   const stageH = Math.round((rawH + extraH + metricSpace + 10) * scale)
 
   if (!SofaElement) {
@@ -119,7 +125,8 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
           scale={scale}
           stageWidth={stageW}
           stageHeight={stageH}
-          armrestWidth={armrestWidthOverride ?? dims.armrest_width}
+          armrestWidth={dims.armrest_width}
+          armrestWidthOverride={armrestWidthOverride}
           backrestWidth={dims.backrest_width}
           mattressWidth={dims.mattress_width}
           mattressLength={dims.mattress_length}
@@ -153,7 +160,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
         <HorizontalMetric
           x={metricSpace + armW}
           y={metricSpace - 50}
-          width={rawW}
+          width={adjustedW}
           height={null}
           fontSize={18}
         />
@@ -186,10 +193,12 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
 
   // Card width matches Konva stage width so preview fits perfectly
   const rawW = dims.width ?? 100
-  const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
+  const originalArmW = dims.armrest_width ?? 22
+  const armW = armrestWidthOverride ?? originalArmW
+  const adjustedW = rawW + (armW - originalArmW)
   const scale = 0.65
   const metricSpace = 45
-  const cardWidth = Math.max(Math.round((rawW + armW * 2 + metricSpace + 30) * scale), 100)
+  const cardWidth = Math.max(Math.round((adjustedW + armW * 2 + metricSpace + 30) * scale), 100)
 
   return (
     <div
@@ -230,6 +239,7 @@ const SofaModulesDrawer = ({
   sofaForms,
   onAddForm,
   armrestWidthOverride,
+  armrestName,
   selectedFabric,
   currency,
 }: SofaModulesDrawerProps) => {
@@ -361,6 +371,12 @@ const SofaModulesDrawer = ({
                       className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1e2a3a] focus:border-[#1e2a3a]"
                     />
                   </div>
+
+                  {armrestName && (
+                    <div className="px-6 py-2 text-xs text-gray-500 border-b">
+                      Sizes shown with armrest: <span className="font-medium text-gray-700">{armrestName}</span>
+                    </div>
+                  )}
 
                   {/* Scrollable module list */}
                   <div className="flex-1 overflow-y-auto px-6 pb-6">

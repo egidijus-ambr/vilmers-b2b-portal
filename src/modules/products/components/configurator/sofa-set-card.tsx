@@ -2,6 +2,9 @@
 
 import React, { useCallback, useRef, useState } from "react"
 import SofaDrawingPreview from "@configurator/SofaDrawingElements/SofaDrawingPreview"
+import { getArmrestsPosition, ArmrestsPosition } from "@configurator/lib/sofa-shape-utils"
+import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
+import { useConfigurator } from "@configurator/context/configurator-context"
 import { useTranslations } from "@lib/i18n"
 
 // =============================================
@@ -21,7 +24,9 @@ interface SetDimensions {
   width: number
   length: number
   height: number
-  armrest_width: number
+  armrest_width_left: number | null
+  armrest_width_right: number | null
+  extendable_part_length: number
 }
 
 interface SetPart {
@@ -32,16 +37,17 @@ interface SetPart {
 // Helpers
 // =============================================
 
-function extractSetData(combination: any[]): {
+function extractSetData(combination: any[], armrestOverrides: Array<{ armrestWidth: number; moduleId: string }>): {
   dimensions: SetDimensions
   parts: SetPart[]
 } {
   let totalWidth = 0
   let maxLength = 0
   let firstHeight = 0
-  let firstArmrestWidth = 0
   let heightSet = false
-  let armrestSet = false
+  let armrestLeftWidth: number | null = null
+  let armrestRightWidth: number | null = null
+  let maxExtension = 0
   const parts: SetPart[] = []
 
   for (const node of combination) {
@@ -50,16 +56,39 @@ function extractSetData(combination: any[]): {
 
     const dims = sofaForm.dimensions
     if (dims) {
-      totalWidth += dims.width || 0
+      // Use the node's armrestPosition attr (set by the shape's getDimensions)
+      // rather than guessing from type string — open-end modules end in L/R
+      // but don't actually have armrests
+      const nodeArmPos = node?.attrs?.armrestPosition || ""
+      let armsCount = 0
+      if (nodeArmPos === "LR") armsCount = 2
+      else if (nodeArmPos === "L" || nodeArmPos === "R") armsCount = 1
+
+      const originalArmWidth = dims.armrest_width || 0
+      const override = armrestOverrides.find((o: any) => o.moduleId === node?.attrs?.id) ?? armrestOverrides.find((o: any) => !o.moduleId)
+      const newArmWidth = override?.armrestWidth ?? originalArmWidth
+      const adjustedWidth = (dims.width || 0) + armsCount * (newArmWidth - originalArmWidth)
+      totalWidth += adjustedWidth
+
       if ((dims.length || 0) > maxLength) maxLength = dims.length || 0
       if (!heightSet) {
         firstHeight = dims.height || 0
         heightSet = true
       }
-      if (!armrestSet) {
-        firstArmrestWidth = dims.armrest_width || 0
-        armrestSet = true
+
+      // Armrest width — only for modules that actually have armrests
+      if (armsCount > 0) {
+        if ((nodeArmPos === "L" || nodeArmPos === "LR") && armrestLeftWidth === null) {
+          armrestLeftWidth = newArmWidth
+        }
+        if ((nodeArmPos === "R" || nodeArmPos === "LR") && armrestRightWidth === null) {
+          armrestRightWidth = newArmWidth
+        }
       }
+
+      // Extension height
+      const ext = dims.extendable_part_length || 0
+      if (ext > maxExtension) maxExtension = ext
     }
 
     const partName = sofaForm.name || sofaForm.code
@@ -73,7 +102,9 @@ function extractSetData(combination: any[]): {
       width: totalWidth,
       length: maxLength,
       height: firstHeight,
-      armrest_width: firstArmrestWidth,
+      armrest_width_left: armrestLeftWidth,
+      armrest_width_right: armrestRightWidth,
+      extendable_part_length: maxExtension,
     },
     parts,
   }
@@ -83,7 +114,11 @@ function extractSetData(combination: any[]): {
 // Component
 // =============================================
 
-const SofaSetCard = ({ combination, setIndex, totalSets }: SofaSetCardProps) => {
+const SofaSetCard = ({
+  combination,
+  setIndex,
+  totalSets,
+}: SofaSetCardProps) => {
   const { t } = useTranslations("account")
   const [drawingEl, setDrawingEl] = useState<HTMLDivElement | null>(null)
   const drawingRef = useRef<HTMLDivElement | null>(null)
@@ -93,14 +128,37 @@ const SofaSetCard = ({ combination, setIndex, totalSets }: SofaSetCardProps) => 
     setDrawingEl(node)
   }, [])
 
-  const { dimensions, parts } = extractSetData(combination)
+  const { state: configuratorState } = useConfigurator()
+  const armrestWidthOverrides = React.useMemo(() => {
+    return getArmrestOverides(configuratorState?.selectedAdditionalComponents ?? [])
+  }, [configuratorState?.selectedAdditionalComponents])
 
-  const dimensionRows = [
+  const { dimensions, parts } = extractSetData(combination, armrestWidthOverrides)
+
+  // Build dimension rows with conditional armrest and extension lines
+  const baseRows: { label: string; value: number }[] = [
     { label: t("width"), value: dimensions.width },
     { label: t("length"), value: dimensions.length },
     { label: t("height"), value: dimensions.height },
-    { label: t("armrest-width"), value: dimensions.armrest_width },
-  ].filter((r) => r.value > 0)
+  ]
+
+  // Extension height
+  if (dimensions.extendable_part_length > 0) {
+    baseRows.push({ label: t("extension-height"), value: dimensions.extendable_part_length })
+  }
+
+  // Armrest width — conditional on module types
+  const { armrest_width_left: awL, armrest_width_right: awR } = dimensions
+  if (awL !== null && awR !== null && awL !== awR) {
+    baseRows.push({ label: `${t("armrest-width")} (L)`, value: awL })
+    baseRows.push({ label: `${t("armrest-width")} (R)`, value: awR })
+  } else if (awL !== null) {
+    baseRows.push({ label: t("armrest-width"), value: awL })
+  } else if (awR !== null) {
+    baseRows.push({ label: t("armrest-width"), value: awR })
+  }
+
+  const dimensionRows = baseRows.filter((r) => r.value > 0)
 
   return (
     <div className="border border-gray-100 rounded-lg p-3">
@@ -119,7 +177,8 @@ const SofaSetCard = ({ combination, setIndex, totalSets }: SofaSetCardProps) => 
             <SofaDrawingPreview
               combination={combination}
               parentRef={drawingRef as React.RefObject<HTMLElement>}
-              metricPadding={50}
+              metricPadding={110}
+              armrestWidthOverrides={armrestWidthOverrides}
             />
           )}
         </div>
