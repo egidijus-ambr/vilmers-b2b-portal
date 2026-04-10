@@ -118,8 +118,6 @@ export function getValidComponents(
   if (sofaCombinations && sofaCombinations.length > 0) {
     const isSpecializedGroup =
       group.code.startsWith("armrest") ||
-      group.code.startsWith("legs") ||
-      group.code === "legs" ||
       group.code.startsWith("threads")
 
     if (!isSpecializedGroup) {
@@ -186,6 +184,14 @@ export function getValidComponents(
       return hasFabricPrice || hasExtraPrice
     })
   }
+
+  // Deduplicate components by code (keep first occurrence)
+  const seenCodes = new Set<string>()
+  filtered = filtered.filter((component) => {
+    if (seenCodes.has(component.code)) return false
+    seenCodes.add(component.code)
+    return true
+  })
 
   return filtered
 }

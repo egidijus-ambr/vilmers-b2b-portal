@@ -8,6 +8,11 @@ import type {
   SelectedFabricState,
 } from "./types"
 
+/** Extract leg codes from metadata.legs which can be objects or strings */
+function extractLegCodes(legs: any[]): string[] {
+  return legs.map((leg: any) => leg.code ?? leg)
+}
+
 // =============================================
 // Thread-Color Group Logic
 // =============================================
@@ -248,7 +253,7 @@ export function computeArmrestAndLegsGroups(
                 if (armrestsLegs && armrestsLegs.length > 0) {
                   return armrestsLegs.includes(component.code)
                 }
-                const legsCodes = model.legs ?? []
+                const legsCodes = model.legs ? extractLegCodes(model.legs) : []
                 return legsCodes.includes(component.code)
               }
             )
@@ -299,16 +304,54 @@ export function computeArmrestAndLegsGroups(
           }
           modified.push(filteredLegsGroup)
         } else {
-          // No armrests_legs_map data — keep original unfiltered
-          modified.push(originalLegsGroup)
+          // No armrests_legs_map — fall back to intersection of metadata.legs
+          const legsFromMetadata: string[][] = []
+          for (const model of modelWithArmrestInUse) {
+            if (model.legs && model.legs.length > 0) {
+              legsFromMetadata.push(extractLegCodes(model.legs))
+            }
+          }
+          if (legsFromMetadata.length > 0) {
+            let commonLegs = legsFromMetadata[0]
+            for (let i = 1; i < legsFromMetadata.length; i++) {
+              commonLegs = commonLegs.filter((code) =>
+                legsFromMetadata[i].includes(code)
+              )
+            }
+            modified.push({
+              ...originalLegsGroup,
+              additional_components: originalLegsGroup.additional_components.filter(
+                (component) => commonLegs.includes(component.code)
+              ),
+            })
+          } else {
+            modified.push(originalLegsGroup)
+          }
         }
       }
     }
   } else if (modelWithArmrestInUse.length === 1) {
-    // Single armrest module — keep original legs group
+    // Single armrest module — filter legs by metadata and armrest selection
     const originalLegsGroup = originalGroups.find((g) => g.code === "legs")
     if (originalLegsGroup && !modified.some((g) => g.code === "legs")) {
-      modified.push(originalLegsGroup)
+      const model = modelWithArmrestInUse[0]
+      const selectedArm = selectedComponents.find(
+        (c) => c.groupCode === "armrest-" + model.code
+      )
+      const armrestLegs = selectedArm ? model.armrests_legs_map?.[selectedArm.code] : undefined
+      const metadataLegCodes = model.legs ? extractLegCodes(model.legs) : undefined
+      const filterCodes = (armrestLegs && armrestLegs.length > 0) ? armrestLegs : metadataLegCodes
+
+      if (filterCodes && filterCodes.length > 0) {
+        modified.push({
+          ...originalLegsGroup,
+          additional_components: originalLegsGroup.additional_components.filter(
+            (component) => filterCodes.includes(component.code)
+          ),
+        })
+      } else {
+        modified.push(originalLegsGroup)
+      }
     }
   } else {
     // No armrest modules — check for additionalLegs fallback
