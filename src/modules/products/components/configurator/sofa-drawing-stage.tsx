@@ -545,6 +545,9 @@ const SofaDrawingStage = ({
         })
       }
 
+      const GAP = 30
+      const allRects = [...placedItems, ...layerRects]
+
       for (let attempt = 0; attempt < 100; attempt++) {
         const candidate = {
           x: candidateX,
@@ -553,18 +556,24 @@ const SofaDrawingStage = ({
           height: sofaObject.height,
         }
 
-        const hasOverlap =
-          placedItems.some((placed) => rectsOverlap(candidate, placed)) ||
-          layerRects.some((rect) => rectsOverlap(candidate, rect))
+        // Find the rightmost edge of any overlapping item
+        let maxRightEdge = 0
+        let hasOverlap = false
+        for (const rect of allRects) {
+          if (rectsOverlap(candidate, rect)) {
+            hasOverlap = true
+            maxRightEdge = Math.max(maxRightEdge, rect.x + rect.width)
+          }
+        }
 
         if (!hasOverlap) break
 
-        // Shift right
-        candidateX += 80
+        // Jump past the rightmost overlapping item + consistent gap
+        candidateX = maxRightEdge + GAP
         // If going off-screen, wrap to next row
         if (candidateX + sofaObject.width > stageW) {
           candidateX = startX
-          candidateY += 80
+          candidateY = candidateY + sofaObject.height + GAP
         }
         // If also going off-screen vertically, stop trying
         if (candidateY + sofaObject.height > stageH) {
