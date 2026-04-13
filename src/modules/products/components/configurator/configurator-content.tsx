@@ -7,6 +7,7 @@ import { useConfigurator } from "@configurator/context/configurator-context"
 import { useConfiguratorData } from "@configurator/hooks/use-configurator-data"
 import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price"
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
+import { buildIntegrationConfiguration } from "@/configurator/lib/vilmers"
 import { getStepsForProduct } from "@configurator/lib/component-utils"
 import { useCustomer } from "@lib/context/customer-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
@@ -15,6 +16,7 @@ import ComponentSection from "./component-section"
 import ConfiguratorStepper from "./configurator-stepper"
 import PriceFooter from "./price-footer"
 import ConfigurationSummary from "./configuration-summary"
+import ProductPreviewSection from "./product-preview-section"
 
 // Konva requires browser DOM — must be loaded client-only
 const SofaShapeSection = dynamic(() => import("./sofa-shape-section"), {
@@ -60,6 +62,9 @@ const ConfiguratorContent = ({
   useDynamicGroups(state.originalComponentGroups)
 
   const isSofa = productData?.advanced_product?.advanced_product_type === "SOFA"
+  const hasFabricSelection =
+    productData?.advanced_product?.advanced_product_type === "SOFA" ||
+    productData?.advanced_product?.advanced_product_type === "OTHER_WITH_FABRICS"
 
   // Compute visible steps
   const steps = useMemo(
@@ -68,9 +73,10 @@ const ConfiguratorContent = ({
         state.additionalComponentGroups,
         state.selectedAdditionalComponents,
         state.sofaCombinations,
-        isSofa
+        isSofa,
+        hasFabricSelection
       ),
-    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa]
+    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection]
   )
 
   const currentStep = Math.min(state.currentStep, Math.max(steps.length - 1, 0))
@@ -126,9 +132,7 @@ const ConfiguratorContent = ({
           {isSofa ? (
             <SofaShapeSection languageCode={languageCode} />
           ) : (
-            <div className="bg-gray-50 p-8 flex items-center justify-center min-h-[400px]">
-              <p className="text-gray-400 text-sm">Product preview</p>
-            </div>
+            <ProductPreviewSection languageCode={languageCode} />
           )}
           <ConfigurationSummary languageCode={languageCode} />
         </div>
@@ -224,9 +228,9 @@ const ConfiguratorContent = ({
               groups={currentStepDef.groups}
               languageCode={languageCode}
             />
-          ) : (
+          ) : hasFabricSelection ? (
             <FabricSection languageCode={languageCode} />
-          )}
+          ) : null}
 
           {/* Step navigation buttons */}
           {steps.length > 1 && (
@@ -275,8 +279,9 @@ const ConfiguratorContent = ({
       <PriceFooter
         currency={productData.manufacturer?.currency ?? "EUR"}
         onAddToCart={() => {
-          // TODO: Cart integration — Phase 6
-          console.log("Add to cart — to be implemented")
+          const integrationConfig = buildIntegrationConfiguration(state, priceListId)
+          console.log("integration_configuration", integrationConfig)
+          // TODO: Cart integration — send integrationConfig as integration_configuration in cart payload
         }}
       />
     </div>
