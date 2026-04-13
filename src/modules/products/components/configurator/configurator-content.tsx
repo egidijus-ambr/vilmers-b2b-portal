@@ -7,7 +7,7 @@ import { useConfigurator } from "@configurator/context/configurator-context"
 import { useConfiguratorData } from "@configurator/hooks/use-configurator-data"
 import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price"
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
-import { buildIntegrationConfiguration } from "@/configurator/lib/vilmers"
+import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
 import { getStepsForProduct } from "@configurator/lib/component-utils"
 import { useCustomer } from "@lib/context/customer-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
@@ -66,6 +66,16 @@ const ConfiguratorContent = ({
     productData?.advanced_product?.advanced_product_type === "SOFA" ||
     productData?.advanced_product?.advanced_product_type === "OTHER_WITH_FABRICS"
 
+  // Customer pre-selected component group codes — these groups are hidden from the configurator
+  const customerComponentGroupCodes = useMemo(() => {
+    const codes = new Set<string>()
+    customer?.additional_components?.forEach((ac: any) => {
+      const groupCode = ac.additionalComponent?.additional_component_group?.code
+      if (groupCode) codes.add(groupCode)
+    })
+    return codes
+  }, [customer?.additional_components])
+
   // Compute visible steps
   const steps = useMemo(
     () =>
@@ -74,9 +84,10 @@ const ConfiguratorContent = ({
         state.selectedAdditionalComponents,
         state.sofaCombinations,
         isSofa,
-        hasFabricSelection
+        hasFabricSelection,
+        customerComponentGroupCodes
       ),
-    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection]
+    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, customerComponentGroupCodes]
   )
 
   const currentStep = Math.min(state.currentStep, Math.max(steps.length - 1, 0))
@@ -85,6 +96,78 @@ const ConfiguratorContent = ({
   // Sofa modules validation: at least one module must be on canvas
   const hasSofaModules = (state.sofaCombinations?.length ?? 0) > 0 &&
     state.sofaCombinations!.some((group) => group.length > 0)
+
+  // Build configuration strings for display below canvas
+  const configStrings = useMemo(() => {
+    const configs = buildIntegrationConfiguration(state, priceListId)
+    const result: { setId: number; itemId: number; module: string; configString: string }[] = []
+    configs?.forEach((set: any, setIndex: number) => {
+      set?.forEach((item: any, itemIndex: number) => {
+        result.push({
+          setId: setIndex + 1,
+          itemId: itemIndex + 1,
+          module: item.moduleCode,
+          configString: item.configuration,
+        })
+      })
+    })
+    return result
+  }, [
+    state.sofaCombinations,
+    state.selectedFabric,
+    state.selectedAdditionalComponents,
+    state.selectedFabricCombination,
+    state.pricesPerModule,
+    state.productData,
+    priceListId,
+  ])
+
+  // Calculate total volume from sofa modules + additional components
+  const totalVolume = useMemo(() => {
+    // Sum sofa module volumes from Konva node attrs
+    const sofaVolume = state.sofaCombinations.reduce(
+      (acc, combination) =>
+        acc +
+        combination.reduce((innerAcc, item) => {
+          const pkgDims = item.attrs?.originalSofaForm?.package_dimensions
+          if (!pkgDims) return innerAcc
+          return (
+            innerAcc +
+            pkgDims.reduce(
+              (sum: number, pkg: { volume: number }) => sum + pkg.volume,
+              0
+            )
+          )
+        }, 0),
+      0
+    )
+
+    // Sum additional component volumes (double for LR armrests)
+    const componentsVolume = state.selectedAdditionalComponents.reduce(
+      (acc, component) => {
+        const pkgDims = component.package_dimensions
+        if (!pkgDims) return acc
+        let count = 1
+        if (
+          component.groupCode?.startsWith("armrest") &&
+          component.groupNameOverride?.endsWith(" LR")
+        ) {
+          count = 2
+        }
+        return (
+          acc +
+          pkgDims.reduce(
+            (sum: number, pkg: { volume: number }) => sum + pkg.volume,
+            0
+          ) *
+            count
+        )
+      },
+      0
+    )
+
+    return sofaVolume + componentsVolume
+  }, [state.sofaCombinations, state.selectedAdditionalComponents])
 
   const canNavigateToStep = useCallback(
     (index: number) => {
@@ -133,6 +216,17 @@ const ConfiguratorContent = ({
             <SofaShapeSection languageCode={languageCode} />
           ) : (
             <ProductPreviewSection languageCode={languageCode} />
+          )}
+          {configStrings.length > 0 && (
+            <div className="flex flex-col gap-0.5 px-1 py-2">
+              {configStrings.map((config, i) => (
+                <p key={i} className="text-xs font-mono text-gray-500">
+                  <span className="font-semibold text-gray-700">{config.setId}.{config.itemId}</span>{" "}
+                  <span className="font-semibold text-gray-700">{config.module}</span>{" "}
+                  {config.configString}
+                </p>
+              ))}
+            </div>
           )}
           <ConfigurationSummary languageCode={languageCode} />
         </div>
@@ -202,6 +296,14 @@ const ConfiguratorContent = ({
               <div>
                 <span className="text-gray-400">Total price:</span>{" "}
                 {state.totalPrice != null ? state.totalPrice : <span className="text-red-400">null</span>}
+              </div>
+              <div>
+                <span className="text-gray-400">Customer components:</span>{" "}
+                {customer?.additional_components?.length > 0
+                  ? customer.additional_components.map((ac: any) =>
+                      `${ac.additionalComponent?.additional_component_group?.code}: ${ac.additionalComponent?.code}`
+                    ).join(", ")
+                  : <span className="text-red-400">none</span>}
               </div>
             </div>
           </details>
@@ -278,6 +380,7 @@ const ConfiguratorContent = ({
       {/* Sticky price footer */}
       <PriceFooter
         currency={productData.manufacturer?.currency ?? "EUR"}
+        volume={totalVolume}
         onAddToCart={() => {
           const integrationConfig = buildIntegrationConfiguration(state, priceListId)
           console.log("integration_configuration", integrationConfig)
