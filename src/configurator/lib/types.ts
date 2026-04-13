@@ -188,6 +188,7 @@ export interface AdditionalComponent {
   color?: { id: number; hex: string; background: string | null } | null
   linked_components_source?: LinkedComponent[] | null
   metadata?: Record<string, any> | null
+  package_dimensions?: { volume: number }[] | null
 }
 
 export interface ComponentPriceFabricCategory {
@@ -257,7 +258,7 @@ export interface LinkedComponent {
   }
 }
 
-export type StepId = 'sofa-modules' | 'fabric' | 'armrest-legs' | 'design' | 'threads'
+export type StepId = 'sofa-modules' | 'fabric' | 'armrest-legs' | 'design' | 'threads' | 'logo' | 'other'
 
 export interface StepDefinition {
   id: StepId
