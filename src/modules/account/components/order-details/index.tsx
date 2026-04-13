@@ -1,18 +1,12 @@
 "use client"
 
-import React, { useState } from "react"
 import {
   OrderDetail,
   OrderDetailAddress,
-  OrderDetailItem,
-  AdditionalComponentDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
-import {
-  TableHeader,
-  TableHeaderCell,
-} from "@modules/common/components/table-header"
 import { useTranslations, useI18n } from "@lib/i18n"
-import SofaConfigurationDetail from "@modules/common/components/sofa-configuration"
+import ProductItemsTable from "@modules/common/components/product-items-table"
+import { orderDetailItemToProductItemRow } from "@modules/common/components/product-items-table/mappers"
 import InfoRow from "@modules/common/components/info-row"
 import { useCustomer } from "@lib/context/customer-context"
 import { BuildingStorefront } from "@medusajs/icons"
@@ -29,36 +23,13 @@ const localeMap: Record<string, string> = {
   da: "da-DK",
 }
 
-const isAdvancedItem = (item: OrderDetailItem): boolean => {
-  if (!item.cart_item?.advanced_product_type) return false
-  const hasFabrics = (item.cart_item?.cartItemFabrics?.length ?? 0) > 0
-  const hasComponents = (item.cart_item?.additional_components?.length ?? 0) > 0
-  const hasConfigurations =
-    Array.isArray(item.metadata?.configurations) &&
-    item.metadata.configurations.length > 0
-  return hasFabrics || hasComponents || hasConfigurations
-}
-
 const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
   const { t } = useTranslations("account")
   const { language } = useI18n()
   const { customer } = useCustomer()
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
   // Check if user is an agent or admin
   const isAgent = customer?.role === "agent" || customer?.role === "admin"
-
-  const toggleItemExpand = (itemId: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev)
-      if (next.has(itemId)) {
-        next.delete(itemId)
-      } else {
-        next.add(itemId)
-      }
-      return next
-    })
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(
@@ -68,18 +39,6 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
         month: "numeric",
         year: "numeric",
       }
-    )
-  }
-
-  const getPaymentMethodName = (): string => {
-    if (!order.payment_method?.payment_method_profiles?.length) return "-"
-    const profile = order.payment_method.payment_method_profiles.find(
-      (p) => p.language.toLowerCase() === language
-    )
-    return (
-      profile?.title ||
-      order.payment_method.payment_method_profiles[0]?.title ||
-      "-"
     )
   }
 
@@ -96,76 +55,6 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
       firstItem.shipping_method.shipping_method_profiles[0]?.title ||
       "-"
     )
-  }
-
-  const getItemProductName = (item: OrderDetailItem): string => {
-    const container = item.cart_item?.product_container
-    if (container?.single_product?.product_profiles?.length) {
-      const profile = container.single_product.product_profiles.find(
-        (p) => p.language.toLowerCase() === language
-      )
-      return (
-        profile?.name ||
-        container.single_product.product_profiles[0]?.name ||
-        "-"
-      )
-    }
-    if (container?.advanced_product?.advanced_product_profiles?.length) {
-      const profile = container.advanced_product.advanced_product_profiles.find(
-        (p) => p.language.toLowerCase() === language
-      )
-      return (
-        profile?.name ||
-        container.advanced_product.advanced_product_profiles[0]?.name ||
-        "-"
-      )
-    }
-    return "-"
-  }
-
-  const getItemImage = (item: OrderDetailItem): string | null => {
-    const container = item.cart_item?.product_container
-    const images =
-      container?.single_product?.images || container?.advanced_product?.images
-    if (!images?.length) return null
-    return images[0].src_xs || images[0].src_thumbnail || images[0].src
-  }
-
-  const getComponentName = (component: AdditionalComponentDetail): string => {
-    const profile = component.additional_component_profiles?.find(
-      (p) => p.language.toLowerCase() === language
-    )
-    return (
-      profile?.name || component.additional_component_profiles?.[0]?.name || "-"
-    )
-  }
-
-  const getComponentGroupName = (
-    component: AdditionalComponentDetail
-  ): string => {
-    const profile =
-      component.additional_component_group?.additional_component_group_profiles?.find(
-        (p) => p.language.toLowerCase() === language
-      )
-    return (
-      profile?.name ||
-      component.additional_component_group
-        ?.additional_component_group_profiles?.[0]?.name ||
-      ""
-    )
-  }
-
-  const getVisibleComponents = (
-    item: OrderDetailItem
-  ): AdditionalComponentDetail[] => {
-    const components = item.cart_item?.additional_components
-    if (!components?.length) return []
-    const excludedCodes = ["shooting", "threads-type", "market", "direction"]
-    return components.filter((c) => {
-      const groupCode = c.additional_component_group?.code
-      if (groupCode && excludedCodes.includes(groupCode)) return false
-      return true
-    })
   }
 
   const formatPrice = (price: number): string => {
@@ -386,408 +275,102 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
       {/* Order Items Table */}
       {orderItems.length > 0 && (
         <>
-          {/* Mobile: card layout */}
-          <div className="small:hidden bg-white">
-            <div className="bg-gold-20 px-4 py-4">
-              <span className="text-sm font-medium text-dark-blue">
-                {t("order-items")}
-              </span>
-            </div>
-            <div className="px-4">
-            {orderItems.map((item, index) => {
-              const imageSrc = getItemImage(item)
-              const productName = getItemProductName(item)
-              const lineTotal = item.price * item.quantity
-              const hasAdvancedConfig = isAdvancedItem(item)
-              const isExpanded = expandedItems.has(item.id)
-              return (
-                <React.Fragment key={item.id}>
-                  {index > 0 && (
-                    <div className="border-t border-gray-100" />
-                  )}
-                  <div className="flex gap-4 py-4">
-                    <div className="w-[100px] h-[100px] flex-shrink-0 bg-gray-100 overflow-hidden">
-                      {imageSrc ? (
-                        <img
-                          src={imageSrc}
-                          alt={productName}
-                          width={100}
-                          height={100}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                          {t("no-image")}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col text-sm min-w-0">
-                      <p className="text-dark-blue font-medium">
-                        {productName}
-                      </p>
-                      {item.reference && (
-                        <p className="text-dark-blue-70 text-xs mt-0.5">
-                          {t("customer-reference")}: {item.reference}
-                        </p>
-                      )}
-                      <p className="text-dark-blue-70 mt-1">
-                        {t("quantity-short")}: {item.quantity}
-                      </p>
-                      <p className="text-dark-blue font-medium mt-1">
-                        {formatPrice(lineTotal)}
-                      </p>
-                      {!hasAdvancedConfig &&
-                        getVisibleComponents(item).length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            {getVisibleComponents(item).map((comp) => {
-                              const groupName = getComponentGroupName(comp)
-                              const compName = getComponentName(comp)
-                              return (
-                                <div
-                                  key={comp.id}
-                                  className="flex items-center gap-2 text-xs"
-                                >
-                                  {comp.image?.src_thumbnail ? (
-                                    <img
-                                      src={comp.image.src_thumbnail}
-                                      alt={compName}
-                                      className="w-6 h-6 rounded object-cover flex-shrink-0"
-                                    />
-                                  ) : comp.color?.hex ? (
-                                    <span
-                                      className="w-6 h-6 rounded flex-shrink-0 border border-gray-200"
-                                      style={{
-                                        backgroundColor: comp.color.hex,
-                                      }}
-                                    />
-                                  ) : null}
-                                  <span className="text-dark-blue-70">
-                                    {groupName ? `${groupName}: ` : ""}
-                                    <span className="text-dark-blue font-medium">
-                                      {compName}
-                                    </span>
-                                  </span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                      {hasAdvancedConfig && (
-                        <button
-                          type="button"
-                          onClick={() => toggleItemExpand(item.id)}
-                          className="mt-2 text-xs text-dark-blue-70 hover:text-dark-blue underline underline-offset-2 transition-colors self-start"
-                        >
-                          {isExpanded
-                            ? t("hide-configuration")
-                            : t("show-configuration")}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {hasAdvancedConfig && isExpanded && (
-                    <SofaConfigurationDetail item={item} />
-                  )}
-                </React.Fragment>
-              )
-            })}
-            </div>
+          <ProductItemsTable
+            items={orderItems.map((item) =>
+              orderDetailItemToProductItemRow(item, language)
+            )}
+            formatPrice={formatPrice}
+            showVolume={showVolume}
+            translations={{
+              orderItems: t("order-items"),
+              unitPrice: t("unit-price"),
+              quantity: t("quantity-short"),
+              volume: t("volume"),
+              total: t("total"),
+              noImage: t("no-image"),
+              customerReference: t("customer-reference"),
+              showConfiguration: t("show-configuration"),
+              hideConfiguration: t("hide-configuration"),
+            }}
+          />
 
-            {/* Summary - Mobile */}
-            <div className="px-4 py-4 border-t border-gray-200">
-              <div className="flex flex-col items-end gap-2 text-sm">
-                {showVolume && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">{t("volume")}</span>
-                    <span className="text-dark-blue font-medium">
-                      {orderItems
-                        .reduce((sum, item) => sum + (item.volume || 0), 0)
-                        .toFixed(2)}{" "}
-                      m³
-                    </span>
-                  </div>
-                )}
+          {/* Summary */}
+          <div className="bg-white px-4 py-4 border-t border-gray-200">
+            <div className="flex flex-col items-end gap-2 text-sm">
+              {showVolume && (
                 <div className="flex justify-between w-full max-w-xs">
-                  <span className="text-dark-blue-70">
-                    {t("subtotal")} ({orderItems.length}{" "}
-                    {t("items").toLowerCase()})
-                  </span>
+                  <span className="text-dark-blue-70">{t("volume")}</span>
                   <span className="text-dark-blue font-medium">
-                    {formatPrice(subtotal)}
+                    {orderItems
+                      .reduce((sum, item) => sum + (item.volume || 0), 0)
+                      .toFixed(2)}{" "}
+                    m³
                   </span>
                 </div>
-                {order.total_price_confirmed != null && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">
-                      {t("confirmed-price")}
-                    </span>
-                    <span className="text-dark-blue font-medium">
-                      {formatPrice(order.total_price_confirmed)}
-                    </span>
-                  </div>
-                )}
-                {showShipping && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">
-                      {t("shipping-cost")}
-                    </span>
-                    <span className="text-dark-blue font-medium">
-                      {formatPrice(shippingTotal)}
-                    </span>
-                  </div>
-                )}
-                {showPvm && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">{t("vat")} 21%</span>
-                    <span className="text-dark-blue font-medium">
-                      {formatPrice(vatAmount)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between w-full max-w-xs border-t border-gray-200 pt-2 mt-1">
-                  <span className="text-dark-blue font-semibold">
-                    {showPvm ? t("total-incl-tax") : t("total").toUpperCase()}
-                  </span>
-                  <span
-                    className={`font-semibold flex items-center gap-1 ${
-                      order.total_price_confirmed != null
-                        ? "text-green-700"
-                        : "text-dark-blue"
-                    }`}
-                  >
-                    {order.total_price_confirmed != null && (
-                      <svg
-                        className="h-4 w-4 text-green-600"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                    {formatPrice(order.total_price_confirmed ?? grandTotal)}
-                  </span>
-                </div>
+              )}
+              <div className="flex justify-between w-full max-w-xs">
+                <span className="text-dark-blue-70">
+                  {t("subtotal")} ({orderItems.length}{" "}
+                  {t("items").toLowerCase()})
+                </span>
+                <span className="text-dark-blue font-medium">
+                  {formatPrice(subtotal)}
+                </span>
               </div>
-            </div>
-          </div>
-
-          {/* Desktop: table layout */}
-          <div className="hidden small:block bg-white">
-            <table className="w-full text-sm">
-              <TableHeader>
-                <TableHeaderCell>{t("order-items")}</TableHeaderCell>
-                <TableHeaderCell>{t("unit-price")}</TableHeaderCell>
-                <TableHeaderCell>{t("quantity-short")}</TableHeaderCell>
-                {showVolume && <TableHeaderCell>{t("volume")}</TableHeaderCell>}
-                <TableHeaderCell align="right">{t("total")}</TableHeaderCell>
-              </TableHeader>
-              <tbody className="">
-                {orderItems.map((item, index) => {
-                  const imageSrc = getItemImage(item)
-                  const productName = getItemProductName(item)
-                  const lineTotal = item.price * item.quantity
-                  const hasAdvancedConfig = isAdvancedItem(item)
-                  const isExpanded = expandedItems.has(item.id)
-                  const colCount = 4 + (showVolume ? 1 : 0)
-                  return (
-                    <React.Fragment key={item.id}>
-                      {index > 0 && (
-                        <tr>
-                          <td colSpan={colCount} className="px-4 py-0">
-                            <div className="border-t border-gray-200" />
-                          </td>
-                        </tr>
-                      )}
-                      <tr className="align-top">
-                        <td className="px-4 py-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-[150px] h-[150px] flex-shrink-0 bg-gray-100 overflow-hidden">
-                              {imageSrc ? (
-                                <img
-                                  src={imageSrc}
-                                  alt={productName}
-                                  width={150}
-                                  height={150}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                  {t("no-image")}
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-dark-blue font-medium">
-                                {productName}
-                              </p>
-                              {item.reference && (
-                                <p className="text-dark-blue-70 text-xs mt-0.5">
-                                  {t("customer-reference")}: {item.reference}
-                                </p>
-                              )}
-                              {!hasAdvancedConfig &&
-                                getVisibleComponents(item).length > 0 && (
-                                  <div className="mt-2 space-y-1">
-                                    {getVisibleComponents(item).map((comp) => {
-                                      const groupName =
-                                        getComponentGroupName(comp)
-                                      const compName = getComponentName(comp)
-                                      return (
-                                        <div
-                                          key={comp.id}
-                                          className="flex items-center gap-2 text-xs"
-                                        >
-                                          {comp.image?.src_thumbnail ? (
-                                            <img
-                                              src={comp.image.src_thumbnail}
-                                              alt={compName}
-                                              className="w-6 h-6 rounded object-cover flex-shrink-0"
-                                            />
-                                          ) : comp.color?.hex ? (
-                                            <span
-                                              className="w-6 h-6 rounded flex-shrink-0 border border-gray-200"
-                                              style={{
-                                                backgroundColor: comp.color.hex,
-                                              }}
-                                            />
-                                          ) : null}
-                                          <span className="text-dark-blue-70">
-                                            {groupName ? `${groupName}: ` : ""}
-                                            <span className="text-dark-blue font-medium">
-                                              {compName}
-                                            </span>
-                                          </span>
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                )}
-                              {hasAdvancedConfig && (
-                                <button
-                                  type="button"
-                                  onClick={() => toggleItemExpand(item.id)}
-                                  className="mt-2 text-xs text-dark-blue-70 hover:text-dark-blue underline underline-offset-2 transition-colors"
-                                >
-                                  {isExpanded
-                                    ? t("hide-configuration")
-                                    : t("show-configuration")}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-gray-900">
-                          {formatPrice(item.price)}
-                        </td>
-                        <td className="px-4 py-4 text-gray-900">
-                          {item.quantity}
-                        </td>
-                        {showVolume && (
-                          <td className="px-4 py-4 text-gray-900">
-                            {item.volume != null
-                              ? `${item.volume.toFixed(2)} m³`
-                              : "-"}
-                          </td>
-                        )}
-                        <td className="px-4 py-4 text-right text-gray-900 font-medium">
-                          {formatPrice(lineTotal)}
-                        </td>
-                      </tr>
-                      {hasAdvancedConfig && isExpanded && (
-                        <tr>
-                          <td colSpan={colCount} className="p-0">
-                            <SofaConfigurationDetail item={item} />
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  )
-                })}
-              </tbody>
-            </table>
-
-            {/* Summary - Desktop */}
-            <div className="px-4 py-4 border-t border-gray-200">
-              <div className="flex flex-col items-end gap-2 text-sm">
-                {showVolume && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">{t("volume")}</span>
-                    <span className="text-dark-blue font-medium">
-                      {orderItems
-                        .reduce((sum, item) => sum + (item.volume || 0), 0)
-                        .toFixed(2)}{" "}
-                      m³
-                    </span>
-                  </div>
-                )}
+              {order.total_price_confirmed != null && (
                 <div className="flex justify-between w-full max-w-xs">
                   <span className="text-dark-blue-70">
-                    {t("subtotal")} ({orderItems.length}{" "}
-                    {t("items").toLowerCase()})
+                    {t("confirmed-price")}
                   </span>
                   <span className="text-dark-blue font-medium">
-                    {formatPrice(subtotal)}
+                    {formatPrice(order.total_price_confirmed)}
                   </span>
                 </div>
-                {order.total_price_confirmed != null && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">
-                      {t("confirmed-price")}
-                    </span>
-                    <span className="text-dark-blue font-medium">
-                      {formatPrice(order.total_price_confirmed)}
-                    </span>
-                  </div>
-                )}
-                {showShipping && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">
-                      {t("shipping-cost")}
-                    </span>
-                    <span className="text-dark-blue font-medium">
-                      {formatPrice(shippingTotal)}
-                    </span>
-                  </div>
-                )}
-                {showPvm && (
-                  <div className="flex justify-between w-full max-w-xs">
-                    <span className="text-dark-blue-70">{t("vat")} 21%</span>
-                    <span className="text-dark-blue font-medium">
-                      {formatPrice(vatAmount)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between w-full max-w-xs border-t border-gray-200 pt-2 mt-1">
-                  <span className="text-dark-blue font-semibold">
-                    {showPvm ? t("total-incl-tax") : t("total").toUpperCase()}
+              )}
+              {showShipping && (
+                <div className="flex justify-between w-full max-w-xs">
+                  <span className="text-dark-blue-70">
+                    {t("shipping-cost")}
                   </span>
-                  <span
-                    className={`font-semibold flex items-center gap-1 ${
-                      order.total_price_confirmed != null
-                        ? "text-green-700"
-                        : "text-dark-blue"
-                    }`}
-                  >
-                    {order.total_price_confirmed != null && (
-                      <svg
-                        className="h-4 w-4 text-green-600"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                    {formatPrice(order.total_price_confirmed ?? grandTotal)}
+                  <span className="text-dark-blue font-medium">
+                    {formatPrice(shippingTotal)}
                   </span>
                 </div>
+              )}
+              {showPvm && (
+                <div className="flex justify-between w-full max-w-xs">
+                  <span className="text-dark-blue-70">{t("vat")} 21%</span>
+                  <span className="text-dark-blue font-medium">
+                    {formatPrice(vatAmount)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between w-full max-w-xs border-t border-gray-200 pt-2 mt-1">
+                <span className="text-dark-blue font-semibold">
+                  {showPvm ? t("total-incl-tax") : t("total").toUpperCase()}
+                </span>
+                <span
+                  className={`font-semibold flex items-center gap-1 ${
+                    order.total_price_confirmed != null
+                      ? "text-green-700"
+                      : "text-dark-blue"
+                  }`}
+                >
+                  {order.total_price_confirmed != null && (
+                    <svg
+                      className="h-4 w-4 text-green-600"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  )}
+                  {formatPrice(order.total_price_confirmed ?? grandTotal)}
+                </span>
               </div>
             </div>
           </div>
