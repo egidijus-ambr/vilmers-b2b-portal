@@ -12,7 +12,7 @@ import {
   TableHeaderCell,
 } from "@modules/common/components/table-header"
 import { useTranslations, useI18n } from "@lib/i18n"
-import SofaConfigurationDetail from "@modules/account/components/sofa-configuration"
+import SofaConfigurationDetail from "@modules/common/components/sofa-configuration"
 import InfoRow from "@modules/common/components/info-row"
 import { useCustomer } from "@lib/context/customer-context"
 import { BuildingStorefront } from "@medusajs/icons"
