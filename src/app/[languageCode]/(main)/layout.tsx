@@ -1,17 +1,14 @@
 import { Metadata } from "next"
 
-import { listCartOptions, retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getShopSettings } from "@lib/data/shop-settings"
 import { getBaseURL } from "@lib/util/env"
-import { StoreCartShippingOption } from "@medusajs/types"
-import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
-import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import { CustomerProvider } from "@lib/context/customer-context"
 import { ShopSettingsProvider } from "@lib/context/shop-settings-context"
+import { CartProvider } from "@lib/context/cart-context"
 import TawkToChat from "@modules/common/components/tawk-to-chat"
 import { listMenuCategories } from "@lib/data/categories"
 
@@ -42,15 +39,6 @@ export default async function PageLayout({
     shopSettings ? "shop settings found" : "no shop settings"
   )
 
-  const cart = await retrieveCart()
-  let shippingOptions: StoreCartShippingOption[] = []
-
-  if (cart) {
-    const { shipping_options } = await listCartOptions()
-
-    shippingOptions = shipping_options
-  }
-
   // Extract language from URL parameter
   const resolvedParams = await params
   const language = resolvedParams.languageCode as SupportedLanguage
@@ -62,21 +50,12 @@ export default async function PageLayout({
   return (
     <CustomerProvider customer={customer}>
       <ShopSettingsProvider initialShopSettings={shopSettings}>
-        <Nav customer={customer} categories={categories} />
-        {customer && cart && (
-          <CartMismatchBanner customer={customer} cart={cart} />
-        )}
-
-        {cart && (
-          <FreeShippingPriceNudge
-            variant="popup"
-            cart={cart}
-            shippingOptions={shippingOptions}
-          />
-        )}
-        {children}
-        <Footer language={validLanguage} />
-        {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
+        <CartProvider>
+          <Nav customer={customer} categories={categories} />
+          {children}
+          <Footer language={validLanguage} />
+          {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
+        </CartProvider>
       </ShopSettingsProvider>
     </CustomerProvider>
   )
