@@ -122,6 +122,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
   } = state
 
   const isSofa = productData?.advanced_product?.advanced_product_type === "SOFA"
+  const hasFabricSelection = productData?.advanced_product?.advanced_product_type === "SOFA" || productData?.advanced_product?.advanced_product_type === "OTHER_WITH_FABRICS"
 
   // --- Determine fabric visibility ---
   const hasSingleFabric =
@@ -152,6 +153,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
   // ==============================
 
   const renderFabrics = () => {
+    if (!hasFabricSelection) return null
     if (!hasFabrics) return null
 
     return (

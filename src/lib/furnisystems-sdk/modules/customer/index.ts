@@ -625,13 +625,9 @@ export class CustomerModule {
 
       const customerData = response.getMe
 
-      console.log("getMe response:", customerData)
-
       if (!customerData) {
         return null
       }
-
-      console.log("Customer data:", customerData)
 
       // Map the response to the Customer interface
       const customer: Customer = {
@@ -1067,11 +1063,12 @@ export class CustomerModule {
       })
 
       const directPalettes = response?.getMe?.fabric_palettes ?? []
-      const groupPalettes = response?.getMe?.customer_group?.fabric_palettes ?? []
+      const groupPalettes =
+        response?.getMe?.customer_group?.fabric_palettes ?? []
 
       // Merge and deduplicate by ID
       const allPalettes = [...directPalettes]
-      const existingIds = new Set(directPalettes.map(p => p.id))
+      const existingIds = new Set(directPalettes.map((p) => p.id))
       for (const palette of groupPalettes) {
         if (!existingIds.has(palette.id)) {
           allPalettes.push(palette)

@@ -89,12 +89,7 @@ export function getValidComponents(
   selectedComponents: SelectedComponent[],
   sofaCombinations?: any[][]
 ): AdditionalComponent[] {
-  // Filter out components hidden in configuration (customer preselected / locked)
-  let filtered = group.additional_components.filter((component: any) => {
-    const metadata = (component as any).metadata
-    if (metadata?.hidden_in_configuration === true) return false
-    return true
-  })
+  let filtered = [...group.additional_components]
 
   // Filter by conditions.onlyWithComponents
   filtered = filtered.filter((component) => {
@@ -171,7 +166,7 @@ export function getValidComponents(
       const hasExtraPrice =
         component.extra_price != null && component.extra_price > 0
 
-      if (!group.use_fabric_prices_for_components) {
+      if (group.use_fabric_prices_for_components === false) {
         return hasExtraPrice
       }
 
@@ -206,27 +201,40 @@ export function categorizeStep(groupCode: string): StepId {
   if (groupCode.startsWith("threads")) {
     return "threads"
   }
+  if (
+    groupCode.startsWith("logo") ||
+    groupCode === "shooting" ||
+    groupCode === "direction"
+  ) {
+    return "other"
+  }
   return "design"
 }
 
-const STEP_ORDER: StepId[] = ["sofa-modules", "fabric", "threads", "armrest-legs", "design"]
+const STEP_ORDER: StepId[] = ["sofa-modules", "fabric", "threads", "armrest-legs", "design", "other"]
 const STEP_LABELS: Record<StepId, string> = {
   "sofa-modules": "Sofa Modules",
   fabric: "Fabrics",
   threads: "Threads",
   "armrest-legs": "Armrest & Legs",
   design: "Design & Comfort",
+  logo: "Logo",
+  other: "Other",
 }
 
 /**
  * Compute which steps should be shown for this product.
- * Fabric step is always included. Other steps only if they have visible groups.
+ * Fabric and threads steps are only included when hasFabricSelection is true
+ * (i.e. advanced_product_type is SOFA or OTHER_WITH_FABRICS).
+ * Other steps only if they have visible groups.
  */
 export function getStepsForProduct(
   componentGroups: ComponentGroup[],
   selectedComponents: SelectedComponent[],
   sofaCombinations?: any[][],
-  isSofa?: boolean
+  isSofa?: boolean,
+  hasFabricSelection?: boolean,
+  customerComponentGroupCodes?: Set<string>
 ): StepDefinition[] {
   // Categorize groups into steps
   const stepGroups = new Map<StepId, ComponentGroup[]>()
@@ -236,6 +244,9 @@ export function getStepsForProduct(
 
     // Skip hidden groups for step visibility
     if (group.ui_type === "hidden") continue
+
+    // Skip groups where customer has a pre-selected component
+    if (customerComponentGroupCodes?.has(group.code)) continue
 
     // Check if group has >1 valid component
     const validComponents = getValidComponents(group, selectedComponents, sofaCombinations)
@@ -250,24 +261,45 @@ export function getStepsForProduct(
   // Build ordered steps
   const steps: StepDefinition[] = []
 
-  if (isSofa) {
-    steps.push({ id: "sofa-modules", label: STEP_LABELS["sofa-modules"], groups: [] })
-  }
+  // For sofa products: sofa-modules → fabric → threads → armrest-legs → design → logo
+  // For non-sofa products: design → armrest-legs → logo (fabric/threads only if hasFabricSelection)
+  const baseStepIds: StepId[] = isSofa
+    ? ["sofa-modules", "fabric", "threads", "armrest-legs", "design", "other"]
+    : ["design", "fabric", "threads", "armrest-legs", "other"]
 
-  steps.push({ id: "fabric", label: STEP_LABELS.fabric, groups: [] })
+  // Filter out fabric and threads steps when hasFabricSelection is false
+  const orderedStepIds = hasFabricSelection === false
+    ? baseStepIds.filter((id) => id !== "fabric" && id !== "threads")
+    : baseStepIds
 
-  for (const stepId of STEP_ORDER) {
-    if (stepId === "fabric" || stepId === "sofa-modules") continue
+  for (const stepId of orderedStepIds) {
+    if (stepId === "sofa-modules") {
+      steps.push({ id: "sofa-modules", label: STEP_LABELS["sofa-modules"], groups: [] })
+      continue
+    }
+    if (stepId === "fabric") {
+      steps.push({ id: "fabric", label: STEP_LABELS.fabric, groups: [] })
+      continue
+    }
     const groups = stepGroups.get(stepId)
     if (groups && groups.length > 0) {
-      const sortedGroups = groups.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      const sortedGroups = groups.sort((a, b) => {
+        const aIsModel = a.code.startsWith("model") ? 0 : 1
+        const bIsModel = b.code.startsWith("model") ? 0 : 1
+        if (aIsModel !== bIsModel) return aIsModel - bIsModel
+        return (a.order ?? 0) - (b.order ?? 0)
+      })
       const groupNames = sortedGroups
         .map((g) => g.additional_component_group_profiles?.[0]?.name)
         .filter(Boolean)
-      const label =
-        groupNames.length > 0
-          ? [...new Set(groupNames)].join(" & ")
-          : STEP_LABELS[stepId]
+      let label: string
+      if (stepId === "other" && sortedGroups.length > 1) {
+        label = STEP_LABELS.other
+      } else if (groupNames.length > 0) {
+        label = [...new Set(groupNames)].join(" & ")
+      } else {
+        label = STEP_LABELS[stepId]
+      }
       steps.push({ id: stepId, label, groups: sortedGroups })
     }
   }

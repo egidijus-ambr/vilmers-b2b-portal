@@ -292,6 +292,17 @@ export const GET_CONFIGURATOR_DATA = gql`
               backrest_width
               seat_height
               leg_height
+              seat_width
+              seat_depth
+              headboard_height
+              headboard_width
+              mattress_width
+              mattress_length
+              table_extended_lengh
+              table_top_thickness
+              table_leg_width
+              shade_height
+              shade_radius
               seat_sections
               backrest_sections
               extension_type

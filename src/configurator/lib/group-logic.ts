@@ -7,6 +7,7 @@ import type {
   SelectedComponent,
   SelectedFabricState,
 } from "./types"
+import { getValidComponents } from "./component-utils"
 
 /** Extract leg codes from metadata.legs which can be objects or strings */
 function extractLegCodes(legs: any[]): string[] {
@@ -483,20 +484,28 @@ export function buildSortedFabricGroups(
 
 /**
  * Select the default component from each group.
+ * Applies the same validity filtering as the drawer (getValidComponents) so
+ * the selected default is always present in the visible component list.
  * For armrest groups, picks the first component with armrest_width > 0
  * to avoid selecting "covered side" (width 0) options.
  */
 export function selectDefaultComponents(
-  componentGroups: ComponentGroup[]
+  componentGroups: ComponentGroup[],
+  existingSelections: SelectedComponent[] = [],
+  sofaCombinations: any[][] = []
 ): SelectedComponent[] {
   const selected: SelectedComponent[] = []
   for (const group of componentGroups) {
-    let component = group.additional_components?.[0]
+    // Get valid components using the same filtering as the drawer
+    const validComponents = getValidComponents(group, existingSelections, sofaCombinations)
+
+    // Fall back to raw first component if all got filtered out (matches storefront behavior)
+    let component = validComponents[0] ?? group.additional_components?.[0]
 
     // For armrest groups, prefer the first component with a positive width
-    if (group.code.startsWith("armrest") && group.additional_components?.length) {
+    if (group.code.startsWith("armrest") && validComponents.length) {
       component =
-        group.additional_components.find(
+        validComponents.find(
           (c) => (c.dimensions?.armrest_width ?? 0) > 0
         ) ?? component
     }

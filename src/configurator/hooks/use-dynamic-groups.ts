@@ -45,10 +45,24 @@ export function useDynamicGroups(
         additionalComponentGroups.map((g) => g.code)
       )
 
-      // Remove selected components for groups that no longer exist
-      const cleaned = selectedAdditionalComponents.filter((c) =>
-        validGroupCodes.has(c.groupCode)
-      )
+      // Remove selected components for groups that no longer exist,
+      // and replace any component whose code is no longer valid in its group
+      const cleaned = selectedAdditionalComponents
+        .filter((c) => validGroupCodes.has(c.groupCode))
+        .map((c) => {
+          const group = additionalComponentGroups.find((g) => g.code === c.groupCode)
+          if (!group) return c
+          const stillValid = group.additional_components.some((ac) => ac.code === c.code)
+          if (stillValid) return c
+          // Selected component no longer available in this group — pick first available
+          const replacement = group.additional_components[0]
+          if (!replacement) return c
+          return {
+            ...replacement,
+            groupCode: c.groupCode,
+            groupNameOverride: c.groupNameOverride,
+          }
+        })
 
       // Add defaults for new groups that don't have a selection
       const existingGroupCodes = new Set(cleaned.map((c) => c.groupCode))
@@ -57,7 +71,7 @@ export function useDynamicGroups(
       )
 
       const newDefaults = newGroups.length > 0
-        ? selectDefaultComponents(newGroups)
+        ? selectDefaultComponents(newGroups, state.selectedAdditionalComponents, state.sofaCombinations ?? [])
         : []
 
       const updated = [...cleaned, ...newDefaults]
@@ -86,7 +100,7 @@ export function useDynamicGroups(
     if (!isEqual(updated, additionalComponentGroups)) {
       dispatch({ type: "SET_COMPONENT_GROUPS", payload: updated })
     }
-  }, [sofaCombinations])
+  }, [sofaCombinations, selectedAdditionalComponents])
 
   // Recompute thread groups when fabric or components change
   useEffect(() => {
