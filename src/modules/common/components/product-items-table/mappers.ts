@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { OrderDetailItem } from "@lib/furnisystems-sdk/modules/customer/types"
+import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
 import { ProductItemRow } from "./types"
 
 export function cartLineItemToProductItemRow(
@@ -57,5 +58,57 @@ export function orderDetailItemToProductItemRow(
     volume: item.volume,
     isAdvanced,
     orderDetailItem: item,
+  }
+}
+
+export function furnisystemsCartItemToProductItemRow(
+  item: FurnisystemsCartItem,
+  language: string
+): ProductItemRow {
+  const container = item.product_container
+  const singleProduct = container?.single_product
+  const advancedProduct = container?.advanced_product
+
+  const profiles =
+    singleProduct?.product_profiles ||
+    advancedProduct?.advanced_product_profiles ||
+    []
+  const localProfile =
+    profiles.find((p) => p.language.toLowerCase() === language) || profiles[0]
+  const name = localProfile?.name || "-"
+
+  const images = singleProduct?.images || advancedProduct?.images
+  const image =
+    images?.[0]?.src_xs || images?.[0]?.src_thumbnail || images?.[0]?.src || undefined
+
+  const hasFabrics = (item.cartItemFabrics?.length ?? 0) > 0
+  const hasComponents = (item.additional_components?.length ?? 0) > 0
+  const isAdvanced =
+    !!item.advanced_product_type && (hasFabrics || hasComponents)
+
+  return {
+    id: String(item.id),
+    name,
+    image,
+    unitPrice: 0,
+    quantity: item.quantity ?? 1,
+    total: 0,
+    isAdvanced,
+    orderDetailItem: isAdvanced
+      ? {
+          cart_item: {
+            advanced_product_type: item.advanced_product_type,
+            selected_sofa_combinations: item.selected_sofa_combinations,
+            fabric_code: item.fabric_code,
+            fabric_group_name: item.fabric_group_name,
+            cartItemFabrics: item.cartItemFabrics,
+            product_container: item.product_container,
+            additional_components: item.additional_components,
+            fabricCombination: item.fabricCombination,
+            sofa_forms: item.sofa_forms,
+          },
+          metadata: {},
+        }
+      : undefined,
   }
 }
