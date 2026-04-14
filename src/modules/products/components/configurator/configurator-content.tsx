@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useMemo } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import { clx } from "@medusajs/ui"
 import { useConfigurator } from "@configurator/context/configurator-context"
@@ -18,6 +18,7 @@ import ConfiguratorStepper from "./configurator-stepper"
 import PriceFooter from "./price-footer"
 import ConfigurationSummary from "./configuration-summary"
 import ProductPreviewSection from "./product-preview-section"
+import Toast from "@modules/common/components/toast"
 
 // Konva requires browser DOM — must be loaded client-only
 const SofaShapeSection = dynamic(() => import("./sofa-shape-section"), {
@@ -45,6 +46,7 @@ const ConfiguratorContent = ({
   const { customer } = useCustomer()
   const { addItem } = useCart()
   const paletteIds = useCustomerPaletteIds()
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
   // Use customer's price list instead of hardcoded default
   const priceListId = customer?.price_listId
@@ -379,6 +381,14 @@ const ConfiguratorContent = ({
         </div>
       </div>
 
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Sticky price footer */}
       <PriceFooter
         currency={productData.manufacturer?.currency ?? "EUR"}
@@ -415,8 +425,9 @@ const ConfiguratorContent = ({
                     }))
                 : undefined,
             })
+            setToast({ message: "Item added to cart", type: "success" })
           } catch (error) {
-            console.error("Failed to add to cart:", error)
+            setToast({ message: "Failed to add item to cart", type: "error" })
           }
         }}
       />
