@@ -165,7 +165,7 @@ const ADD_ITEM_TO_CART = gql`
     $fabric_group_name: String
     $selected_sofa_combinations: String
     $additionalComponentIds: [Int!]
-    $cartItemFabrics: [CartItemFabricCreateInput]
+    $cartItemFabrics: [CartItemFabricInput]
   ) {
     addItemToCart(
       cartId: $cartId
