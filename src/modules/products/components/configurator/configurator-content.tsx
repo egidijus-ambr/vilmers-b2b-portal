@@ -10,6 +10,7 @@ import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
 import { getStepsForProduct } from "@configurator/lib/component-utils"
 import { useCustomer } from "@lib/context/customer-context"
+import { useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
 import FabricSection from "./fabric-section"
 import ComponentSection from "./component-section"
@@ -42,6 +43,7 @@ const ConfiguratorContent = ({
   isOpen,
 }: ConfiguratorContentProps) => {
   const { customer } = useCustomer()
+  const { addItem } = useCart()
   const paletteIds = useCustomerPaletteIds()
 
   // Use customer's price list instead of hardcoded default
@@ -381,10 +383,39 @@ const ConfiguratorContent = ({
       <PriceFooter
         currency={productData.manufacturer?.currency ?? "EUR"}
         volume={totalVolume}
-        onAddToCart={() => {
-          const integrationConfig = buildIntegrationConfiguration(state, priceListId)
-          console.log("integration_configuration", integrationConfig)
-          // TODO: Cart integration — send integrationConfig as integration_configuration in cart payload
+        onAddToCart={async () => {
+          if (!productData?.id) return
+
+          try {
+            await addItem({
+              productContainerId: productData.id,
+              product_type: productData.product_type || "SIMPLE_PRODUCT",
+              advanced_product_type: productData.advanced_product?.advanced_product_type,
+              quantity: state.quantity,
+              fabricId: state.selectedFabric.fabricObject?.id,
+              fabric_groupId: state.selectedFabric.fabricGroupObject?.id,
+              fabricCombinationId: state.selectedFabricCombination?.fabricCombination?.id,
+              fabric_code: state.selectedFabric.fabricObject?.code,
+              fabric_group_name: state.selectedFabric.fabricGroupObject?.name,
+              selected_sofa_combinations: state.sofaCombinations.length > 0
+                ? JSON.stringify(state.sofaCombinations)
+                : undefined,
+              additionalComponentIds: state.selectedAdditionalComponents
+                .filter((c) => c.id != null)
+                .map((c) => c.id),
+              cartItemFabrics: state.selectedFabric.combinationFabrics
+                ? Object.values(state.selectedFabric.combinationFabrics)
+                    .filter((f: any) => f?.fabricObject?.id)
+                    .map((f: any) => ({
+                      fabricId: f.fabricObject?.id,
+                      fabric_groupId: f.fabricGroupObject?.id,
+                      combination_optionId: f.combinationOptionId,
+                    }))
+                : undefined,
+            })
+          } catch (error) {
+            console.error("Failed to add to cart:", error)
+          }
         }}
       />
     </div>
