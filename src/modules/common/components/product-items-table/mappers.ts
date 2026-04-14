@@ -83,8 +83,22 @@ export function furnisystemsCartItemToProductItemRow(
 
   const hasFabrics = (item.cartItemFabrics?.length ?? 0) > 0
   const hasComponents = (item.additional_components?.length ?? 0) > 0
+  const hasSofaCombinations = !!item.selected_sofa_combinations
   const isAdvanced =
-    !!item.advanced_product_type && (hasFabrics || hasComponents)
+    !!item.advanced_product_type && (hasFabrics || hasComponents || hasSofaCombinations)
+
+  // Build metadata.configurations from selected_sofa_combinations so SofaConfigurationDetail renders
+  let configurations: any[] | undefined
+  if (hasSofaCombinations) {
+    try {
+      const combos = JSON.parse(item.selected_sofa_combinations!)
+      if (Array.isArray(combos)) {
+        // Create one configuration entry per sofa set with empty parts
+        // The Konva preview will still render from selected_sofa_combinations
+        configurations = combos.map(() => [])
+      }
+    } catch {}
+  }
 
   return {
     id: String(item.id),
@@ -107,7 +121,7 @@ export function furnisystemsCartItemToProductItemRow(
             fabricCombination: item.fabricCombination,
             sofa_forms: item.sofa_forms,
           },
-          metadata: {},
+          metadata: configurations ? { configurations } : {},
         }
       : undefined,
   }
