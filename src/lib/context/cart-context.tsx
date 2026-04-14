@@ -22,23 +22,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<FurnisystemsCart | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const customerAccountId = customer?.customer_account?.id
+  const customerId = customer?.id ? Number(customer.id) : undefined
 
   const refreshCart = useCallback(async () => {
-    if (!customerAccountId) {
+    if (!customerId) {
       setCart(null)
       return
     }
     setIsLoading(true)
     try {
-      const activeCart = await sdk.cart.getOrCreateActiveCart(customerAccountId)
+      const activeCart = await sdk.cart.getOrCreateActiveCart(customerId)
       setCart(activeCart)
     } catch (error) {
       console.error("[CartContext] Failed to fetch cart:", error)
     } finally {
       setIsLoading(false)
     }
-  }, [customerAccountId])
+  }, [customerId])
 
   useEffect(() => {
     refreshCart()

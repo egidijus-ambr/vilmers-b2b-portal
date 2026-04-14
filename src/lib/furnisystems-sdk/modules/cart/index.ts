@@ -135,12 +135,12 @@ const CART_ITEM_FRAGMENT = gql`
 
 const GET_OR_CREATE_ACTIVE_CART = gql`
   ${CART_ITEM_FRAGMENT}
-  query GetOrCreateActiveCart($customerAccountId: String!) {
-    getOrCreateActiveCart(customerAccountId: $customerAccountId) {
+  query GetOrCreateActiveCart($customerId: Int!) {
+    getOrCreateActiveCart(customerId: $customerId) {
       id
       name
       isActive
-      customerAccountId
+      customerId
       createdAt
       updatedAt
       items {
@@ -208,12 +208,12 @@ export class CartModule {
   constructor(private client: ApolloGraphQLClient) {}
 
   async getOrCreateActiveCart(
-    customerAccountId: string
+    customerId: number
   ): Promise<FurnisystemsCart> {
     const data = await this.client.query<{
       getOrCreateActiveCart: FurnisystemsCart
     }>(GET_OR_CREATE_ACTIVE_CART, {
-      variables: { customerAccountId },
+      variables: { customerId },
       fetchPolicy: "network-only",
     })
     return data.getOrCreateActiveCart

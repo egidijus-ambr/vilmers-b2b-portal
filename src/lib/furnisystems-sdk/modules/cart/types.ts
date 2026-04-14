@@ -2,7 +2,7 @@ export interface FurnisystemsCart {
   id: number
   name: string | null
   isActive: boolean
-  customerAccountId: string
+  customerId: number
   items: FurnisystemsCartItem[]
   createdAt: string
   updatedAt: string
