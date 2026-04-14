@@ -10,6 +10,8 @@ const CART_ITEM_FRAGMENT = gql`
   fragment CartItemFields on CartItem {
     id
     quantity
+    price
+    volume
     product_type
     advanced_product_type
     fabric_code
@@ -158,6 +160,8 @@ const ADD_ITEM_TO_CART = gql`
     $product_type: ProductType!
     $advanced_product_type: AdvancedProductType
     $quantity: Int
+    $price: Float
+    $volume: Float
     $fabricId: Int
     $fabric_groupId: Int
     $fabricCombinationId: Int
@@ -173,6 +177,8 @@ const ADD_ITEM_TO_CART = gql`
       product_type: $product_type
       advanced_product_type: $advanced_product_type
       quantity: $quantity
+      price: $price
+      volume: $volume
       fabricId: $fabricId
       fabric_groupId: $fabric_groupId
       fabricCombinationId: $fabricCombinationId
@@ -232,6 +238,8 @@ export class CartModule {
         product_type: input.product_type,
         advanced_product_type: input.advanced_product_type || null,
         quantity: input.quantity,
+        price: input.price || null,
+        volume: input.volume || null,
         fabricId: input.fabricId || null,
         fabric_groupId: input.fabric_groupId || null,
         fabricCombinationId: input.fabricCombinationId || null,

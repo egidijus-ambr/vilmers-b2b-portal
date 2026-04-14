@@ -11,6 +11,8 @@ export interface FurnisystemsCart {
 export interface FurnisystemsCartItem {
   id: number
   quantity: number | null
+  price: number | null
+  volume: number | null
   product_type: string
   advanced_product_type: string | null
   fabric_code: string | null
@@ -73,6 +75,8 @@ export interface AddCartItemInput {
   product_type: string
   advanced_product_type?: string
   quantity: number
+  price?: number
+  volume?: number
   fabricId?: number
   fabric_groupId?: number
   fabricCombinationId?: number

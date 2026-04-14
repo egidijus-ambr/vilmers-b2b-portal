@@ -392,6 +392,8 @@ const ConfiguratorContent = ({
               product_type: productData.product_type || "SIMPLE_PRODUCT",
               advanced_product_type: productData.advanced_product?.advanced_product_type,
               quantity: state.quantity,
+              price: state.totalPrice ?? undefined,
+              volume: totalVolume ?? undefined,
               fabricId: state.selectedFabric.fabricObject?.id,
               fabric_groupId: state.selectedFabric.fabricGroupObject?.id,
               fabricCombinationId: state.selectedFabricCombination?.fabricCombination?.id,

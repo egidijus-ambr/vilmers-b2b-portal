@@ -104,9 +104,10 @@ export function furnisystemsCartItemToProductItemRow(
     id: String(item.id),
     name,
     image,
-    unitPrice: 0,
+    unitPrice: item.price ?? 0,
     quantity: item.quantity ?? 1,
-    total: 0,
+    total: (item.price ?? 0) * (item.quantity ?? 1),
+    volume: item.volume ?? undefined,
     isAdvanced,
     orderDetailItem: isAdvanced
       ? {
