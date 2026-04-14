@@ -44,7 +44,7 @@ const ConfiguratorContent = ({
   isOpen,
 }: ConfiguratorContentProps) => {
   const { customer } = useCustomer()
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const paletteIds = useCustomerPaletteIds()
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
@@ -385,6 +385,8 @@ const ConfiguratorContent = ({
         <Toast
           message={toast.message}
           type={toast.type}
+          cartItemCount={toast.type === "success" ? items.length : undefined}
+          cartHref={toast.type === "success" ? `/${languageCode}/cart` : undefined}
           onClose={() => setToast(null)}
         />
       )}
