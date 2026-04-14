@@ -29,7 +29,7 @@ const ItemsTemplate = () => {
 
   const showVolume = process.env.NEXT_PUBLIC_SHOW_VOLUME === "true"
 
-  const mappedItems = items
+  const mappedItems = [...items]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .map((item) => furnisystemsCartItemToProductItemRow(item, language))
 
