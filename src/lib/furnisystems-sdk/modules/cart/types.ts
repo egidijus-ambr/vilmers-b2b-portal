@@ -1,124 +1,84 @@
-import { BaseEntity, Address, Money, Region } from "../../types/common"
-
-export interface Cart extends BaseEntity {
-  region_id: string
-  region?: Region
-  customer_id?: string
-  email?: string
-  items: CartItem[]
-  shipping_address?: Address
-  billing_address?: Address
-  shipping_methods?: ShippingMethod[]
-  payment_sessions?: PaymentSession[]
-  total: number
-  subtotal: number
-  tax_total: number
-  shipping_total: number
-  discount_total: number
-  currency_code: string
-  promotions?: Promotion[]
+export interface FurnisystemsCart {
+  id: number
+  name: string | null
+  isActive: boolean
+  customerAccountId: string
+  items: FurnisystemsCartItem[]
+  createdAt: string
+  updatedAt: string
 }
 
-export interface CartItem extends BaseEntity {
-  cart_id: string
-  variant_id: string
-  product_id: string
-  title: string
-  description?: string
-  thumbnail?: string
-  quantity: number
-  unit_price: number
-  total: number
-  original_total: number
-  original_unit_price: number
-  metadata?: Record<string, any>
-  variant?: ProductVariant
-  product?: Product
-}
-
-export interface Product extends BaseEntity {
-  title: string
-  description?: string
-  handle: string
-  thumbnail?: string
-  images?: ProductImage[]
-  variants?: ProductVariant[]
-  tags?: ProductTag[]
-  metadata?: Record<string, any>
-}
-
-export interface ProductVariant extends BaseEntity {
-  title: string
-  sku?: string
-  product_id: string
-  prices?: ProductPrice[]
-  inventory_quantity?: number
-  metadata?: Record<string, any>
-}
-
-export interface ProductImage extends BaseEntity {
-  url: string
-  alt_text?: string
-}
-
-export interface ProductTag extends BaseEntity {
-  value: string
-}
-
-export interface ProductPrice extends BaseEntity {
-  amount: number
-  currency_code: string
-  variant_id: string
-}
-
-export interface ShippingMethod extends BaseEntity {
-  name: string
-  price: number
-  currency_code: string
-  option_id: string
-}
-
-export interface PaymentSession extends BaseEntity {
-  provider_id: string
-  amount: number
-  currency_code: string
-  status: string
-  data?: Record<string, any>
-}
-
-export interface Promotion extends BaseEntity {
-  code: string
-  type: string
-  value: number
-  description?: string
-}
-
-export interface CreateCartInput {
-  region_id: string
-  customer_id?: string
-  email?: string
-}
-
-export interface UpdateCartInput {
-  region_id?: string
-  email?: string
-  shipping_address?: Address
-  billing_address?: Address
-  promo_codes?: string[]
+export interface FurnisystemsCartItem {
+  id: number
+  quantity: number | null
+  product_type: string
+  advanced_product_type: string | null
+  fabric_code: string | null
+  fabric_group_name: string | null
+  selected_sofa_combinations: string | null
+  cartId: number | null
+  productContainerId: number | null
+  product_container: {
+    single_product?: {
+      images?: { src: string; src_xs?: string; src_thumbnail?: string }[]
+      product_profiles?: { name: string; language: string }[]
+    }
+    advanced_product?: {
+      images?: { src: string; src_xs?: string; src_thumbnail?: string }[]
+      advanced_product_profiles?: { name: string; language: string }[]
+      dimensions?: Record<string, number | null> | null
+    }
+  } | null
+  additional_components: {
+    id: number
+    code?: string
+    additional_component_profiles?: { name: string; material_name?: string; language: string }[]
+    image?: { src: string; src_thumbnail?: string }
+    color?: { id: number; hex: string; background?: string }
+    additional_component_group?: {
+      id: number
+      code: string
+      additional_component_group_profiles?: { name: string; language: string }[]
+    }
+    dimensions?: { width?: number; height?: number; length?: number } | null
+  }[]
+  cartItemFabrics: {
+    id: number
+    fabric?: {
+      id: number
+      code: string
+      color_name?: string
+      image?: { src: string; src_thumbnail?: string }
+    }
+    fabric_group?: {
+      id: number
+      code?: string
+      type?: string
+      fabric_group_profiles?: { language: string; name: string }[]
+    }
+    combination_option?: {
+      fabricCombinationOptionProfiles?: { language: string; name: string }[]
+    }
+  }[]
+  sofa_forms: { id: number; name?: string; code?: string; dimensions?: any }[]
+  fabric_group: any | null
+  fabric: any | null
+  fabricCombination: { image?: { src?: string; src_xs?: string; src_thumbnail?: string } } | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface AddCartItemInput {
-  variant_id: string
+  productContainerId: number
+  product_type: string
+  advanced_product_type?: string
   quantity: number
-  metadata?: Record<string, any>
-}
-
-export interface UpdateCartItemInput {
-  quantity: number
-  metadata?: Record<string, any>
-}
-
-export interface InitiatePaymentSessionInput {
-  provider_id: string
-  data?: Record<string, any>
+  fabricId?: number
+  fabric_groupId?: number
+  fabricCombinationId?: number
+  fabric_code?: string
+  fabric_group_name?: string
+  selected_sofa_combinations?: string
+  additionalComponentIds?: number[]
+  cartItemFabrics?: { fabricId?: number; fabric_groupId?: number; combination_optionId?: number }[]
 }
