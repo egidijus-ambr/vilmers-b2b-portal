@@ -39,9 +39,17 @@ export default function Checkout() {
   }
 
   return (
-    <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
-      <CheckoutForm />
-      <CartSummary />
+    <div className="pb-12">
+      <div className="grid grid-cols-1 small:grid-cols-3 gap-6">
+        <div className="small:col-span-2">
+          <CheckoutForm />
+        </div>
+        <div className="relative">
+          <div className="flex flex-col gap-y-8 sticky top-[120px]">
+            <CartSummary />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
