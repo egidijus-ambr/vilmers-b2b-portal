@@ -5,7 +5,7 @@ import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { useParams, useRouter } from "next/navigation"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
-import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
+import CartSummary from "@modules/cart/components/cart-summary"
 
 export default function Checkout() {
   const { items, isLoading } = useCart()
@@ -41,7 +41,7 @@ export default function Checkout() {
   return (
     <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-40 py-12">
       <CheckoutForm />
-      <CheckoutSummary />
+      <CartSummary />
     </div>
   )
 }
