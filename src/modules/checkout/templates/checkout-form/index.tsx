@@ -2,10 +2,9 @@
 
 import { useState, useCallback, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { sdk } from "@lib/config"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
-import { GET_ADDITIONAL_ADDRESS, CREATE_ORDER } from "@modules/checkout/queries/checkout-queries"
+import { fetchCustomerAddresses, placeOrder } from "@lib/data/checkout"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
 import { Address } from "@modules/checkout/components/address-select"
 import Button from "@modules/common/components/button"
@@ -39,21 +38,7 @@ export default function CheckoutForm() {
 
   useEffect(() => {
     if (!customer?.id) return
-    sdk.getApolloClient()
-      .query({
-        query: GET_ADDITIONAL_ADDRESS,
-        variables: { customerId: Number(customer.id) },
-        fetchPolicy: "network-only",
-      })
-      .then((result: any) => {
-        const data = result.data?.getAddresses
-        if (data?.addresses) {
-          setAddresses(data.addresses)
-        }
-      })
-      .catch((err: any) => {
-        console.error("Failed to fetch addresses:", err)
-      })
+    fetchCustomerAddresses(Number(customer.id)).then(setAddresses)
   }, [customer?.id])
 
   const handleAddressReady = useCallback(
@@ -85,43 +70,41 @@ export default function CheckoutForm() {
     }))
 
     try {
-      const result = await sdk.getApolloClient().mutate({
-        mutation: CREATE_ORDER,
-        variables: {
-          phoneNumber: customer?.phone || "",
-          shipping_country: addressData.country,
-          billing_country: addressData.country,
-          shipping_address_1: addressData.address_1,
-          billing_address_1: addressData.address_1,
-          shipping_address_2: addressData.address_2 || "",
-          billing_address_2: addressData.address_2 || "",
-          shipping_city: addressData.city,
-          billing_city: addressData.city,
-          shipping_postal_code: addressData.postal_code,
-          billing_postal_code: addressData.postal_code,
-          shipping_state_region: addressData.state_region || "",
-          discount_applied: 0,
-          sub_total_price: totalPrice,
-          total_shipping_price: 0,
-          total_price_without_VAT: totalPrice,
-          total_price: totalPrice,
-          email: customer?.email || "",
-          name: customer?.name || "",
-          surname: customer?.surname || "",
-          order_items: orderItems,
-          company_name: customer?.b2b_company_name || "",
-          buying_as_company: true,
-          order_locale: languageCode.toUpperCase(),
-          hostname: window.location.hostname,
-          price_multiplier: 1,
-          order_type: "b2b",
-          customer_accountId: customer?.id ? String(customer.id) : undefined,
-        },
+      const result = await placeOrder({
+        phoneNumber: customer?.phone || "",
+        shipping_country: addressData.country,
+        billing_country: addressData.country,
+        shipping_address_1: addressData.address_1,
+        billing_address_1: addressData.address_1,
+        shipping_address_2: addressData.address_2 || "",
+        billing_address_2: addressData.address_2 || "",
+        shipping_city: addressData.city,
+        billing_city: addressData.city,
+        shipping_postal_code: addressData.postal_code,
+        billing_postal_code: addressData.postal_code,
+        shipping_state_region: addressData.state_region || "",
+        discount_applied: 0,
+        sub_total_price: totalPrice,
+        total_shipping_price: 0,
+        total_price_without_VAT: totalPrice,
+        total_price: totalPrice,
+        email: customer?.email || "",
+        name: customer?.name || "",
+        surname: customer?.surname || "",
+        order_items: orderItems,
+        company_name: customer?.b2b_company_name || "",
+        buying_as_company: true,
+        order_locale: languageCode.toUpperCase(),
+        hostname: window.location.hostname,
+        price_multiplier: 1,
+        order_type: "b2b",
+        customer_accountId: customer?.id ? String(customer.id) : undefined,
       })
 
-      const orderId = result.data?.createNewOrder?.id
-      if (orderId) {
-        router.push(`/${languageCode}/order/${orderId}/confirmed`)
+      if (result.success && result.orderId) {
+        router.push(`/${languageCode}/order/${result.orderId}/confirmed`)
+      } else {
+        setError(result.error || "Failed to place order. Please try again.")
       }
     } catch (err: any) {
       setError(err.message || "Failed to place order. Please try again.")
