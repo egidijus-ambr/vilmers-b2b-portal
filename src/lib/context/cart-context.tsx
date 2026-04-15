@@ -21,13 +21,14 @@ const CartContext = createContext<CartContextValue | undefined>(undefined)
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { customer } = useCustomer()
   const [cart, setCart] = useState<FurnisystemsCart | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const customerId = customer?.id ? Number(customer.id) : undefined
 
   const refreshCart = useCallback(async () => {
     if (!customerId) {
       setCart(null)
+      setIsLoading(false)
       return
     }
     setIsLoading(true)

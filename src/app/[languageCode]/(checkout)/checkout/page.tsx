@@ -1,8 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
-import { useParams, redirect } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CheckoutSummary from "@modules/checkout/templates/checkout-summary"
 
@@ -10,15 +11,20 @@ export default function Checkout() {
   const { items, isLoading } = useCart()
   const { customer } = useCustomer()
   const params = useParams()
+  const router = useRouter()
   const languageCode = params.languageCode as string
 
-  if (!isLoading && items.length === 0) {
-    redirect(`/${languageCode}/store`)
-  }
+  useEffect(() => {
+    if (!isLoading && items.length === 0) {
+      router.replace(`/${languageCode}/store`)
+    }
+  }, [isLoading, items.length, languageCode, router])
 
-  if (!customer) {
-    redirect(`/${languageCode}/account`)
-  }
+  useEffect(() => {
+    if (!customer) {
+      router.replace(`/${languageCode}/account`)
+    }
+  }, [customer, languageCode, router])
 
   if (isLoading) {
     return (
@@ -26,6 +32,10 @@ export default function Checkout() {
         <div className="text-ui-fg-subtle">Loading...</div>
       </div>
     )
+  }
+
+  if (items.length === 0 || !customer) {
+    return null
   }
 
   return (

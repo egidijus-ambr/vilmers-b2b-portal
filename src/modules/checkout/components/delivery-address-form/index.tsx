@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import AddressSelect, { Address } from "@modules/checkout/components/address-select"
 import SearchInput from "@modules/common/components/search-input"
@@ -57,11 +57,28 @@ export default function DeliveryAddressForm({
     register("state_region")
   }, [register])
 
-  const formValues = watch()
+  // Use a ref to call onAddressReady without causing infinite loops
+  const onAddressReadyRef = useRef(onAddressReady)
+  onAddressReadyRef.current = onAddressReady
 
   useEffect(() => {
-    onAddressReady(formValues, mode === "select" ? selectedAddressId !== null : isValid)
-  }, [formValues, isValid, selectedAddressId, mode])
+    const subscription = watch((formValues) => {
+      onAddressReadyRef.current(
+        formValues as AddressFormData,
+        mode === "select" ? selectedAddressId !== null : isValid
+      )
+    })
+    return () => subscription.unsubscribe()
+  }, [watch, mode, selectedAddressId, isValid])
+
+  // Also notify on mode/selection changes
+  useEffect(() => {
+    const currentValues = watch() as unknown as AddressFormData
+    onAddressReadyRef.current(
+      currentValues,
+      mode === "select" ? selectedAddressId !== null : isValid
+    )
+  }, [mode, selectedAddressId, isValid])
 
   function handleSelectAddress(addr: Address) {
     setSelectedAddressId(addr.id)
