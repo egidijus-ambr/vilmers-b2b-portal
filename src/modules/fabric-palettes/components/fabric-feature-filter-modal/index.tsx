@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { clx } from "@medusajs/ui"
 import X from "@modules/common/icons/x"
+import Button from "@modules/common/components/button"
 import type {
   FabricPaletteDetail,
   FabricFeatureDetail,
@@ -377,19 +378,15 @@ export default function FabricFeatureFilterModal({
 
                   {/* Sticky footer */}
                   <div className="flex flex-col gap-3 px-8 py-6 border-t border-gray-200 bg-gold-10">
-                    <button
+                    <Button
                       onClick={apply}
-                      className="w-full bg-dark-blue text-white py-4 text-sm font-medium rounded-full hover:opacity-90 transition-opacity"
                       data-testid="apply-fabric-feature-filters-button"
                     >
                       {labels.showResults} ({totalCount})
-                    </button>
-                    <button
-                      onClick={clearAll}
-                      className="w-full border border-dark-blue text-dark-blue py-3 text-sm font-medium rounded-full hover:bg-gray-50 transition-colors"
-                    >
+                    </Button>
+                    <Button variant="secondary" onClick={clearAll}>
                       {labels.clearAll}
-                    </button>
+                    </Button>
                   </div>
                 </Dialog.Panel>
               </Transition.Child>
