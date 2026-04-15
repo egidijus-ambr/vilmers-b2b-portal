@@ -12,6 +12,9 @@ import { getStepsForProduct } from "@configurator/lib/component-utils"
 import { useCustomer } from "@lib/context/customer-context"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
+import { useTranslations } from "@lib/i18n"
+import ReferenceStep from "./reference-step"
+import { MissingReferenceModal } from "./missing-reference-modal"
 import FabricSection from "./fabric-section"
 import ComponentSection from "./component-section"
 import ConfiguratorStepper from "./configurator-stepper"
@@ -47,6 +50,8 @@ const ConfiguratorContent = ({
   const { addItem, items } = useCart()
   const paletteIds = useCustomerPaletteIds()
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const [showReferenceModal, setShowReferenceModal] = useState(false)
+  const { t } = useTranslations("account")
 
   // Use customer's price list instead of hardcoded default
   const priceListId = customer?.price_listId
@@ -82,8 +87,8 @@ const ConfiguratorContent = ({
 
   // Compute visible steps
   const steps = useMemo(
-    () =>
-      getStepsForProduct(
+    () => [
+      ...getStepsForProduct(
         state.additionalComponentGroups,
         state.selectedAdditionalComponents,
         state.sofaCombinations,
@@ -91,7 +96,9 @@ const ConfiguratorContent = ({
         hasFabricSelection,
         customerComponentGroupCodes
       ),
-    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, customerComponentGroupCodes]
+      { id: "reference" as any, label: t("customer-reference"), groups: [] },
+    ],
+    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, customerComponentGroupCodes, t]
   )
 
   const currentStep = Math.min(state.currentStep, Math.max(steps.length - 1, 0))
@@ -172,6 +179,44 @@ const ConfiguratorContent = ({
 
     return sofaVolume + componentsVolume
   }, [state.sofaCombinations, state.selectedAdditionalComponents])
+
+  const handleAddToCart = useCallback(async (reference: string) => {
+    if (!productData?.id) return
+    try {
+      await addItem({
+        productContainerId: productData.id,
+        product_type: productData.product_type || "SIMPLE_PRODUCT",
+        advanced_product_type: productData.advanced_product?.advanced_product_type,
+        quantity: state.quantity,
+        price: state.totalPrice ?? undefined,
+        volume: totalVolume ?? undefined,
+        fabricId: state.selectedFabric.fabricObject?.id,
+        fabric_groupId: state.selectedFabric.fabricGroupObject?.id,
+        fabricCombinationId: state.selectedFabricCombination?.fabricCombination?.id,
+        fabric_code: state.selectedFabric.fabricObject?.code,
+        fabric_group_name: state.selectedFabric.fabricGroupObject?.name,
+        selected_sofa_combinations: state.sofaCombinations.length > 0
+          ? JSON.stringify(state.sofaCombinations)
+          : undefined,
+        additionalComponentIds: state.selectedAdditionalComponents
+          .filter((c) => c.id != null)
+          .map((c) => c.id),
+        cartItemFabrics: state.selectedFabric.combinationFabrics
+          ? Object.values(state.selectedFabric.combinationFabrics)
+              .filter((f: any) => f?.fabricObject?.id)
+              .map((f: any) => ({
+                fabricId: f.fabricObject?.id,
+                fabric_groupId: f.fabricGroupObject?.id,
+                combination_optionId: f.combinationOptionId,
+              }))
+          : undefined,
+        customerReference: reference,
+      })
+      setToast({ message: "Item added to cart", type: "success" })
+    } catch (error) {
+      setToast({ message: "Failed to add item to cart", type: "error" })
+    }
+  }, [productData, state, totalVolume, addItem])
 
   const canNavigateToStep = useCallback(
     (index: number) => {
@@ -313,13 +358,22 @@ const ConfiguratorContent = ({
           </details>
 
           {/* Step content */}
-          {currentStepDef?.id === "sofa-modules" ? (
+          {currentStepDef?.id === "reference" ? (
+            <ReferenceStep />
+          ) : currentStepDef?.id === "sofa-modules" ? (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Sofa Modules</h3>
               <p className="text-sm text-gray-500">
                 Select and arrange sofa modules on the canvas to build your configuration.
               </p>
-              {!hasSofaModules && (
+              {paletteIds.length === 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+                  <p className="text-sm text-amber-700">
+                    You don't have a fabric palette assigned. Without a palette you won't be able to see module prices, pick a fabric, or place an order. Please contact your manager.
+                  </p>
+                </div>
+              )}
+              {paletteIds.length > 0 && !hasSofaModules && (
                 <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
                   <p className="text-sm text-amber-700">
                     Please add at least one sofa module to continue.
@@ -396,42 +450,22 @@ const ConfiguratorContent = ({
         currency={productData.manufacturer?.currency ?? "EUR"}
         volume={totalVolume}
         onAddToCart={async () => {
-          if (!productData?.id) return
-
-          try {
-            await addItem({
-              productContainerId: productData.id,
-              product_type: productData.product_type || "SIMPLE_PRODUCT",
-              advanced_product_type: productData.advanced_product?.advanced_product_type,
-              quantity: state.quantity,
-              price: state.totalPrice ?? undefined,
-              volume: totalVolume ?? undefined,
-              fabricId: state.selectedFabric.fabricObject?.id,
-              fabric_groupId: state.selectedFabric.fabricGroupObject?.id,
-              fabricCombinationId: state.selectedFabricCombination?.fabricCombination?.id,
-              fabric_code: state.selectedFabric.fabricObject?.code,
-              fabric_group_name: state.selectedFabric.fabricGroupObject?.name,
-              selected_sofa_combinations: state.sofaCombinations.length > 0
-                ? JSON.stringify(state.sofaCombinations)
-                : undefined,
-              additionalComponentIds: state.selectedAdditionalComponents
-                .filter((c) => c.id != null)
-                .map((c) => c.id),
-              cartItemFabrics: state.selectedFabric.combinationFabrics
-                ? Object.values(state.selectedFabric.combinationFabrics)
-                    .filter((f: any) => f?.fabricObject?.id)
-                    .map((f: any) => ({
-                      fabricId: f.fabricObject?.id,
-                      fabric_groupId: f.fabricGroupObject?.id,
-                      combination_optionId: f.combinationOptionId,
-                    }))
-                : undefined,
-            })
-            setToast({ message: "Item added to cart", type: "success" })
-          } catch (error) {
-            setToast({ message: "Failed to add item to cart", type: "error" })
+          if (!state.referenceText.trim()) {
+            setShowReferenceModal(true)
+            return
           }
+          await handleAddToCart(state.referenceText.trim())
         }}
+      />
+
+      <MissingReferenceModal
+        isOpen={showReferenceModal}
+        onConfirm={async (reference) => {
+          setShowReferenceModal(false)
+          dispatch({ type: "SET_REFERENCE_TEXT", payload: reference })
+          await handleAddToCart(reference)
+        }}
+        onCancel={() => setShowReferenceModal(false)}
       />
     </div>
   )
