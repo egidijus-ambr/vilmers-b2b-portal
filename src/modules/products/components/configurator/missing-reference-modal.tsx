@@ -49,16 +49,15 @@ export function MissingReferenceModal({
         />
       </Modal.Body>
       <Modal.Footer>
-        <div className="flex flex-col gap-3 mt-6">
+        <div className="flex gap-3 mt-6">
+          <Button variant="outline" onClick={onCancel}>
+            {t("cancel")}
+          </Button>
           <Button
-            className="w-full"
             onClick={() => onConfirm(reference.trim())}
             disabled={!reference.trim()}
           >
             {t("add-to-cart")}
-          </Button>
-          <Button variant="outline" className="w-full" onClick={onCancel}>
-            {t("cancel")}
           </Button>
         </div>
       </Modal.Footer>
