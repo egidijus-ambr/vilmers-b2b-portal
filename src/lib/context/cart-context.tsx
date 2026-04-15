@@ -11,6 +11,7 @@ interface CartContextValue {
   isLoading: boolean
   addItem: (input: AddCartItemInput) => Promise<void>
   updateItemQuantity: (cartItemId: number, quantity: number) => Promise<void>
+  updateItemReference: (cartItemId: number, reference: string) => Promise<void>
   removeItem: (cartItemId: number) => Promise<void>
   refreshCart: () => Promise<void>
 }
@@ -65,6 +66,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshCart])
 
+  const updateItemReference = useCallback(async (cartItemId: number, reference: string) => {
+    try {
+      await sdk.cart.updateItemReference(cartItemId, reference)
+      await refreshCart()
+    } catch (error) {
+      console.error("[CartContext] Failed to update reference:", error)
+      throw error
+    }
+  }, [refreshCart])
+
   const removeItem = useCallback(async (cartItemId: number) => {
     try {
       await sdk.cart.removeItem(cartItemId)
@@ -83,6 +94,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         addItem,
         updateItemQuantity,
+        updateItemReference,
         removeItem,
         refreshCart,
       }}

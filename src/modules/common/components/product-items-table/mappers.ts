@@ -103,6 +103,7 @@ export function furnisystemsCartItemToProductItemRow(
   return {
     id: String(item.id),
     name,
+    reference: item.reference ?? undefined,
     image,
     unitPrice: item.price ?? 0,
     quantity: item.quantity ?? 1,
