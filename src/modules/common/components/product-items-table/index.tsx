@@ -15,6 +15,7 @@ const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
   formatPrice,
   translations: t,
   showVolume,
+  onReferenceChange,
 }) => {
   if (items.length === 0) return null
 
@@ -42,6 +43,7 @@ const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
                 hideConfiguration: t.hideConfiguration,
               }}
               renderActions={renderActions}
+              onReferenceChange={onReferenceChange}
             />
           ))}
         </div>
@@ -73,6 +75,7 @@ const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
                   hideConfiguration: t.hideConfiguration,
                 }}
                 renderActions={renderActions}
+                onReferenceChange={onReferenceChange}
               />
             ))}
           </tbody>

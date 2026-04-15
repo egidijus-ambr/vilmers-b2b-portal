@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { ProductItemRow } from "./types"
 import SofaConfigurationDetail from "@modules/common/components/sofa-configuration"
+import { InlineReferenceEdit } from "./inline-reference-edit"
 
 interface MobileCardProps {
   item: ProductItemRow
@@ -16,6 +17,7 @@ interface MobileCardProps {
     hideConfiguration: string
   }
   renderActions?: (item: ProductItemRow) => React.ReactNode
+  onReferenceChange?: (itemId: string, newReference: string) => Promise<void>
 }
 
 const excludedCodes = ["shooting", "threads-type", "market", "direction"]
@@ -26,6 +28,7 @@ export const MobileCard: React.FC<MobileCardProps> = ({
   formatPrice,
   translations: t,
   renderActions,
+  onReferenceChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -58,11 +61,17 @@ export const MobileCard: React.FC<MobileCardProps> = ({
         </div>
         <div className="flex flex-col text-sm min-w-0">
           <p className="text-dark-blue font-medium">{item.name}</p>
-          {item.reference && (
+          {item.reference && onReferenceChange ? (
+            <InlineReferenceEdit
+              reference={item.reference}
+              label={t.customerReference}
+              onSave={(newRef) => onReferenceChange(item.id, newRef)}
+            />
+          ) : item.reference ? (
             <p className="text-dark-blue-70 text-xs mt-0.5">
               {t.customerReference}: {item.reference}
             </p>
-          )}
+          ) : null}
           <p className="text-dark-blue-70 mt-1">
             {t.quantity}: {item.quantity}
           </p>

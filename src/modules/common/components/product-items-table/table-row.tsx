@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { ProductItemRow } from "./types"
 import SofaConfigurationDetail from "@modules/common/components/sofa-configuration"
+import { InlineReferenceEdit } from "./inline-reference-edit"
 
 interface TableRowProps {
   item: ProductItemRow
@@ -16,6 +17,7 @@ interface TableRowProps {
     hideConfiguration: string
   }
   renderActions?: (item: ProductItemRow) => React.ReactNode
+  onReferenceChange?: (itemId: string, newReference: string) => Promise<void>
 }
 
 const excludedCodes = ["shooting", "threads-type", "market", "direction"]
@@ -27,6 +29,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   formatPrice,
   translations: t,
   renderActions,
+  onReferenceChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const colCount = 4 + (showVolume ? 1 : 0) + (renderActions ? 1 : 0)
@@ -68,11 +71,17 @@ export const TableRow: React.FC<TableRowProps> = ({
             </div>
             <div>
               <p className="text-dark-blue font-medium">{item.name}</p>
-              {item.reference && (
+              {item.reference && onReferenceChange ? (
+                <InlineReferenceEdit
+                  reference={item.reference}
+                  label={t.customerReference}
+                  onSave={(newRef) => onReferenceChange(item.id, newRef)}
+                />
+              ) : item.reference ? (
                 <p className="text-dark-blue-70 text-xs mt-0.5">
                   {t.customerReference}: {item.reference}
                 </p>
-              )}
+              ) : null}
               {!item.isAdvanced && visibleComponents.length > 0 && (
                 <div className="mt-2 space-y-1">
                   {visibleComponents.map((comp: any) => {

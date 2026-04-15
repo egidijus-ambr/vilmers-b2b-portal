@@ -38,4 +38,5 @@ export interface ProductItemsTableProps {
     hideConfiguration: string
   }
   showVolume: boolean
+  onReferenceChange?: (itemId: string, newReference: string) => Promise<void>
 }
