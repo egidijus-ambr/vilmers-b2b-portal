@@ -16,6 +16,7 @@ import {
   useTranslations,
 } from "@lib/i18n"
 import { useSessionValidation } from "@lib/hooks/use-session-validation"
+import { useCart } from "@lib/context/cart-context"
 
 // Import NavMenu normally for SSR
 import NavMenu from "@modules/layout/components/nav-menu"
@@ -32,6 +33,8 @@ export default function Nav({ customer, categories }: NavProps) {
   const [isClient, setIsClient] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const { isSessionValid, isSessionLoading } = useSessionValidation()
+  const { items } = useCart()
+  const totalCartItems = items.reduce((sum, item) => sum + (item.quantity ?? 1), 0)
 
   useEffect(() => {
     setIsClient(true)
@@ -151,6 +154,24 @@ export default function Nav({ customer, categories }: NavProps) {
                 />
               </svg>
             </button>
+
+            {/* Desktop Cart Button */}
+            {isLoggedIn && (
+              <LocalizedClientLink
+                href="/cart"
+                className={`hidden small:flex items-center gap-x-2 text-base font-medium font-['Montserrat'] transition-colors ${
+                  isTransparent ? "text-white hover:text-white/80" : "text-dark-blue hover:text-dark-blue/80"
+                }`}
+                data-testid="nav-cart-link"
+              >
+                <span>Cart</span>
+                {totalCartItems > 0 && (
+                  <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-dark-blue text-white text-xs font-semibold leading-none">
+                    {totalCartItems}
+                  </span>
+                )}
+              </LocalizedClientLink>
+            )}
 
             {/* Desktop Account Menu */}
             <div className="hidden small:flex items-center gap-x-6 h-full">
