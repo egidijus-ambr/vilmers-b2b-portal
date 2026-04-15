@@ -1,17 +1,27 @@
 "use client"
 
-import { useActionState } from "react"
+import React, { useActionState } from "react"
 import { useTranslation } from "react-i18next"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { sendPartnerRequest, PartnerRequestState } from "@lib/data/partner"
-import { SubmitButton } from "@modules/checkout/components/submit-button"
+import Button from "@modules/common/components/button"
+import { useFormStatus } from "react-dom"
 import {
   FormInput,
   FormSelect,
   FormTextarea,
 } from "@modules/common/components/form-input"
 import Back from "@modules/common/icons/back"
+
+function SubmitButton({ children, className }: { children: React.ReactNode; className?: string }) {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" disabled={pending} className={className}>
+      {pending ? "..." : children}
+    </Button>
+  )
+}
 
 const COUNTRIES = [
   { code: "AT", name: "Austria" },

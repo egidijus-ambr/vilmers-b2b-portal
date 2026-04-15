@@ -2,19 +2,29 @@
 
 import React, { useEffect, useState, useActionState } from "react"
 import { PencilSquare as Edit, Trash } from "@medusajs/icons"
-import { Button, Heading, Text, clx } from "@medusajs/ui"
+import { Heading, Text, clx } from "@medusajs/ui"
+import Button from "@modules/common/components/button"
 
+import { useFormStatus } from "react-dom"
 import useToggleState from "@lib/hooks/use-toggle-state"
-import CountrySelect from "@modules/checkout/components/country-select"
 import Input from "@modules/common/components/input"
+import NativeSelect from "@modules/common/components/native-select"
 import Modal from "@modules/common/components/modal"
 import Spinner from "@modules/common/icons/spinner"
-import { SubmitButton } from "@modules/checkout/components/submit-button"
 import { HttpTypes } from "@medusajs/types"
 import {
   deleteCustomerAddress,
   updateCustomerAddress,
 } from "@lib/data/customer"
+
+function SubmitButton({ children, className, "data-testid": dataTestId }: { children: React.ReactNode; className?: string; "data-testid"?: string }) {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" disabled={pending} className={className} data-testid={dataTestId}>
+      {pending ? <Spinner /> : children}
+    </Button>
+  )
+}
 
 type EditAddressProps = {
   region: HttpTypes.StoreRegion
@@ -186,14 +196,20 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 defaultValue={address.province || undefined}
                 data-testid="state-input"
               />
-              <CountrySelect
+              <NativeSelect
                 name="country_code"
-                region={region}
                 required
                 autoComplete="country"
                 defaultValue={address.country_code || undefined}
+                placeholder="Country"
                 data-testid="country-select"
-              />
+              >
+                {region?.countries?.map((country) => (
+                  <option key={country.iso_2} value={country.iso_2}>
+                    {country.display_name}
+                  </option>
+                ))}
+              </NativeSelect>
               <Input
                 label="Phone"
                 name="phone"
@@ -212,7 +228,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             <div className="flex gap-3 mt-6">
               <Button
                 type="reset"
-                variant="secondary"
+                variant="outline"
                 onClick={close}
                 className="h-10"
                 data-testid="cancel-button"

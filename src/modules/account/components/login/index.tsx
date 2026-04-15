@@ -1,10 +1,21 @@
+import React from "react"
 import { requestMagicLink } from "@lib/data/customer"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
-import { SubmitButton } from "@modules/checkout/components/submit-button"
+import Button from "@modules/common/components/button"
 import { useActionState } from "react"
+import { useFormStatus } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { useParams } from "next/navigation"
+
+function SubmitButton({ children, className, "data-testid": dataTestId }: { children: React.ReactNode; className?: string; "data-testid"?: string }) {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" disabled={pending} className={className} data-testid={dataTestId}>
+      {pending ? "..." : children}
+    </Button>
+  )
+}
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
