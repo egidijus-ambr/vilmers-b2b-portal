@@ -1,7 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { Button } from "@medusajs/ui"
+
 import { useTranslations } from "@lib/i18n"
+import Modal from "@modules/common/components/modal"
+import Input from "@modules/common/components/input"
 
 interface MissingReferenceModalProps {
   isOpen: boolean
@@ -16,56 +20,53 @@ export function MissingReferenceModal({
 }: MissingReferenceModalProps) {
   const [reference, setReference] = useState("")
   const { t } = useTranslations("account")
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (isOpen) setReference("")
+    if (isOpen) {
+      setReference("")
+      // Auto-focus after modal transition
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
   }, [isOpen])
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl p-7 w-[380px] shadow-xl">
-        <h3 className="text-lg font-semibold text-dark-blue mb-1">
-          {t("reference-required-title")}
-        </h3>
-        <p className="text-sm text-dark-blue-70 mb-5">
-          {t("reference-required-description")}
-        </p>
-
-        <label className="block text-sm font-medium text-dark-blue mb-1.5">
-          {t("customer-reference")}
-        </label>
-        <input
-          type="text"
-          value={reference}
-          onChange={(e) => setReference(e.target.value)}
-          placeholder={t("reference-placeholder")}
-          className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm text-dark-blue focus:outline-none focus:ring-2 focus:ring-dark-blue/20 focus:border-dark-blue mb-5"
-          autoFocus
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && reference.trim()) {
-              onConfirm(reference.trim())
-            }
-          }}
-        />
-
-        <div className="flex gap-2.5 justify-end">
-          <button
+    <Modal isOpen={isOpen} close={onCancel} size="small">
+      <Modal.Title>{t("reference-required-title")}</Modal.Title>
+      <Modal.Description>{t("reference-required-description")}</Modal.Description>
+      <Modal.Body>
+        <div className="w-full">
+          <Input
+            ref={inputRef}
+            label={t("customer-reference")}
+            name="reference"
+            type="text"
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && reference.trim()) {
+                onConfirm(reference.trim())
+              }
+            }}
+          />
+        </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <div className="flex gap-3 mt-6">
+          <Button
+            variant="secondary"
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-dark-blue-70 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
           >
             {t("cancel")}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => onConfirm(reference.trim())}
             disabled={!reference.trim()}
-            className="px-4 py-2 text-sm text-white bg-dark-blue rounded-md hover:bg-dark-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t("add-to-cart")}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </Modal.Footer>
+    </Modal>
   )
 }
