@@ -134,8 +134,5 @@
   "assign-cart-to-subuser": "Attribuer le panier à un sous-utilisateur",
   "add-to-wishlist": "Ajouter à la liste de souhaits",
   "remove": "Supprimer",
-  "quantity": "Quantité",
-  "reference-step-description": "Ajoutez une référence optionnelle pour identifier cette configuration dans vos commandes.",
-  "reference-placeholder": "ex. Nom du projet, pièce, numéro de commande...",
-  "reference-optional-hint": "Ce champ est facultatif. La référence apparaîtra sur votre commande."
+  "quantity": "Quantité"
 }

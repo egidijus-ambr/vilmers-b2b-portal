@@ -134,8 +134,5 @@
   "assign-cart-to-subuser": "Assign cart to Subuser",
   "add-to-wishlist": "Add to Wishlist",
   "remove": "Remove",
-  "quantity": "Quantity",
-  "reference-step-description": "Add an optional reference to help identify this configuration in your orders.",
-  "reference-placeholder": "e.g. Project name, room, PO number...",
-  "reference-optional-hint": "This field is optional. The reference will appear on your order."
+  "quantity": "Quantity"
 }

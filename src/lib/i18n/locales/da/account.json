@@ -134,8 +134,5 @@
   "assign-cart-to-subuser": "Tildel kurv til underbruger",
   "add-to-wishlist": "Tilføj til ønskeliste",
   "remove": "Fjern",
-  "quantity": "Antal",
-  "reference-step-description": "Tilføj en valgfri reference for at hjælpe med at identificere denne konfiguration i dine ordrer.",
-  "reference-placeholder": "f.eks. Projektnavn, rum, PO-nummer...",
-  "reference-optional-hint": "Dette felt er valgfrit. Referencen vil fremgå af din ordre."
+  "quantity": "Antal"
 }

@@ -134,8 +134,5 @@
   "assign-cart-to-subuser": "Warenkorb an Unterbenutzer zuweisen",
   "add-to-wishlist": "Zur Wunschliste hinzufügen",
   "remove": "Entfernen",
-  "quantity": "Menge",
-  "reference-step-description": "Fügen Sie eine optionale Referenz hinzu, um diese Konfiguration in Ihren Bestellungen zu identifizieren.",
-  "reference-placeholder": "z.B. Projektname, Raum, PO-Nummer...",
-  "reference-optional-hint": "Dieses Feld ist optional. Die Referenz erscheint auf Ihrer Bestellung."
+  "quantity": "Menge"
 }

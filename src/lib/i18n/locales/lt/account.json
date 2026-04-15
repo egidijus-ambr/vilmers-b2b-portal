@@ -134,8 +134,5 @@
   "assign-cart-to-subuser": "Priskirti krepšelį vartotojui",
   "add-to-wishlist": "Įtraukti į pageidavimų sąrašą",
   "remove": "Pašalinti",
-  "quantity": "Kiekis",
-  "reference-step-description": "Pridėkite neprivalomą nuorodą, kad būtų lengviau atpažinti šią konfigūraciją užsakymuose.",
-  "reference-placeholder": "pvz. Projekto pavadinimas, kambarys, PO numeris...",
-  "reference-optional-hint": "Šis laukas neprivalomas. Nuoroda bus rodoma jūsų užsakyme."
+  "quantity": "Kiekis"
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "@lib/i18n"
 
 interface MissingReferenceModalProps {
@@ -17,26 +17,30 @@ export function MissingReferenceModal({
   const [reference, setReference] = useState("")
   const { t } = useTranslations("account")
 
+  useEffect(() => {
+    if (isOpen) setReference("")
+  }, [isOpen])
+
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl p-7 w-[380px] shadow-xl">
         <h3 className="text-lg font-semibold text-dark-blue mb-1">
-          {t["reference-required-title"]}
+          {t("reference-required-title")}
         </h3>
         <p className="text-sm text-dark-blue-70 mb-5">
-          {t["reference-required-description"]}
+          {t("reference-required-description")}
         </p>
 
         <label className="block text-sm font-medium text-dark-blue mb-1.5">
-          {t["customer-reference"]}
+          {t("customer-reference")}
         </label>
         <input
           type="text"
           value={reference}
           onChange={(e) => setReference(e.target.value)}
-          placeholder={t["reference-placeholder"]}
+          placeholder={t("reference-placeholder")}
           className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm text-dark-blue focus:outline-none focus:ring-2 focus:ring-dark-blue/20 focus:border-dark-blue mb-5"
           autoFocus
           onKeyDown={(e) => {
@@ -51,14 +55,14 @@ export function MissingReferenceModal({
             onClick={onCancel}
             className="px-4 py-2 text-sm text-dark-blue-70 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100"
           >
-            {t["cancel"]}
+            {t("cancel")}
           </button>
           <button
             onClick={() => onConfirm(reference.trim())}
             disabled={!reference.trim()}
             className="px-4 py-2 text-sm text-white bg-dark-blue rounded-md hover:bg-dark-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {t["add-to-cart"]}
+            {t("add-to-cart")}
           </button>
         </div>
       </div>

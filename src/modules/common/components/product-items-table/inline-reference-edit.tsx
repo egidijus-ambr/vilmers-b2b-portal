@@ -19,6 +19,12 @@ export function InlineReferenceEdit({
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    if (!isEditing) {
+      setValue(reference)
+    }
+  }, [reference, isEditing])
+
+  useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus()
       inputRef.current.select()
