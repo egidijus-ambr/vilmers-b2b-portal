@@ -12,6 +12,7 @@ const CART_ITEM_FRAGMENT = gql`
     quantity
     price
     volume
+    reference
     product_type
     advanced_product_type
     fabric_code
@@ -170,6 +171,7 @@ const ADD_ITEM_TO_CART = gql`
     $selected_sofa_combinations: String
     $additionalComponentIds: [Int!]
     $cartItemFabrics: [CartItemFabricInput]
+    $customerReference: String
   ) {
     addItemToCart(
       cartId: $cartId
@@ -187,6 +189,7 @@ const ADD_ITEM_TO_CART = gql`
       selected_sofa_combinations: $selected_sofa_combinations
       additionalComponentIds: $additionalComponentIds
       cartItemFabrics: $cartItemFabrics
+      customerReference: $customerReference
     ) {
       ...CartItemFields
     }
@@ -208,6 +211,18 @@ const REMOVE_CART_ITEM = gql`
       id
     }
   }
+`
+
+const UPDATE_CART_ITEM_REFERENCE = gql`
+  mutation UpdateCartItemReference($cartItemId: Int!, $reference: String!) {
+    updateCartItemReference(cartItemId: $cartItemId, reference: $reference) {
+      id
+      items {
+        ...CartItemFields
+      }
+    }
+  }
+  ${CART_ITEM_FRAGMENT}
 `
 
 export class CartModule {
@@ -248,6 +263,7 @@ export class CartModule {
         selected_sofa_combinations: input.selected_sofa_combinations || null,
         additionalComponentIds: input.additionalComponentIds || [],
         cartItemFabrics: input.cartItemFabrics || [],
+        customerReference: input.customerReference || null,
       },
     })
     return data.addItemToCart
@@ -263,6 +279,18 @@ export class CartModule {
       variables: { cartItemId, quantity },
     })
     return data.updateCartItemQuantity
+  }
+
+  async updateItemReference(
+    cartItemId: number,
+    reference: string
+  ): Promise<FurnisystemsCart> {
+    const data = await this.client.mutate<{
+      updateCartItemReference: FurnisystemsCart
+    }>(UPDATE_CART_ITEM_REFERENCE, {
+      variables: { cartItemId, reference },
+    })
+    return data.updateCartItemReference
   }
 
   async removeItem(cartItemId: number): Promise<{ id: number }> {

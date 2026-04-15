@@ -66,6 +66,7 @@ export interface FurnisystemsCartItem {
   fabric_group: any | null
   fabric: any | null
   fabricCombination: { image?: { src?: string; src_xs?: string; src_thumbnail?: string } } | null
+  reference?: string
   createdAt: string
   updatedAt: string
 }
@@ -85,4 +86,5 @@ export interface AddCartItemInput {
   selected_sofa_combinations?: string
   additionalComponentIds?: number[]
   cartItemFabrics?: { fabricId?: number; fabric_groupId?: number; combination_optionId?: number }[]
+  customerReference?: string
 }
