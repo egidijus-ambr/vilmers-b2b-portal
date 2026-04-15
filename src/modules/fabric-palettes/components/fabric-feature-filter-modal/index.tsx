@@ -384,7 +384,7 @@ export default function FabricFeatureFilterModal({
                     >
                       {labels.showResults} ({totalCount})
                     </Button>
-                    <Button variant="secondary" onClick={clearAll}>
+                    <Button variant="outline" onClick={clearAll}>
                       {labels.clearAll}
                     </Button>
                   </div>

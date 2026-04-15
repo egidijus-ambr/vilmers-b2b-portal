@@ -338,7 +338,7 @@ export default function ProductFilterModal({
                     >
                       {labels.showResults} ({facets.totalCount})
                     </Button>
-                    <Button variant="secondary" onClick={clearAll}>
+                    <Button variant="outline" onClick={clearAll}>
                       {labels.clearAll}
                     </Button>
                   </div>

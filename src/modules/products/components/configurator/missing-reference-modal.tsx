@@ -56,7 +56,7 @@ export function MissingReferenceModal({
           >
             {t("add-to-cart")}
           </Button>
-          <Button variant="secondary" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel}>
             {t("cancel")}
           </Button>
         </div>
