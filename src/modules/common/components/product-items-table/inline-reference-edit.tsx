@@ -53,7 +53,7 @@ export function InlineReferenceEdit({
 
   if (!isEditing) {
     return (
-      <p className="text-dark-blue-70 text-xs mt-0.5 flex items-center gap-1.5">
+      <p className="text-dark-blue-70 text-sm mt-0.5 flex items-center gap-1.5">
         <span>{label}:</span>
         <button
           onClick={() => setIsEditing(true)}
@@ -83,8 +83,8 @@ export function InlineReferenceEdit({
   }
 
   return (
-    <div className="flex items-center gap-1 mt-0.5">
-      <span className="text-dark-blue-70 text-xs">{label}:</span>
+    <div className="flex items-center gap-1.5 mt-0.5">
+      <span className="text-dark-blue-70 text-sm">{label}:</span>
       <input
         ref={inputRef}
         type="text"
@@ -95,23 +95,27 @@ export function InlineReferenceEdit({
           if (e.key === "Escape") handleCancel()
         }}
         disabled={isSaving}
-        className="border border-dark-blue rounded px-1.5 py-0.5 text-xs text-dark-blue focus:outline-none focus:ring-2 focus:ring-dark-blue/20 w-44"
+        className="border border-gray-300 px-2 py-1 text-sm text-dark-blue bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-44"
       />
       <button
         onClick={handleSave}
         disabled={!value.trim() || isSaving}
-        className="flex items-center justify-center w-6 h-6 bg-dark-blue text-white rounded text-sm disabled:opacity-50"
+        className="text-dark-blue hover:text-dark-blue/70 disabled:opacity-50"
         aria-label="Save"
       >
-        ✓
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
       </button>
       <button
         onClick={handleCancel}
         disabled={isSaving}
-        className="flex items-center justify-center w-6 h-6 bg-gray-100 text-dark-blue-70 border border-gray-200 rounded text-sm"
+        className="text-dark-blue-70 hover:text-dark-blue"
         aria-label="Cancel"
       >
-        ✕
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
       </button>
     </div>
   )
