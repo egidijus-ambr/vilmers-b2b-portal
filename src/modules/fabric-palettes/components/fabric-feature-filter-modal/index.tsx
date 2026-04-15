@@ -379,12 +379,13 @@ export default function FabricFeatureFilterModal({
                   {/* Sticky footer */}
                   <div className="flex flex-col gap-3 px-8 py-6 border-t border-gray-200 bg-gold-10">
                     <Button
+                      className="w-full"
                       onClick={apply}
                       data-testid="apply-fabric-feature-filters-button"
                     >
                       {labels.showResults} ({totalCount})
                     </Button>
-                    <Button variant="outline" onClick={clearAll}>
+                    <Button variant="outline" className="w-full" onClick={clearAll}>
                       {labels.clearAll}
                     </Button>
                   </div>

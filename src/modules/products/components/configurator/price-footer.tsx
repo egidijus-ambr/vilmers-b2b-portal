@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { priceFormatter } from "@configurator/lib/price-utils"
+import Button from "@modules/common/components/button"
 
 type PriceFooterProps = {
   currency?: string
@@ -79,8 +80,7 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
         </div>
 
         {/* Add to cart */}
-        <button
-          className="bg-[#1e2a3a] text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-[#2a3a4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        <Button
           onClick={handleAddToCart}
           disabled={totalPrice == null || totalPrice <= 0 || isAdding}
         >
@@ -95,7 +95,7 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
           ) : (
             "Add to Cart"
           )}
-        </button>
+        </Button>
       </div>
     </div>
   )

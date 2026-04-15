@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import dynamic from "next/dynamic"
 import { useCustomer } from "@lib/context/customer-context"
+import Button from "@modules/common/components/button"
 
 // Lazy-load the configurator modal to avoid loading Konva etc. on initial page load
 const ConfiguratorModal = dynamic(() => import("./configurator-modal"), {
@@ -29,13 +30,12 @@ const ConfiguratorButton = ({
 
   return (
     <>
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
-        className="bg-[#1e2a3a] text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-[#2a3a4a] transition-colors"
         data-testid="configurator-button"
       >
         Product configurator
-      </button>
+      </Button>
 
       {isOpen && (
         <ConfiguratorModal
