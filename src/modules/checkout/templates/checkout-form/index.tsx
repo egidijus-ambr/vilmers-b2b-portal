@@ -114,11 +114,13 @@ export default function CheckoutForm() {
   }
 
   return (
-    <div className="flex flex-col gap-y-8">
-      <DeliveryAddressForm
-        addresses={addresses}
-        onAddressReady={handleAddressReady}
-      />
+    <div className="flex flex-col gap-y-6">
+      <div className="bg-white p-4 sm:p-6">
+        <DeliveryAddressForm
+          addresses={addresses}
+          onAddressReady={handleAddressReady}
+        />
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
