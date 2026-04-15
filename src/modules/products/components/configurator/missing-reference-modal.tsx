@@ -5,7 +5,7 @@ import { Button } from "@medusajs/ui"
 
 import { useTranslations } from "@lib/i18n"
 import Modal from "@modules/common/components/modal"
-import Input from "@modules/common/components/input"
+import SearchInput from "@modules/common/components/search-input"
 
 interface MissingReferenceModalProps {
   isOpen: boolean
@@ -25,7 +25,6 @@ export function MissingReferenceModal({
   useEffect(() => {
     if (isOpen) {
       setReference("")
-      // Auto-focus after modal transition
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [isOpen])
@@ -35,21 +34,19 @@ export function MissingReferenceModal({
       <Modal.Title>{t("reference-required-title")}</Modal.Title>
       <Modal.Description>{t("reference-required-description")}</Modal.Description>
       <Modal.Body>
-        <div className="w-full">
-          <Input
-            ref={inputRef}
-            label={t("customer-reference")}
-            name="reference"
-            type="text"
-            value={reference}
-            onChange={(e) => setReference(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && reference.trim()) {
-                onConfirm(reference.trim())
-              }
-            }}
-          />
-        </div>
+        <SearchInput
+          ref={inputRef}
+          value={reference}
+          onChange={setReference}
+          placeholder={t("reference-placeholder")}
+          showSearchIcon={false}
+          label={t("customer-reference")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && reference.trim()) {
+              onConfirm(reference.trim())
+            }
+          }}
+        />
       </Modal.Body>
       <Modal.Footer>
         <div className="flex gap-3 mt-6">
