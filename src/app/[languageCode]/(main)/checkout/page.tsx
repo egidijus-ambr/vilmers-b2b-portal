@@ -4,15 +4,18 @@ import { useEffect } from "react"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { useParams, useRouter } from "next/navigation"
+import { useTranslations } from "@lib/i18n"
+import PageHeader from "@modules/common/components/page-header"
+import PageContent from "@modules/common/components/page-content"
 import CheckoutForm from "@modules/checkout/templates/checkout-form"
 import CartSummary from "@modules/cart/components/cart-summary"
 
 export default function Checkout() {
   const { items, isLoading } = useCart()
   const { customer } = useCustomer()
-  const params = useParams()
+  const { languageCode } = useParams() as { languageCode: string }
   const router = useRouter()
-  const languageCode = params.languageCode as string
+  const { t } = useTranslations("account")
 
   useEffect(() => {
     if (!isLoading && items.length === 0) {
@@ -38,18 +41,32 @@ export default function Checkout() {
     return null
   }
 
+  const breadcrumbItems = [
+    { label: t("breadcrumb-home"), href: "/" },
+    { label: t("breadcrumb-cart"), href: "/cart" },
+    { label: t("checkout"), href: null },
+  ]
+
   return (
-    <div className="pb-12">
-      <div className="grid grid-cols-1 small:grid-cols-3 gap-6">
-        <div className="small:col-span-2">
-          <CheckoutForm />
-        </div>
-        <div className="relative">
-          <div className="flex flex-col gap-y-8 sticky top-[120px]">
-            <CartSummary />
+    <>
+      <PageHeader
+        title={t("checkout")}
+        breadcrumbItems={breadcrumbItems}
+      />
+      <PageContent>
+        <div className="pb-12">
+          <div className="grid grid-cols-1 small:grid-cols-3 gap-6">
+            <div className="small:col-span-2">
+              <CheckoutForm />
+            </div>
+            <div className="relative">
+              <div className="flex flex-col gap-y-8 sticky top-[120px]">
+                <CartSummary />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </PageContent>
+    </>
   )
 }
