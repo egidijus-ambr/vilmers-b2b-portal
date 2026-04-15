@@ -61,8 +61,8 @@ export default function CartSummary() {
   )
 
   return (
-    <div className="bg-white p-4 sm:p-6">
-      <h2 className="text-lg sm:text-xl font-medium text-dark-blue leading-7 sm:leading-9 mb-6">
+    <div className="bg-white pb-6 p-4 md:p-6">
+      <h2 className="text-xl md:text-2xl font-medium text-gray-900 mb-6">
         {t("order-summary")}
       </h2>
 

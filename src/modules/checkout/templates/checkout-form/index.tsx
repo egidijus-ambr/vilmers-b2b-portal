@@ -115,7 +115,7 @@ export default function CheckoutForm() {
 
   return (
     <div className="flex flex-col gap-y-6">
-      <div className="bg-white p-4 sm:p-6">
+      <div className="bg-white pb-6 p-4 md:p-6">
         <DeliveryAddressForm
           addresses={addresses}
           onAddressReady={handleAddressReady}
