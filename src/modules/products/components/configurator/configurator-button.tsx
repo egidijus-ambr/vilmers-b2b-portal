@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import dynamic from "next/dynamic"
+import { useCustomer } from "@lib/context/customer-context"
 
 // Lazy-load the configurator modal to avoid loading Konva etc. on initial page load
 const ConfiguratorModal = dynamic(() => import("./configurator-modal"), {
@@ -22,8 +23,9 @@ const ConfiguratorButton = ({
   priceListId = 1,
 }: ConfiguratorButtonProps) => {
   const [isOpen, setIsOpen] = useState(false)
+  const { customer } = useCustomer()
 
-  if (!isAdvancedProduct) return null
+  if (!isAdvancedProduct || !customer) return null
 
   return (
     <>
