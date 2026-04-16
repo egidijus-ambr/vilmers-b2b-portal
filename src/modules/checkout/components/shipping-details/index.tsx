@@ -128,15 +128,14 @@ export default function ShippingDetails({
         </label>
         <div className="flex items-center gap-x-6">
           {ORDER_TYPES.map((type) => (
-            <button
+            <div
               key={type.value}
-              type="button"
-              className="flex items-center gap-x-2"
+              className="flex items-center gap-x-2 cursor-pointer"
               onClick={() => handleOrderTypeChange(type.value)}
             >
               <Radio checked={orderType === type.value} />
               <span className="text-base text-dark-blue">{type.label}</span>
-            </button>
+            </div>
           ))}
         </div>
       </div>
