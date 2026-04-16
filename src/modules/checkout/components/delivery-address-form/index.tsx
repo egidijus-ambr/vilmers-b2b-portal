@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import AddressSelect, { Address } from "@modules/checkout/components/address-select"
 import SearchInput from "@modules/common/components/search-input"
-import NativeSelect from "@modules/common/components/native-select"
+import Button from "@modules/common/components/button"
 
 export interface AddressFormData {
   address_name: string
@@ -129,25 +129,25 @@ export default function DeliveryAddressForm({
             onSelect={handleSelectAddress}
             label="Delivery address"
           />
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={handleSwitchToNew}
-            className="text-sm text-dark-blue underline self-start"
+            className="self-start"
           >
             + Add new address
-          </button>
+          </Button>
         </>
       )}
 
       {mode === "new" && (
         <>
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={handleCancelNew}
-            className="text-sm text-gray-500 underline self-start"
+            className="self-start"
           >
             ← Back to address selection
-          </button>
+          </Button>
           <div>
             <SearchInput
               label="Address name"
