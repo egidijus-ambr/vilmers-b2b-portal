@@ -202,25 +202,26 @@ export default function ShippingDetails({
               const isToday = isSameDay(date, today)
 
               return (
-                <button
-                  key={date.toISOString()}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => handleDateSelect(date)}
-                  className={`
-                    flex items-center justify-center h-10 text-sm transition-colors
-                    ${isSelected
-                      ? "bg-dark-blue text-white rounded-full"
-                      : isDisabled
-                        ? "text-gray-300 cursor-not-allowed"
-                        : isToday
-                          ? "text-dark-blue font-semibold hover:bg-gray-100 rounded-full"
-                          : "text-dark-blue hover:bg-gray-100 rounded-full"
-                    }
-                  `}
-                >
-                  {date.getDate()}
-                </button>
+                <div key={date.toISOString()} className="flex items-center justify-center py-1">
+                  <button
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => handleDateSelect(date)}
+                    className={`
+                      flex items-center justify-center w-10 h-10 text-sm rounded-full transition-colors
+                      ${isSelected
+                        ? "bg-dark-blue text-white"
+                        : isDisabled
+                          ? "text-gray-300 cursor-not-allowed"
+                          : isToday
+                            ? "text-dark-blue font-semibold hover:bg-gray-100"
+                            : "text-dark-blue hover:bg-gray-100"
+                      }
+                    `}
+                  >
+                    {date.getDate()}
+                  </button>
+                </div>
               )
             })}
           </div>
