@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import Radio from "@modules/common/components/radio"
+import ChevronDown from "@modules/common/icons/chevron-down"
 
 const ORDER_TYPES = [
   { value: "expo", label: "Expo" },
@@ -52,6 +53,18 @@ export default function ShippingDetails({
 }: ShippingDetailsProps) {
   const [orderType, setOrderType] = useState("expo")
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const calendarRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setIsCalendarOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const today = useMemo(() => new Date(), [])
   const [viewYear, setViewYear] = useState(today.getFullYear())
@@ -75,6 +88,7 @@ export default function ShippingDetails({
   function handleDateSelect(date: Date) {
     if (isPastDay(date)) return
     setSelectedDate(date)
+    setIsCalendarOpen(false)
     onShippingChange(orderType, date)
   }
 
@@ -122,12 +136,26 @@ export default function ShippingDetails({
         </div>
       </div>
 
-      {/* Delivery date calendar */}
-      <div>
+      {/* Delivery date */}
+      <div ref={calendarRef} className="relative">
         <label className="block text-sm font-medium text-dark-blue mb-1.5">
           Delivery date
         </label>
-        <div className="border border-gray-300 bg-white p-4">
+        <button
+          type="button"
+          onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+          className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 bg-white text-left hover:border-gray-400 transition-colors"
+        >
+          <span className={selectedDate ? "text-dark-blue" : "text-gray-500"}>
+            {selectedDate
+              ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+              : "Select a date"}
+          </span>
+          <ChevronDown size="14" className="flex-shrink-0 ml-2" />
+        </button>
+
+        {isCalendarOpen && (
+        <div className="absolute z-50 mt-1 w-full border border-gray-300 bg-white shadow-md p-4">
           {/* Month navigation */}
           <div className="flex items-center justify-between mb-4">
             <button
@@ -197,6 +225,7 @@ export default function ShippingDetails({
             })}
           </div>
         </div>
+        )}
       </div>
     </div>
   )
