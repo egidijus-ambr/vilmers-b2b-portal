@@ -139,7 +139,7 @@ export default function ShippingDetails({
       {/* Delivery date */}
       <div ref={calendarRef} className="relative">
         <label className="block text-sm font-medium text-dark-blue mb-1.5">
-          Delivery date
+          Desired delivery date  (optional)
         </label>
         <button
           type="button"
