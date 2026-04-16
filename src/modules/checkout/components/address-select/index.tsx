@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   Listbox,
   ListboxButton,
@@ -7,6 +8,7 @@ import {
   ListboxOptions,
 } from "@headlessui/react"
 import ChevronDown from "@modules/common/icons/chevron-down"
+import SearchInput from "@modules/common/components/search-input"
 
 export interface Address {
   id: number
@@ -33,6 +35,20 @@ function formatAddress(addr: Address): string {
   return parts.join(", ")
 }
 
+function matchesSearch(addr: Address, query: string): boolean {
+  const lower = query.toLowerCase()
+  return [
+    addr.description,
+    addr.address_1,
+    addr.address_2,
+    addr.city,
+    addr.postal_code,
+    addr.country,
+    addr.state_region,
+    addr.roles,
+  ].some((field) => field?.toLowerCase().includes(lower))
+}
+
 export default function AddressSelect({
   addresses,
   selectedAddressId,
@@ -40,7 +56,9 @@ export default function AddressSelect({
   label,
   placeholder = "Select an address",
 }: AddressSelectProps) {
+  const [search, setSearch] = useState("")
   const selected = addresses.find((a) => a.id === selectedAddressId) ?? null
+  const filtered = search ? addresses.filter((a) => matchesSearch(a, search)) : addresses
 
   return (
     <div className="w-full">
@@ -49,7 +67,15 @@ export default function AddressSelect({
           {label}
         </label>
       )}
-      <Listbox value={selected} onChange={(addr) => addr && onSelect(addr)}>
+      <Listbox
+        value={selected}
+        onChange={(addr) => {
+          if (addr) {
+            onSelect(addr)
+            setSearch("")
+          }
+        }}
+      >
         <div className="relative">
           <ListboxButton className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 bg-white text-left hover:border-gray-400 transition-colors">
             <span className={selected ? "text-dark-blue truncate" : "text-gray-500"}>
@@ -57,8 +83,16 @@ export default function AddressSelect({
             </span>
             <ChevronDown size="14" className="flex-shrink-0 ml-2" />
           </ListboxButton>
-          <ListboxOptions className="absolute z-50 mt-1 w-full bg-white border border-gray-300 shadow-md max-h-60 overflow-auto">
-            {addresses.map((addr) => (
+          <ListboxOptions className="absolute z-50 mt-1 w-full bg-white border border-gray-300 shadow-md max-h-80 overflow-auto">
+            <div className="sticky top-0 bg-white p-2 border-b border-gray-200">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Search addresses..."
+                autoFocus
+              />
+            </div>
+            {filtered.map((addr) => (
               <ListboxOption
                 key={addr.id}
                 value={addr}
@@ -84,6 +118,11 @@ export default function AddressSelect({
                 )}
               </ListboxOption>
             ))}
+            {filtered.length === 0 && (
+              <div className="px-3 py-3 text-sm text-gray-500">
+                No addresses found
+              </div>
+            )}
           </ListboxOptions>
         </div>
       </Listbox>
