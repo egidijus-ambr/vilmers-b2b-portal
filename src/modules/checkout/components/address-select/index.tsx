@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   Listbox,
   ListboxButton,
@@ -57,6 +57,7 @@ export default function AddressSelect({
   placeholder = "Select an address",
 }: AddressSelectProps) {
   const [search, setSearch] = useState("")
+  const searchRef = useRef<HTMLInputElement>(null)
   const selected = addresses.find((a) => a.id === selectedAddressId) ?? null
   const filtered = search ? addresses.filter((a) => matchesSearch(a, search)) : addresses
 
@@ -83,13 +84,17 @@ export default function AddressSelect({
             </span>
             <ChevronDown size="14" className="flex-shrink-0 ml-2" />
           </ListboxButton>
-          <ListboxOptions className="absolute z-50 mt-1 w-full bg-white border border-gray-300 shadow-md max-h-80 overflow-auto">
-            <div className="sticky top-0 bg-white p-2 border-b border-gray-200">
+          <ListboxOptions
+            className="absolute z-50 mt-1 w-full bg-white border border-gray-300 shadow-md max-h-80 overflow-auto"
+            ref={() => setTimeout(() => searchRef.current?.focus(), 0)}
+          >
+            <div className="sticky top-0 bg-white p-2 border-b border-gray-200" onClick={(e) => e.stopPropagation()}>
               <SearchInput
+                ref={searchRef}
                 value={search}
                 onChange={setSearch}
                 placeholder="Search addresses..."
-                autoFocus
+                onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
             {filtered.map((addr) => (
