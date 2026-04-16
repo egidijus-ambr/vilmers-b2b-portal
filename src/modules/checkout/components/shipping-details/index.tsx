@@ -1,13 +1,6 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-} from "@headlessui/react"
-import ChevronDown from "@modules/common/icons/chevron-down"
 import Radio from "@modules/common/components/radio"
 
 const ORDER_TYPES = [
@@ -16,31 +9,36 @@ const ORDER_TYPES = [
   { value: "stock", label: "Stock" },
 ]
 
-function getUpcomingMondays(count: number, locale: string): { value: string; label: string; date: Date }[] {
-  const dates: { value: string; label: string; date: Date }[] = []
-  const now = new Date()
-  const current = new Date(now)
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
-  // Move to next Monday
-  const day = current.getDay()
-  const daysUntilMonday = day === 0 ? 1 : day === 1 ? 7 : 8 - day
-  current.setDate(current.getDate() + daysUntilMonday)
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
 
-  for (let i = 0; i < count; i++) {
-    const d = new Date(current)
-    dates.push({
-      value: d.toISOString(),
-      label: d.toLocaleDateString(locale, {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      date: d,
-    })
-    current.setDate(current.getDate() + 7)
+function isPastDay(date: Date): boolean {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return date < today
+}
+
+function getCalendarDays(year: number, month: number): (Date | null)[] {
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const days: (Date | null)[] = []
+
+  // Pad start with nulls for days before the 1st
+  for (let i = 0; i < firstDay.getDay(); i++) {
+    days.push(null)
   }
-  return dates
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    days.push(new Date(year, month, d))
+  }
+  return days
+}
+
+function formatMonthYear(year: number, month: number, locale: string): string {
+  const date = new Date(year, month, 1)
+  return date.toLocaleDateString(locale, { month: "long", year: "numeric" }).toUpperCase()
 }
 
 interface ShippingDetailsProps {
@@ -53,26 +51,49 @@ export default function ShippingDetails({
   language = "en",
 }: ShippingDetailsProps) {
   const [orderType, setOrderType] = useState("expo")
-  const [selectedDate, setSelectedDate] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+
+  const today = useMemo(() => new Date(), [])
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth())
 
   const localeMap: Record<string, string> = {
     en: "en-GB", de: "de-DE", fr: "fr-FR", lt: "lt-LT", da: "da-DK",
   }
-  const dates = useMemo(
-    () => getUpcomingMondays(12, localeMap[language] || "en-GB"),
-    [language]
-  )
+  const locale = localeMap[language] || "en-GB"
 
-  const selectedDateObj = dates.find((d) => d.value === selectedDate)
+  const calendarDays = useMemo(
+    () => getCalendarDays(viewYear, viewMonth),
+    [viewYear, viewMonth]
+  )
 
   function handleOrderTypeChange(value: string) {
     setOrderType(value)
-    onShippingChange(value, selectedDate ? new Date(selectedDate) : null)
+    onShippingChange(value, selectedDate)
   }
 
-  function handleDateChange(value: string) {
-    setSelectedDate(value)
-    onShippingChange(orderType, value ? new Date(value) : null)
+  function handleDateSelect(date: Date) {
+    if (isPastDay(date)) return
+    setSelectedDate(date)
+    onShippingChange(orderType, date)
+  }
+
+  function prevMonth() {
+    if (viewMonth === 0) {
+      setViewMonth(11)
+      setViewYear(viewYear - 1)
+    } else {
+      setViewMonth(viewMonth - 1)
+    }
+  }
+
+  function nextMonth() {
+    if (viewMonth === 11) {
+      setViewMonth(0)
+      setViewYear(viewYear + 1)
+    } else {
+      setViewMonth(viewMonth + 1)
+    }
   }
 
   return (
@@ -101,32 +122,81 @@ export default function ShippingDetails({
         </div>
       </div>
 
-      {/* Delivery date */}
-      <div className="w-full">
+      {/* Delivery date calendar */}
+      <div>
         <label className="block text-sm font-medium text-dark-blue mb-1.5">
           Delivery date
         </label>
-        <Listbox value={selectedDate} onChange={handleDateChange}>
-          <div className="relative">
-            <ListboxButton className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 bg-white text-left hover:border-gray-400 transition-colors">
-              <span className={selectedDateObj ? "text-dark-blue" : "text-gray-500"}>
-                {selectedDateObj ? selectedDateObj.label : "Choose date from the list"}
-              </span>
-              <ChevronDown size="14" className="flex-shrink-0 ml-2" />
-            </ListboxButton>
-            <ListboxOptions className="absolute z-50 mt-1 w-full bg-white border border-gray-300 shadow-md max-h-80 overflow-auto">
-              {dates.map((d) => (
-                <ListboxOption
-                  key={d.value}
-                  value={d.value}
-                  className="px-3 py-3 cursor-pointer hover:bg-gray-100 data-[selected]:bg-gray-50 text-base text-dark-blue"
-                >
-                  {d.label}
-                </ListboxOption>
-              ))}
-            </ListboxOptions>
+        <div className="border border-gray-300 bg-white p-4">
+          {/* Month navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              type="button"
+              onClick={prevMonth}
+              className="p-1 text-dark-blue hover:opacity-70"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <span className="text-sm font-medium text-dark-blue tracking-widest">
+              {formatMonthYear(viewYear, viewMonth, locale)}
+            </span>
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="p-1 text-dark-blue hover:opacity-70"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
           </div>
-        </Listbox>
+
+          {/* Day headers */}
+          <div className="grid grid-cols-7 mb-2">
+            {DAY_LABELS.map((day) => (
+              <div key={day} className="text-center text-xs font-medium text-dark-blue py-2">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7">
+            {calendarDays.map((date, i) => {
+              if (!date) {
+                return <div key={`empty-${i}`} />
+              }
+
+              const isSelected = selectedDate && isSameDay(date, selectedDate)
+              const isDisabled = isPastDay(date)
+              const isToday = isSameDay(date, today)
+
+              return (
+                <button
+                  key={date.toISOString()}
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => handleDateSelect(date)}
+                  className={`
+                    flex items-center justify-center h-10 text-sm transition-colors
+                    ${isSelected
+                      ? "bg-dark-blue text-white rounded-full"
+                      : isDisabled
+                        ? "text-gray-300 cursor-not-allowed"
+                        : isToday
+                          ? "text-dark-blue font-semibold hover:bg-gray-100 rounded-full"
+                          : "text-dark-blue hover:bg-gray-100 rounded-full"
+                    }
+                  `}
+                >
+                  {date.getDate()}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )
