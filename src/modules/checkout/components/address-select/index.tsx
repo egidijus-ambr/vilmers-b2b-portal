@@ -103,24 +103,28 @@ export default function AddressSelect({
                 value={addr}
                 className="px-3 py-3 cursor-pointer hover:bg-gray-100 data-[selected]:bg-gray-50"
               >
-                <div className="text-sm font-medium text-dark-blue">
-                  {addr.description || addr.address_1}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {formatAddress(addr)}
-                </div>
-                {addr.roles && (
-                  <div className="flex gap-1 mt-1">
-                    {addr.roles.split(";").map((role) => (
-                      <span
-                        key={role}
-                        className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500"
-                      >
-                        {role.trim()}
-                      </span>
-                    ))}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-dark-blue">
+                      {addr.description || addr.address_1}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {formatAddress(addr)}
+                    </div>
                   </div>
-                )}
+                  {addr.roles && (
+                    <div className="flex gap-1 flex-shrink-0">
+                      {addr.roles.split(";").map((role) => (
+                        <span
+                          key={role}
+                          className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500"
+                        >
+                          {role.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </ListboxOption>
             ))}
             {filtered.length === 0 && (
