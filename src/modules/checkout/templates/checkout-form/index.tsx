@@ -6,6 +6,7 @@ import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { fetchCustomerAddresses, placeOrder } from "@lib/data/checkout"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
+import ShippingDetails from "@modules/checkout/components/shipping-details"
 import { Address } from "@modules/checkout/components/address-select"
 import Button from "@modules/common/components/button"
 import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
@@ -35,6 +36,8 @@ export default function CheckoutForm() {
   const [isAddressValid, setIsAddressValid] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [orderType, setOrderType] = useState("expo")
+  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
 
   useEffect(() => {
     if (!customer?.id) return
@@ -97,7 +100,8 @@ export default function CheckoutForm() {
         order_locale: languageCode.toUpperCase(),
         hostname: window.location.hostname,
         price_multiplier: 1,
-        order_type: "b2b",
+        order_type: orderType,
+        preferred_delivery_date: deliveryDate?.toISOString() || undefined,
         customer_accountId: customer?.id ? String(customer.id) : undefined,
       })
 
@@ -119,6 +123,16 @@ export default function CheckoutForm() {
         <DeliveryAddressForm
           addresses={addresses}
           onAddressReady={handleAddressReady}
+        />
+      </div>
+
+      <div className="bg-white pb-6 p-4 md:p-6">
+        <ShippingDetails
+          onShippingChange={(type, date) => {
+            setOrderType(type)
+            setDeliveryDate(date)
+          }}
+          language={languageCode}
         />
       </div>
 
