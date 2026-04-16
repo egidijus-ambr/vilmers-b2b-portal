@@ -119,6 +119,37 @@ export default function CheckoutForm() {
 
   return (
     <div className="flex flex-col gap-y-6">
+      {/* Customer information */}
+      <div className="bg-white pb-6 p-4 md:p-6">
+        <h2 className="text-xl md:text-2xl font-medium text-gray-900 mb-6">
+          Customer information
+        </h2>
+        <div className="flex flex-col gap-y-3">
+          <div className="flex">
+            <span className="w-32 text-sm text-gray-500 flex-shrink-0">Name</span>
+            <span className="text-sm text-dark-blue">{customer?.b2b_company_name || [customer?.name, customer?.surname].filter(Boolean).join(" ") || "—"}</span>
+          </div>
+          {customer?.phone && (
+            <div className="flex">
+              <span className="w-32 text-sm text-gray-500 flex-shrink-0">Phone</span>
+              <span className="text-sm text-dark-blue">{customer.phone}</span>
+            </div>
+          )}
+          {customer?.email && (
+            <div className="flex">
+              <span className="w-32 text-sm text-gray-500 flex-shrink-0">Email</span>
+              <span className="text-sm text-dark-blue">{customer.email}</span>
+            </div>
+          )}
+          {customer?.account_code && (
+            <div className="flex">
+              <span className="w-32 text-sm text-gray-500 flex-shrink-0">Customer code</span>
+              <span className="text-sm text-dark-blue">{customer.account_code}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="bg-white pb-6 p-4 md:p-6">
         <DeliveryAddressForm
           addresses={addresses}
