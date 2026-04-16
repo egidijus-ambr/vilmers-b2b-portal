@@ -1,7 +1,6 @@
 import React from "react"
 import { requestMagicLink } from "@lib/data/customer"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
-import ErrorMessage from "@modules/checkout/components/error-message"
 import Button from "@modules/common/components/button"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
@@ -93,7 +92,7 @@ const Login = ({ setCurrentView }: Props) => {
           />
         </div>
 
-        <ErrorMessage error={errorMessage} data-testid="login-error-message" />
+        {errorMessage && <p className="text-sm text-red-500" data-testid="login-error-message">{errorMessage}</p>}
 
         <SubmitButton data-testid="sign-in-button" className="w-full">
           {t("log-in")}
