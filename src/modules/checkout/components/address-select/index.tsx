@@ -1,6 +1,12 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import {
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+} from "@headlessui/react"
+import ChevronDown from "@modules/common/icons/chevron-down"
 
 export interface Address {
   id: number
@@ -34,59 +40,29 @@ export default function AddressSelect({
   label,
   placeholder = "Select an address",
 }: AddressSelectProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
-
-  const selected = addresses.find((a) => a.id === selectedAddressId)
+  const selected = addresses.find((a) => a.id === selectedAddressId) ?? null
 
   return (
-    <div ref={ref} className="relative w-full">
+    <div className="w-full">
       {label && (
         <label className="block text-sm font-medium text-dark-blue mb-1.5">
           {label}
         </label>
       )}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-14 flex items-center justify-between px-3 text-base border border-gray-300 bg-white text-left leading-5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-      >
-        <span className={selected ? "text-dark-blue" : "text-gray-500"}>
-          {selected ? formatAddress(selected) : placeholder}
-        </span>
-        <svg
-          className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {isOpen && addresses.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 shadow-lg max-h-60 overflow-auto">
-          {addresses.map((addr) => (
-            <li key={addr.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  onSelect(addr)
-                  setIsOpen(false)
-                }}
-                className={`w-full text-left px-3 py-3 hover:bg-gray-50 ${
-                  addr.id === selectedAddressId ? "bg-gray-50" : ""
-                }`}
+      <Listbox value={selected} onChange={(addr) => addr && onSelect(addr)}>
+        <div className="relative">
+          <ListboxButton className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 bg-white text-left hover:border-gray-400 transition-colors">
+            <span className={selected ? "text-dark-blue truncate" : "text-gray-500"}>
+              {selected ? formatAddress(selected) : placeholder}
+            </span>
+            <ChevronDown size="14" className="flex-shrink-0 ml-2" />
+          </ListboxButton>
+          <ListboxOptions className="absolute z-50 mt-1 w-full bg-white border border-gray-300 shadow-md max-h-60 overflow-auto">
+            {addresses.map((addr) => (
+              <ListboxOption
+                key={addr.id}
+                value={addr}
+                className="px-3 py-3 cursor-pointer hover:bg-gray-100 data-[selected]:bg-gray-50"
               >
                 <div className="text-sm font-medium text-dark-blue">
                   {addr.description || addr.address_1}
@@ -106,11 +82,11 @@ export default function AddressSelect({
                     ))}
                   </div>
                 )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </div>
+      </Listbox>
     </div>
   )
 }
