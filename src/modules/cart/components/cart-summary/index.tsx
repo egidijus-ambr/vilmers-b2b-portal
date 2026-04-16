@@ -39,7 +39,7 @@ function getItemImage(item: FurnisystemsCartItem): string | undefined {
   )
 }
 
-export default function CartSummary() {
+export default function CartSummary({ children }: { children?: React.ReactNode }) {
   const { t, language } = useTranslations("account")
   const { items } = useCart()
 
@@ -130,11 +130,13 @@ export default function CartSummary() {
         </div>
       </div>
       <div className="mt-6">
-        <LocalizedClientLink href="/checkout" className="block">
-          <Button className="w-full">
-            Proceed to checkout
-          </Button>
-        </LocalizedClientLink>
+        {children ?? (
+          <LocalizedClientLink href="/checkout" className="block">
+            <Button className="w-full">
+              Proceed to checkout
+            </Button>
+          </LocalizedClientLink>
+        )}
       </div>
     </div>
   )

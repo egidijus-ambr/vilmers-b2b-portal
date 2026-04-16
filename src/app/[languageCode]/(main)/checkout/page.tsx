@@ -64,15 +64,16 @@ export default function Checkout() {
               <CheckoutForm ref={checkoutRef} onStateChange={setCheckoutState} />
             </div>
             <div className="relative">
-              <div className="flex flex-col gap-y-6 sticky top-[120px]">
-                <CartSummary />
-                <Button
-                  className="w-full"
-                  onClick={() => checkoutRef.current?.placeOrder()}
-                  disabled={!checkoutState.isReady || checkoutState.isSubmitting}
-                >
-                  {checkoutState.isSubmitting ? "Placing order..." : "Place Order"}
-                </Button>
+              <div className="flex flex-col gap-y-8 sticky top-[120px]">
+                <CartSummary>
+                  <Button
+                    className="w-full"
+                    onClick={() => checkoutRef.current?.placeOrder()}
+                    disabled={!checkoutState.isReady || checkoutState.isSubmitting}
+                  >
+                    {checkoutState.isSubmitting ? "Placing order..." : "Place Order"}
+                  </Button>
+                </CartSummary>
               </div>
             </div>
           </div>
