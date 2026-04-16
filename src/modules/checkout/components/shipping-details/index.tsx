@@ -66,6 +66,11 @@ export default function ShippingDetails({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Notify parent of default order type on mount
+  useEffect(() => {
+    onShippingChange(orderType, null)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const today = useMemo(() => new Date(), [])
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
