@@ -18,6 +18,7 @@ interface AddressSelectProps {
   addresses: Address[]
   selectedAddressId: number | null
   onSelect: (address: Address) => void
+  label?: string
   placeholder?: string
 }
 
@@ -30,6 +31,7 @@ export default function AddressSelect({
   addresses,
   selectedAddressId,
   onSelect,
+  label,
   placeholder = "Select an address",
 }: AddressSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -48,17 +50,22 @@ export default function AddressSelect({
   const selected = addresses.find((a) => a.id === selectedAddressId)
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-full">
+      {label && (
+        <label className="block text-sm font-medium text-dark-blue mb-1.5">
+          {label}
+        </label>
+      )}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 border border-ui-border-base rounded-md bg-ui-bg-field text-left text-base-regular hover:bg-ui-bg-field-hover"
+        className="w-full flex items-center justify-between px-3 py-3 border border-gray-300 bg-white text-left leading-5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
       >
-        <span className={selected ? "text-ui-fg-base" : "text-ui-fg-muted"}>
+        <span className={selected ? "text-dark-blue" : "text-gray-500"}>
           {selected ? formatAddress(selected) : placeholder}
         </span>
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -68,7 +75,7 @@ export default function AddressSelect({
       </button>
 
       {isOpen && addresses.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full bg-white border border-ui-border-base rounded-md shadow-lg max-h-60 overflow-auto">
+        <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 shadow-lg max-h-60 overflow-auto">
           {addresses.map((addr) => (
             <li key={addr.id}>
               <button
@@ -77,14 +84,14 @@ export default function AddressSelect({
                   onSelect(addr)
                   setIsOpen(false)
                 }}
-                className={`w-full text-left px-4 py-3 hover:bg-ui-bg-field-hover ${
-                  addr.id === selectedAddressId ? "bg-ui-bg-field" : ""
+                className={`w-full text-left px-3 py-3 hover:bg-gray-50 ${
+                  addr.id === selectedAddressId ? "bg-gray-50" : ""
                 }`}
               >
-                <div className="text-sm font-medium text-ui-fg-base">
+                <div className="text-sm font-medium text-dark-blue">
                   {addr.description || addr.address_1}
                 </div>
-                <div className="text-sm text-ui-fg-subtle">
+                <div className="text-sm text-gray-500">
                   {formatAddress(addr)}
                 </div>
                 {addr.roles && (
@@ -92,7 +99,7 @@ export default function AddressSelect({
                     {addr.roles.split(";").map((role) => (
                       <span
                         key={role}
-                        className="text-xs bg-gray-100 px-2 py-0.5 rounded text-ui-fg-subtle"
+                        className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500"
                       >
                         {role.trim()}
                       </span>

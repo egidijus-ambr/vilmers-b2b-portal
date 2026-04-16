@@ -127,6 +127,7 @@ export default function DeliveryAddressForm({
             addresses={addresses}
             selectedAddressId={selectedAddressId}
             onSelect={handleSelectAddress}
+            label="Delivery address"
           />
           <button
             type="button"
@@ -143,7 +144,7 @@ export default function DeliveryAddressForm({
           <button
             type="button"
             onClick={handleCancelNew}
-            className="text-sm text-ui-fg-subtle underline self-start"
+            className="text-sm text-gray-500 underline self-start"
           >
             ← Back to address selection
           </button>

@@ -32,7 +32,7 @@ export default function Checkout() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-ui-fg-subtle">Loading...</div>
+        <div className="text-gray-500">Loading...</div>
       </div>
     )
   }
