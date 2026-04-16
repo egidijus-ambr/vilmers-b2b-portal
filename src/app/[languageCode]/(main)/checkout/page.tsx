@@ -19,7 +19,7 @@ export default function Checkout() {
   const router = useRouter()
   const { t } = useTranslations("account")
   const checkoutRef = useRef<CheckoutFormHandle>(null)
-  const [checkoutState, setCheckoutState] = useState<CheckoutFormState>({ isReady: false, isSubmitting: false })
+  const [checkoutState, setCheckoutState] = useState<CheckoutFormState>({ isSubmitting: false })
 
   useEffect(() => {
     if (!isLoading && items.length === 0) {
@@ -69,7 +69,7 @@ export default function Checkout() {
                   <Button
                     className="w-full"
                     onClick={() => checkoutRef.current?.placeOrder()}
-                    disabled={!checkoutState.isReady || checkoutState.isSubmitting}
+                    disabled={checkoutState.isSubmitting}
                   >
                     {checkoutState.isSubmitting ? "Placing order..." : "Place Order"}
                   </Button>

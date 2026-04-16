@@ -15,7 +15,6 @@ export interface CheckoutFormHandle {
 }
 
 export interface CheckoutFormState {
-  isReady: boolean
   isSubmitting: boolean
 }
 
@@ -50,12 +49,11 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const [error, setError] = useState<string | null>(null)
   const [orderType, setOrderType] = useState("")
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
-
-  const isReady = isAddressValid && !!orderType
+  const [showErrors, setShowErrors] = useState(false)
 
   useEffect(() => {
-    onStateChange?.({ isReady, isSubmitting })
-  }, [isReady, isSubmitting, onStateChange])
+    onStateChange?.({ isSubmitting })
+  }, [isSubmitting, onStateChange])
 
   useImperativeHandle(ref, () => ({
     placeOrder: handlePlaceOrder,
@@ -75,7 +73,13 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   )
 
   async function handlePlaceOrder() {
-    if (!addressData || !isAddressValid) return
+    if (!isAddressValid || !orderType) {
+      setShowErrors(true)
+      // Scroll to first error
+      const firstError = document.querySelector("[data-checkout-error]")
+      firstError?.scrollIntoView({ behavior: "smooth", block: "center" })
+      return
+    }
 
     setIsSubmitting(true)
     setError(null)
@@ -178,6 +182,9 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
           onAddressReady={handleAddressReady}
         />
       </div>
+      {showErrors && !isAddressValid && (
+        <p data-checkout-error className="text-sm text-red-500 -mt-4">Please select or enter a delivery address</p>
+      )}
 
       <div className="bg-white pb-6 p-4 md:p-6">
         <ShippingDetails
@@ -188,6 +195,9 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
           language={languageCode}
         />
       </div>
+      {showErrors && !orderType && (
+        <p data-checkout-error className="text-sm text-red-500 -mt-4">Please select an order type</p>
+      )}
 
       {error && (
         <p className="text-sm text-red-500">{error}</p>
