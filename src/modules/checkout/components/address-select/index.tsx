@@ -59,7 +59,7 @@ export default function AddressSelect({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-3 border border-gray-300 bg-white text-left leading-5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        className="w-full h-14 flex items-center justify-between px-3 text-base border border-gray-300 bg-white text-left leading-5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
       >
         <span className={selected ? "text-dark-blue" : "text-gray-500"}>
           {selected ? formatAddress(selected) : placeholder}

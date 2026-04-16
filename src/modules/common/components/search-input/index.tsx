@@ -54,7 +54,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
           onChange={(e) => onChange(e.target.value)}
           autoFocus={autoFocus}
           onKeyDown={onKeyDown}
-          className={`block w-full ${showSearchIcon ? "pl-10" : "pl-3"} pr-3 py-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
+          className={`block w-full h-14 text-base ${showSearchIcon ? "pl-10" : "pl-3"} pr-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
         />
       </div>
     </div>
