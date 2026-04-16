@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import AddressSelect, { Address } from "@modules/checkout/components/address-select"
 import SearchInput from "@modules/common/components/search-input"
+import CountrySelect from "@modules/common/components/country-select"
 import Button from "@modules/common/components/button"
+import { useTranslations } from "@lib/i18n"
 
 export interface AddressFormData {
   address_name: string
@@ -25,6 +27,7 @@ export default function DeliveryAddressForm({
   addresses,
   onAddressReady,
 }: DeliveryAddressFormProps) {
+  const { language } = useTranslations("account")
   const [mode, setMode] = useState<"select" | "new">("select")
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
 
@@ -213,12 +216,11 @@ export default function DeliveryAddressForm({
             )}
           </div>
           <div>
-            <SearchInput
+            <CountrySelect
               label="Country"
               value={watch("country")}
-              onChange={(val) => setValue("country", val, { shouldValidate: true })}
-              showSearchIcon={false}
-              placeholder="Country"
+              onChange={(code) => setValue("country", code, { shouldValidate: true })}
+              language={language}
             />
             {errors.country && (
               <p className="text-sm text-red-500 mt-1">{errors.country.message}</p>
