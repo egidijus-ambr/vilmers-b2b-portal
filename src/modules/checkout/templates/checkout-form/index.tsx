@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
@@ -8,8 +8,16 @@ import { fetchCustomerAddresses, placeOrder } from "@lib/data/checkout"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
 import ShippingDetails from "@modules/checkout/components/shipping-details"
 import { Address } from "@modules/checkout/components/address-select"
-import Button from "@modules/common/components/button"
 import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
+
+export interface CheckoutFormHandle {
+  placeOrder: () => Promise<void>
+}
+
+export interface CheckoutFormState {
+  isReady: boolean
+  isSubmitting: boolean
+}
 
 function getItemName(item: FurnisystemsCartItem, language: string): string {
   const container = item.product_container
@@ -24,7 +32,11 @@ function getItemName(item: FurnisystemsCartItem, language: string): string {
   return localProfile?.name || "-"
 }
 
-export default function CheckoutForm() {
+interface CheckoutFormProps {
+  onStateChange?: (state: CheckoutFormState) => void
+}
+
+const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function CheckoutForm({ onStateChange }, ref) {
   const router = useRouter()
   const params = useParams()
   const languageCode = params.languageCode as string
@@ -38,6 +50,16 @@ export default function CheckoutForm() {
   const [error, setError] = useState<string | null>(null)
   const [orderType, setOrderType] = useState("")
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
+
+  const isReady = isAddressValid && !!orderType
+
+  useEffect(() => {
+    onStateChange?.({ isReady, isSubmitting })
+  }, [isReady, isSubmitting, onStateChange])
+
+  useImperativeHandle(ref, () => ({
+    placeOrder: handlePlaceOrder,
+  }))
 
   useEffect(() => {
     if (!customer?.id) return
@@ -170,13 +192,8 @@ export default function CheckoutForm() {
       {error && (
         <p className="text-sm text-red-500">{error}</p>
       )}
-
-      <Button
-        onClick={handlePlaceOrder}
-        disabled={!isAddressValid || !orderType || isSubmitting}
-      >
-        {isSubmitting ? "Placing order..." : "Place Order"}
-      </Button>
     </div>
   )
-}
+})
+
+export default CheckoutForm
