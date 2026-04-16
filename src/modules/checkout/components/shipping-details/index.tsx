@@ -51,7 +51,7 @@ export default function ShippingDetails({
   onShippingChange,
   language = "en",
 }: ShippingDetailsProps) {
-  const [orderType, setOrderType] = useState("expo")
+  const [orderType, setOrderType] = useState("")
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const calendarRef = useRef<HTMLDivElement>(null)

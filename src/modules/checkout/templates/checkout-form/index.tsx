@@ -36,7 +36,7 @@ export default function CheckoutForm() {
   const [isAddressValid, setIsAddressValid] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [orderType, setOrderType] = useState("expo")
+  const [orderType, setOrderType] = useState("")
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export default function CheckoutForm() {
 
       <Button
         onClick={handlePlaceOrder}
-        disabled={!isAddressValid || isSubmitting}
+        disabled={!isAddressValid || !orderType || isSubmitting}
       >
         {isSubmitting ? "Placing order..." : "Place Order"}
       </Button>
