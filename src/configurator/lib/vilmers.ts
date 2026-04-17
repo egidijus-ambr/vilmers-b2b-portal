@@ -577,7 +577,7 @@ export const getConfigString = ({
 
     sets.push(newSet)
   } else {
-    console.error('Unknown product type', product.advanced_product_type)
+    console.error('Unknown product type', product.advanced_product?.advanced_product_type)
     const newSet: any[] = []
 
     // find model component
