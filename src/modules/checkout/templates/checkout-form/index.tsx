@@ -148,6 +148,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       expected_delivery_date: deliveryDate?.toISOString() || new Date().toISOString(),
       shipping_method: { id: 6 },
       status: "PENDING",
+      reference: item.reference,
       advanced_product_data: buildAdvancedProductData(item),
       metadata: null,
     }))
