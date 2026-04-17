@@ -332,6 +332,7 @@ export interface OrderDetailItem {
     fabric_group_name?: string
     cartItemFabrics?: CartItemFabricDetail[]
     fabricCombination?: {
+      id?: number
       image?: OrderDetailImage
     }
     sofa_forms?: SofaFormDetail[]
