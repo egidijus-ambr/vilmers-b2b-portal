@@ -207,7 +207,7 @@ const ConfiguratorContent = ({
               .map((f: any) => ({
                 fabricId: f.fabricObject?.id,
                 fabric_groupId: f.fabricGroupObject?.id,
-                combination_optionId: f.combinationOptionId,
+                combination_optionId: f.option?.id,
               }))
           : undefined,
         customerReference: reference,
