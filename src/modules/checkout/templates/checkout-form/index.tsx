@@ -18,6 +18,45 @@ export interface CheckoutFormState {
   isSubmitting: boolean
 }
 
+function buildAdvancedProductData(item: FurnisystemsCartItem) {
+  if (!item.product_container?.advanced_product) return undefined
+
+  const fabricCombinationFabrics = item.cartItemFabrics
+    ?.filter(
+      (f) => f.fabric?.id != null && f.fabric_group?.id != null && f.combination_option?.id != null
+    )
+    .map((f) => ({
+      fabricId: f.fabric!.id,
+      fabric_groupId: f.fabric_group!.id,
+      optionId: f.combination_option!.id,
+    }))
+
+  const fabricCombination =
+    item.fabricCombination?.id != null || (fabricCombinationFabrics && fabricCombinationFabrics.length > 0)
+      ? {
+          id: item.fabricCombination?.id,
+          fabrics: fabricCombinationFabrics,
+        }
+      : undefined
+
+  const additional_components = item.additional_components?.length
+    ? item.additional_components.map((c) => ({ id: c.id }))
+    : undefined
+
+  const data = {
+    advanced_product_type: item.advanced_product_type ?? undefined,
+    selected_sofa_combinations: item.selected_sofa_combinations ?? undefined,
+    fabric_code: item.fabric_code ?? undefined,
+    fabric_group: item.fabric_group?.id != null ? { id: item.fabric_group.id } : undefined,
+    fabric: item.fabric?.id != null ? { id: item.fabric.id } : undefined,
+    fabricCombination,
+    additional_components,
+  }
+
+  const hasAny = Object.values(data).some((v) => v !== undefined)
+  return hasAny ? data : undefined
+}
+
 function getItemName(item: FurnisystemsCartItem, language: string): string {
   const container = item.product_container
   const singleProduct = container?.single_product
@@ -109,6 +148,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       expected_delivery_date: deliveryDate?.toISOString() || new Date().toISOString(),
       shipping_method: { id: 6 },
       status: "PENDING",
+      advanced_product_data: buildAdvancedProductData(item),
       metadata: null,
     }))
 
