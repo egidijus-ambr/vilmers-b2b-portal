@@ -32,10 +32,10 @@ function buildAdvancedProductData(item: FurnisystemsCartItem) {
     }))
 
   const fabricCombination =
-    item.fabricCombination?.id != null || (fabricCombinationFabrics && fabricCombinationFabrics.length > 0)
+    item.fabricCombination?.id != null
       ? {
-          id: item.fabricCombination?.id,
-          fabrics: fabricCombinationFabrics,
+          id: item.fabricCombination.id,
+          fabrics: fabricCombinationFabrics ?? [],
         }
       : undefined
 
