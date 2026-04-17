@@ -1,7 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import { GET_ADDITIONAL_ADDRESS, CREATE_ORDER } from "@modules/checkout/queries/checkout-queries"
+import { GET_ADDITIONAL_ADDRESS, CREATE_ORDER, GET_PAYMENT_METHOD } from "@modules/checkout/queries/checkout-queries"
 
 export async function fetchCustomerAddresses(customerId: number) {
   try {
@@ -17,8 +17,23 @@ export async function fetchCustomerAddresses(customerId: number) {
   }
 }
 
+export async function fetchDefaultPaymentMethod(): Promise<number | null> {
+  try {
+    const result = await sdk.getApolloClient().query({
+      query: GET_PAYMENT_METHOD,
+      fetchPolicy: "network-only",
+    })
+    const methods = result.data?.findManyPaymentMethod
+    return methods?.[0]?.id ?? null
+  } catch (err: any) {
+    console.error("Failed to fetch payment method:", err)
+    return null
+  }
+}
+
 export async function placeOrder(variables: Record<string, any>) {
   try {
+    console.log("[placeOrder] purchased_by:", JSON.stringify(variables.purchased_by))
     const result = await sdk.getApolloClient().mutate({
       mutation: CREATE_ORDER,
       variables,

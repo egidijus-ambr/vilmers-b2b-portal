@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } fro
 import { useRouter, useParams } from "next/navigation"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
-import { fetchCustomerAddresses, placeOrder } from "@lib/data/checkout"
+import { fetchCustomerAddresses, placeOrder, fetchDefaultPaymentMethod } from "@lib/data/checkout"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
 import ShippingDetails from "@modules/checkout/components/shipping-details"
 import { Address } from "@modules/checkout/components/address-select"
@@ -50,6 +50,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const [orderType, setOrderType] = useState("")
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
   const [showErrors, setShowErrors] = useState(false)
+  const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null)
 
   useEffect(() => {
     onStateChange?.({ isSubmitting })
@@ -63,6 +64,10 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
     if (!customer?.id) return
     fetchCustomerAddresses(Number(customer.id)).then(setAddresses)
   }, [customer?.id])
+
+  useEffect(() => {
+    fetchDefaultPaymentMethod().then(setPaymentMethodId)
+  }, [])
 
   const handleAddressReady = useCallback(
     (data: AddressFormData, isValid: boolean) => {
@@ -81,6 +86,11 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       return
     }
 
+    if (!paymentMethodId) {
+      setError("No payment method available. Please contact support.")
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -90,45 +100,61 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
     )
 
     const orderItems = items.map((item) => ({
-      product_container_id: item.productContainerId,
+      product_container: { id: item.productContainerId },
       quantity: item.quantity ?? 1,
       price: item.price ?? 0,
-      name: getItemName(item, languageCode),
       sku: item.fabric_code || "",
+      product_type: item.product_container?.advanced_product ? "advanced" : "single",
+      shipping_price: 0,
+      expected_delivery_date: deliveryDate?.toISOString() || new Date().toISOString(),
+      shipping_method: { id: 6 },
+      status: "PENDING",
       metadata: null,
     }))
 
     try {
       const result = await placeOrder({
-        phoneNumber: customer?.phone || "",
-        shipping_country: addressData.country,
-        billing_country: addressData.country,
-        shipping_address_1: addressData.address_1,
-        billing_address_1: addressData.address_1,
-        shipping_address_2: addressData.address_2 || "",
-        billing_address_2: addressData.address_2 || "",
-        shipping_city: addressData.city,
-        billing_city: addressData.city,
-        shipping_postal_code: addressData.postal_code,
-        billing_postal_code: addressData.postal_code,
-        shipping_state_region: addressData.state_region || "",
+        shipping_address: {
+          phone_number: customer?.phone || "",
+          country: addressData.country,
+          city: addressData.city,
+          postal_code: addressData.postal_code,
+          state_region: addressData.state_region || "",
+          address_1: addressData.address_1,
+          address_2: addressData.address_2 || "",
+        },
+        billing_address: {
+          phone_number: customer?.phone || "",
+          country: addressData.country,
+          city: addressData.city,
+          postal_code: addressData.postal_code,
+          state_region: addressData.state_region || "",
+          address_1: addressData.address_1,
+          address_2: addressData.address_2 || "",
+        },
+        payment_method: { id: paymentMethodId },
+        purchased_by: {
+          name: customer?.name || "",
+          surname: customer?.surname || "",
+          email: customer?.email || "",
+          account_code: customer?.account_code || undefined,
+          buying_as_company: true,
+          customer_accountId: customer?.id ? String(customer.id) : undefined,
+          default_phone_number: customer?.phone || "",
+        },
         discount_applied: 0,
         sub_total_price: totalPrice,
         total_shipping_price: 0,
         total_price_without_VAT: totalPrice,
         total_price: totalPrice,
-        email: customer?.email || "",
-        name: customer?.name || "",
-        surname: customer?.surname || "",
         order_items: orderItems,
         company_name: customer?.b2b_company_name || "",
-        buying_as_company: true,
-        order_locale: languageCode.toUpperCase(),
+        order_locale: languageCode.toLowerCase(),
         hostname: window.location.hostname,
         price_multiplier: 1,
         order_type: orderType,
         preferred_delivery_date: deliveryDate?.toISOString() || undefined,
-        customer_accountId: customer?.id ? String(customer.id) : undefined,
+        shopId: { id: 1 },
       })
 
       if (result.success && result.orderId) {

@@ -51,9 +51,11 @@ export default async function PageLayout({
     <CustomerProvider customer={customer}>
       <ShopSettingsProvider initialShopSettings={shopSettings}>
         <CartProvider>
-          <Nav customer={customer} categories={categories} />
-          {children}
-          <Footer language={validLanguage} />
+          <div className="flex flex-col min-h-screen">
+            <Nav customer={customer} categories={categories} />
+            <main className="flex-1">{children}</main>
+            <Footer language={validLanguage} />
+          </div>
           {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
         </CartProvider>
       </ShopSettingsProvider>

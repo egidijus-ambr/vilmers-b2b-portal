@@ -1,33 +1,29 @@
-import { Metadata } from "next"
+import { redirect } from "next/navigation"
 
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import StoreTemplate from "@modules/store/templates"
-
-export const metadata: Metadata = {
-  title: "Store",
-  description: "Explore all of our products.",
-}
+import { listMenuCategories } from "@lib/data/categories"
+import { supportedLanguages, defaultLanguage } from "@lib/i18n/config"
 
 type Params = {
-  searchParams: Promise<{
-    sortBy?: SortOptions
-    page?: string
-  }>
   params: Promise<{
-    countryCode: string
+    languageCode: string
   }>
 }
 
 export default async function StorePage(props: Params) {
-  const params = await props.params;
-  const searchParams = await props.searchParams;
-  const { sortBy, page } = searchParams
+  const { languageCode } = await props.params
+  const validLanguage = supportedLanguages.includes(languageCode)
+    ? languageCode
+    : defaultLanguage
 
-  return (
-    <StoreTemplate
-      sortBy={sortBy}
-      page={page}
-      countryCode={params.countryCode}
-    />
-  )
+  const menuCategories = await listMenuCategories(validLanguage)
+  const rootCategory = menuCategories?.find((c) => c.is_root_category)
+  const permalink =
+    rootCategory?.category_profiles?.[0]?.meta_information?.permalink
+
+  if (permalink) {
+    redirect(`/${validLanguage}/categories/${permalink}`)
+  }
+
+  // Fallback: redirect to home if no root category found
+  redirect(`/${validLanguage}`)
 }
