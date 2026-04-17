@@ -59,13 +59,17 @@ export interface FurnisystemsCartItem {
       fabric_group_profiles?: { language: string; name: string }[]
     }
     combination_option?: {
+      id: number
       fabricCombinationOptionProfiles?: { language: string; name: string }[]
     }
   }[]
   sofa_forms: { id: number; name?: string; code?: string; dimensions?: any }[]
-  fabric_group: any | null
-  fabric: any | null
-  fabricCombination: { image?: { src?: string; src_xs?: string; src_thumbnail?: string } } | null
+  fabric_group: { id: number } | null
+  fabric: { id: number } | null
+  fabricCombination: {
+    id: number
+    image?: { src?: string; src_xs?: string; src_thumbnail?: string }
+  } | null
   reference?: string
   createdAt: string
   updatedAt: string
