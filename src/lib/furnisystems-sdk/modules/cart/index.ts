@@ -17,6 +17,12 @@ const CART_ITEM_FRAGMENT = gql`
     advanced_product_type
     fabric_code
     fabric_group_name
+    fabric {
+      id
+    }
+    fabric_group {
+      id
+    }
     selected_sofa_combinations
     cartId
     productContainerId
@@ -115,6 +121,7 @@ const CART_ITEM_FRAGMENT = gql`
         }
       }
       combination_option {
+        id
         fabricCombinationOptionProfiles {
           language
           name
@@ -127,6 +134,7 @@ const CART_ITEM_FRAGMENT = gql`
       code
     }
     fabricCombination {
+      id
       image {
         src
         src_xs
