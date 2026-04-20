@@ -52,7 +52,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
   }
 
   return (
-    <span className={`flex flex-col ${alignClass} ${className}`}>
+    <span className={`flex flex-col gap-y-0.5 ${alignClass} ${className}`}>
       <span
         className={`line-through text-ui-fg-muted ${sizeClasses[size].regular}`}
         data-testid="price-original"
