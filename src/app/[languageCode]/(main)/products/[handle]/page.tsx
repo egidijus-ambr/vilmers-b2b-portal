@@ -25,10 +25,6 @@ function mapFurnisystemsProduct(
   rootCategory?: CategoryData
 ): ProductPageData {
   const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
-  // OTHER products are structurally advanced (they have advanced_product data) but use a
-  // simple fixed config — no configurator UI needed.
-  const showConfigurator =
-    isAdvanced && container.advanced_product?.advanced_product_type !== "OTHER"
 
   const profiles = isAdvanced
     ? container.advanced_product?.advanced_product_profiles ?? []
@@ -173,7 +169,7 @@ function mapFurnisystemsProduct(
     linkedProductGroups,
     comfortData,
     languageCode,
-    isAdvancedProduct: showConfigurator,
+    isAdvancedProduct: isAdvanced,
     productContainerId: container.id,
   }
 }
