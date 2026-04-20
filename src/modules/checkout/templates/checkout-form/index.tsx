@@ -78,7 +78,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const router = useRouter()
   const params = useParams()
   const languageCode = params.languageCode as string
-  const { items, refreshCart } = useCart()
+  const { items } = useCart()
   const { customer } = useCustomer()
 
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -199,14 +199,8 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       })
 
       if (result.success && result.orderId) {
-        try {
-          await refreshCart()
-        } catch (refreshErr) {
-          console.error("[CheckoutForm] Cart refresh failed:", refreshErr)
-        }
-        router.push(
-          `/${languageCode}/account/orders/details/${result.orderId}?placed=1`
-        )
+        window.location.href = `/${languageCode}/account/orders/details/${result.orderId}?placed=1`
+        return
       } else {
         setError(result.error || "Failed to place order. Please try again.")
       }
