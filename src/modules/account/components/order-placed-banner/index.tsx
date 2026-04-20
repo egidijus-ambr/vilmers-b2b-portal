@@ -1,7 +1,6 @@
 "use client"
 
 import { useTranslations } from "@lib/i18n"
-import Button from "@modules/common/components/button"
 
 type OrderPlacedBannerProps = {
   onClose: () => void
@@ -19,14 +18,14 @@ export default function OrderPlacedBanner({ onClose }: OrderPlacedBannerProps) {
       <span className="text-sm font-medium">
         {t("order-successfully-placed")}
       </span>
-      <Button
+      <button
         type="button"
         aria-label={t("dismiss")}
         onClick={onClose}
         className="text-green-800 hover:opacity-70 text-lg leading-none px-2"
       >
         ✕
-      </Button>
+      </button>
     </div>
   )
 }
