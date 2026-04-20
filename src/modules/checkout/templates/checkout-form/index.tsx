@@ -193,6 +193,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
         company_name: customer?.b2b_company_name || "",
         order_locale: languageCode.toLowerCase(),
         hostname: window.location.hostname,
+        metadata: { address_name: addressData.address_name },
         price_multiplier: 1,
         order_type: orderType,
         preferred_delivery_date: deliveryDate?.toISOString() || undefined,
