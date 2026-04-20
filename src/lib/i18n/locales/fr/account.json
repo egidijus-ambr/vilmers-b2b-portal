@@ -27,6 +27,7 @@
   "no-orders-found": "Aucune commande trouvée",
   "order-date": "Date de commande",
   "order-id": "ID de commande",
+  "order-successfully-placed": "Commande passée avec succès",
   "orders": "Ordres",
   "orders-description": "Suivre, gérer et traiter les achats de manière transparente avec des mises à jour en temps réel et des outils intuitifs.",
   "partially-delivered": "Partiellement livré",

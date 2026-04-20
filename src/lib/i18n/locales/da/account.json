@@ -27,6 +27,7 @@
   "no-orders-found": "Ingen ordrer fundet",
   "order-date": "Ordredato",
   "order-id": "Ordre-ID",
+  "order-successfully-placed": "Ordre afgivet",
   "orders": "Ordrer",
   "orders-description": "Spor, administrere og procesopkøb problemfrit med realtidsopdateringer og intuitive værktøjer.",
   "partially-delivered": "Delvist leveret",
