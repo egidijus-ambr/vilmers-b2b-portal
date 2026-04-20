@@ -180,3 +180,35 @@ export const isDiscountValid = (
   const end = new Date(discount.expiryDate)
   return now >= start && now <= end
 }
+
+export type DiscountResult = {
+  regular: number
+  discounted: number
+  hasDiscount: boolean
+}
+
+/**
+ * Apply a customer-level percentage discount to a price.
+ * Null/0/undefined pct is treated as "no discount".
+ * Out-of-range values are clamped to [0, 100] with a dev warning.
+ */
+export const applyDiscount = (
+  regular: number,
+  pct: number | null | undefined
+): DiscountResult => {
+  if (pct == null || pct === 0) {
+    return { regular, discounted: regular, hasDiscount: false }
+  }
+  let safePct = pct
+  if (pct < 0 || pct > 100) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[applyDiscount] pct ${pct} out of range [0,100], clamping`
+      )
+    }
+    safePct = Math.max(0, Math.min(100, pct))
+  }
+  const raw = regular * (1 - safePct / 100)
+  const discounted = Math.round(raw * 100) / 100
+  return { regular, discounted, hasDiscount: discounted < regular }
+}
