@@ -4,7 +4,9 @@ import React, { Fragment, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import { Dialog, Transition } from "@headlessui/react"
 import type { SofaFormExtended, SelectedFabricState } from "@configurator/lib/types"
-import { getPriceFromPriceCategories, priceFormatter } from "@configurator/lib/price-utils"
+import { getPriceFromPriceCategories, applyDiscount } from "@configurator/lib/price-utils"
+import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
+import PriceDisplay from "@modules/common/components/price-display"
 
 // =============================================
 // Types
@@ -189,6 +191,7 @@ interface ModuleCardProps {
 
 function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, currency }: ModuleCardProps) {
   const price = getPriceFromPriceCategories(selectedFabric, sofaForm.form_price_fabric_category)
+  const { discountPct } = useCustomerDiscount()
   const dims = sofaForm.dimensions
 
   // Card width matches Konva stage width so preview fits perfectly
@@ -215,9 +218,17 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
         <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2">
           {sofaForm.name}
         </p>
-        {price != null && price > 0 && (
-          <p className="text-xs text-gray-500">{priceFormatter(price, currency)}</p>
-        )}
+        {price != null && price > 0 && (() => {
+          const priced = applyDiscount(price, discountPct)
+          return (
+            <PriceDisplay
+              regular={priced.regular}
+              discounted={priced.hasDiscount ? priced.discounted : null}
+              currencyCode={currency ?? "EUR"}
+              size="sm"
+            />
+          )
+        })()}
         <button
           onClick={onAdd}
           className="mt-1.5 w-full text-xs font-medium border border-[#1e2a3a] text-[#1e2a3a] hover:bg-[#1e2a3a] hover:text-white transition-colors py-1 px-2"
