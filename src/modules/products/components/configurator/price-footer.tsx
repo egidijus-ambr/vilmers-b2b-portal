@@ -2,7 +2,9 @@
 
 import React, { useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
-import { priceFormatter } from "@configurator/lib/price-utils"
+import { applyDiscount } from "@configurator/lib/price-utils"
+import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
+import PriceDisplay from "@modules/common/components/price-display"
 import Button from "@modules/common/components/button"
 
 type PriceFooterProps = {
@@ -25,7 +27,10 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
     }
   }
 
+  const { discountPct } = useCustomerDiscount()
   const displayPrice = totalPrice != null ? totalPrice * quantity : null
+  const priced =
+    displayPrice != null ? applyDiscount(displayPrice, discountPct) : null
   const displayVolume = volume * quantity
 
   return (
@@ -70,10 +75,14 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
 
         {/* Price display */}
         <div className="text-right">
-          {displayPrice != null ? (
-            <p className="text-lg font-semibold">
-              {priceFormatter(displayPrice, currency)}
-            </p>
+          {priced != null ? (
+            <PriceDisplay
+              regular={priced.regular}
+              discounted={priced.hasDiscount ? priced.discounted : null}
+              currencyCode={currency ?? "EUR"}
+              size="lg"
+              align="right"
+            />
           ) : (
             <p className="text-sm text-gray-400">Select options to see price</p>
           )}
