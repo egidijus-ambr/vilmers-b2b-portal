@@ -33,7 +33,7 @@ export default function OrderDetailsPage() {
   )
 
   useEffect(() => {
-    if (showPlacedBanner && searchParams?.get("placed") === "1") {
+    if (showPlacedBanner) {
       router.replace(pathname, { scroll: false })
     }
     // Run once on mount; intentionally omit deps to avoid re-triggering
