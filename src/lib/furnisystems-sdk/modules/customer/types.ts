@@ -102,6 +102,7 @@ export interface Customer {
   b2b_company_name?: string
   account_code?: string
   price_listId?: string
+  b2b_customer_discount?: number | null
   group_price_listId?: string
   tags?: { id: number }[]
   fabric_palettes?: FabricPalette[]

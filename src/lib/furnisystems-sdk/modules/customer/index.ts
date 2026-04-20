@@ -57,6 +57,7 @@ const GET_ME_QUERY = gql`
       b2b_company_name
       account_code
       price_listId
+      b2b_customer_discount
       tags {
         id
       }
@@ -571,6 +572,7 @@ export class CustomerModule {
           b2b_company_name: string
           account_code: string
           price_listId: string
+          b2b_customer_discount: number | null
           tags: { id: number }[]
           fabric_palettes: {
             id: string
@@ -640,6 +642,7 @@ export class CustomerModule {
         b2b_company_name: customerData.b2b_company_name,
         account_code: customerData.account_code,
         price_listId: customerData.price_listId,
+        b2b_customer_discount: customerData.b2b_customer_discount,
         tags: customerData.tags,
         fabric_palettes: customerData.fabric_palettes,
         customer_group: customerData.customer_group,
