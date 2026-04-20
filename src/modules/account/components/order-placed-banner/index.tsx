@@ -21,7 +21,7 @@ export default function OrderPlacedBanner({ onClose }: OrderPlacedBannerProps) {
       </span>
       <Button
         type="button"
-        aria-label="Dismiss"
+        aria-label={t("dismiss")}
         onClick={onClose}
         className="text-green-800 hover:opacity-70 text-lg leading-none px-2"
       >
