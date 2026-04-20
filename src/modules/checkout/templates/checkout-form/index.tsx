@@ -199,7 +199,11 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       })
 
       if (result.success && result.orderId) {
-        await refreshCart()
+        try {
+          await refreshCart()
+        } catch (refreshErr) {
+          console.error("[CheckoutForm] Cart refresh failed:", refreshErr)
+        }
         router.push(
           `/${languageCode}/account/orders/details/${result.orderId}?placed=1`
         )
