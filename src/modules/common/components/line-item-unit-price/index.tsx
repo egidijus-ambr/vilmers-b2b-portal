@@ -1,6 +1,10 @@
+"use client"
+
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
+import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
+import { applyDiscount } from "@configurator/lib/price-utils"
 
 type LineItemUnitPriceProps = {
   item: HttpTypes.StoreCartLineItem | HttpTypes.StoreOrderLineItem
@@ -13,12 +17,17 @@ const LineItemUnitPrice = ({
   style = "default",
   currencyCode,
 }: LineItemUnitPriceProps) => {
+  const { discountPct } = useCustomerDiscount()
   const { total, original_total } = item
-  const hasReducedPrice = total < original_total
+  const safeTotal = total ?? 0
+  const quantity = item.quantity || 1
+  const baselineUnitRegular = Math.max(original_total ?? safeTotal, safeTotal) / quantity
+  const effectiveUnit = applyDiscount(safeTotal / quantity, discountPct).discounted
+  const hasReducedPrice = effectiveUnit < baselineUnitRegular
 
-  const percentage_diff = Math.round(
-    ((original_total - total) / original_total) * 100
-  )
+  const percentage_diff = hasReducedPrice
+    ? Math.round(((baselineUnitRegular - effectiveUnit) / baselineUnitRegular) * 100)
+    : 0
 
   return (
     <div className="flex flex-col text-ui-fg-muted justify-center h-full">
@@ -33,7 +42,7 @@ const LineItemUnitPrice = ({
               data-testid="product-unit-original-price"
             >
               {convertToLocale({
-                amount: original_total / item.quantity,
+                amount: baselineUnitRegular,
                 currency_code: currencyCode,
               })}
             </span>
@@ -50,7 +59,7 @@ const LineItemUnitPrice = ({
         data-testid="product-unit-price"
       >
         {convertToLocale({
-          amount: total / item.quantity,
+          amount: effectiveUnit,
           currency_code: currencyCode,
         })}
       </span>

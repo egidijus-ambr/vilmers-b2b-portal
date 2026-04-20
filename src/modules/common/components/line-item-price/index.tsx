@@ -1,7 +1,11 @@
+"use client"
+
 import { getPercentageDiff } from "@lib/util/get-precentage-diff"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
+import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
+import { applyDiscount } from "@configurator/lib/price-utils"
 
 type LineItemPriceProps = {
   item: HttpTypes.StoreCartLineItem | HttpTypes.StoreOrderLineItem
@@ -14,10 +18,13 @@ const LineItemPrice = ({
   style = "default",
   currencyCode,
 }: LineItemPriceProps) => {
+  const { discountPct } = useCustomerDiscount()
   const { total, original_total } = item
-  const originalPrice = original_total
-  const currentPrice = total
-  const hasReducedPrice = currentPrice < originalPrice
+  const safeTotal = total ?? 0
+  const baselineRegular = Math.max(original_total ?? safeTotal, safeTotal)
+  const b2b = applyDiscount(safeTotal, discountPct)
+  const effectivePrice = b2b.discounted
+  const hasReducedPrice = effectivePrice < baselineRegular
 
   return (
     <div className="flex flex-col gap-x-2 text-ui-fg-subtle items-end">
@@ -33,14 +40,14 @@ const LineItemPrice = ({
                 data-testid="product-original-price"
               >
                 {convertToLocale({
-                  amount: originalPrice,
+                  amount: baselineRegular,
                   currency_code: currencyCode,
                 })}
               </span>
             </p>
             {style === "default" && (
               <span className="text-ui-fg-interactive">
-                -{getPercentageDiff(originalPrice, currentPrice || 0)}%
+                -{getPercentageDiff(baselineRegular, effectivePrice || 0)}%
               </span>
             )}
           </>
@@ -52,7 +59,7 @@ const LineItemPrice = ({
           data-testid="product-price"
         >
           {convertToLocale({
-            amount: currentPrice,
+            amount: effectivePrice,
             currency_code: currencyCode,
           })}
         </span>

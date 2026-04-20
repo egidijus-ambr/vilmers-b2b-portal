@@ -5,6 +5,9 @@ import { useCart } from "@lib/context/cart-context"
 import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Button from "@modules/common/components/button"
+import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
+import { applyDiscount } from "@configurator/lib/price-utils"
+import PriceDisplay from "@modules/common/components/price-display"
 
 const localeMap: Record<string, string> = {
   en: "en-GB",
@@ -42,6 +45,7 @@ function getItemImage(item: FurnisystemsCartItem): string | undefined {
 export default function CartSummary({ children }: { children?: React.ReactNode }) {
   const { t, language } = useTranslations("account")
   const { items } = useCart()
+  const { discountPct } = useCustomerDiscount()
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat(localeMap[language] || "en-GB", {
@@ -54,6 +58,7 @@ export default function CartSummary({ children }: { children?: React.ReactNode }
     (sum, item) => sum + (item.price ?? 0) * (item.quantity ?? 1),
     0
   )
+  const totalPriced = applyDiscount(totalPrice, discountPct)
 
   const totalVolume = items.reduce(
     (sum, item) => sum + (item.volume ?? 0) * (item.quantity ?? 1),
@@ -96,8 +101,20 @@ export default function CartSummary({ children }: { children?: React.ReactNode }
                 <span className="text-sm font-light text-gray-500 mt-1">
                   Quantity: {quantity}
                 </span>
-                <span className="text-base font-medium text-dark-blue mt-4">
-                  {formatPrice(price)}
+                <span className="mt-4">
+                  {(() => {
+                    const itemPriced = applyDiscount(price, discountPct)
+                    return (
+                      <PriceDisplay
+                        regular={price}
+                        discounted={itemPriced.hasDiscount ? itemPriced.discounted : null}
+                        currencyCode="EUR"
+                        locale={localeMap[language] || "en-GB"}
+                        size="md"
+                        align="left"
+                      />
+                    )
+                  })()}
                 </span>
               </div>
             </div>
@@ -124,8 +141,15 @@ export default function CartSummary({ children }: { children?: React.ReactNode }
           <span className="text-[18px] font-semibold text-dark-blue">
             TOTAL
           </span>
-          <span className="text-[18px] font-semibold text-dark-blue">
-            {formatPrice(totalPrice)}
+          <span>
+            <PriceDisplay
+              regular={totalPriced.regular}
+              discounted={totalPriced.hasDiscount ? totalPriced.discounted : null}
+              currencyCode="EUR"
+              locale={localeMap[language] || "en-GB"}
+              size="lg"
+              align="right"
+            />
           </span>
         </div>
       </div>
