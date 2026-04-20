@@ -78,7 +78,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const router = useRouter()
   const params = useParams()
   const languageCode = params.languageCode as string
-  const { items } = useCart()
+  const { items, refreshCart } = useCart()
   const { customer } = useCustomer()
 
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -199,7 +199,10 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       })
 
       if (result.success && result.orderId) {
-        router.push(`/${languageCode}/order/${result.orderId}/confirmed`)
+        await refreshCart()
+        router.push(
+          `/${languageCode}/account/orders/details/${result.orderId}?placed=1`
+        )
       } else {
         setError(result.error || "Failed to place order. Please try again.")
       }
