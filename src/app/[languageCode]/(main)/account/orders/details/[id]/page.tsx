@@ -1,13 +1,14 @@
 "use client"
 
 import { useCustomer } from "@lib/context/customer-context"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, useSearchParams, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { retrieveOrder } from "@lib/data/orders"
 import { OrderDetail } from "@lib/furnisystems-sdk/modules/customer/types"
 import OrderDetailsTemplate from "@modules/account/components/order-details"
 import PageContent from "@modules/common/components/page-content"
 import PageHeader from "@modules/common/components/page-header"
+import OrderPlacedBanner from "@modules/account/components/order-placed-banner"
 import { useTranslations } from "@lib/i18n"
 
 const isFeatureEnabled =
@@ -24,6 +25,20 @@ export default function OrderDetailsPage() {
 
   const orderId = params?.id as string
   const languageCode = params?.languageCode as string
+
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const [showPlacedBanner, setShowPlacedBanner] = useState(
+    searchParams?.get("placed") === "1"
+  )
+
+  useEffect(() => {
+    if (showPlacedBanner && searchParams?.get("placed") === "1") {
+      router.replace(pathname, { scroll: false })
+    }
+    // Run once on mount; intentionally omit deps to avoid re-triggering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!isFeatureEnabled) {
@@ -110,6 +125,9 @@ export default function OrderDetailsPage() {
         breadcrumbItems={breadcrumbItems}
       />
       <PageContent>
+        {showPlacedBanner && (
+          <OrderPlacedBanner onClose={() => setShowPlacedBanner(false)} />
+        )}
         <OrderDetailsTemplate order={order} />
       </PageContent>
     </>
