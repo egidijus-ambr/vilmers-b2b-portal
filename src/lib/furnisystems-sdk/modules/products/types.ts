@@ -40,6 +40,7 @@ export interface SingleProduct {
 
 export interface AdvancedProduct {
   id: number
+  advanced_product_type?: string | null
   price_from: number
   base_prices: BasePrice[]
   images: ProductCardImage[]
@@ -182,6 +183,7 @@ export interface FurnisystemsProductDetail {
   } | null
   advanced_product: {
     id: number
+    advanced_product_type?: string | null
     advanced_product_profiles: {
       name: string
       description: string | null

@@ -188,6 +188,7 @@ const GET_PRODUCT_BY_PERMALINK = gql`
       }
       advanced_product {
         id
+        advanced_product_type
         advanced_product_profiles(where: { language: { equals: $language } }) {
           name
           description
@@ -707,6 +708,7 @@ export class ProductsModule {
         } | null
         advanced_product: {
           id: number
+          advanced_product_type: string | null
           advanced_product_profiles: RawProfile[]
           images: {
             id: number

@@ -576,8 +576,7 @@ export const getConfigString = ({
     }
 
     sets.push(newSet)
-  } else {
-    console.error('Unknown product type', product.advanced_product?.advanced_product_type)
+  } else if (product.advanced_product?.advanced_product_type === 'OTHER') {
     const newSet: any[] = []
 
     // find model component
@@ -599,6 +598,11 @@ export const getConfigString = ({
     )
     newSet.push({ ...config, price })
     sets.push(newSet)
+  } else {
+    console.warn(
+      '[vilmers] Unknown advanced_product_type',
+      product.advanced_product?.advanced_product_type
+    )
   }
 
   return sets
