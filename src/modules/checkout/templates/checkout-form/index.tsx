@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { fetchCustomerAddresses, placeOrder, fetchDefaultPaymentMethod } from "@lib/data/checkout"
+import { sdk } from "@lib/config"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
 import ShippingDetails from "@modules/checkout/components/shipping-details"
 import { Address } from "@modules/checkout/components/address-select"
@@ -199,6 +200,13 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       })
 
       if (result.success && result.orderId) {
+        try {
+          await Promise.all(
+            items.map((item) => sdk.cart.removeItem(item.id))
+          )
+        } catch (clearErr) {
+          console.error("[CheckoutForm] Cart clear failed:", clearErr)
+        }
         window.location.href = `/${languageCode}/account/orders/details/${result.orderId}?placed=1`
         return
       } else {
