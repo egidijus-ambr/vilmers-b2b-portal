@@ -1,3 +1,6 @@
+// Verification script for the applyDiscount helper.
+// Run with: pnpm exec sucrase-node scripts/verify-apply-discount.ts
+// Exits 0 when all cases pass, 1 otherwise.
 import { applyDiscount } from "../src/configurator/lib/price-utils"
 
 const cases: Array<[number, number | null | undefined, { discounted: number; hasDiscount: boolean }]> = [
