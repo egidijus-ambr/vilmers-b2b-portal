@@ -322,12 +322,14 @@ git commit -m "feat(pricelist): refuse deletion of the default pricelist"
 
 ---
 
-### Task 4: Authorization rules
+### Task 4: Authorization rules (+ lock down existing PriceList CRUD)
+
+**Scope expansion (decided with user on 2026-04-21 per advisor finding):** The existing PriceList CRUD mutations (`createOnePriceList`, `updateOnePriceList`, `deleteOnePriceList`, `deleteManyPriceList`) have no graphql-shield rules today — they are publicly callable. This makes the "exactly one default" invariant unenforceable (anyone could call `updateOnePriceList(data: { default: true })` and bypass `setDefaultPriceList`). This task now locks those down too, so the feature's security story holds. If locking them breaks the admin UI (because it doesn't send admin auth), we fall back to documenting the limitation honestly — surface the failure in this task's smoke-test.
 
 **Files:**
 - Modify: `/Users/egidijus/Documents/GitHub/furnisystems-workspace/furnisystems-backend/src/permissions.ts`
 
-- [ ] **Step 1: Locate the Query / Mutation rule blocks**
+- [ ] **Step 1: Locate the Query / Mutation rule blocks and identify the admin rule**
 
 Open `src/permissions.ts`. You will see an object exported to graphql-shield with shapes roughly like:
 
@@ -338,33 +340,69 @@ const permissions = shield({
 })
 ```
 
-- [ ] **Step 2: Add rules for the two new operations**
+Grep the file for the existing admin predicate (likely named `isAdmin` or similar). If no admin rule exists in the file, check for `isAuthenticated` or any rule used on other admin-scoped mutations (e.g., a mutation in the `Customer` or `CustomerGroup` types that only admins call). Name whichever you find as `<adminRule>` in the steps below.
 
-Locate the `Mutation` block and add a rule for `setDefaultPriceList`. Use whatever admin-check rule is already in use for other pricelist write operations (likely `isAdmin` or similar — grep `updateOnePriceList` in the same file to find the existing rule). Example:
+- [ ] **Step 2: Add rules for the two NEW operations**
+
+In the `Mutation` block:
 
 ```ts
-// Inside the Mutation rule block
-setDefaultPriceList: isAdmin,
+setDefaultPriceList: <adminRule>,
 ```
 
-Locate the `Query` block. The `defaultPriceList` query must be PUBLIC (guests call it). If graphql-shield has a default deny-all fallback, add an explicit allow:
+In the `Query` block (must be PUBLIC — guests call this):
 
 ```ts
-// Inside the Query rule block
 defaultPriceList: allow, // or whatever the public-rule name is in this file
 ```
 
-If the file uses `fallbackRule: allow`, no explicit entry is needed — verify by checking the top of the file.
+If the file uses a `fallbackRule: allow` pattern, no explicit `defaultPriceList` entry is needed for the query — verify by checking the top of the file.
 
-- [ ] **Step 3: Smoke-test**
+- [ ] **Step 3: Lock down the existing PriceList CRUD**
 
-Restart the backend. Attempt `setDefaultPriceList(id: 1)` from an unauthenticated playground session — expected: permission error. From an admin-authenticated session — expected: success. Attempt `defaultPriceList` from unauthenticated — expected: success.
+In the `Mutation` block, add (or replace existing entries if any):
 
-- [ ] **Step 4: Commit**
+```ts
+createOnePriceList: <adminRule>,
+updateOnePriceList: <adminRule>,
+deleteOnePriceList: <adminRule>,
+deleteManyPriceList: <adminRule>,
+```
+
+- [ ] **Step 4: Smoke-test permission enforcement**
+
+Restart the backend. From an unauthenticated playground session:
+
+- `setDefaultPriceList(id: 1)` → expected: permission error.
+- `defaultPriceList` → expected: success.
+- `updateOnePriceList(where: { id: 1 }, data: { name: "x" })` → expected: permission error (was previously allowed).
+
+From an admin-authenticated session:
+
+- All of the above succeed.
+
+- [ ] **Step 5: Smoke-test admin UI compatibility**
+
+Start the admin UI (`cd saas-admin-ui && pnpm dev`) and log in. Navigate to `/dashboard/b2b-accounts/price-lists`. Create a new pricelist. Expected: succeeds (admin auth is forwarded). If it fails with a permission error, the admin UI isn't sending admin auth to this endpoint — escalate to the user:
+
+- Option B fallback: revert the CRUD lockdown additions from Step 3 (keep only `setDefaultPriceList: <adminRule>` from Step 2), and add a **Known limitation** note to the spec's §2 → "Known limitation — generic update" section saying PriceList CRUD is otherwise unprotected and that fixing it is tracked separately.
+
+Do NOT ship the scope expansion if the admin UI regresses. A cosmetic security label is better than a broken admin.
+
+- [ ] **Step 6: Commit**
+
+If Step 5 passed:
 
 ```bash
 git add src/permissions.ts
-git commit -m "feat(pricelist): restrict setDefaultPriceList to admin; allow public defaultPriceList"
+git commit -m "feat(pricelist): restrict all PriceList mutations to admin; allow public defaultPriceList query"
+```
+
+If Step 5 failed and the CRUD lockdown was reverted:
+
+```bash
+git add src/permissions.ts
+git commit -m "feat(pricelist): restrict setDefaultPriceList to admin; allow public defaultPriceList query"
 ```
 
 ---
