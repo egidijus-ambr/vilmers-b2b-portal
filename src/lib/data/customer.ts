@@ -41,6 +41,8 @@ export const retrieveCustomer = async (): Promise<ExtendedStoreCustomer | null> 
     }
 
     console.log("[retrieveCustomer] Customer mapping completed successfully")
+    console.log("[debug] customer keys", Object.keys(customer || {}), "b2b_discount=",   
+  (customer as any)?.b2b_customer_discount)
     return customer
   } catch (error) {
     console.log(
