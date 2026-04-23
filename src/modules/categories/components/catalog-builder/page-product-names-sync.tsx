@@ -19,11 +19,24 @@ export default function PageProductNamesSync({
 }: PageProductNamesSyncProps) {
   const context = useCatalogBuilder()
 
+  console.log("[pdf-debug] PageProductNamesSync render", {
+    productNamesCount: productNames.length,
+    productNames,
+    filterKey,
+    hasContext: !!context,
+  })
+
   useEffect(() => {
+    console.log("[pdf-debug] PageProductNamesSync mounted")
+  }, [])
+
+  useEffect(() => {
+    console.log("[pdf-debug] PageProductNamesSync -> setFilterKey", { filterKey, hasContext: !!context })
     context?.setFilterKey(filterKey)
   }, [filterKey, context])
 
   useEffect(() => {
+    console.log("[pdf-debug] PageProductNamesSync -> setPageProductNames", { productNamesCount: productNames.length, hasContext: !!context })
     context?.setPageProductNames(productNames)
   }, [productNames, context])
 
