@@ -53,14 +53,11 @@ export class ProductCataloguesModule {
   async getBatchProductCatalogues(
     names: string[]
   ): Promise<BatchProductCataloguesResponse> {
-    const query = names.map((n) => encodeURIComponent(n)).join(",")
-    const url = `${this.restApiUrl}/s3/product-catalogues?names=${query}`
-    console.log("[pdf-debug] getBatchProductCatalogues fetch ->", { url, namesCount: names.length, restApiUrl: this.restApiUrl })
     try {
-      const response = await fetch(url)
-
-      const rawText = await response.clone().text()
-      console.log("[pdf-debug] getBatchProductCatalogues response", { status: response.status, ok: response.ok, length: rawText.length })
+      const query = names.map((n) => encodeURIComponent(n)).join(",")
+      const response = await fetch(
+        `${this.restApiUrl}/s3/product-catalogues?names=${query}`
+      )
 
       if (!response.ok) {
         throw new NetworkError(
@@ -71,7 +68,6 @@ export class ProductCataloguesModule {
       const data: BatchProductCataloguesResponse = await response.json()
       return data
     } catch (error) {
-      console.warn("[pdf-debug] getBatchProductCatalogues error", error)
       if (error instanceof FurnisystemsError) {
         throw error
       }

@@ -59,6 +59,7 @@ export default function FabricPalettesPage() {
   const loadPalettes = useCallback(async () => {
     try {
       const data = await getFabricPalettes()
+      console.log("[palette-pdf-debug] page loadPalettes result", { total: data.length, withCode: data.filter((p: any) => !!p?.code).length, withoutCode: data.filter((p: any) => !p?.code).length, firstItemKeys: data[0] ? Object.keys(data[0]) : [], firstItemCode: (data[0] as any)?.code ?? null })
       setPalettes(data)
     } catch (error) {
       console.error("[FabricPalettesPage] Error loading palettes:", error)
@@ -213,6 +214,8 @@ export default function FabricPalettesPage() {
 
   const hasContent =
     palettes.length > 0 && palettes.some((p) => p.fabric_groups.length > 0)
+
+  console.log("[palette-pdf-debug] page render gate", { loading, totalPalettes: palettes.length, withCode: palettes.filter((p: any) => !!p?.code).length, hasContent, totalGroups, buttonsWouldRender: !loading && hasContent && totalGroups !== 0 && palettes.filter((p: any) => !!p?.code).length > 0 })
 
   return (
     <>

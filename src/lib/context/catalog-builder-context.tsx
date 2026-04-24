@@ -61,7 +61,6 @@ async function fetchCataloguesForNames(
 ): Promise<Record<string, CatalogueFile[]>> {
   // Only fetch names we don't already have
   const newNames = names.filter((n) => !(n in existing))
-  console.log("[pdf-debug] fetchCataloguesForNames called", { incomingCount: names.length, newNames, existingKeys: Object.keys(existing) })
   if (newNames.length === 0) return existing
 
   const merged = { ...existing }
@@ -69,18 +68,13 @@ async function fetchCataloguesForNames(
   // Batch in groups of 50 (backend limit)
   for (let i = 0; i < newNames.length; i += BATCH_SIZE) {
     const batch = newNames.slice(i, i + BATCH_SIZE)
-    console.log("[pdf-debug] fetchCataloguesForNames batch sending", { batchSize: batch.length, batch })
     try {
       const data =
         await sdk.productCatalogues.getBatchProductCatalogues(batch)
-      const summary: Record<string, number> = {}
       for (const [name, entry] of Object.entries(data.products)) {
         merged[name] = entry.catalogues
-        summary[name] = entry.catalogues.length
       }
-      console.log("[pdf-debug] fetchCataloguesForNames batch response", { productCount: Object.keys(data.products).length, perProductCounts: summary })
     } catch (err) {
-      console.warn("[pdf-debug] fetchCataloguesForNames batch error", err)
       console.error("Failed to fetch catalogues for batch:", err)
     }
   }
@@ -125,10 +119,6 @@ export function CatalogBuilderProvider({
   // Guard against concurrent selectAll calls
   const selectAllInProgress = useRef(false)
 
-  useEffect(() => {
-    console.log("[pdf-debug] CatalogBuilderProvider mounted")
-  }, [])
-
   // --- Filter key setter: resets all state on change ---
   const setFilterKey = useCallback((key: string) => {
     setFilterKeyState((prev) => {
@@ -144,20 +134,11 @@ export function CatalogBuilderProvider({
 
   // --- Page product names setter: triggers incremental catalogue fetch ---
   const setPageProductNames = useCallback((names: string[]) => {
-    console.log("[pdf-debug] setPageProductNames called", { incomingNames: names, currentMapKeys: Object.keys(catalogueMapRef.current) })
     setPageProductNamesState(names)
   }, [])
 
   // Fetch catalogues for current page products when they change
   useEffect(() => {
-    const existingKeys = Object.keys(catalogueMapRef.current)
-    const newNames = pageProductNames.filter((n) => !(n in catalogueMapRef.current))
-    console.log("[pdf-debug] pageProductNames effect fired", {
-      pageProductNames,
-      existingKeys,
-      newNames,
-      willFetch: pageProductNames.length > 0 && newNames.length > 0,
-    })
     if (pageProductNames.length === 0) return
     let cancelled = false
 

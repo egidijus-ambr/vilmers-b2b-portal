@@ -20,6 +20,7 @@ export const getFabricPalettes = async (): Promise<FabricPaletteDetail[]> => {
     }
 
     const palettes = await sdk.customer.getFabricPalettes()
+    console.log("[palette-pdf-debug] getFabricPalettes sdk result", { total: palettes.length, firstItemKeys: palettes[0] ? Object.keys(palettes[0] as any) : [], firstItemId: (palettes[0] as any)?.id ?? null, firstItemCode: (palettes[0] as any)?.code ?? null, firstItemName: (palettes[0] as any)?.name ?? null })
     return palettes
   } catch (error) {
     console.error("[getFabricPalettes] Error:", error)

@@ -40,17 +40,6 @@ export default function PdfCatalogueButton({
   const matchedCatalogues =
     marketMatches.length > 0 ? marketMatches : allCatalogues
 
-  console.log("[pdf-debug] PdfCatalogueButton render", {
-    productName,
-    customerMarket,
-    allCataloguesLen: allCatalogues.length,
-    marketMatchesLen: marketMatches.length,
-    matchedCataloguesLen: matchedCatalogues.length,
-    willRender: matchedCatalogues.length > 0,
-    hasContext: !!context,
-    mapKeys: Object.keys(catalogueMap),
-  })
-
   // Close dropdown on outside click
   useEffect(() => {
     if (!dropdownOpen) return
