@@ -649,7 +649,8 @@ export class ProductsModule {
 
   async getProductByPermalink(
     permalink: string,
-    language?: string
+    language?: string,
+    priceListIds?: number[]
   ): Promise<FurnisystemsProductDetail | null> {
     // Raw GraphQL response type (permalink nested under meta_information)
     type RawProfile = {
@@ -780,7 +781,7 @@ export class ProductsModule {
       meta_information: { is: { permalink: { equals: permalink } } },
       ...(lang ? { language: { equals: lang } } : {}),
     }
-    const where = {
+    const permalinkFilter = {
       OR: [
         { single_product: { is: { product_profiles: { some: profileSome } } } },
         {
@@ -789,6 +790,53 @@ export class ProductsModule {
           },
         },
       ],
+    }
+
+    let where: Record<string, unknown> = permalinkFilter
+
+    if (priceListIds && priceListIds.length > 0) {
+      const priceListSelect = { price_listId: { in: priceListIds } }
+      const priceListFilter = {
+        OR: [
+          // Single products always pass through
+          { single_product: { isNot: null } },
+          // Advanced products must have pricing matching customer's price lists
+          {
+            advanced_product: {
+              is: {
+                OR: [
+                  { base_prices: { some: priceListSelect } },
+                  {
+                    sofa_forms: {
+                      some: {
+                        form_price_fabric_category: { some: priceListSelect },
+                      },
+                    },
+                  },
+                  {
+                    advanced_product_price_fabric_category: {
+                      some: priceListSelect,
+                    },
+                  },
+                  {
+                    additional_component_to_advanced_product: {
+                      some: {
+                        price_fabric_category: { some: priceListSelect },
+                      },
+                    },
+                  },
+                  {
+                    additional_component_to_advanced_product: {
+                      some: { extra_prices: { some: priceListSelect } },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      }
+      where = { AND: [permalinkFilter, priceListFilter] }
     }
 
     try {
