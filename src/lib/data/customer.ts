@@ -21,6 +21,7 @@ import { ErrorHandlers } from "@lib/util/error-handler"
 import { validateSession } from "@lib/util/session-validation"
 import { validateTokenAndExtractCustomerId } from "@lib/util/jwt-utils"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
+import { getDefaultPriceListId } from "./default-pricelist"
 
 export const retrieveCustomer = async (): Promise<ExtendedStoreCustomer | null> => {
   // Prevent caching for authentication-related data
@@ -514,10 +515,17 @@ export async function getCustomerFilterData(): Promise<{
 
   const customerTagIds = customer?.tags?.map((t) => t.id)
   const groupPriceListId = await getGroupPriceListId()
-  const priceListIds = [
-    ...(customer?.price_listId ? [parseInt(customer.price_listId)] : []),
-    ...(groupPriceListId ? [parseInt(groupPriceListId)] : []),
-  ]
+
+  let priceListIds: number[]
+  if (!customer) {
+    const defaultId = await getDefaultPriceListId()
+    priceListIds = [defaultId]
+  } else {
+    priceListIds = [
+      ...(customer.price_listId ? [parseInt(customer.price_listId)] : []),
+      ...(groupPriceListId ? [parseInt(groupPriceListId)] : []),
+    ]
+  }
 
   return { customerTagIds, priceListIds }
 }
