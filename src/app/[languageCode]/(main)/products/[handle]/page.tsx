@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories } from "@lib/data/categories"
+import { getCustomerFilterData } from "@lib/data/customer"
 import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
 import type { LinkedProductType, ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import type { CategoryData } from "@lib/furnisystems-sdk"
@@ -176,7 +177,8 @@ function mapFurnisystemsProduct(
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle, languageCode } = await params
-  const product = await getProductByPermalink(handle, languageCode)
+  const { priceListIds } = await getCustomerFilterData()
+  const product = await getProductByPermalink(handle, languageCode, priceListIds)
 
   if (!product) {
     return { title: "Product Not Found" }
@@ -229,8 +231,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { handle, languageCode } = await params
+  const { priceListIds } = await getCustomerFilterData()
   const [product, menuCategories] = await Promise.all([
-    getProductByPermalink(handle, languageCode),
+    getProductByPermalink(handle, languageCode, priceListIds),
     listMenuCategories(languageCode),
   ])
 
