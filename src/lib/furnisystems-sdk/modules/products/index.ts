@@ -131,41 +131,8 @@ const SEARCH_PRODUCTS = gql`
 
 const GET_PRODUCT_BY_PERMALINK = gql`
   ${PRODUCT_CARD_FRAGMENT}
-  query GetProductByPermalink($permalink: String!, $language: Language) {
-    findFirstProductContainer(
-      where: {
-        OR: [
-          {
-            single_product: {
-              is: {
-                product_profiles: {
-                  some: {
-                    meta_information: {
-                      is: { permalink: { equals: $permalink } }
-                    }
-                    language: { equals: $language }
-                  }
-                }
-              }
-            }
-          }
-          {
-            advanced_product: {
-              is: {
-                advanced_product_profiles: {
-                  some: {
-                    meta_information: {
-                      is: { permalink: { equals: $permalink } }
-                    }
-                    language: { equals: $language }
-                  }
-                }
-              }
-            }
-          }
-        ]
-      }
-    ) {
+  query GetProductByPermalink($where: ProductContainerWhereInput!, $language: Language) {
+    findFirstProductContainer(where: $where) {
       id
       type
       single_product {
@@ -808,13 +775,29 @@ export class ProductsModule {
       } | null
     }
 
+    const lang = language?.toLowerCase()
+    const profileSome = {
+      meta_information: { is: { permalink: { equals: permalink } } },
+      ...(lang ? { language: { equals: lang } } : {}),
+    }
+    const where = {
+      OR: [
+        { single_product: { is: { product_profiles: { some: profileSome } } } },
+        {
+          advanced_product: {
+            is: { advanced_product_profiles: { some: profileSome } },
+          },
+        },
+      ],
+    }
+
     try {
       const response = await this.client.query<RawResponse>(
         GET_PRODUCT_BY_PERMALINK,
         {
           variables: {
-            permalink,
-            ...(language ? { language: language.toLowerCase() } : {}),
+            where,
+            ...(lang ? { language: lang } : {}),
           },
           fetchPolicy: "no-cache",
           errorPolicy: "all",
