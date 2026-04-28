@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useCart } from "@lib/context/cart-context"
-import { useCustomer } from "@lib/context/customer-context"
+import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { fetchCustomerAddresses, placeOrder, fetchDefaultPaymentMethod } from "@lib/data/checkout"
 import { sdk } from "@lib/config"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
@@ -80,7 +80,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const params = useParams()
   const languageCode = params.languageCode as string
   const { items } = useCart()
-  const { customer } = useCustomer()
+  const { actingCustomer: customer } = useActingCustomer() as { actingCustomer: any }
 
   const [addresses, setAddresses] = useState<Address[]>([])
   const [addressData, setAddressData] = useState<AddressFormData | null>(null)
