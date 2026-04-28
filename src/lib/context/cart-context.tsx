@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { sdk } from "@lib/config"
 import { FurnisystemsCart, FurnisystemsCartItem, AddCartItemInput } from "@lib/furnisystems-sdk/modules/cart/types"
-import { useCustomer } from "./customer-context"
+import { useActingCustomer } from "./acting-customer-context"
 
 interface CartContextValue {
   cart: FurnisystemsCart | null
@@ -19,11 +19,11 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { customer } = useCustomer()
+  const { actingCustomer } = useActingCustomer()
   const [cart, setCart] = useState<FurnisystemsCart | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const customerId = customer?.id ? Number(customer.id) : undefined
+  const customerId = actingCustomer?.id ? Number(actingCustomer.id) : undefined
 
   const refreshCart = useCallback(async () => {
     if (!customerId) {
@@ -43,8 +43,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [customerId])
 
   useEffect(() => {
-    refreshCart()
-  }, [refreshCart])
+    if (!customerId) {
+      setCart(null)
+      setIsLoading(false)
+      return
+    }
+    let cancelled = false
+    const requestedId = customerId
+    setIsLoading(true)
+    sdk.cart
+      .getOrCreateActiveCart(requestedId)
+      .then((next) => {
+        if (cancelled) return
+        setCart(next)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        console.error("[CartContext] Failed to fetch cart:", error)
+      })
+      .finally(() => {
+        if (cancelled) return
+        setIsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [customerId])
 
   const addItem = useCallback(async (input: AddCartItemInput) => {
     if (!cart) return
