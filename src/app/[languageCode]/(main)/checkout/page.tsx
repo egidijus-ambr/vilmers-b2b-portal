@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
+import { useActingCustomer } from "@lib/context/acting-customer-context"
+import { isAgentOrAdmin } from "@lib/util/roles"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "@lib/i18n"
 import PageHeader from "@modules/common/components/page-header"
@@ -15,6 +17,8 @@ import Button from "@modules/common/components/button"
 export default function Checkout() {
   const { items, isLoading } = useCart()
   const { customer } = useCustomer()
+  const { actingCustomer } = useActingCustomer()
+  const blockedNoActingCustomer = isAgentOrAdmin(customer) && !actingCustomer
   const { languageCode } = useParams() as { languageCode: string }
   const router = useRouter()
   const { t } = useTranslations("account")
@@ -68,8 +72,17 @@ export default function Checkout() {
                 <CartSummary>
                   <Button
                     className="w-full"
-                    onClick={() => checkoutRef.current?.placeOrder()}
-                    disabled={checkoutState.isSubmitting}
+                    onClick={
+                      blockedNoActingCustomer
+                        ? undefined
+                        : () => checkoutRef.current?.placeOrder()
+                    }
+                    disabled={checkoutState.isSubmitting || blockedNoActingCustomer}
+                    title={
+                      blockedNoActingCustomer
+                        ? "Select a customer first"
+                        : undefined
+                    }
                   >
                     {checkoutState.isSubmitting ? "Placing order..." : "Place Order"}
                   </Button>

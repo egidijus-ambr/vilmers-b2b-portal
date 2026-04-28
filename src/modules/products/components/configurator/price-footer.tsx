@@ -4,6 +4,9 @@ import React, { useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { applyDiscount } from "@configurator/lib/price-utils"
 import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
+import { useCustomer } from "@lib/context/customer-context"
+import { useActingCustomer } from "@lib/context/acting-customer-context"
+import { isAgentOrAdmin } from "@lib/util/roles"
 import PriceDisplay from "@modules/common/components/price-display"
 import Button from "@modules/common/components/button"
 
@@ -17,6 +20,9 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
   const { state, dispatch } = useConfigurator()
   const { totalPrice, quantity } = state
   const [isAdding, setIsAdding] = useState(false)
+  const { customer } = useCustomer()
+  const { actingCustomer } = useActingCustomer()
+  const blockedNoActingCustomer = isAgentOrAdmin(customer) && !actingCustomer
 
   const handleAddToCart = async () => {
     setIsAdding(true)
@@ -90,8 +96,14 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
 
         {/* Add to cart */}
         <Button
-          onClick={handleAddToCart}
-          disabled={totalPrice == null || totalPrice <= 0 || isAdding}
+          onClick={blockedNoActingCustomer ? undefined : handleAddToCart}
+          disabled={
+            totalPrice == null ||
+            totalPrice <= 0 ||
+            isAdding ||
+            blockedNoActingCustomer
+          }
+          title={blockedNoActingCustomer ? "Select a customer first" : undefined}
         >
           {isAdding ? (
             <span className="flex items-center gap-2">

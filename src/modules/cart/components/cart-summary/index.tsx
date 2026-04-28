@@ -2,6 +2,9 @@
 
 import { useTranslations } from "@lib/i18n"
 import { useCart } from "@lib/context/cart-context"
+import { useCustomer } from "@lib/context/customer-context"
+import { useActingCustomer } from "@lib/context/acting-customer-context"
+import { isAgentOrAdmin } from "@lib/util/roles"
 import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Button from "@modules/common/components/button"
@@ -46,6 +49,9 @@ export default function CartSummary({ children }: { children?: React.ReactNode }
   const { t, language } = useTranslations("account")
   const { items } = useCart()
   const { discountPct } = useCustomerDiscount()
+  const { customer } = useCustomer()
+  const { actingCustomer } = useActingCustomer()
+  const blockedNoActingCustomer = isAgentOrAdmin(customer) && !actingCustomer
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat(localeMap[language] || "en-GB", {
@@ -154,13 +160,22 @@ export default function CartSummary({ children }: { children?: React.ReactNode }
         </div>
       </div>
       <div className="mt-6">
-        {children ?? (
-          <LocalizedClientLink href="/checkout" className="block">
-            <Button className="w-full">
+        {children ??
+          (blockedNoActingCustomer ? (
+            <Button
+              className="w-full"
+              disabled
+              title="Select a customer first"
+            >
               Proceed to checkout
             </Button>
-          </LocalizedClientLink>
-        )}
+          ) : (
+            <LocalizedClientLink href="/checkout" className="block">
+              <Button className="w-full">
+                Proceed to checkout
+              </Button>
+            </LocalizedClientLink>
+          ))}
       </div>
     </div>
   )
