@@ -7,10 +7,12 @@ import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import { CustomerProvider } from "@lib/context/customer-context"
+import { ActingCustomerProvider } from "@lib/context/acting-customer-context"
 import { ShopSettingsProvider } from "@lib/context/shop-settings-context"
 import { CartProvider } from "@lib/context/cart-context"
 import TawkToChat from "@modules/common/components/tawk-to-chat"
 import { listMenuCategories } from "@lib/data/categories"
+import { getActingCustomer } from "@lib/data/acting-customer"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -33,6 +35,12 @@ export default async function PageLayout({
     customer ? "customer found" : "no customer"
   )
 
+  const acting = await getActingCustomer()
+  console.log(
+    "[PageLayout] Acting customer retrieval result:",
+    acting ? "acting customer present" : "no acting customer"
+  )
+
   const shopSettings = await getShopSettings()
   console.log(
     "[PageLayout] Shop settings retrieval result:",
@@ -49,16 +57,18 @@ export default async function PageLayout({
 
   return (
     <CustomerProvider customer={customer}>
-      <ShopSettingsProvider initialShopSettings={shopSettings}>
-        <CartProvider>
-          <div className="flex flex-col min-h-screen">
-            <Nav customer={customer} categories={categories} />
-            <main className="flex-1">{children}</main>
-            <Footer language={validLanguage} />
-          </div>
-          {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
-        </CartProvider>
-      </ShopSettingsProvider>
+      <ActingCustomerProvider initialActingCustomer={acting}>
+        <ShopSettingsProvider initialShopSettings={shopSettings}>
+          <CartProvider>
+            <div className="flex flex-col min-h-screen">
+              <Nav customer={customer} categories={categories} />
+              <main className="flex-1">{children}</main>
+              <Footer language={validLanguage} />
+            </div>
+            {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
+          </CartProvider>
+        </ShopSettingsProvider>
+      </ActingCustomerProvider>
     </CustomerProvider>
   )
 }
