@@ -22,6 +22,7 @@ import { validateSession } from "@lib/util/session-validation"
 import { validateTokenAndExtractCustomerId } from "@lib/util/jwt-utils"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
 import { getDefaultPriceListId } from "./default-pricelist"
+import { getActingCustomer } from "./acting-customer"
 
 export const retrieveCustomer = async (): Promise<ExtendedStoreCustomer | null> => {
   // Prevent caching for authentication-related data
@@ -508,12 +509,12 @@ export async function getCustomerFilterData(): Promise<{
 }> {
   let customer = null
   try {
-    customer = await retrieveCustomer()
+    customer = await getActingCustomer()
   } catch {
     // Not authenticated — no filtering
   }
 
-  const customerTagIds = customer?.tags?.map((t) => t.id)
+  const customerTagIds = customer?.tags?.map((t: { id: number }) => t.id)
   const groupPriceListId = await getGroupPriceListId()
 
   let priceListIds: number[]
