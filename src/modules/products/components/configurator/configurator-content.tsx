@@ -9,7 +9,7 @@ import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
 import { getStepsForProduct } from "@configurator/lib/component-utils"
-import { useCustomer } from "@lib/context/customer-context"
+import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
 import { useTranslations } from "@lib/i18n"
@@ -46,7 +46,7 @@ const ConfiguratorContent = ({
   priceListId: priceListIdProp,
   isOpen,
 }: ConfiguratorContentProps) => {
-  const { customer } = useCustomer()
+  const { actingCustomer: customer } = useActingCustomer() as { actingCustomer: any }
   const { addItem, items } = useCart()
   const paletteIds = useCustomerPaletteIds()
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
@@ -306,11 +306,11 @@ const ConfiguratorContent = ({
               </div>
               <div>
                 <span className="text-gray-400">Customer palettes:</span>{" "}
-                {customer?.fabric_palettes?.map(p => p.id).join(", ") || <span className="text-red-400">none</span>}
+                {customer?.fabric_palettes?.map((p: any) => p.id).join(", ") || <span className="text-red-400">none</span>}
               </div>
               <div>
                 <span className="text-gray-400">Group palettes:</span>{" "}
-                {customer?.customer_group?.fabric_palettes?.map(p => p.id).join(", ") || <span className="text-red-400">none</span>}
+                {customer?.customer_group?.fabric_palettes?.map((p: any) => p.id).join(", ") || <span className="text-red-400">none</span>}
               </div>
               <div>
                 <span className="text-gray-400">Price List ID:</span>{" "}
