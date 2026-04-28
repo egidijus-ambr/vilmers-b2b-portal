@@ -36,10 +36,6 @@ export default async function PageLayout({
   )
 
   const acting = await getActingCustomer()
-  console.log(
-    "[PageLayout] Acting customer retrieval result:",
-    acting ? "acting customer present" : "no acting customer"
-  )
 
   const shopSettings = await getShopSettings()
   console.log(
