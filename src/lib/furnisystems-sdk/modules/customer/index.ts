@@ -14,6 +14,8 @@ import {
   OrdersQueryOptions,
   OrdersQueryResult,
   FabricPaletteDetail,
+  SearchCustomerArgs,
+  SearchCustomerResult,
 } from "./types"
 import { useMutation } from "@apollo/client"
 
@@ -495,6 +497,21 @@ const GET_FABRIC_PALETTES_QUERY = gql`
           }
         }
       }
+    }
+  }
+`
+
+const SEARCH_CUSTOMERS_QUERY = gql`
+  query SearchCustomers($query: String, $limit: Int, $ids: [Int!]) {
+    searchCustomers(query: $query, limit: $limit, ids: $ids) {
+      id
+      name
+      surname
+      email
+      account_code
+      b2b_company_name
+      price_listId
+      role
     }
   }
 `
@@ -1082,6 +1099,29 @@ export class CustomerModule {
     } catch (error) {
       console.error("[getFabricPalettes] Error:", error)
       return []
+    }
+  }
+
+  async searchCustomers(
+    args: SearchCustomerArgs
+  ): Promise<SearchCustomerResult[]> {
+    try {
+      const response = await this.client.query<{
+        searchCustomers: SearchCustomerResult[]
+      }>(SEARCH_CUSTOMERS_QUERY, {
+        variables: {
+          query: args.query,
+          limit: args.limit,
+          ids: args.ids,
+        },
+        fetchPolicy: "no-cache",
+        errorPolicy: "all",
+      })
+
+      return response.searchCustomers ?? []
+    } catch (error) {
+      console.error("Error searching customers:", error)
+      throw error
     }
   }
 

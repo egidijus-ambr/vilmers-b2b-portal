@@ -448,3 +448,20 @@ export interface OrdersQueryResult {
   hasNextPage: boolean
   hasPreviousPage: boolean
 }
+
+export type SearchCustomerArgs = {
+  query?: string
+  limit?: number
+  ids?: number[]
+}
+
+export type SearchCustomerResult = {
+  id: number
+  name: string
+  surname: string | null
+  email: string | null
+  account_code: string | null
+  b2b_company_name: string | null
+  price_listId: number | null
+  role: string | null
+}
