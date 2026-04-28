@@ -8,6 +8,8 @@ import MobileMenu from "@modules/layout/components/mobile-menu"
 import MobileMenuButton from "@modules/layout/components/mobile-menu-button"
 import BackButton from "@modules/layout/components/back-button"
 import TopBar from "@modules/layout/components/top-bar"
+import CustomerSelector from "@modules/layout/components/customer-selector"
+import ActingCustomerCallout from "@modules/layout/components/acting-customer-callout"
 import SearchModal from "@modules/search/components/search-modal"
 import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
 import type { CategoryData } from "@lib/furnisystems-sdk"
@@ -17,6 +19,7 @@ import {
 } from "@lib/i18n"
 import { useSessionValidation } from "@lib/hooks/use-session-validation"
 import { useCart } from "@lib/context/cart-context"
+import { isAgentOrAdmin } from "@lib/util/roles"
 
 // Import NavMenu normally for SSR
 import NavMenu from "@modules/layout/components/nav-menu"
@@ -201,6 +204,16 @@ export default function Nav({ customer, categories }: NavProps) {
           </div>
         </nav>
       </header>
+
+      {/* Agent / Admin sub-header: customer selector */}
+      {isAgentOrAdmin(customer) && (
+        <div className="flex h-10 items-center border-b border-line bg-beige-20 px-6">
+          <CustomerSelector />
+        </div>
+      )}
+
+      {/* Acting-customer callout (self-gates on role + selection) */}
+      <ActingCustomerCallout />
 
       {/* Mobile Menu */}
       <MobileMenu
