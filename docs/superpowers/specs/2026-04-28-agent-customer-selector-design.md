@@ -123,42 +123,68 @@ export const isAgentOrAdmin = (c?: { role?: string } | null) => isAgent(c) || is
 
 Used by `ActingCustomerProvider`, the sub-header, and the catalog/PDP/cart callouts. Replaces existing magic-string `customer?.role === "agent" || customer?.role === "admin"` checks in `src/modules/account/components/order-details/index.tsx` and `orders-table/index.tsx`.
 
-### 6.2 `ActingCustomerContext`
+### 6.2 Persistence — cookie as source of truth
 
-New file `src/lib/context/acting-customer-context.tsx`. Mounts inside `CustomerContext`. Exposes:
+The acting-customer selection is persisted in a **cookie** (not `localStorage`). Reason: pricing flows through server-side data helpers (`src/lib/data/customer.ts:505 getCustomerFilterData()`, called from category/PDP/search server components) which cannot read `localStorage`. A cookie is readable by both client and server.
+
+Cookie spec:
+
+- Name: `actingCustomerId`
+- Value: stringified customer id, or absent
+- `Path=/`, `SameSite=Lax`, **not** `HttpOnly` (selector needs to write it client-side), not `Secure` in dev / `Secure` in prod
+- `Max-Age` = 365 days. Auto-persists across logout / login on the same browser, matching the per-device persistence intent.
+
+Two helpers:
+
+- **Server** (`src/lib/data/acting-customer.ts`):
+  - `getActingCustomerId(): Promise<number | null>` — reads the cookie via `cookies()` from `next/headers`, parses to number, returns `null` if absent or invalid.
+  - `getActingCustomer(): Promise<Customer | null>` — reads logged-in customer via existing `getMe()`. If non-agent/admin, returns the logged-in customer (passthrough). If agent/admin and cookie is set, fetches that customer via `searchCustomers({ ids: [cookieId] })`; on empty result clears the cookie and returns `null`. If agent/admin with no cookie, returns `null`.
+- **Client** (`src/lib/util/acting-customer-cookie.ts`):
+  - `setActingCustomerCookie(id: number): void`
+  - `clearActingCustomerCookie(): void`
+  - Both write `document.cookie` with the attributes above. Used by the selector and the clear (✕) button only.
+
+### 6.3 `ActingCustomerContext` (client)
+
+New file `src/lib/context/acting-customer-context.tsx`. Mounts inside `CustomerProvider` and outside `CartProvider`. Exposes:
 
 ```ts
 type ActingCustomerContextValue = {
   actingCustomer: SearchCustomerResult | Customer | null
-  setActingCustomer: (c: SearchCustomerResult | Customer | null) => void
+  setActingCustomer: (c: SearchCustomerResult | null) => void
   clearActingCustomer: () => void
   isAgentOrAdmin: boolean
-  isHydrating: boolean
 }
 ```
 
+The provider receives an `initialActingCustomer` prop populated by the parent **server** layout (which calls `getActingCustomer()` once per request). The client never re-hydrates from a stored value — the server already did it. This keeps SSR-rendered prices and client-rendered cart in agreement.
+
 Behavior by caller:
 
-- **Guest:** `actingCustomer = null`, `isAgentOrAdmin = false`. No `localStorage` access.
-- **B2B end-customer (logged-in, not agent/admin):** `actingCustomer = customer` (passthrough). `setActingCustomer` is a no-op. No `localStorage` access.
+- **Guest:** `actingCustomer = null`, `isAgentOrAdmin = false`. Provider passes through; cookies are never written.
+- **B2B end-customer (logged-in, not agent/admin):** `actingCustomer = customer` (passthrough). `setActingCustomer` is a no-op. Cookies are never written.
 - **Agent / admin:**
-  - On mount: read `localStorage["actingCustomer:<userId>"]`. If present, call `searchCustomers({ ids: [stored] })`. If result is non-empty → set as `actingCustomer`; if empty (no longer linked / not found) → clear the key, set `null`.
-  - `setActingCustomer(c)` writes `localStorage["actingCustomer:<userId>"] = c.id` and updates state.
-  - `clearActingCustomer()` removes the key, sets `null`.
-  - The hydration round-trip is gated by SWR/React Query with a 30 s cache to avoid one extra request per page navigation within a session.
+  - Initial state: `initialActingCustomer` from the server (already validated against the agent's linked-customers via `searchCustomers({ ids })`).
+  - `setActingCustomer(c)` writes the cookie via `setActingCustomerCookie(c.id)`, updates client state, and **calls `router.refresh()`** so server-rendered pricing-keyed pages refetch with the new acting customer in scope.
+  - `clearActingCustomer()` calls `clearActingCustomerCookie()`, sets state to `null`, and `router.refresh()`.
 
-### 6.3 Provider mount
+### 6.4 Provider mount
 
-In whichever layout currently mounts `CustomerContextProvider` (likely `src/app/[languageCode]/(main)/layout.tsx`), insert `ActingCustomerProvider` between `CustomerContext` and `CartContextProvider`. Provider tree:
+The portal mounts `CustomerProvider` in two places: `src/app/[languageCode]/(main)/layout.tsx:51` (root) and `src/app/[languageCode]/(main)/account/layout.tsx:74` (nested). Both files mount `ActingCustomerProvider` directly inside their `CustomerProvider`, before `CartProvider` (root layout) or any account-section content (account layout). The server-side `getActingCustomer()` is called once per layout render and passed as `initialActingCustomer`.
+
+Provider tree (root layout):
 
 ```
-CustomerContextProvider
-  └─ ActingCustomerProvider     ← new
-       └─ CartContextProvider   ← existing, re-keyed
-            └─ ...
+CustomerProvider customer={customer}                          // existing
+  └─ ActingCustomerProvider initialActingCustomer={acting}    // new
+       └─ ShopSettingsProvider                                // existing
+            └─ CartProvider                                   // existing, re-keyed
+                 └─ ...
 ```
 
-### 6.4 Cart context wiring
+The server-rendered `initialActingCustomer` ensures the first paint matches the cookie state — no client-only flash where prices are wrong for a moment.
+
+### 6.5 Cart context wiring
 
 In `src/lib/context/cart-context.tsx`, the line that today reads:
 
@@ -174,11 +200,17 @@ const customerId = actingCustomer?.id ? Number(actingCustomer.id) : undefined
 
 Effect dependencies on `customerId` already exist; switching customers will refetch through the existing path. Add an "ignore stale response" guard so a slow first switch doesn't overwrite a fast second switch.
 
-### 6.5 Pricing & data-fetch caches
+### 6.6 Pricing & data-fetch swap surface
 
-Pricing already keys off `customer.price_listId` via `getCustomerFilterData()` and `default-pricelist.ts`. Re-source those reads from `actingCustomer.price_listId` (with the existing default-pricelist fallback for `null`).
+Pricing already keys off `customer.price_listId` via `getCustomerFilterData()` and `default-pricelist.ts`. The codebase has **no** SWR or `react.cache()` callsites and only three `unstable_cache` calls — none of which key on `customer.id` or `price_listId`. The actual swap surface is concentrated in five places:
 
-**Plan must enumerate** every `cache()` / `unstable_cache` / SWR call in `src/lib/data/*` and `src/lib/furnisystems-sdk/*` whose key includes `customer.id` or `price_listId`. Each must take the acting one. The plan delivers this as an explicit checklist.
+1. `src/lib/data/customer.ts:505` — `getCustomerFilterData()` reads `customer.price_listId` and `customer.tags`. Switch to read from `getActingCustomer()`. Single-source-of-truth swap; downstream callers (`category-filters.ts:10`, `category-products.ts:15`, `category-products.ts:61`, `search-products.ts:13`, `search-products.ts:42`) pick up the change automatically.
+2. `src/lib/context/cart-context.tsx:26` — covered by §6.5.
+3. `src/modules/products/components/configurator/configurator-content.tsx:57-86, 317-318, 338` — reads `customer?.price_listId` and `customer.additional_components` to drive configurator data, price, and visible steps. Swap to acting customer.
+4. `src/modules/checkout/templates/checkout-form/index.tsx:105` — `fetchCustomerAddresses(Number(customer.id))`. Swap to acting customer's id.
+5. `src/modules/checkout/templates/checkout-form/index.tsx:184` — `customer_accountId` on order placement. Swap so the order is recorded against the acting customer.
+
+The plan enumerates each of these as a discrete task with the line number and exact replacement.
 
 ### 6.6 Sub-header row
 
@@ -188,7 +220,7 @@ In `src/modules/layout/templates/nav/index.tsx`, add a conditional row directly 
 - Sticky with the header.
 - Single child for MVP: the customer selector (left side). Right side empty, reserved for future use.
 
-### 6.7 Selector component
+### 6.8 Selector component
 
 New file under `src/modules/layout/components/customer-selector/`. Uses Headless UI `Popover`, mirroring the pattern in `src/modules/layout/components/cart-dropdown/`.
 
@@ -206,11 +238,11 @@ Open state (popover panel, ~360 px wide):
 - Loading → skeleton rows.
 - Error → inline message + retry button. Page does not crash.
 - Keyboard: ↑/↓ navigate, Enter pick, Esc close (Headless UI defaults).
-- On pick: call `setActingCustomer(c)`, close popover. Cart updates via context; no router refresh, no page reload.
+- On pick: call `setActingCustomer(c)`, close popover. Cart re-keys via context; the provider also calls `router.refresh()` so server-rendered pricing-keyed pages refetch.
 
 Mobile (`< sm`): same content, but rendered as a Headless UI `Dialog` full-screen sheet instead of a fixed-width popover.
 
-### 6.8 Catalog / PDP / cart gating callout
+### 6.9 Catalog / PDP / cart gating callout
 
 New component `src/modules/layout/components/acting-customer-callout/` (or co-located if it ends up trivial).
 
@@ -221,7 +253,7 @@ New component `src/modules/layout/components/acting-customer-callout/` (or co-lo
 - Style: informational tone (blue/neutral), not error.
 - Not dismissible — disappears the moment a customer is selected.
 
-### 6.9 Disabled cart actions when no acting customer
+### 6.10 Disabled cart actions when no acting customer
 
 When `isAgentOrAdmin(customer) && !actingCustomer`:
 
@@ -229,7 +261,7 @@ When `isAgentOrAdmin(customer) && !actingCustomer`:
 - Cart drawer/page shows the same callout; "Place order" disabled with same tooltip.
 - For non-agent/admin users: zero change.
 
-### 6.10 Out-of-scope for MVP
+### 6.11 Out-of-scope for MVP
 
 - "Shop / sub-account" dimension (the orders module already shows `purchased_subAccount?.name` — future selector).
 - Per-customer "remember last viewed page".
@@ -240,22 +272,21 @@ When `isAgentOrAdmin(customer) && !actingCustomer`:
 
 **Login (agent/admin):**
 
-1. `getMe()` resolves logged-in user (existing).
-2. `ActingCustomerProvider` reads `localStorage["actingCustomer:<userId>"]`.
-3. If stored id present → `searchCustomers({ ids: [stored] })` validates link → set or clear.
-4. Cart context fetches `getOrCreateActiveCart(actingCustomer.id)` if non-null, otherwise no cart.
+1. Server layout calls `getActingCustomer()`. It calls `getMe()` for the logged-in user, reads cookie `actingCustomerId`, and if set validates via `searchCustomers({ ids: [cookieId] })`. Returns the customer or `null`.
+2. `ActingCustomerProvider` mounts with `initialActingCustomer` already populated. No client-side hydration round-trip.
+3. Cart context reads `actingCustomer?.id` from the new context and fetches `getOrCreateActiveCart(id)` if non-null.
 
 **Pick / switch:**
 
-1. User opens selector → `searchCustomers({ query: "", limit: 10 })`.
+1. User opens selector → client calls SDK `searchCustomers({ query: "", limit: 10 })`.
 2. User types → debounced `searchCustomers({ query, limit: 20 })`.
-3. User picks → `setActingCustomer(c)` → localStorage + state.
-4. Cart context re-fetches with new id → previous cart preserved server-side, new cart on screen.
-5. Pricing-keyed pages refetch via cache key change. No router refresh.
+3. User picks → `setActingCustomer(c)` writes the cookie, updates client state, calls `router.refresh()`.
+4. Cart context re-fetches with new id (effect dep on `actingCustomer.id`); previous cart preserved server-side, new cart on screen.
+5. `router.refresh()` re-renders server components → pricing-keyed pages refetch with the new acting customer.
 
 **Logout:**
 
-- `localStorage["actingCustomer:<userId>"]` is preserved. Same user on same device resumes their last selection on next login.
+- The cookie is preserved (we only clear it on explicit ✕ or backend-rejected hydration). Same browser, same user resumes their last selection on next login.
 
 ## 8. Testing
 
@@ -270,7 +301,8 @@ When `isAgentOrAdmin(customer) && !actingCustomer`:
 **Portal:**
 
 - `roles.ts` — three trivial unit tests.
-- `ActingCustomerProvider` — guest, end-customer passthrough, agent hydration happy path, agent hydration stale-id-cleared path, `setActingCustomer` write-through.
+- `ActingCustomerProvider` — guest, end-customer passthrough, agent with `initialActingCustomer` populated, agent with `initialActingCustomer = null`, `setActingCustomer` writes cookie + calls `router.refresh()`, `clearActingCustomer` clears cookie + calls `router.refresh()`.
+- `getActingCustomer()` server helper — returns logged-in customer for end-customer, returns cookie-validated customer for agent, returns `null` and clears cookie when validation returns `[]`, returns `null` for agent with no cookie.
 - Selector component — closed/open/searching/no-results/error renders.
 - Cart re-key test: mock `getOrCreateActiveCart`, flip acting-customer, assert second call uses new id and previous cart no longer rendered.
 - Manual / Playwright E2E checklist:
@@ -291,16 +323,15 @@ When `isAgentOrAdmin(customer) && !actingCustomer`:
 
 ## 10. Risks
 
-1. **Cache-key audit miss.** A `cache()` call still keyed to `customer.id` would leak the previous customer's data to the screen after a switch. Mitigation: the implementation plan delivers an explicit, file-by-file checklist of every cache call to update.
+1. **Missed swap site.** A read of `customer.id` or `customer.price_listId` left in place would mean prices/cart for the logged-in user, not the acting customer. Mitigation: the implementation plan lists every site (§6.6) as a discrete TDD task; manual E2E checklist covers prices on catalog/PDP, cart, checkout, configurator.
 2. **Race on rapid switch.** Double-click on two different rows fires two cart fetches; slower wins. Mitigation: stale-response guard in cart context (compare against current `actingCustomer.id`).
-3. **`localStorage` poisoning.** Stored id no longer linked to agent → backend returns `[]` → provider clears the key. Already handled in §6.2.
-4. **Missing `latest_order_at` field.** Resolver may need a join-to-Order subquery. Acceptable for MVP given the hard `limit ≤ 50`.
+3. **Stale cookie.** Cookie id no longer linked to agent → `getActingCustomer()` server helper sees empty result from `searchCustomers({ ids })` → clears the cookie and returns `null`. Handled in §6.2.
+4. **Missing `latest_order_at` field.** Audit confirmed it does not exist. Resolver uses `orderBy: { orders: { _count: "desc" } }` as a stable proxy ("agents who have placed many orders for a customer rank that customer higher"). Acceptable for MVP given the hard `limit ≤ 50`. If the proxy proves wrong in practice, swap to a `groupBy` on Order with `_max(createdAt)` followed by an in-memory sort.
 5. **Mobile UX.** Popover on a 360 px panel is cramped on phones. Mitigation: full-screen `Dialog` sheet on `< sm` viewports.
+6. **Two `CustomerProvider` mount points.** Root layout and `account/layout.tsx` both mount `CustomerProvider`. Both must also mount `ActingCustomerProvider`, otherwise the account section sees the wrong context. Plan handles both.
 
-## 11. Open questions for the plan
+## 11. Plan-time facts (resolved during planning)
 
-- Confirm the existence of `Customer.latest_order_at` (or equivalent) before resolver implementation. Choose ordering strategy accordingly.
-- Confirm the exact layout file that mounts `CustomerContextProvider` today — the plan should call out the file path and the precise insertion point for `ActingCustomerProvider`.
-- Confirm that `getCustomerFilterData()` is the only place pricelist/customer-id flow into product/category caches, or list every other site.
-
-These three questions resolve into single-line checks during planning, not new design decisions.
+- **Ordering field for default 10:** `Customer.latest_order_at` does not exist. Use `orderBy: { orders: { _count: "desc" } }` (Prisma supports relation-`_count` ordering natively) with `name ASC` as tiebreaker.
+- **Layout mount points:** `src/app/[languageCode]/(main)/layout.tsx:51` (root) — wraps `CustomerProvider` around the rest of the tree; `src/app/[languageCode]/(main)/account/layout.tsx:74` (nested) — wraps `CustomerProvider` around the account section. Both layouts mount `ActingCustomerProvider` directly inside their `CustomerProvider`.
+- **Swap surface:** `getCustomerFilterData()` is the only data-layer site that reads `customer.price_listId` / `customer.tags`. Three additional read sites outside the data layer are listed in §6.6 (configurator and checkout). No `useSWR`, no `react.cache()`, no `unstable_cache` calls in the codebase are keyed on customer id.
