@@ -706,27 +706,31 @@ const ProductImageGallery = ({
           onClose={() => setLightboxOpen(false)}
           className="relative z-50"
         >
-          <div className="fixed inset-0 bg-black/90" aria-hidden="true" />
+          <div
+            className="fixed inset-0"
+            style={{ backgroundColor: "#F2F0EF" }}
+            aria-hidden="true"
+          />
 
           <div className="fixed inset-0 flex items-center justify-center">
             <DialogPanel className="relative w-full h-full flex items-center justify-center">
               {/* Close button */}
               <button
                 onClick={() => setLightboxOpen(false)}
-                className="fixed top-3 right-3 z-10 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+                className="fixed top-3 right-3 z-10 bg-black/5 hover:bg-black/10 rounded-full p-2 transition-colors"
                 aria-label="Close lightbox"
               >
-                <X className="w-6 h-6 text-white" />
+                <X className="w-6 h-6 text-dark-blue" />
               </button>
 
               {/* Main lightbox image */}
               <div
-                className="relative w-full h-full"
+                className="relative w-full h-full max-w-[1400px] max-h-[85vh]"
                 style={{ padding: "2.5rem 1rem 2rem" }}
               >
                 {lightboxImageLoading && (
                   <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-dark-blue/20 border-t-dark-blue" />
                   </div>
                 )}
                 <Image
@@ -736,7 +740,7 @@ const ProductImageGallery = ({
                   }`}
                   fill
                   className="object-contain"
-                  sizes="100vw"
+                  sizes="(max-width: 1400px) 100vw, 1400px"
                   quality={95}
                   priority
                   onLoad={() => setLightboxImageLoading(false)}
@@ -752,10 +756,10 @@ const ProductImageGallery = ({
                         navigate("prev", lightboxImages.length, i)
                       )
                     }
-                    className="fixed left-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 rounded-full p-3 transition-colors"
+                    className="fixed left-3 top-1/2 -translate-y-1/2 bg-black/5 hover:bg-black/15 rounded-full p-3 transition-colors"
                     aria-label="Previous image"
                   >
-                    <ChevronLeft className="w-7 h-7 text-white" />
+                    <ChevronLeft className="w-7 h-7 text-dark-blue" />
                   </button>
                   <button
                     onClick={() =>
@@ -763,16 +767,16 @@ const ProductImageGallery = ({
                         navigate("next", lightboxImages.length, i)
                       )
                     }
-                    className="fixed right-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 rounded-full p-3 transition-colors"
+                    className="fixed right-3 top-1/2 -translate-y-1/2 bg-black/5 hover:bg-black/15 rounded-full p-3 transition-colors"
                     aria-label="Next image"
                   >
-                    <ChevronRight className="w-7 h-7 text-white" />
+                    <ChevronRight className="w-7 h-7 text-dark-blue" />
                   </button>
                 </>
               )}
 
               {/* Counter */}
-              <div className="fixed bottom-3 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+              <div className="fixed bottom-3 left-1/2 -translate-x-1/2 text-dark-blue/70 text-sm">
                 {lightboxIndex + 1} / {lightboxImages.length}
               </div>
             </DialogPanel>
