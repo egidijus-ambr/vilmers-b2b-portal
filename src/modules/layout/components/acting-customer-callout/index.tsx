@@ -12,12 +12,9 @@ export default function ActingCustomerCallout() {
   if (actingCustomer) return null
 
   return (
-    <div
-      role="status"
-      className="border-b border-gold-20 bg-gold-10 px-6 py-2 text-sm text-dark-blue"
-    >
-      You&apos;re viewing the general catalog. Select a customer above to see
-      their pricing and place an order.
-    </div>
+    <p role="status" className="text-right text-sm text-dark-blue">
+      You&apos;re viewing the general catalog. Select a customer to see their
+      pricing and place an order.
+    </p>
   )
 }

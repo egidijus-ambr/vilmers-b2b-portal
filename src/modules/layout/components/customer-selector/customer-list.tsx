@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { X } from "lucide-react"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
-import { sdk } from "@lib/config"
+import { searchCustomersForSelector } from "@lib/data/customer-search"
 import SearchInput from "@modules/common/components/search-input"
 import Button from "@modules/common/components/button"
 import type { SearchCustomerResult } from "@lib/furnisystems-sdk/modules/customer/types"
@@ -12,7 +13,10 @@ const DEBOUNCE_MS = 250
 type Props = { onPick: () => void }
 
 export default function CustomerList({ onPick }: Props) {
-  const { setActingCustomer } = useActingCustomer()
+  const { actingCustomer, setActingCustomer, clearActingCustomer } =
+    useActingCustomer()
+  const acting = actingCustomer as SearchCustomerResult | null
+  const actingId = acting?.id ?? null
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchCustomerResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -27,7 +31,7 @@ export default function CustomerList({ onPick }: Props) {
         setLoading(true)
         setError(null)
         try {
-          const data = await sdk.customer.searchCustomers(
+          const data = await searchCustomersForSelector(
             query ? { query, limit: 20 } : { query: "", limit: 10 }
           )
           if (seq !== seqRef.current) return
@@ -43,6 +47,14 @@ export default function CustomerList({ onPick }: Props) {
     )
     return () => clearTimeout(handle)
   }, [query, retryTick])
+
+  const displayResults = useMemo<SearchCustomerResult[]>(() => {
+    // Pin the acting customer to the top of the Recent list (no query mode).
+    if (!query && acting && actingId != null) {
+      return [acting, ...results.filter((r) => r.id !== actingId)]
+    }
+    return results
+  }, [query, acting, actingId, results])
 
   return (
     <div className="w-full">
@@ -72,33 +84,61 @@ export default function CustomerList({ onPick }: Props) {
           </Button>
         </div>
       )}
-      {!loading && !error && results.length === 0 && (
+      {!loading && !error && displayResults.length === 0 && (
         <p className="px-3 py-4 text-sm text-gray-500">No customers found</p>
       )}
-      {!loading && !error && results.length > 0 && (
+      {!loading && !error && displayResults.length > 0 && (
         <ul className="max-h-72 overflow-y-auto">
-          {results.map((c) => (
-            <li key={c.id}>
-              <button
-                type="button"
-                className="block w-full px-3 py-2 text-left hover:bg-gray-50"
-                onClick={() => {
-                  setActingCustomer(c)
-                  onPick()
-                }}
+          {displayResults.map((c) => {
+            const isActing = actingId != null && c.id === actingId
+            return (
+              <li
+                key={c.id}
+                className={
+                  isActing ? "border-l-2 border-gold bg-gold/10" : undefined
+                }
               >
-                <span className="font-mono text-xs text-gray-500">
-                  {c.account_code}
-                </span>{" "}
-                <span className="font-medium text-dark-blue">
-                  {c.b2b_company_name ?? c.name}
-                </span>
-                {c.email && (
-                  <span className="block text-xs text-gray-500">{c.email}</span>
-                )}
-              </button>
-            </li>
-          ))}
+                <div className="flex items-stretch">
+                  <button
+                    type="button"
+                    className={`flex-1 px-3 py-2 text-left ${
+                      isActing ? "hover:bg-gold/20" : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => {
+                      setActingCustomer(c)
+                      onPick()
+                    }}
+                  >
+                    <span className="block font-mono text-xs text-gray-500">
+                      {c.account_code}
+                    </span>
+                    <span className="block font-medium text-dark-blue">
+                      {c.b2b_company_name ?? c.name}
+                    </span>
+                    {c.email && (
+                      <span className="block text-xs text-gray-500">
+                        {c.email}
+                      </span>
+                    )}
+                  </button>
+                  {isActing && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        clearActingCustomer()
+                        onPick()
+                      }}
+                      aria-label="Clear acting customer"
+                      className="flex items-center px-3 text-dark-blue hover:bg-gold/20"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

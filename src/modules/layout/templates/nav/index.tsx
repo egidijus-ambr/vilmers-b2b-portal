@@ -205,15 +205,13 @@ export default function Nav({ customer, categories }: NavProps) {
         </nav>
       </header>
 
-      {/* Agent / Admin sub-header: customer selector */}
+      {/* Agent / Admin sub-header: callout + customer selector, right-aligned */}
       {isAgentOrAdmin(customer) && (
-        <div className="flex h-10 items-center border-b border-line bg-beige-20 px-6">
+        <div className="flex h-10 items-center justify-end gap-4 border-b border-line bg-beige-20 px-6">
+          <ActingCustomerCallout />
           <CustomerSelector />
         </div>
       )}
-
-      {/* Acting-customer callout (self-gates on role + selection) */}
-      <ActingCustomerCallout />
 
       {/* Mobile Menu */}
       <MobileMenu
