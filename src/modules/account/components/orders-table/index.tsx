@@ -9,6 +9,7 @@ import ReferencesTooltip from "../references-tooltip"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
 import { useCustomer } from "@lib/context/customer-context"
+import { isAgentOrAdmin } from "@lib/util/roles"
 import {
   TableHeader,
   TableHeaderCell,
@@ -133,7 +134,7 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
   // }
 
   // Check if user is an agent
-  const isAgent = customer?.role === "agent" || customer?.role === "admin"
+  const isAgent = isAgentOrAdmin(customer)
 
   // Check if order details feature is enabled
   const isOrderDetailsEnabled =

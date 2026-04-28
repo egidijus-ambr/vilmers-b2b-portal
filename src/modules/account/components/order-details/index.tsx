@@ -9,6 +9,7 @@ import ProductItemsTable from "@modules/common/components/product-items-table"
 import { orderDetailItemToProductItemRow } from "@modules/common/components/product-items-table/mappers"
 import InfoRow from "@modules/common/components/info-row"
 import { useCustomer } from "@lib/context/customer-context"
+import { isAgentOrAdmin } from "@lib/util/roles"
 import { BuildingStorefront } from "@medusajs/icons"
 
 interface OrderDetailsProps {
@@ -29,7 +30,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
   const { customer } = useCustomer()
 
   // Check if user is an agent or admin
-  const isAgent = customer?.role === "agent" || customer?.role === "admin"
+  const isAgent = isAgentOrAdmin(customer)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(
