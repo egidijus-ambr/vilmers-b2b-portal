@@ -23,6 +23,7 @@ import { validateTokenAndExtractCustomerId } from "@lib/util/jwt-utils"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
 import { getDefaultPriceListId } from "./default-pricelist"
 import { getActingCustomer } from "./acting-customer"
+import { getShowAllProductsActive } from "./show-all-products"
 
 export const retrieveCustomer = async (): Promise<ExtendedStoreCustomer | null> => {
   // Prevent caching for authentication-related data
@@ -507,6 +508,15 @@ export async function getCustomerFilterData(): Promise<{
   customerTagIds: number[] | undefined
   priceListIds: number[]
 }> {
+  // Privileged override: when an admin-impersonator or Account Manager has
+  // ticked the "All products" checkbox, return an empty filter so the catalog
+  // is unrestricted. The gate is enforced server-side inside
+  // getShowAllProductsActive(), so a forged cookie on a non-privileged user
+  // is inert.
+  if (await getShowAllProductsActive()) {
+    return { customerTagIds: undefined, priceListIds: [] }
+  }
+
   let customer = null
   try {
     customer = await getActingCustomer()
