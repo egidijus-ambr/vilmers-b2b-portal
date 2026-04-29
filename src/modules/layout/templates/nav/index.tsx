@@ -10,6 +10,7 @@ import BackButton from "@modules/layout/components/back-button"
 import TopBar from "@modules/layout/components/top-bar"
 import CustomerSelector from "@modules/layout/components/customer-selector"
 import ActingCustomerCallout from "@modules/layout/components/acting-customer-callout"
+import ShowAllProductsToggle from "@modules/layout/components/show-all-products-toggle"
 import SearchModal from "@modules/search/components/search-modal"
 import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
 import type { CategoryData } from "@lib/furnisystems-sdk"
@@ -27,9 +28,11 @@ import NavMenu from "@modules/layout/components/nav-menu"
 interface NavProps {
   customer: any
   categories?: CategoryData[]
+  canShowAllProducts: boolean
+  showAllProductsActive: boolean
 }
 
-export default function Nav({ customer, categories }: NavProps) {
+export default function Nav({ customer, categories, canShowAllProducts, showAllProductsActive }: NavProps) {
   const pathname = usePathname()
   const { t, isReady } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -206,9 +209,12 @@ export default function Nav({ customer, categories }: NavProps) {
       </header>
 
       {/* Agent / Admin sub-header: callout + customer selector, right-aligned */}
-      {isAgentOrAdmin(customer) && (
+      {!isHomePage && isAgentOrAdmin(customer) && (
         <div className="flex h-10 items-center justify-end gap-4 border-b border-line bg-beige-20 px-6">
           <ActingCustomerCallout />
+          {canShowAllProducts && (
+            <ShowAllProductsToggle initialChecked={showAllProductsActive} />
+          )}
           <CustomerSelector />
         </div>
       )}

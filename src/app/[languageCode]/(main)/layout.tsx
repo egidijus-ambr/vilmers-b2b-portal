@@ -13,6 +13,10 @@ import { CartProvider } from "@lib/context/cart-context"
 import TawkToChat from "@modules/common/components/tawk-to-chat"
 import { listMenuCategories } from "@lib/data/categories"
 import { getActingCustomer } from "@lib/data/acting-customer"
+import {
+  canShowAllProductsToggle,
+  getShowAllProductsCookie,
+} from "@lib/data/show-all-products"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -51,13 +55,23 @@ export default async function PageLayout({
   // Fetch menu categories for navigation
   const categories = await listMenuCategories(validLanguage)
 
+  const [canShowAllProducts, showAllProductsActive] = await Promise.all([
+    canShowAllProductsToggle(),
+    getShowAllProductsCookie(),
+  ])
+
   return (
     <CustomerProvider customer={customer}>
       <ActingCustomerProvider initialActingCustomer={acting}>
         <ShopSettingsProvider initialShopSettings={shopSettings}>
           <CartProvider>
             <div className="flex flex-col min-h-screen">
-              <Nav customer={customer} categories={categories} />
+              <Nav
+                customer={customer}
+                categories={categories}
+                canShowAllProducts={canShowAllProducts}
+                showAllProductsActive={showAllProductsActive}
+              />
               <main className="flex-1">{children}</main>
               <Footer language={validLanguage} />
             </div>
