@@ -5,7 +5,6 @@ import { useTranslations } from "@lib/i18n"
 import { getStoreLoginLink, getClaimsLink } from "@lib/data/customer"
 import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
-import { isAgentOrAdmin } from "@lib/util/roles"
 import { isInternalDomain } from "@lib/utils/internal-domains"
 import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
@@ -215,23 +214,6 @@ const Overview = (): JSX.Element => {
             />
           </div>
         </div>
-
-        {isAgentOrAdmin(customer) && (
-          <div className="space-y-4">
-            <div className="bg-white ">
-              <ActionCard
-                key="product_range_index"
-                title={t("product-range.title")}
-                description={t("product-range.description")}
-                onClick={() =>
-                  window.open("https://portal.vilmers.com/", "_blank")
-                }
-                buttonText={t("check")}
-                height="auto"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Orders Section */}
         <div className="space-y-10">

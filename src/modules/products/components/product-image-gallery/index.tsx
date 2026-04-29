@@ -425,13 +425,14 @@ const ProductImageGallery = ({
     )
   }
 
-  // The side column shows up to 4 thumbnails alongside the hero. By default
-  // these are the cover photos (DB images). Once both selectors are picked
-  // and API photos are driving the hero, the same column shows the API
-  // (configurator) thumbnails for that combination + fabric pair.
+  // The side column shows thumbnails alongside the hero. By default these
+  // are the cover photos (DB images, capped at 4 by admin spec). Once both
+  // selectors are picked, the same column shows the API (configurator)
+  // thumbnails for that combination + fabric pair — and these can exceed 4,
+  // so the column scrolls (horizontally on mobile, vertically on lg+).
   const sideThumbs =
     filteredApiImages.length > 0
-      ? filteredApiImages.slice(0, 4)
+      ? filteredApiImages
       : originalImages.slice(0, 4)
   const showSideColumn = sideThumbs.length > 1
 
@@ -529,10 +530,15 @@ const ProductImageGallery = ({
         </div>
 
         {/* Side thumbnail column — cover photos by default, API photos
-             for the picked configuration + fabric. Vertical column on lg+,
-             horizontal row on smaller screens. */}
+             for the picked configuration + fabric. Horizontal scroll on
+             mobile (4 visible at once), vertical scroll on lg+ (column
+             height pinned to hero proportions so 4 thumbs fit exactly
+             and extras scroll). Scrollbars hidden for a cleaner look. */}
         {showSideColumn && (
-          <div className="grid grid-cols-4 gap-3 lg:grid-cols-1 lg:grid-rows-4 lg:w-1/5 lg:flex-shrink-0 lg:gap-3 lg:self-stretch">
+          <div
+            className="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto lg:w-1/5 lg:flex-shrink-0 lg:self-start lg:gap-3 lg:aspect-[340/840] [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+            style={{ scrollbarWidth: "none" }}
+          >
             {sideThumbs.map((image, index) => {
               const isSelected = index === selectedIndex
               return (
@@ -540,12 +546,13 @@ const ProductImageGallery = ({
                   key={image.id}
                   onClick={() => setSelectedIndex(index)}
                   className={[
-                    "relative w-full overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
-                    // Mobile: aspect ratio defines thumb height. Lg: grid-rows-4
-                    // on the parent column divides hero height into 4 equal rows,
-                    // and h-full makes each thumb fill its row — guaranteeing
-                    // the column total height aligns with the hero's bottom.
-                    "aspect-[1360/840] lg:aspect-auto lg:h-full",
+                    "relative flex-shrink-0 overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                    // Mobile: 4 visible at once via calc width; the rest scroll
+                    // horizontally. Lg: thumb takes full column width and the
+                    // parent's pinned aspect ratio yields ~4 thumbs visible
+                    // before vertical scrolling kicks in.
+                    "w-[calc((100%-36px)/4)] lg:w-full",
+                    "aspect-[1360/840]",
                     isSelected
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",
