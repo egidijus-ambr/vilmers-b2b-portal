@@ -90,6 +90,38 @@ export function getCustomerAccountIdFromToken(token: string): string | null {
 }
 
 /**
+ * Extracts managerId from a JWT token. Set ONLY when the session originated
+ * from the admin app's "Impersonate B2B Portal" action. Returns null otherwise.
+ */
+export function getManagerIdFromToken(token: string): number | null {
+  try {
+    const payload = decodeJWTPayload(token)
+    if (!payload) return null
+    const id = payload.managerId
+    if (id == null) return null
+    const n = Number(id)
+    return Number.isFinite(n) ? n : null
+  } catch (error) {
+    console.error("[getManagerIdFromToken] Error extracting managerId:", error)
+    return null
+  }
+}
+
+/**
+ * Extracts the customer role from a JWT token (e.g. 'admin', 'agent', or null).
+ */
+export function getRoleFromToken(token: string): string | null {
+  try {
+    const payload = decodeJWTPayload(token)
+    if (!payload) return null
+    return typeof payload.role === 'string' ? payload.role : null
+  } catch (error) {
+    console.error("[getRoleFromToken] Error extracting role:", error)
+    return null
+  }
+}
+
+/**
  * Validates token and extracts customer info in one call
  */
 export function validateTokenAndExtractCustomerId(token: string): {
