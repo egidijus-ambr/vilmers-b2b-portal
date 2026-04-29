@@ -2,8 +2,16 @@
 
 import Image from "next/image"
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Dialog, DialogPanel } from "@headlessui/react"
 import {
+  Dialog,
+  DialogPanel,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+} from "@headlessui/react"
+import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   X,
@@ -56,6 +64,77 @@ function formatCategoryName(category: string): string {
     .replace(/_/g, " ")
     .replace(/\b\w/g, (l) => l.toUpperCase())
 }
+
+type GalleryDropdownProps = {
+  label: string
+  placeholder: string
+  options: string[]
+  value: string | null
+  onChange: (value: string) => void
+  disabled?: boolean
+  formatOption?: (option: string) => string
+}
+
+// Sentinel value Headless UI uses for the unselected state. Keeping the
+// Listbox always controlled (vs. switching from undefined → defined) avoids
+// React's "uncontrolled to controlled" warning.
+const UNSELECTED = ""
+
+const GalleryDropdown = ({
+  label,
+  placeholder,
+  options,
+  value,
+  onChange,
+  disabled = false,
+  formatOption,
+}: GalleryDropdownProps) => {
+  const display = (option: string) =>
+    formatOption ? formatOption(option) : option
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-xs font-medium text-ui-fg-muted uppercase tracking-wide">
+        {label}
+      </span>
+      <Listbox
+        value={value ?? UNSELECTED}
+        onChange={onChange}
+        disabled={disabled}
+      >
+        <div className="relative">
+          <ListboxButton
+            className={[
+              "flex items-center justify-between gap-x-2 w-full sm:w-72 h-11 border px-4 text-sm transition-colors",
+              disabled
+                ? "border-line bg-ui-bg-subtle text-ui-fg-muted cursor-not-allowed"
+                : "border-gray-300 text-dark-blue hover:border-gray-400 bg-white",
+            ].join(" ")}
+          >
+            <span className={value ? "" : "text-ui-fg-muted"}>
+              {value ? display(value) : placeholder}
+            </span>
+            <ChevronDown className="w-4 h-4" />
+          </ListboxButton>
+          <ListboxOptions className="absolute left-0 mt-1 z-50 bg-white border border-gray-300 shadow-md min-w-full max-h-72 overflow-auto">
+            {options.map((option) => (
+              <ListboxOption
+                key={option}
+                value={option}
+                className="px-4 py-2.5 text-sm text-dark-blue cursor-pointer hover:bg-gray-100 data-[selected]:font-semibold data-[selected]:bg-ui-bg-subtle"
+              >
+                {display(option)}
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </div>
+      </Listbox>
+    </div>
+  )
+}
+
+const stripImageExtension = (value: string): string =>
+  value.replace(/\.(jpe?g|png|webp|avif|gif)$/i, "")
 
 const ProductImageGallery = ({
   images,
@@ -119,15 +198,15 @@ const ProductImageGallery = ({
     }
   }, [alwaysExpanded, apiPhotos])
 
-  // Auto-select defaults when API photos load
+  // Auto-select default category when API photos load.
+  // Combination & fabric remain null — user must pick both before the
+  // hero image swaps to API photos.
   useEffect(() => {
     if (!apiPhotos.length) return
 
     if (!showCategoryFilter) {
-      // Force PRODUCT_PHOTOS only
       setSelectedCategory(PRODUCT_PHOTOS_CATEGORY)
     } else {
-      // Existing logic: prefer PRODUCT_PHOTOS, fallback to first available
       const categories = Array.from(
         new Set(apiPhotos.map((p) => p.category))
       ).filter((c) => c !== PRODUCT_PHOTOS_CATEGORY)
@@ -143,51 +222,7 @@ const ProductImageGallery = ({
     }
     setSelectedCombination(null)
     setSelectedFabric(null)
-    setSelectedIndex(0)
   }, [apiPhotos, showCategoryFilter])
-
-  // Auto-select first combination when category changes
-  useEffect(() => {
-    if (selectedCategory !== PRODUCT_PHOTOS_CATEGORY) {
-      setSelectedCombination(null)
-      setSelectedFabric(null)
-      return
-    }
-    const combinations = Array.from(
-      new Set(
-        apiPhotos
-          .filter(
-            (p) => p.category === PRODUCT_PHOTOS_CATEGORY && p.combination
-          )
-          .map((p) => p.combination as string)
-      )
-    )
-    setSelectedCombination(combinations[0] ?? null)
-    setSelectedFabric(null)
-    setSelectedIndex(0)
-  }, [selectedCategory, apiPhotos])
-
-  // Auto-select first fabric when combination changes
-  useEffect(() => {
-    if (!selectedCombination) {
-      setSelectedFabric(null)
-      return
-    }
-    const fabrics = Array.from(
-      new Set(
-        apiPhotos
-          .filter(
-            (p) =>
-              p.category === PRODUCT_PHOTOS_CATEGORY &&
-              p.combination === selectedCombination &&
-              p.fabric
-          )
-          .map((p) => p.fabric as string)
-      )
-    )
-    setSelectedFabric(fabrics[0] ?? null)
-    setSelectedIndex(0)
-  }, [selectedCombination, apiPhotos])
 
   // Derive category lists
   const nonProductPhotoCategories = Array.from(
@@ -210,7 +245,13 @@ const ProductImageGallery = ({
           new Set(
             apiPhotos
               .filter(
-                (p) => p.category === PRODUCT_PHOTOS_CATEGORY && p.combination
+                (p) =>
+                  p.category === PRODUCT_PHOTOS_CATEGORY &&
+                  p.combination &&
+                  // "cover" is a backend artifact (cover-image grouping),
+                  // not a user-facing configuration choice. Trim + lowercase
+                  // to be robust to backend whitespace/casing variations.
+                  p.combination.trim().toLowerCase() !== "cover"
               )
               .map((p) => p.combination as string)
           )
@@ -241,18 +282,22 @@ const ProductImageGallery = ({
     thumbnail: img.src_md || img.src,
   }))
 
-  const filteredApiImages: DisplayImage[] = panelExpanded
+  // API photos only drive the hero once BOTH combination and fabric are picked.
+  // Until then, the original DB images remain on screen.
+  const hasFullSelection =
+    panelExpanded &&
+    selectedCategory === PRODUCT_PHOTOS_CATEGORY &&
+    !!selectedCombination &&
+    !!selectedFabric
+
+  const filteredApiImages: DisplayImage[] = hasFullSelection
     ? apiPhotos
-        .filter((p) => {
-          if (!selectedCategory) return false
-          if (p.category !== selectedCategory) return false
-          if (selectedCategory === PRODUCT_PHOTOS_CATEGORY) {
-            if (selectedCombination && p.combination !== selectedCombination)
-              return false
-            if (selectedFabric && p.fabric !== selectedFabric) return false
-          }
-          return true
-        })
+        .filter(
+          (p) =>
+            p.category === selectedCategory &&
+            p.combination === selectedCombination &&
+            p.fabric === selectedFabric
+        )
         .map((p, index) => ({
           type: "api",
           id: `api-${index}`,
@@ -265,11 +310,8 @@ const ProductImageGallery = ({
         }))
     : []
 
-  const displayImages: DisplayImage[] = panelExpanded
-    ? filteredApiImages.length > 0
-      ? filteredApiImages
-      : originalImages
-    : originalImages
+  const displayImages: DisplayImage[] =
+    filteredApiImages.length > 0 ? filteredApiImages : originalImages
 
   // Lightbox images: use filtered API images when the panel is expanded and has results, otherwise use DB originals
   const lightboxImages =
@@ -308,11 +350,6 @@ const ProductImageGallery = ({
     return () => window.removeEventListener("keydown", handler)
   }, [lightboxOpen, lightboxImages.length, navigate])
 
-  // Reset loading state when the selected main image changes
-  useEffect(() => {
-    setImageLoading(true)
-  }, [selectedIndex])
-
   // Reset loading state when the lightbox image changes
   useEffect(() => {
     setLightboxImageLoading(true)
@@ -330,6 +367,16 @@ const ProductImageGallery = ({
 
   const handleCombinationSelect = (combination: string) => {
     setSelectedCombination(combination)
+    // Auto-pick the first fabric for the chosen configuration so the hero
+    // updates immediately. The user can still change the fabric afterward.
+    const firstFabric =
+      apiPhotos.find(
+        (p) =>
+          p.category === PRODUCT_PHOTOS_CATEGORY &&
+          p.combination === combination &&
+          p.fabric
+      )?.fabric ?? null
+    setSelectedFabric(firstFabric)
     setSelectedIndex(0)
   }
 
@@ -345,7 +392,10 @@ const ProductImageGallery = ({
   const togglePanel = () => {
     setPanelExpanded((prev) => {
       if (prev) {
-        // Collapsing — reset to first DB image
+        // Collapsing — clear selections so the next expand starts at
+        // "no selection" (hero stays on original DB image).
+        setSelectedCombination(null)
+        setSelectedFabric(null)
         setSelectedIndex(0)
       }
       return !prev
@@ -360,6 +410,13 @@ const ProductImageGallery = ({
   }
   const currentImage = rawCurrentImage ?? lastImageRef.current
 
+  // Reset hero spinner whenever the underlying image URL changes. We can't
+  // rely on selectedIndex alone because dropdown picks keep the index at 0
+  // while the src swaps from a DB image to an API image.
+  useEffect(() => {
+    if (currentImage) setImageLoading(true)
+  }, [currentImage?.src])
+
   if (!images.length && !apiPhotos.length) {
     return (
       <div className="w-full aspect-square bg-white flex items-center justify-center">
@@ -368,12 +425,25 @@ const ProductImageGallery = ({
     )
   }
 
+  // The side column shows up to 4 thumbnails alongside the hero. By default
+  // these are the cover photos (DB images). Once both selectors are picked
+  // and API photos are driving the hero, the same column shows the API
+  // (configurator) thumbnails for that combination + fabric pair.
+  const sideThumbs =
+    filteredApiImages.length > 0
+      ? filteredApiImages.slice(0, 4)
+      : originalImages.slice(0, 4)
+  const showSideColumn = sideThumbs.length > 1
+
   return (
     <>
       <div className="flex flex-col gap-3">
+        {/* Hero + cover thumbnail column */}
+        <div className="flex flex-col lg:flex-row lg:items-stretch gap-3">
         {/* Main image */}
         <div
-          className="relative w-full aspect-[4/3] bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
+          className="relative w-full lg:flex-1 lg:min-w-0 lg:self-start bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
+          style={{ aspectRatio: "1360 / 840" }}
           onClick={() => {
             const idx = displayImages.indexOf(currentImage)
             openLightbox(Math.max(idx, 0))
@@ -458,20 +528,24 @@ const ProductImageGallery = ({
           )}
         </div>
 
-        {/* Thumbnail strip */}
-        {!panelExpanded && displayImages.length > 1 && (
-          <div
-            className="grid gap-4"
-            style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
-          >
-            {displayImages.map((image, index) => {
+        {/* Side thumbnail column — cover photos by default, API photos
+             for the picked configuration + fabric. Vertical column on lg+,
+             horizontal row on smaller screens. */}
+        {showSideColumn && (
+          <div className="grid grid-cols-4 gap-3 lg:grid-cols-1 lg:grid-rows-4 lg:w-1/5 lg:flex-shrink-0 lg:gap-3 lg:self-stretch">
+            {sideThumbs.map((image, index) => {
               const isSelected = index === selectedIndex
               return (
                 <button
                   key={image.id}
                   onClick={() => setSelectedIndex(index)}
                   className={[
-                    "relative w-full aspect-[4/3] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                    "relative w-full overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                    // Mobile: aspect ratio defines thumb height. Lg: grid-rows-4
+                    // on the parent column divides hero height into 4 equal rows,
+                    // and h-full makes each thumb fill its row — guaranteeing
+                    // the column total height aligns with the hero's bottom.
+                    "aspect-[1360/840] lg:aspect-auto lg:h-full",
                     isSelected
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",
@@ -511,6 +585,7 @@ const ProductImageGallery = ({
             })}
           </div>
         )}
+        </div>
 
         {/* "More product photos" expandable panel */}
         {apiPhotos.length > 0 && (
@@ -584,113 +659,40 @@ const ProductImageGallery = ({
                       </div>
                     )}
 
-                    {/* Filtered thumbnail grid */}
-                    {filteredApiImages.length > 0 ? (
-                      <div
-                        className="grid gap-4"
-                        style={{ gridTemplateColumns: "repeat(4, 1fr)" }}
-                      >
-                        {filteredApiImages.map((image, index) => {
-                          const isSelected =
-                            panelExpanded && index === selectedIndex
-                          return (
-                            <button
-                              key={image.id}
-                              onClick={() => setSelectedIndex(index)}
-                              className={[
-                                "relative w-full aspect-[4/3] overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
-                                isSelected
-                                  ? "border-dark-blue shadow-md"
-                                  : "border-transparent hover:border-line hover:shadow-sm",
-                              ].join(" ")}
-                              aria-label={`View photo ${index + 1}`}
-                              aria-pressed={isSelected}
-                            >
-                              <Image
-                                src={image.thumbnail}
-                                alt={`${productTitle} photo ${index + 1}`}
-                                fill
-                                className={`object-cover transition-opacity duration-500 ${
-                                  loadedThumbnails.has(image.thumbnail) ? "opacity-100" : "opacity-0"
-                                }`}
-                                style={{ transitionDelay: `${index * 100}ms` }}
-                                sizes="25vw"
-                                quality={70}
-                                onLoad={() => handleThumbnailLoaded(image.thumbnail)}
-                              />
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      selectedCategory && (
-                        <p className="text-sm text-ui-fg-muted">
-                          No photos available for the selected filters.
-                        </p>
-                      )
-                    )}
-
-                    {/* Combination chips — only for PRODUCT_PHOTOS */}
+                    {/* Configuration + Fabric dropdowns. Fabric is disabled
+                         until a configuration is picked. Thumbnails (below)
+                         only render once both are selected. */}
                     {selectedCategory === PRODUCT_PHOTOS_CATEGORY &&
                       availableCombinations.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                          <span className="text-xs font-medium text-ui-fg-muted uppercase tracking-wide">
-                            Configurations
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            {availableCombinations.map((combination) => {
-                              const isActive =
-                                selectedCombination === combination
-                              return (
-                                <button
-                                  key={combination}
-                                  onClick={() =>
-                                    handleCombinationSelect(combination)
-                                  }
-                                  className={[
-                                    "px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150",
-                                    isActive
-                                      ? "bg-[#C5A572] text-white"
-                                      : "border border-line text-dark-blue hover:bg-ui-bg-subtle",
-                                  ].join(" ")}
-                                >
-                                  {combination}
-                                </button>
-                              )
-                            })}
-                          </div>
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
+                          <GalleryDropdown
+                            label="Configurations"
+                            placeholder="Select configuration"
+                            options={availableCombinations}
+                            value={selectedCombination}
+                            onChange={handleCombinationSelect}
+                          />
+                          <GalleryDropdown
+                            label="Fabrics"
+                            placeholder="Select fabric"
+                            options={availableFabrics}
+                            value={selectedFabric}
+                            onChange={handleFabricSelect}
+                            disabled={!selectedCombination}
+                            formatOption={stripImageExtension}
+                          />
                         </div>
                       )}
 
-                    {/* Fabric chips */}
-                    {selectedCategory === PRODUCT_PHOTOS_CATEGORY &&
-                      selectedCombination &&
-                      availableFabrics.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                          <span className="text-xs font-medium text-ui-fg-muted uppercase tracking-wide">
-                            Fabrics
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            {availableFabrics.map((fabric) => {
-                              const isActive = selectedFabric === fabric
-                              return (
-                                <button
-                                  key={fabric}
-                                  onClick={() => handleFabricSelect(fabric)}
-                                  className={[
-                                    "px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150",
-                                    isActive
-                                      ? "bg-[#C5A572] text-white"
-                                      : "border border-line text-dark-blue hover:bg-ui-bg-subtle",
-                                  ].join(" ")}
-                                >
-                                  {fabric}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
+                    {/* When both dropdowns are picked but the API has no
+                         photo for that exact pair, show an empty-state hint.
+                         The thumbnails themselves render in the side column
+                         (next to the hero), not inside this panel. */}
+                    {hasFullSelection && filteredApiImages.length === 0 && (
+                      <p className="text-sm text-ui-fg-muted">
+                        No photos available for the selected combination.
+                      </p>
+                    )}
                   </>
                 )}
               </div>

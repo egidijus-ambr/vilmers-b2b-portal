@@ -113,19 +113,6 @@ export const getNavigationConfig = (
       },
     },
     {
-      id: "about",
-      label: t("about-us"),
-      type: "dropdown" as const,
-      href: null,
-      dropdown: {
-        width: "w-auto min-w-48 max-w-64",
-        layout: "single-column" as const,
-        items: [
-          { label: "FSC™ Vilmers", href: "https://vilmers.com/fsc-vilmers/" },
-        ],
-      },
-    },
-    {
       id: "contact",
       label: t("contact-us"),
       type: "link" as const,

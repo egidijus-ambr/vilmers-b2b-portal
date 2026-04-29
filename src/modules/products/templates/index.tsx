@@ -57,8 +57,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
               productTitle={product.title}
               productName={product.productName}
               showCategoryFilter={false}
-              alwaysExpanded={true}
-              showPanelHeader={false}
             />
           </div>
           <hr className="border-t border-gray-300 mb-4" />
