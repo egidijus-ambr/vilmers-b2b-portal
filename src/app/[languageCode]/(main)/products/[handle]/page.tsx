@@ -33,13 +33,8 @@ function mapFurnisystemsProduct(
 
   const profile = profiles[0]
 
-  const images = isAdvanced
-    ? container.advanced_product?.images ?? []
-    : container.single_product?.images ?? []
-
-  const sortedImages = [...images].sort(
-    (a, b) => a.display_order - b.display_order
-  )
+  const child = container.advanced_product ?? container.single_product
+  const galleryImages = child?.gallery_photos ?? []
 
   // Build breadcrumbs (hrefs without language prefix — LocalizedClientLink adds it)
   const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
@@ -163,7 +158,7 @@ function mapFurnisystemsProduct(
     id: String(container.id),
     title: profile?.name ?? "Product",
     description: profile?.description ?? null,
-    images: sortedImages,
+    images: galleryImages,
     productName: profile?.name?.split(' ')[0] ?? null,
     breadcrumbs,
     features,
@@ -193,20 +188,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? (product.single_product?.product_profiles?.[0]?.short_description ?? null)
     : null
 
-  const images = isAdvanced
-    ? product.advanced_product?.images ?? []
-    : product.single_product?.images ?? []
-
-  const firstImage = [...images].sort(
-    (a, b) => a.display_order - b.display_order
-  )[0]
+  const heroChild = product.advanced_product ?? product.single_product
+  const heroImage = heroChild?.category_photo ?? heroChild?.gallery_photos?.[0] ?? null
 
   const productTitle = profile?.name ?? "Product"
 
-  const ogImages = firstImage?.src
+  const ogImages = heroImage?.src
     ? [
         {
-          url: firstImage.src,
+          url: heroImage.src,
           width: 1200,
           height: 630,
           alt: `${productTitle} - Vilmers`,
@@ -223,7 +213,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       twitter: {
         card: "summary_large_image",
-        images: [firstImage.src],
+        images: [heroImage!.src],
       },
     }),
   }

@@ -24,7 +24,7 @@ const PRODUCT_CARD_FRAGMENT = gql`
     single_product {
       id
       price
-      images {
+      category_photo {
         id
         src
         src_md
@@ -49,7 +49,7 @@ const PRODUCT_CARD_FRAGMENT = gql`
         price
         price_listId
       }
-      images {
+      category_photo {
         id
         src
         src_md
@@ -148,10 +148,20 @@ const GET_PRODUCT_BY_PERMALINK = gql`
             permalink
           }
         }
-        images {
+        category_photo {
           id
           src
           src_md
+          src_xs
+          src_thumbnail
+          display_order
+        }
+        gallery_photos {
+          id
+          src
+          src_md
+          src_xs
+          src_thumbnail
           display_order
         }
       }
@@ -166,10 +176,20 @@ const GET_PRODUCT_BY_PERMALINK = gql`
             permalink
           }
         }
-        images {
+        category_photo {
           id
           src
           src_md
+          src_xs
+          src_thumbnail
+          display_order
+        }
+        gallery_photos {
+          id
+          src
+          src_md
+          src_xs
+          src_thumbnail
           display_order
         }
         additional_component_to_advanced_product(
@@ -670,10 +690,20 @@ export class ProductsModule {
         single_product: {
           id: number
           product_profiles: RawProfile[]
-          images: {
+          category_photo: {
             id: number
             src: string
             src_md: string | null
+            src_xs: string | null
+            src_thumbnail: string | null
+            display_order: number
+          } | null
+          gallery_photos: {
+            id: number
+            src: string
+            src_md: string | null
+            src_xs: string | null
+            src_thumbnail: string | null
             display_order: number
           }[]
         } | null
@@ -681,10 +711,20 @@ export class ProductsModule {
           id: number
           advanced_product_type: string | null
           advanced_product_profiles: RawProfile[]
-          images: {
+          category_photo: {
             id: number
             src: string
             src_md: string | null
+            src_xs: string | null
+            src_thumbnail: string | null
+            display_order: number
+          } | null
+          gallery_photos: {
+            id: number
+            src: string
+            src_md: string | null
+            src_xs: string | null
+            src_thumbnail: string | null
             display_order: number
           }[]
           additional_component_to_advanced_product: {

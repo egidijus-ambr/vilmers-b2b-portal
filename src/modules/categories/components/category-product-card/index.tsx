@@ -30,9 +30,7 @@ function extractProductDisplayData(
     const profile =
       product.advanced_product_profiles?.find((p) => p.language === language) ||
       product.advanced_product_profiles?.[0]
-    const image = [...(product.images || [])].sort(
-      (a, b) => a.display_order - b.display_order
-    )[0]
+    const image = product.category_photo
 
     return {
       name: profile?.name ?? "",
@@ -64,9 +62,7 @@ function extractProductDisplayData(
   const profile =
     product.product_profiles?.find((p) => p.language === language) ||
     product.product_profiles?.[0]
-  const image = [...(product.images || [])].sort(
-    (a, b) => a.display_order - b.display_order
-  )[0]
+  const image = product.category_photo
 
   // Apply discount if active
   let price = product.price

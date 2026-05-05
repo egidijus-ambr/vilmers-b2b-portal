@@ -34,7 +34,7 @@ export interface BasePrice {
 export interface SingleProduct {
   id: number
   price: number
-  images: ProductCardImage[]
+  category_photo: ProductCardImage | null
   product_profiles: ProductProfile[]
 }
 
@@ -43,7 +43,7 @@ export interface AdvancedProduct {
   advanced_product_type?: string | null
   price_from: number
   base_prices: BasePrice[]
-  images: ProductCardImage[]
+  category_photo: ProductCardImage | null
   advanced_product_profiles: AdvancedProductProfile[]
 }
 
@@ -176,10 +176,20 @@ export interface FurnisystemsProductDetail {
       language: string
       permalink: string
     }[]
-    images: {
+    category_photo: {
       id: number
       src: string
       src_md: string | null
+      src_xs: string | null
+      src_thumbnail: string | null
+      display_order: number
+    } | null
+    gallery_photos: {
+      id: number
+      src: string
+      src_md: string | null
+      src_xs: string | null
+      src_thumbnail: string | null
       display_order: number
     }[]
   } | null
@@ -192,10 +202,20 @@ export interface FurnisystemsProductDetail {
       language: string
       permalink: string
     }[]
-    images: {
+    category_photo: {
       id: number
       src: string
       src_md: string | null
+      src_xs: string | null
+      src_thumbnail: string | null
+      display_order: number
+    } | null
+    gallery_photos: {
+      id: number
+      src: string
+      src_md: string | null
+      src_xs: string | null
+      src_thumbnail: string | null
       display_order: number
     }[]
     additional_component_to_advanced_product?: ProductComponentAssociation[] | null
