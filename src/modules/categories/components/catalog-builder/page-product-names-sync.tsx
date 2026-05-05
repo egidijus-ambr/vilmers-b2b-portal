@@ -1,20 +1,23 @@
 "use client"
 
 import { useEffect } from "react"
-import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
+import {
+  useCatalogBuilder,
+  type ProductRef,
+} from "@lib/context/catalog-builder-context"
 
 interface PageProductNamesSyncProps {
-  productNames: string[]
+  products: ProductRef[]
   filterKey: string
 }
 
 /**
  * Bridge between server-rendered product data and the persistent
- * CatalogBuilderProvider. Pushes current-page product names and
+ * CatalogBuilderProvider. Pushes current-page products and
  * filter key into the context on every server re-render.
  */
 export default function PageProductNamesSync({
-  productNames,
+  products,
   filterKey,
 }: PageProductNamesSyncProps) {
   const context = useCatalogBuilder()
@@ -24,8 +27,8 @@ export default function PageProductNamesSync({
   }, [filterKey, context])
 
   useEffect(() => {
-    context?.setPageProductNames(productNames)
-  }, [productNames, context])
+    context?.setPageProducts(products)
+  }, [products, context])
 
   return null
 }

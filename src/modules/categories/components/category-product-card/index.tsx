@@ -36,6 +36,7 @@ function extractProductDisplayData(
 
     return {
       name: profile?.name ?? "",
+      reference: container.reference ?? null,
       handle: profile?.meta_information?.permalink ?? null,
       image: image?.src_md || image?.src || null,
       priceLabel: formatPrice({
@@ -52,6 +53,7 @@ function extractProductDisplayData(
   if (!product)
     return {
       name: "",
+      reference: null,
       handle: null,
       image: null,
       priceLabel: "",
@@ -79,6 +81,7 @@ function extractProductDisplayData(
 
   return {
     name: profile?.name ?? "",
+    reference: container.reference ?? null,
     handle: profile?.meta_information?.permalink ?? null,
     image: image?.src_md || image?.src || null,
     priceLabel: formatPrice({ amount: price, language }),

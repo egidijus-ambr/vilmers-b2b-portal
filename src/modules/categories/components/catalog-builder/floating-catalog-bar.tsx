@@ -27,6 +27,7 @@ export default function FloatingCatalogBar() {
     deselectAll,
     catalogueMap,
     allProductNamesLoading,
+    referenceByName,
   } = useRequiredCatalogBuilder()
 
   const { customer } = useCustomer()
@@ -68,8 +69,11 @@ export default function FloatingCatalogBar() {
     if (selectedProducts.size === 0 || isDownloading) return
     setIsDownloading(true)
     try {
+      const productNames = Array.from(selectedProducts)
+      const productReferences = productNames.map((n) => referenceByName[n])
       const blob = await sdk.productCatalogues.mergeCatalogues({
-        productNames: Array.from(selectedProducts),
+        productNames,
+        productReferences,
         market: customerMarket ?? "EN",
         mode: selectedMode,
         compressed,

@@ -13,6 +13,7 @@ const PRODUCT_CARD_FRAGMENT = gql`
   fragment ProductCardFields on ProductContainer {
     id
     type
+    reference
     discount {
       id
       discount
@@ -135,6 +136,7 @@ const GET_PRODUCT_BY_PERMALINK = gql`
     findFirstProductContainer(where: $where) {
       id
       type
+      reference
       single_product {
         id
         product_profiles(where: { language: { equals: $language } }) {
@@ -664,6 +666,7 @@ export class ProductsModule {
       findFirstProductContainer: {
         id: number
         type: string
+        reference?: string | null
         single_product: {
           id: number
           product_profiles: RawProfile[]

@@ -208,8 +208,10 @@ export function buildDynamicMenuItems(
 
   return staticConfig.menuItems.map((item) => {
     if (item.id === "products") {
+      const rootName = rootCategory ? getCategoryName(rootCategory) : ""
       return {
         ...item,
+        label: rootName || item.label,
         href: rootCategory
           ? buildCategoryHref(getCategoryPermalink(rootCategory))
           : null,

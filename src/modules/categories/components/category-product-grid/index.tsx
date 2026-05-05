@@ -47,24 +47,26 @@ export default async function CategoryProductGrid({
     catIds
   )
 
-  // Extract product names for the CatalogBuilderProvider batch lookup.
+  // Extract product name + reference pairs for the CatalogBuilderProvider batch lookup.
   // Mirrors the name resolution logic in B2BProductCard / extractProductDisplayData.
-  const productNames = products.map((container) => {
-    if (container.type === "AdvancedProduct" || !!container.advanced_product) {
-      const profiles = container.advanced_product?.advanced_product_profiles
-      return (
+  const productRefs = products
+    .map((container) => {
+      if (container.type === "AdvancedProduct" || !!container.advanced_product) {
+        const profiles = container.advanced_product?.advanced_product_profiles
+        const name =
+          profiles?.find((p) => p.language === language)?.name ??
+          profiles?.[0]?.name ??
+          ""
+        return { name, reference: container.reference ?? null }
+      }
+      const profiles = container.single_product?.product_profiles
+      const name =
         profiles?.find((p) => p.language === language)?.name ??
         profiles?.[0]?.name ??
         ""
-      )
-    }
-    const profiles = container.single_product?.product_profiles
-    return (
-      profiles?.find((p) => p.language === language)?.name ??
-      profiles?.[0]?.name ??
-      ""
-    )
-  }).filter(Boolean)
+      return { name, reference: container.reference ?? null }
+    })
+    .filter((p) => Boolean(p.name))
 
   return (
     <div data-testid="category-product-grid">
@@ -110,7 +112,7 @@ export default async function CategoryProductGrid({
         </div>
       ) : (
         <CatalogBuilderWrapper
-          productNames={productNames}
+          products={productRefs}
           filterKey={`${categoryPermalink}|${(attrIds ?? []).sort().join(",")}|${sortBy ?? ""}|${(catIds ?? []).sort().join(",")}`}
         >
           <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">

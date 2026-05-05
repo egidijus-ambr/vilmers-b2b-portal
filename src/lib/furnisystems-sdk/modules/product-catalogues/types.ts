@@ -43,6 +43,7 @@ export interface CatalogueCachePopulateResponse {
 
 export interface MergeCataloguesRequest {
   productNames: string[]
+  productReferences?: (string | null | undefined)[]
   market: string
   mode?: "merge" | "split"
   compressed?: boolean

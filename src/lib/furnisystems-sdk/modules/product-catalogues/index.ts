@@ -18,13 +18,18 @@ export class ProductCataloguesModule {
    * Get catalogues for a specific product
    */
   async getProductCatalogues(
-    productName: string
+    productName: string,
+    reference?: string | null
   ): Promise<ProductCataloguesResponse> {
     try {
+      const refQuery =
+        typeof reference === "string" && reference.length > 0
+          ? `?reference=${encodeURIComponent(reference)}`
+          : ""
       const response = await fetch(
         `${this.restApiUrl}/s3/product-catalogues/${encodeURIComponent(
           productName
-        )}`
+        )}${refQuery}`
       )
 
       if (!response.ok) {
@@ -51,12 +56,29 @@ export class ProductCataloguesModule {
    * Get catalogues for multiple products in a single request
    */
   async getBatchProductCatalogues(
-    names: string[]
+    names: string[],
+    references?: (string | null | undefined)[]
   ): Promise<BatchProductCataloguesResponse> {
+    if (Array.isArray(references) && references.length !== names.length) {
+      throw new FurnisystemsError(
+        `getBatchProductCatalogues: references length (${references.length}) does not match names length (${names.length}). The two arrays must be positionally aligned.`
+      )
+    }
     try {
       const query = names.map((n) => encodeURIComponent(n)).join(",")
+      // Preserve positional alignment with `names` so backend can pair entries
+      const hasAnyReference =
+        Array.isArray(references) &&
+        references.some((r) => typeof r === "string" && r.length > 0)
+      const referencesQuery = hasAnyReference
+        ? `&references=${(references as (string | null | undefined)[])
+            .map((r) =>
+              typeof r === "string" && r.length > 0 ? encodeURIComponent(r) : ""
+            )
+            .join(",")}`
+        : ""
       const response = await fetch(
-        `${this.restApiUrl}/s3/product-catalogues?names=${query}`
+        `${this.restApiUrl}/s3/product-catalogues?names=${query}${referencesQuery}`
       )
 
       if (!response.ok) {

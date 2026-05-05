@@ -58,6 +58,7 @@ export interface ProductDiscount {
 export interface ProductContainer {
   id: number
   type: string
+  reference?: string | null
   discount: ProductDiscount | null
   single_product: SingleProduct | null
   advanced_product: AdvancedProduct | null
@@ -165,6 +166,7 @@ export interface ProductFeatureData {
 export interface FurnisystemsProductDetail {
   id: number
   type: string
+  reference?: string | null
   single_product: {
     id: number
     product_profiles: {
