@@ -167,6 +167,7 @@ export interface FurnisystemsProductDetail {
   id: number
   type: string
   reference?: string | null
+  content_blocks?: import("@modules/home/components/content-block/types").ContentBlockData[] | null
   single_product: {
     id: number
     product_profiles: {

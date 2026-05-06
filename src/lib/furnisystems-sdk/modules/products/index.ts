@@ -8,6 +8,7 @@ import {
   FurnisystemsProductDetail,
   ProductContainer,
 } from "./types"
+import type { ContentBlockData } from "@modules/home/components/content-block/types"
 
 const PRODUCT_CARD_FRAGMENT = gql`
   fragment ProductCardFields on ProductContainer {
@@ -130,13 +131,82 @@ const SEARCH_PRODUCTS = gql`
   }
 `
 
+const PRODUCT_CONTENT_BLOCK_FRAGMENT = gql`
+  fragment ProductContentBlockFields on ContentBlock {
+    id
+    type
+    style
+    video_link
+    video_type
+    video_autoplay
+    video_loop
+    arrangement
+    main_image {
+      id
+      src
+    }
+    gallery_images(orderBy: { display_order: asc }) {
+      id
+      src
+      display_order
+    }
+    content_block_profiles {
+      id
+      name
+      description
+      description_format
+      link
+      language
+    }
+    default_margins
+    max_height
+    max_width
+    min_height
+    min_width
+    top_margin
+    bottom_margin
+    left_margin
+    right_margin
+    background_color
+    text_color
+    media_max_height
+    media_max_width
+    media_min_height
+    media_min_width
+    object_fit_cover
+    link_new_tab
+    link_page {
+      id
+      page_profiles {
+        slug
+        language
+      }
+    }
+    extra_css
+    linked_items {
+      id
+      title
+      link
+      arrangement
+      image {
+        id
+        src
+      }
+    }
+  }
+`
+
 const GET_PRODUCT_BY_PERMALINK = gql`
   ${PRODUCT_CARD_FRAGMENT}
+  ${PRODUCT_CONTENT_BLOCK_FRAGMENT}
   query GetProductByPermalink($where: ProductContainerWhereInput!, $language: Language) {
     findFirstProductContainer(where: $where) {
       id
       type
       reference
+      content_blocks(orderBy: { arrangement: asc }) {
+        ...ProductContentBlockFields
+      }
       single_product {
         id
         product_profiles(where: { language: { equals: $language } }) {
@@ -687,6 +757,7 @@ export class ProductsModule {
         id: number
         type: string
         reference?: string | null
+        content_blocks?: ContentBlockData[] | null
         single_product: {
           id: number
           product_profiles: RawProfile[]

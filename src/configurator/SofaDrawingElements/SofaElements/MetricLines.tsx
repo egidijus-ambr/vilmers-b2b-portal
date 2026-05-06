@@ -23,6 +23,7 @@ interface VerticalMetricProps {
   fontSize?: number
   position?: 'left' | 'right' | null
   value?: number
+  labelBackground?: string
 }
 
 interface HorizontalMetricProps {
@@ -32,6 +33,7 @@ interface HorizontalMetricProps {
   height?: number | null
   fontSize?: number
   value?: number
+  labelBackground?: string
 }
 
 interface MetricKonvaNodeProps {
@@ -49,6 +51,7 @@ export const VerticalMetric = ({
   height,
   fontSize = 12,
   position = null,
+  labelBackground = 'white',
 }: VerticalMetricProps) => {
   height = Math.round(height)
 
@@ -81,18 +84,18 @@ export const VerticalMetric = ({
         stroke="black"
         strokeWidth={0.5}
       /> */}
-      <Text
-        x={textPosition.x}
-        y={textPosition.y}
-        text={height + ' cm'}
-        padding={2}
-        fill="black"
-        fontSize={fontSize}
-        fontFamily="Arial"
-        align="center"
-        verticalAlign="middle"
-        background="white"
-      />
+      <Label x={textPosition.x} y={textPosition.y}>
+        <Tag fill={labelBackground} />
+        <Text
+          text={height + ' cm'}
+          padding={2}
+          fill="black"
+          fontSize={fontSize}
+          fontFamily="Arial"
+          align="center"
+          verticalAlign="middle"
+        />
+      </Label>
     </Group>
   )
 }
@@ -153,7 +156,7 @@ export const VerticalMetricKonvaNode = ({
     y: text.y() - 1,
     width: textBounds.width + 2,
     height: textBounds.height + 2,
-    fill: 'white',
+    fill: '#F5F3EE',
   })
 
   group.add(arrow)
@@ -172,6 +175,7 @@ export const HorizontalMetric = ({
   height,
   fontSize = 12,
   value,
+  labelBackground = 'white',
 }: HorizontalMetricProps) => {
   width = Math.round(width)
   return (
@@ -195,18 +199,18 @@ export const HorizontalMetric = ({
         stroke="black"
         strokeWidth={0.5}
       /> */}
-      <Text
-        x={width / 2 - 20}
-        y={METRIC_SIZE / 2 - 10}
-        text={(value || width) + ' cm'}
-        padding={2}
-        fill="black"
-        fontSize={fontSize}
-        fontFamily="Arial"
-        align="center"
-        verticalAlign="middle"
-        background="white"
-      />
+      <Label x={width / 2 - 20} y={METRIC_SIZE / 2 - 10}>
+        <Tag fill={labelBackground} />
+        <Text
+          text={(value || width) + ' cm'}
+          padding={2}
+          fill="black"
+          fontSize={fontSize}
+          fontFamily="Arial"
+          align="center"
+          verticalAlign="middle"
+        />
+      </Label>
     </Group>
   )
 }
@@ -267,7 +271,7 @@ export const HorizontalMetricKonvaNode = ({
     y: text.y() - 2,
     width: textBounds.width + 4,
     height: textBounds.height + 4,
-    fill: 'white',
+    fill: '#F5F3EE',
   })
 
   group.add(arrow)

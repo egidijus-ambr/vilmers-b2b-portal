@@ -9,8 +9,12 @@ import type { ProductImage } from "@modules/products/components/product-image-ga
 import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import LinkedProductsSection from "@modules/products/components/linked-products-section"
 import InteriorGallerySection from "@modules/products/components/interior-gallery-section"
-import ComfortSection, { type ComfortSectionData } from "@modules/products/components/comfort-section"
+import ComfortSection, {
+  type ComfortSectionData,
+} from "@modules/products/components/comfort-section"
 import ConfiguratorButton from "@modules/products/components/configurator/configurator-button"
+import ProductContentBlocks from "@modules/products/components/product-content-blocks"
+import type { ContentBlockData } from "@modules/home/components/content-block/types"
 
 export type ProductPageData = {
   id: string
@@ -22,6 +26,7 @@ export type ProductPageData = {
   features: ProductPageFeature[]
   linkedProductGroups: { type: string; products: ProductContainer[] }[]
   comfortData: ComfortSectionData | null
+  contentBlocks: ContentBlockData[]
   languageCode: string
   isAdvancedProduct: boolean
   productContainerId: number
@@ -61,6 +66,15 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
           </div>
           <hr className="border-t border-gray-300 mb-4" />
           <ProductFeaturesDisplay features={product.features} />
+          {product.contentBlocks && (
+            <>
+              <hr className="border-t border-gray-300 mt-8 mb-4" />
+              <ProductContentBlocks
+                blocks={product.contentBlocks}
+                languageCode={product.languageCode}
+              />
+            </>
+          )}
           {product.comfortData && (
             <>
               <hr className="border-t border-gray-300 mt-8 mb-4" />

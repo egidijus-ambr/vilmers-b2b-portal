@@ -3,8 +3,14 @@
 import React, { useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import ComponentDrawer from "./component-drawer"
-import type { ComponentGroup, AdditionalComponent } from "@configurator/lib/types"
-import { getComponentName, getGroupName } from "@configurator/lib/component-utils"
+import type {
+  ComponentGroup,
+  AdditionalComponent,
+} from "@configurator/lib/types"
+import {
+  getComponentName,
+  getGroupName,
+} from "@configurator/lib/component-utils"
 
 type ComponentSelectorProps = {
   group: ComponentGroup
@@ -29,7 +35,10 @@ const ComponentSelector = ({
     ? getComponentName(selectedComponent, languageCode)
     : "Select..."
 
-  const imageSrc = selectedComponent?.image?.src_md ?? selectedComponent?.image?.src_xs ?? selectedComponent?.image?.src
+  const imageSrc =
+    selectedComponent?.image?.src_md ??
+    selectedComponent?.image?.src_xs ??
+    selectedComponent?.image?.src
 
   return (
     <>
@@ -38,7 +47,7 @@ const ComponentSelector = ({
         className="w-full flex items-end gap-3 pr-4 border border-gray-200 hover:border-gray-400 transition-colors text-left"
       >
         {/* Thumbnail */}
-        <div className="w-32 h-32 shrink-0 overflow-hidden bg-gray-50 border-r border-gray-200">
+        <div className="w-32 h-32 shrink-0 overflow-hidden bg-[#F2F0EF] border-r border-gray-200">
           {imageSrc ? (
             <img
               src={imageSrc}

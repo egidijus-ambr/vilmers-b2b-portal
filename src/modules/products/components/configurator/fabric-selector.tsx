@@ -7,7 +7,10 @@ import type {
   FabricGroupWithPrice,
   FabricCombinationOption,
 } from "@configurator/lib/types"
-import { useCustomerPaletteIds, getGroupName } from "@configurator/lib/palette-utils"
+import {
+  useCustomerPaletteIds,
+  getGroupName,
+} from "@configurator/lib/palette-utils"
 
 type FabricSelectorProps = {
   fabricGroups: FabricGroupWithPrice[]
@@ -59,7 +62,7 @@ const FabricSelector = ({
         className="w-full flex items-end gap-3 pr-4 border border-gray-200 hover:border-gray-400 transition-colors text-left"
       >
         {/* Thumbnail */}
-        <div className="w-32 h-32 shrink-0 overflow-hidden bg-gray-50 border-r border-gray-200">
+        <div className="w-32 h-32 shrink-0 overflow-hidden bg-[#F2F0EF] border-r border-gray-200">
           {selectedFabricObj?.image?.src_xs ? (
             <img
               src={

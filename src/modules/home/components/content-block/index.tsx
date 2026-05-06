@@ -15,6 +15,7 @@ import B2BProductCard from "@modules/categories/components/category-product-card
 import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import { SupportedLanguage } from "@lib/i18n"
 import ProductCarouselGrid from "@modules/common/components/product-carousel-grid"
+import RichText from "@modules/common/components/rich-text"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -80,6 +81,7 @@ export default function ContentBlock({
           sectionImage={data.main_image?.src ?? null}
           sectionName={profile?.name ?? null}
           sectionDescription={profile?.description ?? null}
+          descriptionFormat={profile?.description_format ?? null}
           backgroundColor={data.background_color}
           textColor={data.text_color}
           mediaMaxHeight={data.media_max_height}
@@ -96,6 +98,7 @@ export default function ContentBlock({
           alignImage={alignImage}
           sectionName={profile?.name ?? null}
           sectionDescription={profile?.description ?? null}
+          descriptionFormat={profile?.description_format ?? null}
           backgroundColor={data.background_color}
           textColor={data.text_color}
           mediaMaxHeight={data.media_max_height}
@@ -115,6 +118,7 @@ export default function ContentBlock({
           style={data.style}
           sectionName={profile?.name ?? null}
           sectionDescription={profile?.description ?? null}
+          descriptionFormat={profile?.description_format ?? null}
           backgroundColor={data.background_color}
           textColor={data.text_color}
         />
@@ -170,6 +174,7 @@ export default function ContentBlock({
           products={data.products ?? []}
           title={profile?.name ?? null}
           description={profile?.description ?? null}
+          descriptionFormat={profile?.description_format ?? null}
           languageCode={languageCode}
           backgroundColor={data.background_color}
           textColor={data.text_color}
@@ -184,18 +189,28 @@ export default function ContentBlock({
 function TextSection({
   name,
   description,
+  descriptionFormat,
   textColor,
+  widthClass = "flex-1",
+  verticalJustifyClass = "justify-center",
+  paddingClass = "px-6 py-10 small:px-12 small:py-16",
 }: {
   name: string | null
   description: string | null
+  descriptionFormat?: "plain" | "markdown" | null
   textColor: string | null
+  widthClass?: string
+  verticalJustifyClass?: string
+  paddingClass?: string
 }) {
   return (
-    <div className="flex flex-1 flex-col justify-center px-6 py-10 small:px-12 small:py-16">
-      <div className="mx-auto max-w-lg">
+    <div
+      className={`flex flex-col ${paddingClass} ${widthClass} ${verticalJustifyClass}`}
+    >
+      <div>
         {name && (
           <h3
-            className="mb-4 text-xl font-medium small:text-2xl"
+            className="mb-4 text-2xl font-medium"
             style={textColor ? { color: textColor } : undefined}
           >
             {name.split("\\n").map((line, i) => (
@@ -206,16 +221,11 @@ function TextSection({
             ))}
           </h3>
         )}
-        {description &&
-          description.split("\\n").map((line, i) => (
-            <p
-              key={i}
-              className="text-base font-normal leading-6 text-gray-600"
-              style={textColor ? { color: textColor } : undefined}
-            >
-              {line}
-            </p>
-          ))}
+        <RichText
+          value={description}
+          format={descriptionFormat}
+          textColor={textColor}
+        />
       </div>
     </div>
   )
@@ -244,6 +254,7 @@ function TextAndImage({
   sectionImage,
   sectionName,
   sectionDescription,
+  descriptionFormat,
   backgroundColor,
   textColor,
   mediaMaxHeight,
@@ -257,6 +268,7 @@ function TextAndImage({
   sectionImage: string | null
   sectionName: string | null
   sectionDescription: string | null
+  descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
   mediaMaxHeight: number | null
@@ -298,29 +310,67 @@ function TextAndImage({
         {/* Overlay text - centered */}
         <div className="absolute inset-0 flex items-center justify-center px-6 py-10">
           <div className="max-w-2xl text-center">
-            {sectionName && (
-              <h3
-                className="mb-4 text-xl font-medium small:text-2xl"
-                style={textColor ? { color: textColor } : undefined}
-              >
-                {sectionName.split("\\n").map((line, i) => (
-                  <span key={i}>
-                    {line}
-                    {i < sectionName.split("\\n").length - 1 && <br />}
-                  </span>
-                ))}
-              </h3>
-            )}
-            {sectionDescription &&
-              sectionDescription.split("\\n").map((line, i) => (
-                <p
-                  key={i}
-                  className="text-base font-normal leading-6"
-                  style={textColor ? { color: textColor } : undefined}
-                >
-                  {line}
-                </p>
-              ))}
+            <RichText
+              value={sectionDescription}
+              format={descriptionFormat}
+              textColor={textColor}
+              paragraphClassName="text-base font-normal leading-6"
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (style === "image_left") {
+    return (
+      <div
+        className="content-container large:px-0 px-6"
+        style={backgroundColor ? { backgroundColor } : undefined}
+      >
+        {sectionName && (
+          <h3
+            className="mb-6 text-2xl font-medium small:mb-8"
+            style={textColor ? { color: textColor } : undefined}
+          >
+            {sectionName.split("\\n").map((line, i) => (
+              <span key={i}>
+                {line}
+                {i < sectionName.split("\\n").length - 1 && <br />}
+              </span>
+            ))}
+          </h3>
+        )}
+        <div className="flex flex-col-reverse small:flex-row-reverse">
+          <TextSection
+            name={null}
+            description={sectionDescription}
+            descriptionFormat={descriptionFormat}
+            textColor={textColor}
+            widthClass="w-full small:w-1/2"
+            verticalJustifyClass="justify-start"
+            paddingClass="pt-6 small:pt-0 small:pl-12"
+          />
+
+          <div className="flex w-full items-stretch justify-center small:w-1/2 small:self-stretch">
+            <div
+              className="relative w-full overflow-hidden"
+              style={mediaStyle({
+                mediaMaxHeight,
+                mediaMaxWidth,
+                mediaMinHeight,
+                mediaMinWidth,
+              })}
+            >
+              {sectionImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={sectionImage}
+                  alt={sectionName ?? ""}
+                  className="h-full w-full object-cover"
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -330,37 +380,52 @@ function TextAndImage({
   // Default: side_by_side style (text left, image right)
   return (
     <div
-      className="mx-auto flex max-w-screen-xl flex-col small:flex-row"
+      className="content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      <TextSection
-        name={sectionName}
-        description={sectionDescription}
-        textColor={textColor}
-      />
-
-      <div className="flex w-full items-center justify-center small:w-1/2">
-        <div
-          className="relative w-full overflow-hidden"
-          style={mediaStyle({
-            mediaMaxHeight,
-            mediaMaxWidth,
-            mediaMinHeight,
-            mediaMinWidth,
-          })}
+      {sectionName && (
+        <h3
+          className="mb-6 text-2xl font-medium small:mb-8"
+          style={textColor ? { color: textColor } : undefined}
         >
-          {sectionImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={sectionImage}
-              alt={sectionName ?? ""}
-              className={
-                objectFitCover
-                  ? "h-full w-full object-cover"
-                  : "max-h-full max-w-full"
-              }
-            />
-          )}
+          {sectionName.split("\\n").map((line, i) => (
+            <span key={i}>
+              {line}
+              {i < sectionName.split("\\n").length - 1 && <br />}
+            </span>
+          ))}
+        </h3>
+      )}
+      <div className="flex flex-col small:flex-row">
+        <TextSection
+          name={null}
+          description={sectionDescription}
+          descriptionFormat={descriptionFormat}
+          textColor={textColor}
+          widthClass="w-full small:w-1/2"
+          verticalJustifyClass="justify-start"
+          paddingClass="pb-6 small:pb-0 small:pr-12"
+        />
+
+        <div className="flex w-full items-stretch justify-center small:w-1/2 small:self-stretch">
+          <div
+            className="relative w-full overflow-hidden"
+            style={mediaStyle({
+              mediaMaxHeight,
+              mediaMaxWidth,
+              mediaMinHeight,
+              mediaMinWidth,
+            })}
+          >
+            {sectionImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={sectionImage}
+                alt={sectionName ?? ""}
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -373,6 +438,7 @@ function TextAndVideo({
   alignImage,
   sectionName,
   sectionDescription,
+  descriptionFormat,
   backgroundColor,
   textColor,
   mediaMaxHeight,
@@ -388,6 +454,7 @@ function TextAndVideo({
   alignImage: "left" | "right"
   sectionName: string | null
   sectionDescription: string | null
+  descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
   mediaMaxHeight: number | null
@@ -410,6 +477,7 @@ function TextAndVideo({
       <TextSection
         name={sectionName}
         description={sectionDescription}
+        descriptionFormat={descriptionFormat}
         textColor={textColor}
       />
 
@@ -442,12 +510,14 @@ function OnlyText({
   style,
   sectionName,
   sectionDescription,
+  descriptionFormat,
   backgroundColor,
   textColor,
 }: {
   style: ContentBlockStyle | null
   sectionName: string | null
   sectionDescription: string | null
+  descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
 }) {
@@ -456,6 +526,7 @@ function OnlyText({
       <ThreeColumnsTitleLeft
         sectionName={sectionName}
         sectionDescription={sectionDescription}
+        descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
       />
@@ -467,6 +538,7 @@ function OnlyText({
       <TwoColumnsTitleTopCenter
         sectionName={sectionName}
         sectionDescription={sectionDescription}
+        descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
       />
@@ -475,13 +547,13 @@ function OnlyText({
 
   return (
     <div
-      className="mx-auto max-w-screen-xl px-6 py-10 text-center small:px-12 small:py-16"
+      className="mx-auto max-w-screen-xl py-10 text-center small:py-16 px-6 small:px-12"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className="mx-auto max-w-2xl">
         {sectionName && (
           <h3
-            className="mb-4 text-xl font-medium small:text-2xl"
+            className="mb-4 text-2xl font-medium"
             style={textColor ? { color: textColor } : undefined}
           >
             {sectionName.split("\\n").map((line, i) => (
@@ -492,16 +564,11 @@ function OnlyText({
             ))}
           </h3>
         )}
-        {sectionDescription &&
-          sectionDescription.split("\\n").map((line, i) => (
-            <p
-              key={i}
-              className="text-base font-normal leading-6 text-gray-600"
-              style={textColor ? { color: textColor } : undefined}
-            >
-              {line}
-            </p>
-          ))}
+        <RichText
+          value={sectionDescription}
+          format={descriptionFormat}
+          textColor={textColor}
+        />
       </div>
     </div>
   )
@@ -512,23 +579,25 @@ function OnlyText({
 function ThreeColumnsTitleLeft({
   sectionName,
   sectionDescription,
+  descriptionFormat,
   backgroundColor,
   textColor,
 }: {
   sectionName: string | null
   sectionDescription: string | null
+  descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
 }) {
   // Split description into two roughly equal halves for the two text columns
-  const lines = sectionDescription ? sectionDescription.split("\\n") : []
+  const lines = sectionDescription ? sectionDescription.split(/\\n|\n/) : []
   const midpoint = Math.ceil(lines.length / 2)
   const leftLines = lines.slice(0, midpoint)
   const rightLines = lines.slice(midpoint)
 
   return (
     <div
-      className="content-container py-10 small:py-12 large:px-0 px-6"
+      className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className="grid grid-cols-1 gap-8 small:grid-cols-3 small:gap-12">
@@ -549,31 +618,43 @@ function ThreeColumnsTitleLeft({
           )}
         </div>
 
-        {/* Middle column — first half of description */}
-        <div>
-          {leftLines.map((line, i) => (
-            <p
-              key={i}
-              className="text-base font-normal leading-6 text-gray-600"
-              style={textColor ? { color: textColor } : undefined}
-            >
-              {line}
-            </p>
-          ))}
-        </div>
+        {descriptionFormat === "markdown" ? (
+          <div className="small:col-span-2">
+            <RichText
+              value={sectionDescription}
+              format="markdown"
+              textColor={textColor}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Middle column — first half of description */}
+            <div>
+              {leftLines.map((line, i) => (
+                <p
+                  key={i}
+                  className="text-base font-normal leading-6 text-gray-600"
+                  style={textColor ? { color: textColor } : undefined}
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
 
-        {/* Right column — second half of description */}
-        <div>
-          {rightLines.map((line, i) => (
-            <p
-              key={i}
-              className="text-base font-normal leading-6 text-gray-600"
-              style={textColor ? { color: textColor } : undefined}
-            >
-              {line}
-            </p>
-          ))}
-        </div>
+            {/* Right column — second half of description */}
+            <div>
+              {rightLines.map((line, i) => (
+                <p
+                  key={i}
+                  className="text-base font-normal leading-6 text-gray-600"
+                  style={textColor ? { color: textColor } : undefined}
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -584,22 +665,24 @@ function ThreeColumnsTitleLeft({
 function TwoColumnsTitleTopCenter({
   sectionName,
   sectionDescription,
+  descriptionFormat,
   backgroundColor,
   textColor,
 }: {
   sectionName: string | null
   sectionDescription: string | null
+  descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
 }) {
-  const lines = sectionDescription ? sectionDescription.split("\\n") : []
+  const lines = sectionDescription ? sectionDescription.split(/\\n|\n/) : []
   const midpoint = Math.ceil(lines.length / 2)
   const leftLines = lines.slice(0, midpoint)
   const rightLines = lines.slice(midpoint)
 
   return (
     <div
-      className="content-container py-10 small:py-12 large:px-0 px-6"
+      className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {/* Centered title */}
@@ -617,31 +700,38 @@ function TwoColumnsTitleTopCenter({
         </h3>
       )}
 
-      {/* Two-column description */}
-      <div className="grid grid-cols-1 gap-8 small:grid-cols-2 small:gap-12">
-        <div>
-          {leftLines.map((line, i) => (
-            <p
-              key={i}
-              className="text-base font-normal leading-6 text-gray-600"
-              style={textColor ? { color: textColor } : undefined}
-            >
-              {line}
-            </p>
-          ))}
+      {descriptionFormat === "markdown" ? (
+        <RichText
+          value={sectionDescription}
+          format="markdown"
+          textColor={textColor}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-8 small:grid-cols-2 small:gap-12">
+          <div>
+            {leftLines.map((line, i) => (
+              <p
+                key={i}
+                className="text-base font-normal leading-6 text-gray-600"
+                style={textColor ? { color: textColor } : undefined}
+              >
+                {line}
+              </p>
+            ))}
+          </div>
+          <div>
+            {rightLines.map((line, i) => (
+              <p
+                key={i}
+                className="text-base font-normal leading-6 text-gray-600"
+                style={textColor ? { color: textColor } : undefined}
+              >
+                {line}
+              </p>
+            ))}
+          </div>
         </div>
-        <div>
-          {rightLines.map((line, i) => (
-            <p
-              key={i}
-              className="text-base font-normal leading-6 text-gray-600"
-              style={textColor ? { color: textColor } : undefined}
-            >
-              {line}
-            </p>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -1226,6 +1316,7 @@ function ProductGrid({
   products,
   title,
   description,
+  descriptionFormat,
   languageCode,
   backgroundColor,
   textColor,
@@ -1233,6 +1324,7 @@ function ProductGrid({
   products: ProductContainer[]
   title: string | null
   description: string | null
+  descriptionFormat?: "plain" | "markdown" | null
   languageCode: string
   backgroundColor: string | null
   textColor: string | null
@@ -1241,7 +1333,7 @@ function ProductGrid({
 
   return (
     <div
-      className="content-container py-10 small:py-12  large:px-0 px-6"
+      className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {title && (
@@ -1257,14 +1349,12 @@ function ProductGrid({
           ))}
         </h3>
       )}
-      {description && (
-        <p
-          className="mb-8 text-base font-normal leading-6 text-gray-600"
-          style={textColor ? { color: textColor } : undefined}
-        >
-          {description}
-        </p>
-      )}
+      <RichText
+        value={description}
+        format={descriptionFormat}
+        textColor={textColor}
+        className="mb-8"
+      />
       {products.length > 0 && (
         <ProductCarouselGrid
           products={products}

@@ -18,6 +18,7 @@ export type ContentBlockStyle =
   | "3_columns_title_left"
   | "side_by_side"
   | "text_on_image"
+  | "image_left"
   | "outline"
   | "filled"
 
@@ -27,6 +28,7 @@ export interface ContentBlockProfile {
   id: string
   name: string | null
   description: string | null
+  description_format?: "plain" | "markdown" | null
   link: string | null
   language: string
 }

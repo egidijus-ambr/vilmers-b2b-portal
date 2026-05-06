@@ -49,6 +49,7 @@ export const FIND_PAGE_BY_CODE = gql`
           id
           name
           description
+          description_format
           link
           language
         }
@@ -153,6 +154,7 @@ export const FIND_PAGE_BY_SLUG = gql`
           id
           name
           description
+          description_format
           link
           language
         }

@@ -164,6 +164,7 @@ function mapFurnisystemsProduct(
     features,
     linkedProductGroups,
     comfortData,
+    contentBlocks: container.content_blocks ?? [],
     languageCode,
     isAdvancedProduct: isAdvanced,
     productContainerId: container.id,

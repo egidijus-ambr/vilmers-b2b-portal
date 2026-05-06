@@ -158,6 +158,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
           height={rawH}
           width={null}
           fontSize={18}
+          labelBackground="#EBE7DD"
         />
         <HorizontalMetric
           x={metricSpace + armW}
@@ -165,6 +166,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
           width={adjustedW}
           height={null}
           fontSize={18}
+          labelBackground="#EBE7DD"
         />
       </Layer>
     </Stage>

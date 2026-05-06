@@ -10,16 +10,18 @@ type ComponentDrawerCardProps = {
     image: { src: string; src_md: string | null; src_xs: string | null } | null
     color?: { hex: string; background: string | null } | null
     is_wrapper?: boolean
-    linked_components_source?: {
-      id: number
-      link_type: string
-      target_component: {
-        id: number
-        code: string | null
-        image: { src_thumbnail?: string; src_md: string | null } | null
-        additional_component_profiles: { name: string; language: string }[]
-      }
-    }[] | null
+    linked_components_source?:
+      | {
+          id: number
+          link_type: string
+          target_component: {
+            id: number
+            code: string | null
+            image: { src_thumbnail?: string; src_md: string | null } | null
+            additional_component_profiles: { name: string; language: string }[]
+          }
+        }[]
+      | null
   }
   name: string
   description?: string | null
@@ -27,8 +29,15 @@ type ComponentDrawerCardProps = {
   onClick: () => void
 }
 
-const ComponentDrawerCard = ({ component, name, description, isSelected, onClick }: ComponentDrawerCardProps) => {
-  const imageSrc = component.image?.src_md ?? component.image?.src_xs ?? component.image?.src
+const ComponentDrawerCard = ({
+  component,
+  name,
+  description,
+  isSelected,
+  onClick,
+}: ComponentDrawerCardProps) => {
+  const imageSrc =
+    component.image?.src_md ?? component.image?.src_xs ?? component.image?.src
 
   // Check for wrapper with INCLUDES linked components
   const includedLinks = (component.linked_components_source ?? []).filter(
@@ -50,10 +59,11 @@ const ComponentDrawerCard = ({ component, name, description, isSelected, onClick
       {/* Image area */}
       {isWrapper ? (
         /* Wrapper: show linked component images side by side */
-        <div className="w-full h-32 bg-gray-50 flex items-center justify-center gap-1 p-2">
+        <div className="w-full h-32 bg-[#F2F0EF] flex items-center justify-center gap-1 p-2">
           {includedLinks.map((link) => {
             const target = link.target_component
-            const targetSrc = target?.image?.src_thumbnail ?? target?.image?.src_md
+            const targetSrc =
+              target?.image?.src_thumbnail ?? target?.image?.src_md
             return targetSrc ? (
               <img
                 key={link.id}
@@ -66,7 +76,7 @@ const ComponentDrawerCard = ({ component, name, description, isSelected, onClick
           })}
         </div>
       ) : imageSrc ? (
-        <div className="w-full h-32 bg-gray-50">
+        <div className="w-full h-32 bg-[#F2F0EF]">
           <img
             src={imageSrc}
             alt={name}
@@ -81,7 +91,7 @@ const ComponentDrawerCard = ({ component, name, description, isSelected, onClick
           style={{ backgroundColor: component.color.hex }}
         />
       ) : (
-        <div className="w-full h-32 bg-gray-100 flex items-center justify-center">
+        <div className="w-full h-32 bg-[#F2F0EF] flex items-center justify-center">
           <span className="text-xs text-gray-400">{component.code}</span>
         </div>
       )}
@@ -89,17 +99,31 @@ const ComponentDrawerCard = ({ component, name, description, isSelected, onClick
       {/* Selected checkmark */}
       {isSelected && (
         <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#1e2a3a] rounded-full flex items-center justify-center">
-          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          <svg
+            className="w-3 h-3 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
       )}
 
       {/* Label */}
       <div className="px-2 py-1.5">
-        <p className="text-xs font-medium text-gray-800 leading-tight truncate">{name}</p>
+        <p className="text-xs font-medium text-gray-800 leading-tight truncate">
+          {name}
+        </p>
         {description && (
-          <p className="text-[10px] text-gray-400 leading-tight truncate mt-0.5">{description}</p>
+          <p className="text-[10px] text-gray-400 leading-tight truncate mt-0.5">
+            {description}
+          </p>
         )}
       </div>
     </button>
