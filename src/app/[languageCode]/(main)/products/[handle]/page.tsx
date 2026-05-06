@@ -111,7 +111,6 @@ function mapFurnisystemsProduct(
   }
 
   const DESIGN_COMFORT = 'design-comfort'
-  const SITTING_CUSHION_COMFORT = 'sitting-cushion-comfort'
 
   let comfortData: ComfortSectionData | null = null
 
@@ -133,7 +132,7 @@ function mapFurnisystemsProduct(
       const groupTitle = wrapperProfile?.name ?? ''
 
       const includedLinks = (wrapper.linked_components_source ?? [])
-        .filter(link => link.link_type === 'INCLUDES' && link.target_component.additional_component_group?.code === SITTING_CUSHION_COMFORT)
+        .filter(link => link.link_type === 'INCLUDES')
         .sort((a, b) => a.display_order - b.display_order)
 
       const items: ComfortItemData[] = includedLinks.map(link => {
