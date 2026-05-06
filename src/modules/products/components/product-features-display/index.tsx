@@ -19,7 +19,7 @@ const ProductFeaturesDisplay: React.FC<ProductFeaturesDisplayProps> = ({
 
   return (
     <div>
-      <h2 className="section-title mb-6">Features</h2>
+      <h2 className="section-title mb-6 text-2xl">Features</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {features.map((feature, index) => (
           <div key={index} className="flex flex-row items-start gap-4">
@@ -37,7 +37,7 @@ const ProductFeaturesDisplay: React.FC<ProductFeaturesDisplayProps> = ({
                 {feature.name}
               </span>
               {feature.description && (
-                <span className="block text-sm text-dark-blue leading-snug">
+                <span className="block text-sm text-dark-blue leading-6">
                   {feature.description}
                 </span>
               )}

@@ -56,39 +56,42 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
               dangerouslySetInnerHTML={{ __html: product.description }}
             />
           )}
-          <div className="mb-8">
-            <ProductImageGallery
-              images={product.images}
-              productTitle={product.title}
-              productName={product.productName}
-              showCategoryFilter={false}
+        </div>
+        <div className="mb-8">
+          <ProductImageGallery
+            images={product.images}
+            productTitle={product.title}
+            productName={product.productName}
+            showCategoryFilter={false}
+          />
+        </div>
+        <hr className="border-t border-gray-300 mb-4" />
+        <ProductFeaturesDisplay features={product.features} />
+        {product.contentBlocks && (
+          <>
+            <hr className="border-t border-gray-300 mt-8 mb-4" />
+            <ProductContentBlocks
+              blocks={product.contentBlocks}
+              languageCode={product.languageCode}
             />
-          </div>
-          <hr className="border-t border-gray-300 mb-4" />
-          <ProductFeaturesDisplay features={product.features} />
-          {product.contentBlocks && (
-            <>
-              <hr className="border-t border-gray-300 mt-8 mb-4" />
-              <ProductContentBlocks
-                blocks={product.contentBlocks}
-                languageCode={product.languageCode}
-              />
-            </>
-          )}
-          {product.comfortData && (
-            <>
-              <hr className="border-t border-gray-300 mt-8 mb-4" />
-              <ComfortSection data={product.comfortData} />
-            </>
-          )}
-          <hr className="border-t border-gray-300 mt-8" />
+          </>
+        )}
+        {product.comfortData && (
+          <>
+            <hr className="border-t border-gray-300 mt-8 mb-4" />
+            <ComfortSection data={product.comfortData} />
+          </>
+        )}
+      </PageContent>
+      <div className="w-full bg-white pt-8 pb-12">
+        <PageContent>
           <InteriorGallerySection productName={product.productName} />
           <LinkedProductsSection
             groups={product.linkedProductGroups}
             languageCode={product.languageCode}
           />
-        </div>
-      </PageContent>
+        </PageContent>
+      </div>
     </>
   )
 }
