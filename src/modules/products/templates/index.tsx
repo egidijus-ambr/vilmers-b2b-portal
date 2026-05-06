@@ -65,9 +65,13 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
             showCategoryFilter={false}
           />
         </div>
-        <hr className="border-t border-gray-300 mb-4" />
-        <ProductFeaturesDisplay features={product.features} />
-        {product.contentBlocks && (
+        {product.features.length > 0 && (
+          <>
+            <hr className="border-t border-gray-300 mb-8" />
+            <ProductFeaturesDisplay features={product.features} />
+          </>
+        )}
+        {product.contentBlocks.length > 0 && (
           <>
             <hr className="border-t border-gray-300 mt-8 mb-4" />
             <ProductContentBlocks

@@ -12,7 +12,9 @@ interface ProductCarouselGridProps {
   language: SupportedLanguage
   maxRows?: number
   title?: string
+  titleClassName?: string
   cardClassName?: string
+  imageBackgroundClass?: string
 }
 
 export default function ProductCarouselGrid({
@@ -20,7 +22,9 @@ export default function ProductCarouselGrid({
   language,
   maxRows,
   title,
+  titleClassName,
   cardClassName,
+  imageBackgroundClass,
 }: ProductCarouselGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -73,7 +77,7 @@ export default function ProductCarouselGrid({
     return (
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
         {products.map((product) => (
-          <B2BProductCard key={product.id} container={product} language={language} cardClassName={cardClassName} />
+          <B2BProductCard key={product.id} container={product} language={language} cardClassName={cardClassName} imageBackgroundClass={imageBackgroundClass} />
         ))}
       </ul>
     )
@@ -83,7 +87,7 @@ export default function ProductCarouselGrid({
     <div>
       {(title || hasOverflow) && (
         <div className="flex items-center justify-between mb-6">
-          {title && <h2 className="section-title !mb-0">{title}</h2>}
+          {title && <h2 className={titleClassName ?? "section-title !mb-0"}>{title}</h2>}
           {hasOverflow && (
             <div className="flex gap-2 ml-auto">
               <button
@@ -130,7 +134,7 @@ export default function ProductCarouselGrid({
             key={product.id}
             className="shrink-0 snap-start w-[calc(50%-12px)] small:w-[calc(33.333%-16px)] medium:w-[calc(25%-18px)]"
           >
-            <B2BProductCard container={product} language={language} cardClassName={cardClassName} />
+            <B2BProductCard container={product} language={language} cardClassName={cardClassName} imageBackgroundClass={imageBackgroundClass} />
           </ul>
         ))}
       </div>

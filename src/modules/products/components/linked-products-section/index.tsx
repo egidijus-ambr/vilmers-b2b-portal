@@ -32,6 +32,8 @@ export default function LinkedProductsSection({
             language={languageCode as SupportedLanguage}
             maxRows={1}
             title={t(`linked-products-${group.type}`)}
+            titleClassName="text-sm font-medium uppercase tracking-[0.2em]"
+            imageBackgroundClass="bg-gold-10"
           />
         </div>
       ))}
