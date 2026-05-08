@@ -4,6 +4,7 @@ import React from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import ComponentSelector from "./component-selector"
 import { getValidComponents } from "@configurator/lib/component-utils"
+import { isHidden } from "@configurator/lib/ui-type"
 import type { ComponentGroup } from "@configurator/lib/types"
 
 type ComponentSectionProps = {
@@ -17,7 +18,7 @@ const ComponentSection = ({ groups, languageCode }: ComponentSectionProps) => {
   // Filter to only visible groups (>1 valid component, not hidden)
   const visibleGroups = groups
     .filter((group) => {
-      if (group.ui_type === "hidden") return false
+      if (isHidden(group.ui_type)) return false
       const valid = getValidComponents(group, state.selectedAdditionalComponents, state.sofaCombinations)
       return valid.length > 1
     })

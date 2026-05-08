@@ -2,8 +2,8 @@ import React from "react"
 import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
-import ProductFeaturesDisplay from "@modules/products/components/product-features-display"
-import type { ProductPageFeature } from "@modules/products/components/product-features-display"
+import ProductFeatureSection from "@modules/products/components/product-feature-section"
+import type { ProductPageFeature } from "@modules/products/components/product-feature-section"
 import ProductImageGallery from "@modules/products/components/product-image-gallery"
 import type { ProductImage } from "@modules/products/components/product-image-gallery"
 import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
@@ -14,6 +14,7 @@ import ComfortSection, {
 } from "@modules/products/components/comfort-section"
 import ConfiguratorButton from "@modules/products/components/configurator/configurator-button"
 import ProductContentBlocks from "@modules/products/components/product-content-blocks"
+import ProductSection from "@modules/products/components/product-section"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
 
 export type ProductPageData = {
@@ -41,51 +42,42 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
     <>
       <PageHeader breadcrumbItems={product.breadcrumbs} />
       <PageContent>
-        <div data-testid="product-container">
-          <div className="flex items-start justify-between mb-4">
-            <h1 className="page-title">{product.title}</h1>
-            <ConfiguratorButton
-              productContainerId={product.productContainerId}
-              isAdvancedProduct={product.isAdvancedProduct}
-              languageCode={product.languageCode}
-            />
+        <ProductSection>
+          <div data-testid="product-container">
+            <div className="flex items-start justify-between mb-4">
+              <h1 className="page-title">{product.title}</h1>
+              <ConfiguratorButton
+                productContainerId={product.productContainerId}
+                isAdvancedProduct={product.isAdvancedProduct}
+                languageCode={product.languageCode}
+              />
+            </div>
+            {product.description && (
+              <div
+                className="text-dark-blue prose prose-sm mb-6 md:w-1/2"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
+            )}
           </div>
-          {product.description && (
-            <div
-              className="text-dark-blue prose prose-sm mb-6 md:w-1/2"
-              dangerouslySetInnerHTML={{ __html: product.description }}
-            />
-          )}
-        </div>
-        <div className="mb-8">
+        </ProductSection>
+        <ProductSection>
           <ProductImageGallery
             images={product.images}
             productTitle={product.title}
             productName={product.productName}
             showCategoryFilter={false}
           />
-        </div>
+        </ProductSection>
         {product.features.length > 0 && (
-          <>
-            <hr className="border-t border-gray-300 mb-8" />
-            <ProductFeaturesDisplay features={product.features} />
-          </>
+          <ProductFeatureSection features={product.features} />
         )}
         {product.contentBlocks.length > 0 && (
-          <>
-            <hr className="border-t border-gray-300 mt-8 mb-4" />
-            <ProductContentBlocks
-              blocks={product.contentBlocks}
-              languageCode={product.languageCode}
-            />
-          </>
+          <ProductContentBlocks
+            blocks={product.contentBlocks}
+            languageCode={product.languageCode}
+          />
         )}
-        {product.comfortData && (
-          <>
-            <hr className="border-t border-gray-300 mt-8 mb-4" />
-            <ComfortSection data={product.comfortData} />
-          </>
-        )}
+        {product.comfortData && <ComfortSection data={product.comfortData} />}
       </PageContent>
       <div className="w-full bg-white pt-8 pb-12">
         <PageContent>

@@ -4,6 +4,7 @@ import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/ty
 import type { SupportedLanguage } from "@lib/i18n"
 import { useTranslations } from "@lib/i18n"
 import ProductCarouselGrid from "@modules/common/components/product-carousel-grid"
+import ProductSection from "@modules/products/components/product-section"
 
 type LinkedProductGroup = {
   type: string
@@ -24,7 +25,7 @@ export default function LinkedProductsSection({
   if (groups.length === 0) return null
 
   return (
-    <div className="mt-6">
+    <ProductSection>
       {groups.map((group) => (
         <div key={group.type} className="mb-10">
           <ProductCarouselGrid
@@ -37,6 +38,6 @@ export default function LinkedProductsSection({
           />
         </div>
       ))}
-    </div>
+    </ProductSection>
   )
 }

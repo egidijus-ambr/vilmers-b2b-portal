@@ -1,4 +1,5 @@
 import React from "react"
+import ProductSection from "@modules/products/components/product-section"
 
 export type ProductPageFeature = {
   name: string
@@ -6,11 +7,11 @@ export type ProductPageFeature = {
   imageUrl: string | null
 }
 
-type ProductFeaturesDisplayProps = {
+type ProductFeatureSectionProps = {
   features: ProductPageFeature[]
 }
 
-const ProductFeaturesDisplay: React.FC<ProductFeaturesDisplayProps> = ({
+const ProductFeatureSection: React.FC<ProductFeatureSectionProps> = ({
   features,
 }) => {
   if (!features || features.length === 0) {
@@ -18,8 +19,7 @@ const ProductFeaturesDisplay: React.FC<ProductFeaturesDisplayProps> = ({
   }
 
   return (
-    <div>
-      <h2 className="section-title mb-6 text-2xl">Features</h2>
+    <ProductSection title="Features" divider>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {features.map((feature, index) => (
           <div key={index} className="flex flex-row items-start gap-4">
@@ -45,8 +45,8 @@ const ProductFeaturesDisplay: React.FC<ProductFeaturesDisplayProps> = ({
           </div>
         ))}
       </div>
-    </div>
+    </ProductSection>
   )
 }
 
-export default ProductFeaturesDisplay
+export default ProductFeatureSection

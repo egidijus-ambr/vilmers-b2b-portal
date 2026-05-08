@@ -5,6 +5,8 @@ import { Dialog, Transition } from "@headlessui/react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import ComponentDrawerCard from "./component-drawer-card"
 import type { AdditionalComponent, ComponentGroup, SelectedComponent } from "@configurator/lib/types"
+import { isWideView, isZoomEnabled } from "@configurator/lib/ui-type"
+import { getComponentName, getComponentDescription } from "@configurator/lib/component-utils"
 
 type ComponentDrawerProps = {
   isOpen: boolean
@@ -13,6 +15,7 @@ type ComponentDrawerProps = {
   validComponents: AdditionalComponent[]
   title: string
   languageCode: string
+  uiType?: string | null
 }
 
 const ComponentDrawer = ({
@@ -22,8 +25,11 @@ const ComponentDrawer = ({
   validComponents,
   title,
   languageCode,
+  uiType,
 }: ComponentDrawerProps) => {
   const { state, dispatch } = useConfigurator()
+  const wide = isWideView(uiType)
+  const zoom = isZoomEnabled(uiType)
 
   // Current selected component id
   const selectedComponent = state.selectedAdditionalComponents.find(
@@ -45,22 +51,6 @@ const ComponentDrawer = ({
     ]
     dispatch({ type: "SET_SELECTED_COMPONENTS", payload: updated })
     close()
-  }
-
-  const getName = (component: AdditionalComponent): string => {
-    const profile =
-      component.additional_component_profiles?.find(
-        (p) => p.language === languageCode
-      ) ?? component.additional_component_profiles?.[0]
-    return profile?.name ?? component.code ?? `Component ${component.id}`
-  }
-
-  const getDescription = (component: AdditionalComponent): string | null => {
-    const profile =
-      component.additional_component_profiles?.find(
-        (p) => p.language === languageCode
-      ) ?? component.additional_component_profiles?.[0]
-    return profile?.description ?? null
   }
 
   return (
@@ -108,15 +98,18 @@ const ComponentDrawer = ({
 
                   {/* Component cards grid */}
                   <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className={wide ? "grid grid-cols-1 gap-3" : "grid grid-cols-2 sm:grid-cols-3 gap-3"}>
                       {validComponents.map((component) => (
                         <ComponentDrawerCard
                           key={component.id}
                           component={component}
-                          name={getName(component)}
-                          description={getDescription(component)}
+                          name={getComponentName(component, languageCode)}
+                          description={getComponentDescription(component, languageCode)}
                           isSelected={selectedId === component.id}
                           onClick={() => handleSelect(component)}
+                          zoomEnabled={zoom}
+                          tall={wide}
+                          languageCode={languageCode}
                         />
                       ))}
                     </div>

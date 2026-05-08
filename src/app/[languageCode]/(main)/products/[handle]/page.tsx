@@ -8,7 +8,7 @@ import type { LinkedProductType, ProductContainer } from "@lib/furnisystems-sdk/
 import type { CategoryData } from "@lib/furnisystems-sdk"
 import ProductTemplate, { ProductPageData } from "@modules/products/templates"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
-import type { ProductPageFeature } from "@modules/products/components/product-features-display"
+import type { ProductPageFeature } from "@modules/products/components/product-feature-section"
 import type { ComfortItemData, ComfortGroupData, ComfortSectionData } from "@modules/products/components/comfort-section"
 
 export type LinkedProductGroup = {
@@ -34,7 +34,11 @@ function mapFurnisystemsProduct(
   const profile = profiles[0]
 
   const child = container.advanced_product ?? container.single_product
-  const galleryImages = child?.gallery_photos ?? []
+  const galleryImages = child?.gallery_photos?.length
+    ? child.gallery_photos
+    : child?.category_photo
+      ? [child.category_photo]
+      : []
 
   // Build breadcrumbs (hrefs without language prefix — LocalizedClientLink adds it)
   const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }]

@@ -5,6 +5,7 @@ import type {
   StepId,
   StepDefinition,
 } from "./types"
+import { isHidden } from "./ui-type"
 
 /**
  * Merge manufacturer-level component groups with per-product associations.
@@ -243,7 +244,7 @@ export function getStepsForProduct(
     const stepId = categorizeStep(group.code)
 
     // Skip hidden groups for step visibility
-    if (group.ui_type === "hidden") continue
+    if (isHidden(group.ui_type)) continue
 
     // Skip groups where customer has a pre-selected component
     if (customerComponentGroupCodes?.has(group.code)) continue
@@ -319,6 +320,20 @@ export function getComponentName(
       (p) => p.language === languageCode
     ) ?? component.additional_component_profiles?.[0]
   return profile?.name ?? component.code ?? `Component ${component.id}`
+}
+
+/**
+ * Get component description from profiles by language.
+ */
+export function getComponentDescription(
+  component: AdditionalComponent,
+  languageCode: string
+): string | null {
+  const profile =
+    component.additional_component_profiles?.find(
+      (p) => p.language === languageCode
+    ) ?? component.additional_component_profiles?.[0]
+  return profile?.description ?? null
 }
 
 /**

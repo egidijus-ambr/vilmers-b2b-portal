@@ -419,7 +419,7 @@ const ProductImageGallery = ({
 
   if (!images.length && !apiPhotos.length) {
     return (
-      <div className="w-full aspect-square bg-white flex items-center justify-center">
+      <div className="w-full aspect-square max-h-[840px] bg-white flex items-center justify-center">
         <span className="text-gray-400">No image</span>
       </div>
     )
@@ -443,7 +443,7 @@ const ProductImageGallery = ({
         <div className="flex flex-col lg:flex-row lg:items-stretch gap-3">
         {/* Main image */}
         <div
-          className="relative w-full lg:flex-1 lg:min-w-0 lg:self-start bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
+          className="relative w-full lg:flex-1 lg:min-w-0 bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
           style={{ aspectRatio: "1360 / 840" }}
           onClick={() => {
             const idx = displayImages.indexOf(currentImage)
@@ -463,7 +463,7 @@ const ProductImageGallery = ({
                 alt={`${productTitle} - image ${selectedIndex + 1}`}
                 fill
                 priority={selectedIndex === 0}
-                className="object-contain"
+                className="object-cover"
                 sizes="(max-width: 768px) 100vw, 60vw"
                 quality={85}
                 onLoad={() => setImageLoading(false)}
@@ -473,7 +473,7 @@ const ProductImageGallery = ({
                 src={currentImage.src}
                 alt={`${productTitle} - ${currentImage.name}`}
                 fill
-                className="object-contain"
+                className="object-cover"
                 sizes="(max-width: 768px) 100vw, 60vw"
                 quality={85}
                 onLoad={() => setImageLoading(false)}
@@ -485,7 +485,7 @@ const ProductImageGallery = ({
               alt={productTitle}
               fill
               priority
-              className="object-contain"
+              className="object-cover"
               sizes="(max-width: 768px) 100vw, 60vw"
               quality={85}
             />
@@ -536,7 +536,7 @@ const ProductImageGallery = ({
              and extras scroll). Scrollbars hidden for a cleaner look. */}
         {showSideColumn && (
           <div
-            className="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto lg:w-1/5 lg:flex-shrink-0 lg:self-start lg:gap-3 lg:aspect-[340/840] [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+            className="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-x-hidden lg:overflow-y-hidden lg:w-1/5 lg:flex-shrink-0 lg:self-start lg:gap-3 lg:aspect-[340/840] [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
             style={{ scrollbarWidth: "none" }}
           >
             {sideThumbs.map((image, index) => {
@@ -552,7 +552,7 @@ const ProductImageGallery = ({
                     // parent's pinned aspect ratio yields ~4 thumbs visible
                     // before vertical scrolling kicks in.
                     "w-[calc((100%-36px)/4)] lg:w-full",
-                    "aspect-[1360/840]",
+                    "aspect-[1360/840] lg:aspect-auto lg:flex-1 lg:min-h-0",
                     isSelected
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",

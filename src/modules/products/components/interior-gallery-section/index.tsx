@@ -4,6 +4,7 @@ import Image from "next/image"
 import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogPanel } from "@headlessui/react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import ProductSection from "@modules/products/components/product-section"
 
 type ApiPhoto = {
   url: string
@@ -110,7 +111,7 @@ const InteriorGallerySection: React.FC<InteriorGallerySectionProps> = ({
   if (!isLoading && photos.length === 0) return null
 
   return (
-    <div className="mt-8 mb-8">
+    <ProductSection>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-sm font-medium uppercase tracking-[0.2em]">
@@ -252,7 +253,7 @@ const InteriorGallerySection: React.FC<InteriorGallerySectionProps> = ({
           </div>
         </Dialog>
       )}
-    </div>
+    </ProductSection>
   )
 }
 

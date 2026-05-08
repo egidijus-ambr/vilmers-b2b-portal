@@ -1,4 +1,5 @@
 import Image from "next/image"
+import ProductSection from "@modules/products/components/product-section"
 
 export type ComfortItemData = {
   name: string
@@ -20,8 +21,7 @@ type Props = { data: ComfortSectionData }
 
 export default function ComfortSection({ data }: Props) {
   return (
-    <div className="mb-4">
-      <h2 className="section-title mb-6 text-2xl mt-6">{data.title}</h2>
+    <ProductSection title={data.title} divider>
       <div className="space-y-8">
         {data.groups.map((group, gi) => (
           <div key={gi}>
@@ -58,6 +58,6 @@ export default function ComfortSection({ data }: Props) {
           </div>
         ))}
       </div>
-    </div>
+    </ProductSection>
   )
 }
