@@ -1,7 +1,11 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
+import { AlertTriangle, Info } from "lucide-react"
 import ResponsiveDialog from "@modules/common/components/responsive-dialog"
+import Button from "@modules/common/components/button"
 import type { FabricGroupDetail } from "@lib/furnisystems-sdk/modules/customer/types"
+import { useTranslations } from "@lib/i18n"
 import { useFabricGroupDetails } from "../../hooks/use-fabric-group-details"
 import { resolveProfile } from "../../utils/fabric-profile-helpers"
 import {
@@ -16,6 +20,18 @@ interface FabricImageModalProps {
   imageSrc: string
   groupData: FabricGroupDetail
   languageCode: string
+  itemId?: string
+  configId?: string
+}
+
+interface StockState {
+  loading: boolean
+  totalQty: number | null
+}
+
+const INITIAL_STOCK_STATE: StockState = {
+  loading: false,
+  totalQty: null,
 }
 
 export default function FabricImageModal({
@@ -25,7 +41,10 @@ export default function FabricImageModal({
   imageSrc,
   groupData,
   languageCode,
+  itemId,
+  configId,
 }: FabricImageModalProps) {
+  const { t } = useTranslations("account")
   const { priceCategory, featuresWithPhoto, featureGroups } =
     useFabricGroupDetails(groupData, languageCode)
 
@@ -33,6 +52,56 @@ export default function FabricImageModal({
     const profile = resolveProfile(groupData.fabric_group_profiles, languageCode)
     return (profile as any)?.name ?? null
   })()
+
+  const [stock, setStock] = useState<StockState>(INITIAL_STOCK_STATE)
+  const requestIdRef = useRef(0)
+
+  // Reset stock state when modal opens or fabric identifiers change.
+  useEffect(() => {
+    requestIdRef.current += 1
+    setStock(INITIAL_STOCK_STATE)
+  }, [isOpen, itemId, configId])
+
+  const formatQty = (qty: number): string => {
+    try {
+      return qty.toLocaleString(languageCode, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      })
+    } catch {
+      return qty.toFixed(1)
+    }
+  }
+
+  const handleCheckStock = async () => {
+    if (!itemId || !configId) return
+    requestIdRef.current += 1
+    const myRequestId = requestIdRef.current
+    const isCancelled = () => requestIdRef.current !== myRequestId
+    setStock({ loading: true, totalQty: null })
+    try {
+      const res = await fetch("/api/fabric-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, configId }),
+      })
+      const data = (await res.json()) as {
+        totalQty: number | null
+        error: string | null
+      }
+      if (isCancelled()) return
+      if (data.totalQty === null) {
+        setStock({ loading: false, totalQty: null })
+        return
+      }
+      setStock({ loading: false, totalQty: data.totalQty })
+    } catch {
+      if (isCancelled()) return
+      setStock({ loading: false, totalQty: null })
+    }
+  }
+
+  const showStockSection = isOpen && !!itemId && !!configId
 
   return (
     <ResponsiveDialog isOpen={isOpen} onClose={onClose} title={fabricName}>
@@ -61,6 +130,50 @@ export default function FabricImageModal({
             <p className="text-sm text-gold tracking-wider uppercase mt-1">
               {priceCategory}
             </p>
+          )}
+
+          {showStockSection && (
+            <div className="mt-6 text-sm">
+              {stock.totalQty !== null ? (
+                <>
+                  <p className="text-dark-blue">
+                    {t("fabric-palettes.stock-available", {
+                      qty: formatQty(stock.totalQty),
+                    })}
+                  </p>
+                  {(() => {
+                    const isLow = stock.totalQty < 80
+                    const Icon = isLow ? AlertTriangle : Info
+                    return (
+                      <div
+                        className={`mt-3 flex items-start gap-2 rounded p-3 ${
+                          isLow
+                            ? "bg-red-50 text-red-800"
+                            : "bg-green-50 text-green-800"
+                        }`}
+                      >
+                        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                        <p>
+                          {isLow
+                            ? t("fabric-palettes.stock-low-message")
+                            : t("fabric-palettes.stock-plenty-message")}
+                        </p>
+                      </div>
+                    )
+                  })()}
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={handleCheckStock}
+                  disabled={stock.loading}
+                >
+                  {stock.loading
+                    ? t("fabric-palettes.stock-loading")
+                    : t("fabric-palettes.stock-check-button")}
+                </Button>
+              )}
+            </div>
           )}
 
           <FabricTextFeaturesGrid

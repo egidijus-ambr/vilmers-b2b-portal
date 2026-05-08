@@ -67,7 +67,12 @@
     "no-results": "Nė vienas audinys neatitinka jūsų paieškos.",
     "showing-groups": "Rodoma {{from}}-{{to}} iš {{total}} grupių",
     "sort-name-asc": "Pavadinimas A-Z",
-    "sort-name-desc": "Pavadinimas Z-A"
+    "sort-name-desc": "Pavadinimas Z-A",
+    "stock-loading": "Tikrinami likučiai…",
+    "stock-available": "{{qty}} m turima",
+    "stock-check-button": "Tikrinti likutį",
+    "stock-low-message": "Mažas likutis. Baldų su šia apmušalų medžiaga gamyba gali užtrukti iki 8 savaičių.",
+    "stock-plenty-message": "Didelis likutis. Gamybą pradedame iš karto."
   },
   "breadcrumb-fabric-palettes": "Audinių paletė",
   "breadcrumb-home": "Pradžia",

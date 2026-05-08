@@ -13,6 +13,8 @@ export interface ClientConfig {
   debug?: boolean
   timeout?: number
   defaultHeaders?: Record<string, string>
+  axApiBaseUrl?: string
+  axApiKey?: string
 }
 
 export interface AuthHeaders {

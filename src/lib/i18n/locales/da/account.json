@@ -67,7 +67,12 @@
     "no-results": "Ingen stoffer matcher din søgning.",
     "showing-groups": "Viser {{from}}-{{to}} af {{total}} grupper",
     "sort-name-asc": "Navn A-Z",
-    "sort-name-desc": "Navn Z-A"
+    "sort-name-desc": "Navn Z-A",
+    "stock-loading": "Tjekker lager…",
+    "stock-available": "{{qty}} m tilgængelig",
+    "stock-check-button": "Tjek lagerbeholdning",
+    "stock-low-message": "Lav lagerbeholdning. Møbler med denne polstring kan tage op til 8 uger at fremstille.",
+    "stock-plenty-message": "Rigeligt på lager. Vi starter produktionen med det samme."
   },
   "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",

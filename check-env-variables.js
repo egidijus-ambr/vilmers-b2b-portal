@@ -13,6 +13,11 @@ const requiredEnvs = [
   },
 ]
 
+// Optional server-only env vars used by the fabric-palette stock-availability
+// integration. Feature degrades silently when missing; do not block boot.
+// - VILMERS_AX_API_BASE_URL (default: https://furnisys.vilmers.com)
+// - VILMERS_AX_API_KEY     (no default; without it the stock check is disabled)
+
 function checkEnvVariables() {
   const missingEnvs = requiredEnvs.filter(function (env) {
     return !process.env[env.key]

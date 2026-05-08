@@ -9,6 +9,7 @@ import { PagesModule } from "./modules/pages"
 import { CategoriesModule } from "./modules/categories"
 import { ProductsModule } from "./modules/products"
 import { FiltersModule } from "./modules/filters"
+import { MaterialAvailabilityModule } from "./modules/material-availability"
 
 export class FurnisystemsSDK {
   private client: GraphQLClient
@@ -24,6 +25,7 @@ export class FurnisystemsSDK {
   public categories: CategoriesModule
   public products: ProductsModule
   public filters: FiltersModule
+  public materialAvailability: MaterialAvailabilityModule
 
   constructor(config: ClientConfig) {
     this.config = config
@@ -39,6 +41,10 @@ export class FurnisystemsSDK {
     this.categories = new CategoriesModule(this.client)
     this.products = new ProductsModule(this.client)
     this.filters = new FiltersModule(this.client)
+    this.materialAvailability = new MaterialAvailabilityModule(
+      this.config.axApiBaseUrl ?? "https://furnisys.vilmers.com",
+      this.config.axApiKey ?? ""
+    )
   }
 
   // Set authentication headers for all requests
@@ -83,6 +89,7 @@ export * from "./modules/pages"
 export * from "./modules/categories"
 export * from "./modules/products"
 export * from "./modules/filters"
+export * from "./modules/material-availability"
 
 // Default export
 export default FurnisystemsSDK

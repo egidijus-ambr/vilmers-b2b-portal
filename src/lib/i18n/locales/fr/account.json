@@ -67,7 +67,12 @@
     "no-results": "Aucun tissu ne correspond à votre recherche.",
     "showing-groups": "Affichage {{from}}-{{to}} sur {{total}} groupes",
     "sort-name-asc": "Nom A-Z",
-    "sort-name-desc": "Nom Z-A"
+    "sort-name-desc": "Nom Z-A",
+    "stock-loading": "Vérification du stock…",
+    "stock-available": "{{qty}} m disponibles",
+    "stock-check-button": "Vérifier la disponibilité",
+    "stock-low-message": "Stock faible. La fabrication des meubles avec ce revêtement peut prendre jusqu'à 8 semaines.",
+    "stock-plenty-message": "Stock abondant. Nous commençons la fabrication immédiatement."
   },
   "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",

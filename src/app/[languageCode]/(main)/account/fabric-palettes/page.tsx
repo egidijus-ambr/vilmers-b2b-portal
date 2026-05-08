@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useCustomer } from "@lib/context/customer-context"
+import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { useRouter, useParams } from "next/navigation"
 import PageContent from "@modules/common/components/page-content"
 import PageHeader from "@modules/common/components/page-header"
@@ -22,6 +23,7 @@ import { Info } from 'lucide-react'
 
 export default function FabricPalettesPage() {
   const { customer } = useCustomer()
+  const { actingCustomer } = useActingCustomer()
   const router = useRouter()
   const params = useParams()
   const { t } = useTranslations("account")
@@ -53,6 +55,8 @@ export default function FabricPalettesPage() {
     name: string
     imageSrc: string
     groupData: FabricGroupDetail
+    itemId?: string
+    configId?: string
   } | null>(null)
   const PAGE_SIZE = 12
 
@@ -68,12 +72,13 @@ export default function FabricPalettesPage() {
     }
   }, [])
 
+  const actingCustomerId = actingCustomer?.id ?? null
   useEffect(() => {
     if (!customer) {
       return
     }
     loadPalettes()
-  }, [customer, loadPalettes])
+  }, [customer, actingCustomerId, loadPalettes])
 
   if (!customer) {
     router.push("/account")
@@ -390,6 +395,8 @@ export default function FabricPalettesPage() {
                                     name: fabric.color_name || fabric.code,
                                     imageSrc: fabric.image.src || fabric.image.src_md || fabric.image.src_thumbnail || '',
                                     groupData: entry.fabric_group,
+                                    itemId: entry.fabric_group.code,
+                                    configId: fabric.code,
                                   })
                                 }
                               }}
@@ -451,6 +458,8 @@ export default function FabricPalettesPage() {
           imageSrc={selectedFabric.imageSrc}
           groupData={selectedFabric.groupData}
           languageCode={backendLang}
+          itemId={selectedFabric.itemId}
+          configId={selectedFabric.configId}
         />
       )}
     </>

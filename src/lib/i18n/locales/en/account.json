@@ -67,7 +67,12 @@
     "no-results": "No fabrics match your search.",
     "showing-groups": "Showing {{from}}-{{to}} of {{total}} groups",
     "sort-name-asc": "Name A-Z",
-    "sort-name-desc": "Name Z-A"
+    "sort-name-desc": "Name Z-A",
+    "stock-loading": "Checking stock…",
+    "stock-available": "{{qty}} m available",
+    "stock-check-button": "Check stock availability",
+    "stock-low-message": "Low stock quantity. Furniture with this upholstery could take up to 8 weeks to manufacture.",
+    "stock-plenty-message": "Plenty of stock. We start manufacturing immediately."
   },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",

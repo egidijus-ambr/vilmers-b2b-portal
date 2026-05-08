@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { useCustomer } from "@lib/context/customer-context"
+import { useActingCustomer } from "@lib/context/acting-customer-context"
 import type { FabricGroupWithPrice } from "./types"
 
 /**
@@ -7,11 +8,20 @@ import type { FabricGroupWithPrice } from "./types"
  */
 export function useCustomerPaletteIds(): number[] {
   const { customer } = useCustomer()
+  const { actingCustomer } = useActingCustomer()
+  // Agents impersonating a customer must read palettes from the acting
+  // customer, not their own JWT identity.
+  const source = (actingCustomer ?? customer) as
+    | {
+        fabric_palettes?: { id: string | number }[]
+        customer_group?: { fabric_palettes?: { id: string | number }[] }
+      }
+    | null
   return useMemo(() => {
-    const direct = customer?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-    const group = customer?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+    const direct = source?.fabric_palettes?.map((p) => Number(p.id)) ?? []
+    const group = source?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
     return Array.from(new Set([...direct, ...group]))
-  }, [customer?.fabric_palettes, customer?.customer_group?.fabric_palettes])
+  }, [source?.fabric_palettes, source?.customer_group?.fabric_palettes])
 }
 
 /**

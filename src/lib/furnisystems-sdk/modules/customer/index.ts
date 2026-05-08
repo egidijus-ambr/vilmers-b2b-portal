@@ -392,6 +392,7 @@ const GET_FABRIC_PALETTES_QUERY = gql`
           name
           fabric_group {
             id
+            code
             fabrics {
               id
               code
@@ -449,6 +450,7 @@ const GET_FABRIC_PALETTES_QUERY = gql`
             name
             fabric_group {
               id
+              code
               fabrics {
                 id
                 code
@@ -501,6 +503,68 @@ const GET_FABRIC_PALETTES_QUERY = gql`
   }
 `
 
+const GET_FABRIC_PALETTES_BY_IDS_QUERY = gql`
+  query GetFabricPalettesByIds($where: FabricPaletteWhereInput) {
+    findManyFabricPalette(where: $where) {
+      id
+      name
+      code
+      fabric_groups {
+        id
+        name
+        fabric_group {
+          id
+          code
+          fabrics {
+            id
+            code
+            color_name
+            order
+            image {
+              id
+              src
+              src_thumbnail
+              src_md
+            }
+          }
+          fabric_group_profiles {
+            id
+            name
+            language
+            description
+          }
+          fabric_features {
+            fabric_feature {
+              id
+              code
+              photo {
+                id
+                src
+              }
+              fabric_feature_profiles {
+                name
+                language
+              }
+              fabric_feature_group {
+                id
+                code
+                fabric_feature_group_profiles {
+                  name
+                  language
+                }
+              }
+            }
+          }
+          fabric_price_category {
+            id
+            group_number
+          }
+        }
+      }
+    }
+  }
+`
+
 const SEARCH_CUSTOMERS_QUERY = gql`
   query SearchCustomers($query: String, $limit: Int, $ids: [Int!]) {
     searchCustomers(query: $query, limit: $limit, ids: $ids) {
@@ -512,6 +576,22 @@ const SEARCH_CUSTOMERS_QUERY = gql`
       b2b_company_name
       price_listId
       role
+      fabric_palettes {
+        id
+      }
+      customer_group {
+        fabric_palettes {
+          id
+        }
+      }
+      additional_components {
+        additionalComponent {
+          code
+          additional_component_group {
+            code
+          }
+        }
+      }
     }
   }
 `
@@ -1098,6 +1178,28 @@ export class CustomerModule {
       return allPalettes
     } catch (error) {
       console.error("[getFabricPalettes] Error:", error)
+      return []
+    }
+  }
+
+  async getFabricPalettesByIds(
+    paletteIds: number[]
+  ): Promise<FabricPaletteDetail[]> {
+    if (!paletteIds.length) return []
+    try {
+      const response = await this.client.query<{
+        findManyFabricPalette: FabricPaletteDetail[]
+      }>(GET_FABRIC_PALETTES_BY_IDS_QUERY, {
+        variables: {
+          where: { id: { in: paletteIds } },
+        },
+        fetchPolicy: "no-cache",
+        errorPolicy: "all",
+      })
+
+      return response?.findManyFabricPalette ?? []
+    } catch (error) {
+      console.error("[getFabricPalettesByIds] Error:", error)
       return []
     }
   }

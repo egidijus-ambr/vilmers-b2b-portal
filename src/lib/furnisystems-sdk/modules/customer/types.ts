@@ -49,6 +49,7 @@ export interface FabricGroupToFabricFeatureDetail {
 
 export interface FabricGroupDetail {
   id: number
+  code?: string
   fabrics: FabricDetail[]
   fabric_group_profiles: FabricGroupProfileDetail[]
   fabric_features?: FabricGroupToFabricFeatureDetail[]
@@ -464,4 +465,7 @@ export type SearchCustomerResult = {
   b2b_company_name: string | null
   price_listId: number | null
   role: string | null
+  fabric_palettes?: Customer["fabric_palettes"]
+  customer_group?: Customer["customer_group"]
+  additional_components?: Customer["additional_components"]
 }
