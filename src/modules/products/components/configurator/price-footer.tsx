@@ -13,10 +13,21 @@ import Button from "@modules/common/components/button"
 type PriceFooterProps = {
   currency?: string
   volume?: number
+  /**
+   * Human-readable names of required component groups that have visible
+   * components but no current selection. When non-empty, Add-to-Cart is
+   * disabled and a helper line is rendered above the button.
+   */
+  missingRequiredGroupNames?: string[]
   onAddToCart: () => Promise<void>
 }
 
-const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterProps) => {
+const PriceFooter = ({
+  currency = "EUR",
+  volume = 0,
+  missingRequiredGroupNames = [],
+  onAddToCart,
+}: PriceFooterProps) => {
   const { state, dispatch } = useConfigurator()
   const { totalPrice, quantity } = state
   const [isAdding, setIsAdding] = useState(false)
@@ -39,8 +50,23 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
     displayPrice != null ? applyDiscount(displayPrice, discountPct) : null
   const displayVolume = volume * quantity
 
+  const hasMissingRequired = missingRequiredGroupNames.length > 0
+  const missingMessage = hasMissingRequired
+    ? `Please select ${missingRequiredGroupNames.join(", ")}`
+    : null
+
   return (
-    <div className="sticky bottom-0 mt-4 border-t bg-gold-20 pt-4 pb-4 flex items-center justify-between px-6">
+    <div className="sticky bottom-0 mt-4 border-t bg-gold-20 pt-4 pb-4 px-6 flex flex-col gap-2">
+      {missingMessage && (
+        <p
+          className="text-xs text-red-700 text-right"
+          role="alert"
+          aria-live="polite"
+        >
+          {missingMessage}
+        </p>
+      )}
+      <div className="flex items-center justify-between">
       {/* Volume display — left side */}
       <div className="flex items-center">
         {displayVolume > 0 && (
@@ -96,14 +122,22 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
 
         {/* Add to cart */}
         <Button
-          onClick={blockedNoActingCustomer ? undefined : handleAddToCart}
+          onClick={
+            blockedNoActingCustomer || hasMissingRequired
+              ? undefined
+              : handleAddToCart
+          }
           disabled={
             totalPrice == null ||
-            totalPrice <= 0 ||
             isAdding ||
-            blockedNoActingCustomer
+            blockedNoActingCustomer ||
+            hasMissingRequired
           }
-          title={blockedNoActingCustomer ? "Select a customer first" : undefined}
+          title={
+            blockedNoActingCustomer
+              ? "Select a customer first"
+              : missingMessage ?? undefined
+          }
         >
           {isAdding ? (
             <span className="flex items-center gap-2">
@@ -117,6 +151,7 @@ const PriceFooter = ({ currency = "EUR", volume = 0, onAddToCart }: PriceFooterP
             "Add to Cart"
           )}
         </Button>
+      </div>
       </div>
     </div>
   )

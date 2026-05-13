@@ -177,7 +177,7 @@
     @apply flex gap-4 text-sm;
   }
   .info-label {
-    @apply text-dark-blue-70 min-w-[100px] sm:min-w-[140px];
+    @apply text-dark-blue-70 min-w-[140px] sm:min-w-[180px];
   }
   .info-value {
     @apply text-dark-blue font-medium;

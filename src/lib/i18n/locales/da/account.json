@@ -7,7 +7,8 @@
     "title": "Reklamationer"
   },
   "completed": "Færdiggjort",
-  "confirmed-delivery-date": "Leveringsdato",
+  "confirmed-delivery-date": "Bekræftet forsendelsesdato",
+  "preferred-delivery-date": "Ønsket leveringsdato",
   "date": "Indsendt",
   "dismiss": "Luk",
   "dispatched": "Sendt",

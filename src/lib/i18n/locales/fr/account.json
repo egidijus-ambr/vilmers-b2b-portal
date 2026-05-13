@@ -7,7 +7,8 @@
     "title": "Réclamations"
   },
   "completed": "Complété",
-  "confirmed-delivery-date": "Date d'expédition",
+  "confirmed-delivery-date": "Date d'expédition confirmée",
+  "preferred-delivery-date": "Date de livraison souhaitée",
   "date": "Soumis",
   "dismiss": "Fermer",
   "dispatched": "Expédié",

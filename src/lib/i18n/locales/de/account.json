@@ -7,7 +7,8 @@
     "title": "Reklamationsbearbeitung"
   },
   "completed": "Vollendet",
-  "confirmed-delivery-date": "Versanddatum",
+  "confirmed-delivery-date": "Bestätigtes Versanddatum",
+  "preferred-delivery-date": "Gewünschtes Lieferdatum",
   "date": "Gesendet",
   "dismiss": "Schließen",
   "dispatched": "Versendet",

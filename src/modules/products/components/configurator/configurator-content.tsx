@@ -8,7 +8,16 @@ import { useConfiguratorData } from "@configurator/hooks/use-configurator-data"
 import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price"
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
-import { getStepsForProduct } from "@configurator/lib/component-utils"
+import {
+  getStepsForProduct,
+  getMissingRequiredGroupCodes,
+  getGroupName,
+  getValidComponents,
+} from "@configurator/lib/component-utils"
+import {
+  getCustomerPriceListIds,
+  getPrimaryPriceListId,
+} from "@configurator/lib/pricelist"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
@@ -53,10 +62,15 @@ const ConfiguratorContent = ({
   const [showReferenceModal, setShowReferenceModal] = useState(false)
   const { t } = useTranslations("account")
 
-  // Use customer's price list instead of hardcoded default
-  const priceListId = customer?.price_listId
-    ? Number(customer.price_listId)
-    : priceListIdProp
+  // Use the customer's effective pricelist (direct wins over group). The
+  // configurator data layer needs a single ID; charges always come from the
+  // direct pricelist when set, falling back to the group's, then the prop.
+  const customerPriceListIds = useMemo(
+    () => getCustomerPriceListIds(customer),
+    [customer]
+  )
+  const priceListId =
+    getPrimaryPriceListId(customer) ?? priceListIdProp
 
   // Load data on-demand when modal opens
   useConfiguratorData(productContainerId, priceListId, languageCode, isOpen)
@@ -85,6 +99,39 @@ const ConfiguratorContent = ({
     return codes
   }, [customer?.additional_components])
 
+  // Required-group validation: enforce a selection in `model` / `model-other`
+  // when those groups have at least one user-selectable component. We MUST
+  // run the same `getValidComponents` filter the renderer uses, otherwise a
+  // group whose components are all hidden by `hide_components_without_price`
+  // (e.g. customer has no price for any of them) would still appear required
+  // and lock add-to-cart with nothing to click.
+  const missingRequiredGroupNames = useMemo(() => {
+    const visibleGroups = state.additionalComponentGroups.map((g) => ({
+      ...g,
+      additional_components: getValidComponents(
+        g,
+        state.selectedAdditionalComponents,
+        state.sofaCombinations,
+        { priceListIds: customerPriceListIds }
+      ),
+    }))
+    const missingCodes = getMissingRequiredGroupCodes(
+      visibleGroups,
+      state.selectedAdditionalComponents
+    )
+    if (missingCodes.length === 0) return []
+    return missingCodes.map((code) => {
+      const group = state.additionalComponentGroups.find((g) => g.code === code)
+      return group ? getGroupName(group, languageCode) : code
+    })
+  }, [
+    state.additionalComponentGroups,
+    state.selectedAdditionalComponents,
+    state.sofaCombinations,
+    customerPriceListIds,
+    languageCode,
+  ])
+
   // Compute visible steps
   const steps = useMemo(
     () => [
@@ -94,7 +141,8 @@ const ConfiguratorContent = ({
         state.sofaCombinations,
         isSofa,
         hasFabricSelection,
-        customerComponentGroupCodes
+        customerComponentGroupCodes,
+        { priceListIds: customerPriceListIds }
       ),
       { id: "reference" as any, label: t("customer-reference"), groups: [] },
     ],
@@ -387,6 +435,7 @@ const ConfiguratorContent = ({
             <ComponentSection
               groups={currentStepDef.groups}
               languageCode={languageCode}
+              priceListIds={customerPriceListIds}
             />
           ) : hasFabricSelection ? (
             <FabricSection languageCode={languageCode} />
@@ -449,6 +498,7 @@ const ConfiguratorContent = ({
       <PriceFooter
         currency={productData.manufacturer?.currency ?? "EUR"}
         volume={totalVolume}
+        missingRequiredGroupNames={missingRequiredGroupNames}
         onAddToCart={async () => {
           if (!state.referenceText.trim()) {
             setShowReferenceModal(true)

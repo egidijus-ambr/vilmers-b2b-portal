@@ -170,6 +170,7 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
         createdAt
         order_status
         confirmed_delivery_date
+        preferred_delivery_date
         total_price_confirmed
         total_price
         order_code
@@ -899,6 +900,7 @@ export class CustomerModule {
             createdAt: string
             order_status: string
             confirmed_delivery_date?: string
+            preferred_delivery_date?: string
             total_price_confirmed?: number
             total_price: number
             order_code: string
@@ -1019,6 +1021,7 @@ export class CustomerModule {
         updated_at: orderData.createdAt,
         order_status: orderData.order_status,
         confirmed_delivery_date: orderData.confirmed_delivery_date,
+        preferred_delivery_date: orderData.preferred_delivery_date,
         total_price_confirmed: orderData.total_price_confirmed,
         total_price: orderData.total_price,
         order_code: orderData.order_code,

@@ -10,16 +10,29 @@ import type { ComponentGroup } from "@configurator/lib/types"
 type ComponentSectionProps = {
   groups: ComponentGroup[]
   languageCode: string
+  priceListIds?: number[]
+  showAllProducts?: boolean
 }
 
-const ComponentSection = ({ groups, languageCode }: ComponentSectionProps) => {
+const ComponentSection = ({
+  groups,
+  languageCode,
+  priceListIds,
+  showAllProducts,
+}: ComponentSectionProps) => {
   const { state } = useConfigurator()
+  const options = { priceListIds, showAllProducts }
 
   // Filter to only visible groups (>1 valid component, not hidden)
   const visibleGroups = groups
     .filter((group) => {
       if (isHidden(group.ui_type)) return false
-      const valid = getValidComponents(group, state.selectedAdditionalComponents, state.sofaCombinations)
+      const valid = getValidComponents(
+        group,
+        state.selectedAdditionalComponents,
+        state.sofaCombinations,
+        options
+      )
       return valid.length > 1
     })
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -38,7 +51,8 @@ const ComponentSection = ({ groups, languageCode }: ComponentSectionProps) => {
         const validComponents = getValidComponents(
           group,
           state.selectedAdditionalComponents,
-          state.sofaCombinations
+          state.sofaCombinations,
+          options
         )
         return (
           <ComponentSelector

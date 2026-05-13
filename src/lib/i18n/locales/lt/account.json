@@ -7,7 +7,8 @@
     "title": "Pretenzijos"
   },
   "completed": "Užbaigta",
-  "confirmed-delivery-date": "Pristatymo data",
+  "confirmed-delivery-date": "Patvirtinta išsiuntimo data",
+  "preferred-delivery-date": "Pageidaujama pristatymo data",
   "date": "Pateikta",
   "dismiss": "Uždaryti",
   "dispatched": "Išsiųsta",

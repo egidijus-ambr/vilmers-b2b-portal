@@ -161,6 +161,22 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
           {order.order_type && (
             <InfoRow label={t("type")} value={order.order_type} />
           )}
+          <InfoRow
+            label={t("preferred-delivery-date")}
+            value={
+              order.preferred_delivery_date
+                ? formatDate(order.preferred_delivery_date)
+                : "-"
+            }
+          />
+          <InfoRow
+            label={t("confirmed-delivery-date")}
+            value={
+              order.confirmed_delivery_date
+                ? formatDate(order.confirmed_delivery_date)
+                : "-"
+            }
+          />
         </div>
       </div>
 

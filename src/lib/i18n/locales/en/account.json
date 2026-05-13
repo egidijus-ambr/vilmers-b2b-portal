@@ -7,7 +7,8 @@
     "title": "Claims"
   },
   "completed": "Completed",
-  "confirmed-delivery-date": "Shipping date",
+  "confirmed-delivery-date": "Confirmed shipping date",
+  "preferred-delivery-date": "Desired delivery date",
   "date": "Submitted",
   "dismiss": "Dismiss",
   "dispatched": "Shipped",

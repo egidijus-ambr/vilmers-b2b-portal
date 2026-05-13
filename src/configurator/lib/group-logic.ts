@@ -7,7 +7,7 @@ import type {
   SelectedComponent,
   SelectedFabricState,
 } from "./types"
-import { getValidComponents } from "./component-utils"
+import { getValidComponents, type ValidComponentsOptions } from "./component-utils"
 
 /** Extract leg codes from metadata.legs which can be objects or strings */
 function extractLegCodes(legs: any[]): string[] {
@@ -492,12 +492,18 @@ export function buildSortedFabricGroups(
 export function selectDefaultComponents(
   componentGroups: ComponentGroup[],
   existingSelections: SelectedComponent[] = [],
-  sofaCombinations: any[][] = []
+  sofaCombinations: any[][] = [],
+  options?: ValidComponentsOptions
 ): SelectedComponent[] {
   const selected: SelectedComponent[] = []
   for (const group of componentGroups) {
     // Get valid components using the same filtering as the drawer
-    const validComponents = getValidComponents(group, existingSelections, sofaCombinations)
+    const validComponents = getValidComponents(
+      group,
+      existingSelections,
+      sofaCombinations,
+      options
+    )
 
     // Fall back to raw first component if all got filtered out (matches storefront behavior)
     let component = validComponents[0] ?? group.additional_components?.[0]
