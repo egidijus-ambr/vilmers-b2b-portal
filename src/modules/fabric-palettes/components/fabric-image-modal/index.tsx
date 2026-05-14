@@ -142,7 +142,7 @@ export default function FabricImageModal({
                     })}
                   </p>
                   {(() => {
-                    const isLow = stock.totalQty < 80
+                    const isLow = stock.totalQty < 50
                     const Icon = isLow ? AlertTriangle : Info
                     return (
                       <div

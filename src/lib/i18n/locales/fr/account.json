@@ -72,8 +72,8 @@
     "stock-loading": "Vérification du stock…",
     "stock-available": "{{qty}} m disponibles",
     "stock-check-button": "Vérifier la disponibilité",
-    "stock-low-message": "Stock faible. La fabrication des meubles avec ce revêtement peut prendre jusqu'à 8 semaines.",
-    "stock-plenty-message": "Stock abondant. Nous commençons la fabrication immédiatement."
+    "stock-low-message": "Rupture de stock - délai de fabrication sur commande 6 semaines.",
+    "stock-plenty-message": "En stock - délai de fabrication actuel pour les nouvelles commandes 2 semaines."
   },
   "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",

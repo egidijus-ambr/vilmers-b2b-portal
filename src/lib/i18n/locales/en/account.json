@@ -72,8 +72,8 @@
     "stock-loading": "Checking stock…",
     "stock-available": "{{qty}} m available",
     "stock-check-button": "Check stock availability",
-    "stock-low-message": "Low stock quantity. Furniture with this upholstery could take up to 8 weeks to manufacture.",
-    "stock-plenty-message": "Plenty of stock. We start manufacturing immediately."
+    "stock-low-message": "Out of stock - new order production lead time 6 weeks.",
+    "stock-plenty-message": "In stock - current production lead time for new order 2 weeks."
   },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",

@@ -72,8 +72,8 @@
     "stock-loading": "Lagerbestand wird geprüft…",
     "stock-available": "{{qty}} m verfügbar",
     "stock-check-button": "Lagerverfügbarkeit prüfen",
-    "stock-low-message": "Geringer Lagerbestand. Die Fertigung von Möbeln mit diesem Bezug kann bis zu 8 Wochen dauern.",
-    "stock-plenty-message": "Reichlich Lagerbestand. Wir beginnen sofort mit der Fertigung."
+    "stock-low-message": "Nicht vorrätig – Lieferzeit bei Neubestellung: 6 Wochen.",
+    "stock-plenty-message": "Auf Lager – aktuelle Lieferzeit für Neubestellungen: 2 Wochen."
   },
   "breadcrumb-fabric-palettes": "Stoffpalette",
   "breadcrumb-home": "Startseite",

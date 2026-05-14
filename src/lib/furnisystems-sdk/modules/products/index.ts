@@ -633,7 +633,8 @@ export class ProductsModule {
 
   async getNewestProducts(
     take: number,
-    language: string
+    language: string,
+    where?: any
   ): Promise<ProductContainer[]> {
     try {
       const response = await this.client.query<{
@@ -641,31 +642,40 @@ export class ProductsModule {
       }>(
         gql`
           ${PRODUCT_CARD_FRAGMENT}
-          query GetNewestProducts($take: Int!, $language: Language) {
+          query GetNewestProducts(
+            $take: Int!
+            $language: Language
+            $where: ProductContainerWhereInput
+          ) {
             findManyProductContainer(
               take: $take
               orderBy: { createdAt: desc }
               where: {
-                visible: { equals: true }
-                OR: [
+                AND: [
+                  { visible: { equals: true } }
                   {
-                    single_product: {
-                      is: {
-                        product_profiles: {
-                          some: { language: { equals: $language } }
+                    OR: [
+                      {
+                        single_product: {
+                          is: {
+                            product_profiles: {
+                              some: { language: { equals: $language } }
+                            }
+                          }
                         }
                       }
-                    }
-                  }
-                  {
-                    advanced_product: {
-                      is: {
-                        advanced_product_profiles: {
-                          some: { language: { equals: $language } }
+                      {
+                        advanced_product: {
+                          is: {
+                            advanced_product_profiles: {
+                              some: { language: { equals: $language } }
+                            }
+                          }
                         }
                       }
-                    }
+                    ]
                   }
+                  $where
                 ]
               }
             ) {
@@ -674,7 +684,7 @@ export class ProductsModule {
           }
         `,
         {
-          variables: { take, language },
+          variables: { take, language, where },
           fetchPolicy: "no-cache",
         }
       )
@@ -687,7 +697,8 @@ export class ProductsModule {
 
   async getProductsByIds(
     ids: number[],
-    language: string
+    language: string,
+    where?: any
   ): Promise<ProductContainer[]> {
     if (ids.length === 0) return []
     try {
@@ -696,30 +707,39 @@ export class ProductsModule {
       }>(
         gql`
           ${PRODUCT_CARD_FRAGMENT}
-          query GetProductsByIds($ids: [Int!]!, $language: Language) {
+          query GetProductsByIds(
+            $ids: [Int!]!
+            $language: Language
+            $where: ProductContainerWhereInput
+          ) {
             findManyProductContainer(
               where: {
-                id: { in: $ids }
-                visible: { equals: true }
-                OR: [
+                AND: [
+                  { id: { in: $ids } }
+                  { visible: { equals: true } }
                   {
-                    single_product: {
-                      is: {
-                        product_profiles: {
-                          some: { language: { equals: $language } }
+                    OR: [
+                      {
+                        single_product: {
+                          is: {
+                            product_profiles: {
+                              some: { language: { equals: $language } }
+                            }
+                          }
                         }
                       }
-                    }
-                  }
-                  {
-                    advanced_product: {
-                      is: {
-                        advanced_product_profiles: {
-                          some: { language: { equals: $language } }
+                      {
+                        advanced_product: {
+                          is: {
+                            advanced_product_profiles: {
+                              some: { language: { equals: $language } }
+                            }
+                          }
                         }
                       }
-                    }
+                    ]
                   }
+                  $where
                 ]
               }
             ) {
@@ -728,7 +748,7 @@ export class ProductsModule {
           }
         `,
         {
-          variables: { ids, language },
+          variables: { ids, language, where },
           fetchPolicy: "no-cache",
         }
       )

@@ -5,6 +5,7 @@ import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
+import { getCustomerFilterData } from "./customer"
 import { getRegion, retrieveRegion } from "./regions"
 import { ContentBlock, ProductContainer } from "@lib/furnisystems-sdk"
 
@@ -144,6 +145,16 @@ export async function enrichContentBlocksWithProducts(
     return blocks
   }
 
+  // Build filter based on customer tags and price lists so home-page grids
+  // only show products the logged-in customer is allowed to see (mirrors the
+  // category / search filtering applied elsewhere).
+  const { customerTagIds, priceListIds } = await getCustomerFilterData()
+  const where = sdk.products.buildWhereFilter(
+    language,
+    customerTagIds,
+    priceListIds
+  )
+
   // Process each product_grid block
   const enrichedBlocks = await Promise.all(
     blocks.map(async (block) => {
@@ -161,13 +172,21 @@ export async function enrichContentBlocksWithProducts(
       let products: ProductContainer[] = []
 
       if (mode === "newest") {
-        products = await sdk.products.getNewestProducts(maxProducts, language)
+        products = await sdk.products.getNewestProducts(
+          maxProducts,
+          language,
+          where
+        )
       } else if (mode === "manual") {
         const productIds = (block.product_containers ?? []).map(
           (pc) => pc.id
         )
         if (productIds.length > 0) {
-          products = await sdk.products.getProductsByIds(productIds, language)
+          products = await sdk.products.getProductsByIds(
+            productIds,
+            language,
+            where
+          )
         }
       }
 
