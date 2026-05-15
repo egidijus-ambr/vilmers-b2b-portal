@@ -473,7 +473,7 @@ const ProductImageGallery = ({
                 src={currentImage.src}
                 alt={`${productTitle} - ${currentImage.name}`}
                 fill
-                className="object-cover"
+                className="object-contain"
                 sizes="(max-width: 768px) 100vw, 60vw"
                 quality={85}
                 onLoad={() => setImageLoading(false)}
@@ -552,7 +552,10 @@ const ProductImageGallery = ({
                     // parent's pinned aspect ratio yields ~4 thumbs visible
                     // before vertical scrolling kicks in.
                     "w-[calc((100%-36px)/4)] lg:w-full",
-                    "aspect-[1360/840] lg:aspect-auto lg:flex-1 lg:min-h-0",
+                    "aspect-[1360/840] lg:aspect-auto",
+                    sideThumbs.length < 4
+                      ? "lg:h-[155px]"
+                      : "lg:flex-1 lg:min-h-0",
                     isSelected
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",
