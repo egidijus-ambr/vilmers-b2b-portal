@@ -32,10 +32,17 @@ type ApiPhoto = {
   category: string
   combination: string | null
   fabric: string | null
+  mediaType?: "image" | "video"
 }
 
 type DisplayImage =
-  | { type: "original"; id: number; src: string; thumbnail: string }
+  | {
+      type: "original"
+      id: number
+      src: string
+      thumbnail: string
+      mediaType: "image" | "video"
+    }
   | {
       type: "api"
       id: string
@@ -45,7 +52,15 @@ type DisplayImage =
       category: string
       combination: string | null
       fabric: string | null
+      mediaType: "image" | "video"
     }
+
+const VIDEO_EXTENSION_REGEX = /\.mp4($|\?)/i
+
+const inferMediaType = (src: string): "image" | "video" =>
+  VIDEO_EXTENSION_REGEX.test(src) ? "video" : "image"
+
+const isVideoItem = (item: DisplayImage) => item.mediaType === "video"
 
 type ProductImageGalleryProps = {
   images: ProductImage[]
@@ -280,6 +295,7 @@ const ProductImageGallery = ({
     id: img.id,
     src: img.src,
     thumbnail: img.src_md || img.src,
+    mediaType: inferMediaType(img.src),
   }))
 
   // API photos only drive the hero once BOTH combination and fabric are picked.
@@ -307,6 +323,7 @@ const ProductImageGallery = ({
           category: p.category,
           combination: p.combination,
           fabric: p.fabric,
+          mediaType: p.mediaType ?? inferMediaType(p.url),
         }))
     : []
 
@@ -457,7 +474,22 @@ const ProductImageGallery = ({
           )}
 
           {currentImage ? (
-            currentImage.type === "original" ? (
+            isVideoItem(currentImage) ? (
+              <video
+                key={currentImage.src}
+                src={currentImage.src}
+                className={`absolute inset-0 w-full h-full ${
+                  currentImage.type === "original"
+                    ? "object-cover"
+                    : "object-contain"
+                }`}
+                controls
+                playsInline
+                preload="metadata"
+                onLoadedData={() => setImageLoading(false)}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : currentImage.type === "original" ? (
               <Image
                 src={currentImage.src}
                 alt={`${productTitle} - image ${selectedIndex + 1}`}
@@ -480,15 +512,27 @@ const ProductImageGallery = ({
               />
             )
           ) : images.length > 0 ? (
-            <Image
-              src={images[0].src}
-              alt={productTitle}
-              fill
-              priority
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 60vw"
-              quality={85}
-            />
+            inferMediaType(images[0].src) === "video" ? (
+              <video
+                key={images[0].src}
+                src={images[0].src}
+                className="absolute inset-0 w-full h-full object-cover"
+                controls
+                playsInline
+                preload="metadata"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <Image
+                src={images[0].src}
+                alt={productTitle}
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 60vw"
+                quality={85}
+              />
+            )
           ) : null}
 
           {/* Zoom hint */}
@@ -563,19 +607,26 @@ const ProductImageGallery = ({
                   aria-label={`View image ${index + 1}`}
                   aria-pressed={isSelected}
                 >
-                  {image.type === "original" ? (
-                    <Image
-                      src={image.thumbnail}
-                      alt={`${productTitle} thumbnail ${index + 1}`}
-                      fill
-                      className={`object-cover transition-opacity duration-500 ${
-                        loadedThumbnails.has(image.thumbnail) ? "opacity-100" : "opacity-0"
-                      }`}
-                      style={{ transitionDelay: `${index * 100}ms` }}
-                      sizes="25vw"
-                      quality={70}
-                      onLoad={() => handleThumbnailLoaded(image.thumbnail)}
-                    />
+                  {isVideoItem(image) ? (
+                    <>
+                      <video
+                        src={image.thumbnail}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="white"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </>
                   ) : (
                     <Image
                       src={image.thumbnail}
@@ -745,18 +796,34 @@ const ProductImageGallery = ({
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-dark-blue/20 border-t-dark-blue" />
                   </div>
                 )}
-                <Image
-                  src={(lightboxImages[lightboxIndex] ?? lightboxImages[0]).src}
-                  alt={`${productTitle} - image ${lightboxIndex + 1} of ${
-                    lightboxImages.length
-                  }`}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 1400px) 100vw, 1400px"
-                  quality={95}
-                  priority
-                  onLoad={() => setLightboxImageLoading(false)}
-                />
+                {(() => {
+                  const lightboxItem =
+                    lightboxImages[lightboxIndex] ?? lightboxImages[0]
+                  return isVideoItem(lightboxItem) ? (
+                    <video
+                      key={lightboxItem.src}
+                      src={lightboxItem.src}
+                      className="absolute inset-0 w-full h-full object-contain"
+                      controls
+                      autoPlay
+                      playsInline
+                      onLoadedData={() => setLightboxImageLoading(false)}
+                    />
+                  ) : (
+                    <Image
+                      src={lightboxItem.src}
+                      alt={`${productTitle} - image ${lightboxIndex + 1} of ${
+                        lightboxImages.length
+                      }`}
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 1400px) 100vw, 1400px"
+                      quality={95}
+                      priority
+                      onLoad={() => setLightboxImageLoading(false)}
+                    />
+                  )
+                })()}
               </div>
 
               {/* Prev/Next arrows */}
