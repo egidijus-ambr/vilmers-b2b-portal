@@ -12,7 +12,11 @@ type ApiPhoto = {
   category: string
   combination: string | null
   fabric: string | null
+  mediaType?: "image" | "video"
 }
+
+const isVideoPhoto = (p: ApiPhoto) =>
+  p.mediaType === "video" || /\.mp4($|\?)/i.test(p.url)
 
 type InteriorGallerySectionProps = {
   productName: string | null
@@ -155,17 +159,39 @@ const InteriorGallerySection: React.FC<InteriorGallerySectionProps> = ({
                   onClick={() => openLightbox(globalIndex)}
                   className="relative aspect-[4/3] overflow-hidden rounded-sm cursor-pointer group bg-gray-100"
                 >
-                  <Image
-                    src={photo.url}
-                    alt={photo.name || `Interior photo ${globalIndex + 1}`}
-                    fill
-                    className={`object-cover transition-opacity duration-500 group-hover:scale-105 ${
-                      isLoaded ? "opacity-100" : "opacity-0"
-                    }`}
-                    style={{ transitionDelay: `${idx * 100}ms` }}
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    onLoad={() => handleImageLoaded(photo.url)}
-                  />
+                  {isVideoPhoto(photo) ? (
+                    <>
+                      <video
+                        src={photo.url}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <svg
+                          width="48"
+                          height="48"
+                          viewBox="0 0 24 24"
+                          fill="white"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </>
+                  ) : (
+                    <Image
+                      src={photo.url}
+                      alt={photo.name || `Interior photo ${globalIndex + 1}`}
+                      fill
+                      className={`object-cover transition-opacity duration-500 group-hover:scale-105 ${
+                        isLoaded ? "opacity-100" : "opacity-0"
+                      }`}
+                      style={{ transitionDelay: `${idx * 100}ms` }}
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      onLoad={() => handleImageLoaded(photo.url)}
+                    />
+                  )}
                 </button>
               )
             })}
@@ -201,18 +227,33 @@ const InteriorGallerySection: React.FC<InteriorGallerySectionProps> = ({
                     <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   </div>
                 )}
-                <Image
-                  src={photos[lightboxIndex]?.url ?? photos[0].url}
-                  alt={`Interior photo ${lightboxIndex + 1} of ${
-                    photos.length
-                  }`}
-                  fill
-                  className="object-contain"
-                  sizes="100vw"
-                  quality={95}
-                  priority
-                  onLoad={() => setLightboxImageLoading(false)}
-                />
+                {(() => {
+                  const current = photos[lightboxIndex] ?? photos[0]
+                  return isVideoPhoto(current) ? (
+                    <video
+                      key={current.url}
+                      src={current.url}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-contain"
+                      onLoadedData={() => setLightboxImageLoading(false)}
+                    />
+                  ) : (
+                    <Image
+                      src={current.url}
+                      alt={`Interior photo ${lightboxIndex + 1} of ${
+                        photos.length
+                      }`}
+                      fill
+                      className="object-contain"
+                      sizes="100vw"
+                      quality={95}
+                      priority
+                      onLoad={() => setLightboxImageLoading(false)}
+                    />
+                  )
+                })()}
               </div>
 
               {/* Prev/Next arrows */}
