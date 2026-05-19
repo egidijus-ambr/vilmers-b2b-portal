@@ -2,7 +2,7 @@
 
 import { HttpTypes } from "@medusajs/types"
 import { useTranslations } from "@lib/i18n"
-import { getStoreLoginLink, getClaimsLink } from "@lib/data/customer"
+import { getClaimsLink } from "@lib/data/customer"
 import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
 import { isInternalDomain } from "@lib/utils/internal-domains"
@@ -24,20 +24,6 @@ const Overview = (): JSX.Element => {
   const params = useParams()
   const router = useRouter()
   const languageCode = params.languageCode as string
-
-  const handlePlaceOrder = async () => {
-    try {
-      // Call the server action to get the store login link
-      const storeUrl = await getStoreLoginLink()
-      console.warn("Store URL", languageCode, storeUrl)
-
-      const finalUrl = storeUrl + `&lng=${languageCode}`
-      window.location.href = finalUrl
-    } catch (error) {
-      console.error("Error getting store login link:", error)
-      // Could add user-friendly error handling here
-    }
-  }
 
   const handleClaimsClick = async () => {
     try {
@@ -122,7 +108,7 @@ const Overview = (): JSX.Element => {
           {
             title: t("place-an-order.title"),
             description: t("place-an-order.description"),
-            onClick: handlePlaceOrder,
+            onClick: () => router.push(`/${languageCode}/store`),
           },
         ]
       : []),
