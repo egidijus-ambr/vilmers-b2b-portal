@@ -21,6 +21,7 @@ import {
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
+import { useDebugMode } from "@lib/hooks/use-debug-mode"
 import { useTranslations } from "@lib/i18n"
 import ReferenceStep from "./reference-step"
 import { MissingReferenceModal } from "./missing-reference-modal"
@@ -55,6 +56,7 @@ const ConfiguratorContent = ({
   priceListId: priceListIdProp,
   isOpen,
 }: ConfiguratorContentProps) => {
+  const isDebug = useDebugMode()
   const { actingCustomer: customer } = useActingCustomer() as { actingCustomer: any }
   const { addItem, items } = useCart()
   const paletteIds = useCustomerPaletteIds()
@@ -314,7 +316,7 @@ const ConfiguratorContent = ({
           ) : (
             <ProductPreviewSection languageCode={languageCode} />
           )}
-          {configStrings.length > 0 && (
+          {isDebug && configStrings.length > 0 && (
             <div className="flex flex-col gap-0.5 px-1 py-2">
               {configStrings.map((config, i) => (
                 <p key={i} className="text-xs font-mono text-gray-500">
@@ -343,7 +345,7 @@ const ConfiguratorContent = ({
           )}
 
           {/* Debug info */}
-          <details className="text-[11px] border border-dashed border-gray-300 bg-gray-50/50">
+          {isDebug && <details className="text-[11px] border border-dashed border-gray-300 bg-gray-50/50">
             <summary className="px-3 py-1.5 cursor-pointer text-gray-400 hover:text-gray-600 select-none font-mono">
               Debug Info
             </summary>
@@ -403,7 +405,7 @@ const ConfiguratorContent = ({
                   : <span className="text-red-400">none</span>}
               </div>
             </div>
-          </details>
+          </details>}
 
           {/* Step content */}
           {currentStepDef?.id === "reference" ? (
