@@ -22,7 +22,7 @@ export class MaterialAvailabilityModule {
   ): Promise<MaterialAvailabilityResult> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/available_materials_test.php`,
+        `${this.baseUrl}/available_materials_prod.php`,
         {
           method: "POST",
           headers: {
