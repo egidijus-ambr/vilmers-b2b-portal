@@ -498,7 +498,8 @@ export const drawMetricLinesForGroups = (
   layer,
   scale,
   params: { offsetX?: number; offsetY?: number } | null = null,
-  fontSize = 12
+  fontSize = 12,
+  labelBackground?: string
 ) => {
   const {
     VerticalMetricKonvaNode,
@@ -562,6 +563,7 @@ export const drawMetricLinesForGroups = (
     width: null,
     height,
     fontSize,
+    labelBackground,
   })
   layer.add(verticalMetric)
 
@@ -583,6 +585,7 @@ export const drawMetricLinesForGroups = (
       width: null,
       height: rightHeight,
       fontSize,
+      labelBackground,
     })
     layer.add(rightVerticalMetric)
   }
@@ -596,6 +599,7 @@ export const drawMetricLinesForGroups = (
     width,
     height: null,
     fontSize,
+    labelBackground,
   })
   layer.add(horizontalMetric)
 

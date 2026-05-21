@@ -42,6 +42,7 @@ interface MetricKonvaNodeProps {
   width: number
   height: number
   fontSize?: number
+  labelBackground?: string
 }
 
 export const VerticalMetric = ({
@@ -106,6 +107,7 @@ export const VerticalMetricKonvaNode = ({
   width,
   height,
   fontSize = 12,
+  labelBackground = '#F5F3EE',
 }: MetricKonvaNodeProps) => {
   //-----
 
@@ -156,7 +158,7 @@ export const VerticalMetricKonvaNode = ({
     y: text.y() - 1,
     width: textBounds.width + 2,
     height: textBounds.height + 2,
-    fill: '#F5F3EE',
+    fill: labelBackground,
   })
 
   group.add(arrow)
@@ -222,6 +224,7 @@ export const HorizontalMetricKonvaNode = ({
   width,
   height,
   fontSize = 12,
+  labelBackground = '#F5F3EE',
 }: MetricKonvaNodeProps) => {
   //-----
   let group = new Konva.Group({
@@ -271,7 +274,7 @@ export const HorizontalMetricKonvaNode = ({
     y: text.y() - 2,
     width: textBounds.width + 4,
     height: textBounds.height + 4,
-    fill: '#F5F3EE',
+    fill: labelBackground,
   })
 
   group.add(arrow)

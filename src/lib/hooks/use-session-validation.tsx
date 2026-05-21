@@ -19,16 +19,12 @@ export function useSessionValidation() {
    * This hook now serves as a placeholder for future client-side validation needs
    */
   const validateSession = useCallback(() => {
-    console.log("[useSessionValidation] Validating session...")
     setIsSessionLoading(true)
 
     try {
       // Since JWT token is httpOnly, we can't access it from client-side
       // For now, we'll assume session is valid if we reach this point
       // The actual validation happens server-side
-      console.log(
-        "[useSessionValidation] JWT token is httpOnly, relying on server-side validation"
-      )
       setIsSessionValid(true)
       setIsSessionLoading(false)
     } catch (error) {
@@ -44,9 +40,6 @@ export function useSessionValidation() {
   const handleStorageChange = useCallback(
     (event: StorageEvent) => {
       if (event.key === "_furni_jwt" || event.key === null) {
-        console.log(
-          "[useSessionValidation] Storage change detected, revalidating..."
-        )
         validateSession()
       }
     },
@@ -57,9 +50,7 @@ export function useSessionValidation() {
    * Handle cookie changes (for cross-tab synchronization)
    */
   const handleCookieChange = useCallback(() => {
-    console.log(
-      "[useSessionValidation] Cookie change detected, revalidating..."
-    )
+
     validateSession()
   }, [validateSession])
 
@@ -112,9 +103,6 @@ export function withSessionValidation<P extends object>(
 
     useEffect(() => {
       if (!isSessionLoading && !isSessionValid) {
-        console.log(
-          "[withSessionValidation] Invalid session, redirecting to login..."
-        )
         router.push("/lt/account")
       }
     }, [isSessionValid, isSessionLoading, router])

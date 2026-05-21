@@ -82,7 +82,7 @@ export default function ProductPreviewSection({ languageCode }: ProductPreviewSe
                   <span className="text-dark-blue-70 whitespace-nowrap">{row.label}</span>
                   <span className="flex-1 border-b border-dashed border-gray-300" />
                   <span className="text-dark-blue font-medium whitespace-nowrap">
-                    {row.value} cm
+                    {Math.round(row.value)} cm
                   </span>
                 </div>
               ))}

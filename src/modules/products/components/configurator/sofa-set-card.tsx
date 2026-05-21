@@ -194,7 +194,7 @@ const SofaSetCard = ({
                   </span>
                   <span className="flex-1 border-b border-dashed border-gray-300" />
                   <span className="text-dark-blue font-medium whitespace-nowrap">
-                    {row.value} cm
+                    {Math.round(row.value)} cm
                   </span>
                 </div>
               ))}

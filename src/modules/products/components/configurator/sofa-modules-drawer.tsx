@@ -1,6 +1,6 @@
 "use client"
 
-import React, { Fragment, useMemo, useState } from "react"
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import { Dialog, Transition } from "@headlessui/react"
 import type { SofaFormExtended, SelectedFabricState } from "@configurator/lib/types"
@@ -68,10 +68,9 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
       React.ComponentType<any>
     >
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { VerticalMetric, HorizontalMetric } =
-    require("@configurator/SofaDrawingElements/SofaElements/MetricLines") as {
-      VerticalMetric: React.ComponentType<any>
-      HorizontalMetric: React.ComponentType<any>
+  const { drawMetricLinesForGroups } =
+    require("@configurator/SofaDrawingElements/utils") as {
+      drawMetricLinesForGroups: (groupOfGroups: any[], layer: any, scale: number, params?: any, fontSize?: number, labelBackground?: string) => void
     }
 
   const SofaElement = SofaElements[sofaForm.type]
@@ -83,16 +82,23 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
   const rawW = dims.width ?? 100
   const rawH = dims.length ?? dims.height ?? 100
   const extraH = dims.extendable_part_length ?? 0
+  const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
 
-  // Compute adjusted width: original width + armrest difference
-  const originalArmW = dims.armrest_width ?? 22
-  const armW = armrestWidthOverride ?? originalArmW
-  const armDiff = armW - originalArmW
-  const adjustedW = rawW + armDiff
-
-  // Stage sized to fit element + metric arrows on left/top + extendable part below
-  const stageW = Math.round((adjustedW + armW * 2 + metricSpace + 30) * scale)
+  const stageW = Math.round((rawW + armW * 2 + metricSpace + 30) * scale)
   const stageH = Math.round((rawH + extraH + metricSpace + 10) * scale)
+
+  const [layer, setLayer] = useState<any>(null)
+  const layerRef = useCallback((node: any) => {
+    if (node) setLayer(node)
+  }, [])
+
+  useEffect(() => {
+    if (!layer) return
+    const shapes = layer.find(".sofa_shape_group")
+    if (shapes.length === 0) return
+    layer.find(".metricLine").forEach((l: any) => l.destroy())
+    drawMetricLinesForGroups(shapes, layer, scale, null, 18, "#EBE7DD")
+  }, [layer, sofaForm.id, armrestWidthOverride, scale])
 
   if (!SofaElement) {
     return (
@@ -113,7 +119,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
       listening={false}
       style={{ display: "block" }}
     >
-      <Layer>
+      <Layer ref={layerRef}>
         <SofaElement
           id={sofaForm.id.toString()}
           x={metricSpace + armW}
@@ -150,23 +156,6 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
           extensionType={dims.extension_type}
           backrestType={dims.backrest_type}
           coveredSide={dims.covered_side}
-        />
-        {/* Dimension arrows rendered directly with larger font */}
-        <VerticalMetric
-          x={metricSpace + armW - 50}
-          y={metricSpace}
-          height={rawH}
-          width={null}
-          fontSize={18}
-          labelBackground="#EBE7DD"
-        />
-        <HorizontalMetric
-          x={metricSpace + armW}
-          y={metricSpace - 50}
-          width={adjustedW}
-          height={null}
-          fontSize={18}
-          labelBackground="#EBE7DD"
         />
       </Layer>
     </Stage>
