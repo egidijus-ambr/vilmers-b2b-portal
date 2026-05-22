@@ -181,7 +181,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
           email: customer?.email || "",
           account_code: customer?.account_code || undefined,
           buying_as_company: true,
-          customer_accountId: customer?.id ? String(customer.id) : undefined,
+          customer_accountId: customer?.customer_account?.id,
           default_phone_number: customer?.phone || "",
         },
         discount_applied: 0,

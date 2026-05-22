@@ -1,3 +1,5 @@
+import { ProductCardImage } from "../products/types"
+
 export interface FurnisystemsCart {
   id: number
   name: string | null
@@ -23,10 +25,12 @@ export interface FurnisystemsCartItem {
   product_container: {
     single_product?: {
       images?: { src: string; src_xs?: string; src_thumbnail?: string }[]
+      category_photo?: ProductCardImage | null
       product_profiles?: { name: string; language: string }[]
     }
     advanced_product?: {
       images?: { src: string; src_xs?: string; src_thumbnail?: string }[]
+      category_photo?: ProductCardImage | null
       advanced_product_profiles?: { name: string; language: string }[]
       dimensions?: Record<string, number | null> | null
     }

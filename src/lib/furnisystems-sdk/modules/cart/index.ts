@@ -35,6 +35,14 @@ const CART_ITEM_FRAGMENT = gql`
           src_xs
           src_thumbnail
         }
+        category_photo {
+          id
+          src
+          src_md
+          src_xs
+          src_thumbnail
+          display_order
+        }
         product_profiles {
           name
           language
@@ -45,6 +53,14 @@ const CART_ITEM_FRAGMENT = gql`
           src
           src_xs
           src_thumbnail
+        }
+        category_photo {
+          id
+          src
+          src_md
+          src_xs
+          src_thumbnail
+          display_order
         }
         advanced_product_profiles {
           name

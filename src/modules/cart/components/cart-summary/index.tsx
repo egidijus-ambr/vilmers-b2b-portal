@@ -35,6 +35,17 @@ function getItemName(item: FurnisystemsCartItem, language: string): string {
 
 function getItemImage(item: FurnisystemsCartItem): string | undefined {
   const container = item.product_container
+  const categoryPhoto =
+    container?.single_product?.category_photo ||
+    container?.advanced_product?.category_photo
+  if (categoryPhoto) {
+    return (
+      categoryPhoto.src_thumbnail ||
+      categoryPhoto.src_xs ||
+      categoryPhoto.src ||
+      undefined
+    )
+  }
   const images =
     container?.single_product?.images || container?.advanced_product?.images
   return (
