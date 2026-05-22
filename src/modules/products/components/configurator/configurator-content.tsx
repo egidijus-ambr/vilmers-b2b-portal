@@ -74,8 +74,10 @@ const ConfiguratorContent = ({
   const priceListId =
     getPrimaryPriceListId(customer) ?? priceListIdProp
 
-  // Load data on-demand when modal opens
-  useConfiguratorData(productContainerId, priceListId, languageCode, isOpen)
+  // Load data on-demand when modal opens.
+  // Pass customer.additional_components so mandatory picks are pre-seeded into
+  // state before useDynamicGroups runs its default-selection logic.
+  useConfiguratorData(productContainerId, priceListId, languageCode, isOpen, customer?.additional_components)
 
   // Recalculate price when selections change
   useConfiguratorPrice(priceListId)

@@ -6,20 +6,39 @@ import { sdk } from "@lib/config"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
 import { buildSortedFabricGroups } from "@configurator/lib/group-logic"
 import { useCustomerPaletteIds } from "../lib/palette-utils"
+import type { SelectedComponent } from "@configurator/lib/types"
+
+type CustomerAdditionalComponent = {
+  additionalComponent: {
+    code: string
+    additional_component_group: { code: string }
+  }
+}
 
 /**
  * Hook to lazy-load configurator data when the modal opens.
  * Fetches product configurator data and dispatches it to context.
+ *
+ * @param customerAdditionalComponents - The customer's mandatory additional component
+ *   selections (from customer.additional_components). When provided, these are
+ *   pre-seeded into state BEFORE useDynamicGroups runs default-component selection,
+ *   so the customer's mandatory picks are never overwritten by defaults.
  */
 export function useConfiguratorData(
   productContainerId: number | null,
   priceListId: number,
   language: string,
-  isOpen: boolean
+  isOpen: boolean,
+  customerAdditionalComponents?: CustomerAdditionalComponent[]
 ) {
   const { dispatch } = useConfigurator()
   const paletteIds = useCustomerPaletteIds()
   const paletteKey = paletteIds.join(",")
+
+  // Stable key derived from customer mandates — avoids referential churn on the dep array
+  const customerMandatesKey = (customerAdditionalComponents ?? [])
+    .map((ac) => `${ac.additionalComponent?.additional_component_group?.code}:${ac.additionalComponent?.code}`)
+    .join(",")
 
   useEffect(() => {
     if (!isOpen || !productContainerId) return
@@ -67,6 +86,32 @@ export function useConfiguratorData(
           )
           dispatch({ type: "SET_COMPONENT_GROUPS", payload: mergedGroups })
           dispatch({ type: "SET_ORIGINAL_COMPONENT_GROUPS", payload: mergedGroups })
+
+          // Pre-seed customer mandatory component selections BEFORE useDynamicGroups
+          // runs its default-selection logic. useDynamicGroups skips groups that
+          // already have a selection (existingGroupCodes check), so these seeds
+          // take precedence over selectDefaultComponents defaults.
+          if (customerAdditionalComponents && customerAdditionalComponents.length > 0) {
+            const seeds: SelectedComponent[] = []
+            for (const customerAc of customerAdditionalComponents) {
+              const groupCode = customerAc.additionalComponent?.additional_component_group?.code
+              const componentCode = customerAc.additionalComponent?.code
+              if (!groupCode || !componentCode) continue
+
+              const matchedGroup = mergedGroups.find((g) => g.code === groupCode)
+              if (!matchedGroup) continue
+
+              const matchedComponent = matchedGroup.additional_components.find(
+                (c) => c.code === componentCode
+              )
+              if (!matchedComponent) continue
+
+              seeds.push({ ...matchedComponent, groupCode: matchedGroup.code })
+            }
+            if (seeds.length > 0) {
+              dispatch({ type: "SET_SELECTED_COMPONENTS", payload: seeds })
+            }
+          }
         }
 
         // Initialize sofa forms with originalDimension
@@ -153,5 +198,5 @@ export function useConfiguratorData(
     return () => {
       cancelled = true
     }
-  }, [isOpen, productContainerId, priceListId, language, dispatch, paletteKey])
+  }, [isOpen, productContainerId, priceListId, language, dispatch, paletteKey, customerMandatesKey])
 }
