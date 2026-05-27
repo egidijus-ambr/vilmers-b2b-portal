@@ -21,14 +21,16 @@ export default function PageProductNamesSync({
   filterKey,
 }: PageProductNamesSyncProps) {
   const context = useCatalogBuilder()
+  const setFilterKey = context?.setFilterKey
+  const setPageProducts = context?.setPageProducts
 
   useEffect(() => {
-    context?.setFilterKey(filterKey)
-  }, [filterKey, context])
+    setFilterKey?.(filterKey)
+  }, [filterKey, setFilterKey])
 
   useEffect(() => {
-    context?.setPageProducts(products)
-  }, [products, context])
+    setPageProducts?.(products)
+  }, [products, setPageProducts])
 
   return null
 }

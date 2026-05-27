@@ -4,7 +4,19 @@ import { cookies } from "next/headers"
 import { sdk } from "@lib/config"
 import { ACTING_CUSTOMER_COOKIE } from "@lib/util/acting-customer-cookie"
 import { isAgentOrAdmin } from "@lib/util/roles"
+import { getManagerIdFromToken } from "@lib/util/jwt-utils"
 import { retrieveCustomer } from "./customer"
+
+/**
+ * Returns true when the current session was initiated by a sales manager
+ * impersonating from saas-admin-ui. Detected by the presence of a non-null
+ * `managerId` field in the `_furni_jwt` cookie payload. Server-only.
+ */
+export async function isImpersonatedByManager(): Promise<boolean> {
+  const token = (await cookies()).get("_furni_jwt")?.value
+  if (!token) return false
+  return getManagerIdFromToken(token) != null
+}
 
 /**
  * Read the acting-customer cookie and return its parsed numeric id, or null

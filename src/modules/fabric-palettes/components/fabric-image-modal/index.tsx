@@ -12,6 +12,24 @@ import {
   FabricTextFeaturesGrid,
   FabricCharacteristicsDisplay,
 } from "../fabric-feature-display"
+import type {
+  FabricCalloutSettings,
+  LocaleMap,
+} from "@lib/data/fabric-callout-settings"
+
+function resolveCalloutMessage(
+  map: LocaleMap | null | undefined,
+  languageCode: string,
+  fallback: string
+): string {
+  if (!map) return fallback
+  const locale = languageCode as keyof LocaleMap
+  const fromLocale = map[locale]
+  if (fromLocale) return fromLocale
+  const fromEn = map["en"]
+  if (fromEn) return fromEn
+  return fallback
+}
 
 interface FabricImageModalProps {
   isOpen: boolean
@@ -22,6 +40,7 @@ interface FabricImageModalProps {
   languageCode: string
   itemId?: string
   configId?: string
+  calloutSettings?: FabricCalloutSettings | null
 }
 
 interface StockState {
@@ -43,13 +62,17 @@ export default function FabricImageModal({
   languageCode,
   itemId,
   configId,
+  calloutSettings,
 }: FabricImageModalProps) {
   const { t } = useTranslations("account")
   const { priceCategory, featuresWithPhoto, featureGroups } =
     useFabricGroupDetails(groupData, languageCode)
 
   const resolvedGroupName = (() => {
-    const profile = resolveProfile(groupData.fabric_group_profiles, languageCode)
+    const profile = resolveProfile(
+      groupData.fabric_group_profiles,
+      languageCode
+    )
     return (profile as any)?.name ?? null
   })()
 
@@ -103,6 +126,10 @@ export default function FabricImageModal({
 
   const showStockSection = isOpen && !!itemId && !!configId
 
+  console.log("Rendering FabricImageModal", {
+    calloutSettings,
+  })
+
   return (
     <ResponsiveDialog isOpen={isOpen} onClose={onClose} title={fabricName}>
       {/* Content: Image + Details */}
@@ -142,8 +169,25 @@ export default function FabricImageModal({
                     })}
                   </p>
                   {(() => {
-                    const isLow = stock.totalQty < 50
+                    const threshold =
+                      calloutSettings != null
+                        ? Number.isNaN(calloutSettings.threshold)
+                          ? 50
+                          : calloutSettings.threshold
+                        : 50
+                    const isLow = stock.totalQty < threshold
                     const Icon = isLow ? AlertTriangle : Info
+                    const message = isLow
+                      ? resolveCalloutMessage(
+                          calloutSettings?.lowMessage,
+                          languageCode,
+                          t("fabric-palettes.stock-low-message")
+                        )
+                      : resolveCalloutMessage(
+                          calloutSettings?.plentyMessage,
+                          languageCode,
+                          t("fabric-palettes.stock-plenty-message")
+                        )
                     return (
                       <div
                         className={`mt-3 flex items-start gap-2 rounded p-3 ${
@@ -153,11 +197,7 @@ export default function FabricImageModal({
                         }`}
                       >
                         <Icon className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                        <p>
-                          {isLow
-                            ? t("fabric-palettes.stock-low-message")
-                            : t("fabric-palettes.stock-plenty-message")}
-                        </p>
+                        <p>{message}</p>
                       </div>
                     )
                   })()}

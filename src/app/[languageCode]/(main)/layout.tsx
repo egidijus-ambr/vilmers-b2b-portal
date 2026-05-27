@@ -12,7 +12,7 @@ import { ShopSettingsProvider } from "@lib/context/shop-settings-context"
 import { CartProvider } from "@lib/context/cart-context"
 import TawkToChat from "@modules/common/components/tawk-to-chat"
 import { listMenuCategories } from "@lib/data/categories"
-import { getActingCustomer } from "@lib/data/acting-customer"
+import { getActingCustomer, isImpersonatedByManager } from "@lib/data/acting-customer"
 import {
   canShowAllProductsToggle,
   getShowAllProductsCookie,
@@ -39,7 +39,10 @@ export default async function PageLayout({
     customer ? "customer found" : "no customer"
   )
 
-  const acting = await getActingCustomer()
+  const [acting, impersonated] = await Promise.all([
+    getActingCustomer(),
+    isImpersonatedByManager(),
+  ])
 
   const shopSettings = await getShopSettings()
   console.log(
@@ -62,7 +65,7 @@ export default async function PageLayout({
 
   return (
     <CustomerProvider customer={customer}>
-      <ActingCustomerProvider initialActingCustomer={acting}>
+      <ActingCustomerProvider initialActingCustomer={acting} isImpersonatedByManager={impersonated}>
         <ShopSettingsProvider initialShopSettings={shopSettings}>
           <CartProvider>
             <div className="flex flex-col min-h-screen">

@@ -67,6 +67,7 @@ const GET_ME_QUERY = gql`
         id
       }
       customer_group {
+        price_listId
         fabric_palettes {
           id
         }
@@ -581,6 +582,8 @@ const SEARCH_CUSTOMERS_QUERY = gql`
         id
       }
       customer_group {
+        name
+        price_listId
         fabric_palettes {
           id
         }
@@ -676,6 +679,7 @@ export class CustomerModule {
             id: string
           }[]
           customer_group?: {
+            price_listId?: string
             fabric_palettes?: {
               id: string
             }[]
@@ -740,6 +744,7 @@ export class CustomerModule {
         b2b_company_name: customerData.b2b_company_name,
         account_code: customerData.account_code,
         price_listId: customerData.price_listId,
+        group_price_listId: customerData.customer_group?.price_listId ?? null,
         b2b_customer_discount: customerData.b2b_customer_discount,
         tags: customerData.tags,
         fabric_palettes: customerData.fabric_palettes,
@@ -1223,7 +1228,10 @@ export class CustomerModule {
         errorPolicy: "all",
       })
 
-      return response.searchCustomers ?? []
+      return (response.searchCustomers ?? []).map((c) => ({
+        ...c,
+        group_price_listId: c.customer_group?.price_listId ?? null,
+      }))
     } catch (error) {
       console.error("Error searching customers:", error)
       throw error

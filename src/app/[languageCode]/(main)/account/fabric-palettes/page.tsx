@@ -19,6 +19,8 @@ import {
 import FabricGroupInfoModal from "@modules/fabric-palettes/components/fabric-group-info-modal"
 import FabricImageModal from "@modules/fabric-palettes/components/fabric-image-modal"
 import { groupSelectedFeatures, matchesFeatureSelection, buildFeatureToGroupMap } from "@modules/fabric-palettes/utils/feature-filter-logic"
+import { getFabricCalloutSettings } from "@lib/data/fabric-callout-settings"
+import type { FabricCalloutSettings } from "@lib/data/fabric-callout-settings"
 import { Info } from 'lucide-react'
 
 export default function FabricPalettesPage() {
@@ -58,6 +60,8 @@ export default function FabricPalettesPage() {
     itemId?: string
     configId?: string
   } | null>(null)
+  const [calloutSettings, setCalloutSettings] =
+    useState<FabricCalloutSettings | null>(null)
   const PAGE_SIZE = 12
 
   const loadPalettes = useCallback(async () => {
@@ -70,6 +74,14 @@ export default function FabricPalettesPage() {
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
+    getFabricCalloutSettings()
+      .then((settings) => setCalloutSettings(settings))
+      .catch(() => {
+        // leave calloutSettings as null — modal falls back to i18n keys
+      })
   }, [])
 
   const actingCustomerId = actingCustomer?.id ?? null
@@ -460,6 +472,7 @@ export default function FabricPalettesPage() {
           languageCode={backendLang}
           itemId={selectedFabric.itemId}
           configId={selectedFabric.configId}
+          calloutSettings={calloutSettings}
         />
       )}
     </>

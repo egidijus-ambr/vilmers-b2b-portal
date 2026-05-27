@@ -199,7 +199,10 @@ const PRODUCT_CONTENT_BLOCK_FRAGMENT = gql`
 const GET_PRODUCT_BY_PERMALINK = gql`
   ${PRODUCT_CARD_FRAGMENT}
   ${PRODUCT_CONTENT_BLOCK_FRAGMENT}
-  query GetProductByPermalink($where: ProductContainerWhereInput!, $language: Language) {
+  query GetProductByPermalink(
+    $where: ProductContainerWhereInput!
+    $language: Language
+  ) {
     findFirstProductContainer(where: $where) {
       id
       type
@@ -522,7 +525,15 @@ export class ProductsModule {
     language?: string
     selectedCategoryIds?: number[]
   }): Promise<CategoryProductsResponse> {
-    const { permalink, page, perPage = 28, where, sortBy, language, selectedCategoryIds } = params
+    const {
+      permalink,
+      page,
+      perPage = 28,
+      where,
+      sortBy,
+      language,
+      selectedCategoryIds,
+    } = params
 
     try {
       const response =
@@ -536,7 +547,9 @@ export class ProductsModule {
               where,
               sortBy,
               language,
-              selectedCategoryIds: selectedCategoryIds?.length ? selectedCategoryIds : null,
+              selectedCategoryIds: selectedCategoryIds?.length
+                ? selectedCategoryIds
+                : null,
             },
             fetchPolicy: "no-cache",
             errorPolicy: "all",
@@ -572,7 +585,9 @@ export class ProductsModule {
           categoryPermalink: permalink,
           where,
           language,
-          selectedCategoryIds: selectedCategoryIds?.length ? selectedCategoryIds : null,
+          selectedCategoryIds: selectedCategoryIds?.length
+            ? selectedCategoryIds
+            : null,
         },
         fetchPolicy: "no-cache",
         errorPolicy: "all",
@@ -818,33 +833,14 @@ export class ProductsModule {
             src_thumbnail: string | null
             display_order: number
           }[]
-          additional_component_to_advanced_product: {
-            additional_component: {
-              id: number
-              is_wrapper: boolean
-              code: string | null
-              additional_component_group: {
-                id: number
-                code: string | null
-                additional_component_group_profiles: {
-                  name: string
-                  language: string
-                }[]
-              }
-              additional_component_profiles: {
-                name: string
-                description: string | null
-                language: string
-              }[]
-              image: { src: string; src_md: string | null; src_xs: string | null } | null
-              linked_components_source: {
-                id: number
-                link_type: string
-                display_order: number
-                target_component: {
+          additional_component_to_advanced_product:
+            | {
+                additional_component: {
                   id: number
+                  is_wrapper: boolean
                   code: string | null
                   additional_component_group: {
+                    id: number
                     code: string | null
                     additional_component_group_profiles: {
                       name: string
@@ -856,11 +852,42 @@ export class ProductsModule {
                     description: string | null
                     language: string
                   }[]
-                  image: { src: string; src_md: string | null; src_xs: string | null } | null
+                  image: {
+                    src: string
+                    src_md: string | null
+                    src_xs: string | null
+                  } | null
+                  linked_components_source:
+                    | {
+                        id: number
+                        link_type: string
+                        display_order: number
+                        target_component: {
+                          id: number
+                          code: string | null
+                          additional_component_group: {
+                            code: string | null
+                            additional_component_group_profiles: {
+                              name: string
+                              language: string
+                            }[]
+                          }
+                          additional_component_profiles: {
+                            name: string
+                            description: string | null
+                            language: string
+                          }[]
+                          image: {
+                            src: string
+                            src_md: string | null
+                            src_xs: string | null
+                          } | null
+                        }
+                      }[]
+                    | null
                 }
-              }[] | null
-            }
-          }[] | null
+              }[]
+            | null
         } | null
         primary_category: {
           id: number
@@ -889,24 +916,28 @@ export class ProductsModule {
             } | null
           } | null
         } | null
-        product_features: {
-          product_feature: {
-            photo: {
-              src_xs: string | null
-              src: string
-            } | null
-            product_feature_profiles: {
-              name: string
-              description: string | null
-              language: string
+        product_features:
+          | {
+              product_feature: {
+                photo: {
+                  src_xs: string | null
+                  src: string
+                } | null
+                product_feature_profiles: {
+                  name: string
+                  description: string | null
+                  language: string
+                }[]
+              }
             }[]
-          }
-        }[] | null
-        linked_products_as_source: {
-          link_type: string
-          display_order: number
-          target_product: ProductContainer
-        }[] | null
+          | null
+        linked_products_as_source:
+          | {
+              link_type: string
+              display_order: number
+              target_product: ProductContainer
+            }[]
+          | null
       } | null
     }
 
@@ -972,6 +1003,9 @@ export class ProductsModule {
       }
       where = { AND: [permalinkFilter, priceListFilter] }
     }
+
+    console.log("=========>")
+    console.dir(where, { depth: 0 })
 
     try {
       const response = await this.client.query<RawResponse>(

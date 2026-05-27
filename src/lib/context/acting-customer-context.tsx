@@ -26,6 +26,7 @@ type ActingCustomerContextValue = {
   setActingCustomer: (c: SearchCustomerResult | null) => void
   clearActingCustomer: () => void
   isAgentOrAdmin: boolean
+  isImpersonatedByManager: boolean
 }
 
 const ActingCustomerContext =
@@ -33,11 +34,13 @@ const ActingCustomerContext =
 
 type ProviderProps = {
   initialActingCustomer: ActingCustomer
+  isImpersonatedByManager?: boolean
   children: ReactNode
 }
 
 export function ActingCustomerProvider({
   initialActingCustomer,
+  isImpersonatedByManager = false,
   children,
 }: ProviderProps) {
   const { customer } = useCustomer()
@@ -73,6 +76,7 @@ export function ActingCustomerProvider({
     setActingCustomer,
     clearActingCustomer,
     isAgentOrAdmin,
+    isImpersonatedByManager,
   }
 
   return (

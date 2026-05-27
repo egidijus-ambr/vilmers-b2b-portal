@@ -104,10 +104,12 @@ export interface Customer {
   account_code?: string
   price_listId?: string
   b2b_customer_discount?: number | null
-  group_price_listId?: string
+  group_price_listId?: string | null
   tags?: { id: number }[]
   fabric_palettes?: FabricPalette[]
   customer_group?: {
+    name?: string | null
+    price_listId?: string
     fabric_palettes?: FabricPalette[]
   }
   managers?: CustomerManager[]
@@ -465,6 +467,7 @@ export type SearchCustomerResult = {
   account_code: string | null
   b2b_company_name: string | null
   price_listId: number | null
+  group_price_listId?: string | null
   role: string | null
   fabric_palettes?: Customer["fabric_palettes"]
   customer_group?: Customer["customer_group"]

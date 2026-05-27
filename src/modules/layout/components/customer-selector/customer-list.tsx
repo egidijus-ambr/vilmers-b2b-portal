@@ -112,8 +112,15 @@ export default function CustomerList({ onPick }: Props) {
                     <span className="block font-mono text-xs text-gray-500">
                       {c.account_code}
                     </span>
-                    <span className="block font-medium text-dark-blue">
-                      {c.b2b_company_name ?? c.name}
+                    <span className="flex items-center gap-2">
+                      <span className="font-medium text-dark-blue">
+                        {c.b2b_company_name ?? c.name}
+                      </span>
+                      {c.customer_group?.name && (
+                        <span className="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700">
+                          {c.customer_group.name}
+                        </span>
+                      )}
                     </span>
                     {c.email && (
                       <span className="block text-xs text-gray-500">

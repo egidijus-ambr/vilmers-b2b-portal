@@ -57,7 +57,7 @@ const ConfiguratorContent = ({
   isOpen,
 }: ConfiguratorContentProps) => {
   const isDebug = useDebugMode()
-  const { actingCustomer: customer } = useActingCustomer() as { actingCustomer: any }
+  const { actingCustomer: customer, actingCustomer, isImpersonatedByManager } = useActingCustomer() as { actingCustomer: any; isImpersonatedByManager: boolean }
   const { addItem, items } = useCart()
   const paletteIds = useCustomerPaletteIds()
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
@@ -318,7 +318,7 @@ const ConfiguratorContent = ({
           ) : (
             <ProductPreviewSection languageCode={languageCode} />
           )}
-          {isDebug && configStrings.length > 0 && (
+          {(isDebug || actingCustomer || isImpersonatedByManager) && configStrings.length > 0 && (
             <div className="flex flex-col gap-0.5 px-1 py-2">
               {configStrings.map((config, i) => (
                 <p key={i} className="text-xs font-mono text-gray-500">
@@ -367,7 +367,14 @@ const ConfiguratorContent = ({
               <div>
                 <span className="text-gray-400">Price List ID:</span>{" "}
                 {priceListId}
-                <span className="text-gray-400 ml-2">(customer: {customer?.price_listId ?? "none"})</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Customer price list:</span>{" "}
+                {customer?.price_listId ?? <span className="text-red-400">none</span>}
+              </div>
+              <div>
+                <span className="text-gray-400">Group price list:</span>{" "}
+                {customer?.group_price_listId ?? <span className="text-red-400">none</span>}
               </div>
               <div>
                 <span className="text-gray-400">Selected fabric:</span>{" "}
