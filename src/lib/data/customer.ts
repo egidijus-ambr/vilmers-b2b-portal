@@ -5,7 +5,7 @@ import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag, unstable_cache, unstable_noStore } from "next/cache"
 import { redirect } from "next/navigation"
-import { cookies, headers } from "next/headers"
+import { headers } from "next/headers"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -25,33 +25,34 @@ import { getDefaultPriceListId } from "./default-pricelist"
 import { getActingCustomer } from "./acting-customer"
 import { getShowAllProductsActive } from "./show-all-products"
 
-export const retrieveCustomer = async (): Promise<ExtendedStoreCustomer | null> => {
-  // Prevent caching for authentication-related data
-  unstable_noStore()
+export const retrieveCustomer =
+  async (): Promise<ExtendedStoreCustomer | null> => {
+    // Prevent caching for authentication-related data
+    unstable_noStore()
 
-  try {
-    // Use the new session validation system
-    const validation = await validateSession()
+    try {
+      // Use the new session validation system
+      const validation = await validateSession()
 
-    if (!validation.isValid) {
+      if (!validation.isValid) {
+        return null
+      }
+
+      const customer = validation.customer
+
+      if (!customer) {
+        return null
+      }
+
+      return customer
+    } catch (error) {
+      console.log(
+        "[retrieveCustomer] Error during customer retrieval:",
+        error instanceof Error ? error.message : error
+      )
       return null
     }
-
-    const customer = validation.customer
-
-    if (!customer) {
-      return null
-    }
-
-    return customer
-  } catch (error) {
-    console.log(
-      "[retrieveCustomer] Error during customer retrieval:",
-      error instanceof Error ? error.message : error
-    )
-    return null
   }
-}
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   // const headers = {
@@ -524,8 +525,9 @@ export async function getCustomerFilterData(): Promise<{
     // Not authenticated — no filtering
   }
 
-  const customerTagIds = customer?.tags?.map((t: { id: number }) => t.id)
-  const groupPriceListId = await getGroupPriceListId()
+  const customerTagIds = customer?.tags?.map((t) => t.id) ?? []
+  const groupPriceListId = customer?.group_price_listId ?? null
+
 
   let priceListIds: number[]
   if (!customer) {
@@ -541,25 +543,3 @@ export async function getCustomerFilterData(): Promise<{
   return { customerTagIds, priceListIds }
 }
 
-/**
- * Get the group price list ID from the JWT token.
- * This field is set by the backend as customer.customer_group?.price_listId
- * but is not available via GraphQL - only in the token payload.
- */
-export async function getGroupPriceListId(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies()
-    const jwtToken = cookieStore.get("_furni_jwt")?.value
-    if (!jwtToken) return null
-
-    const parts = jwtToken.split(".")
-    if (parts.length !== 3) return null
-
-    const payload = JSON.parse(
-      Buffer.from(parts[1], "base64").toString()
-    )
-    return payload.group_price_listId ?? null
-  } catch {
-    return null
-  }
-}

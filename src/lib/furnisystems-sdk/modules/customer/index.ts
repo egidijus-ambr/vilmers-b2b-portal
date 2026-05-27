@@ -103,6 +103,7 @@ const GET_ME_QUERY = gql`
       }
       additional_components {
         additionalComponent {
+          id
           code
           additional_component_group {
             code
@@ -578,6 +579,9 @@ const SEARCH_CUSTOMERS_QUERY = gql`
       b2b_company_name
       price_listId
       role
+      tags {
+        id
+      }
       fabric_palettes {
         id
       }
@@ -590,6 +594,7 @@ const SEARCH_CUSTOMERS_QUERY = gql`
       }
       additional_components {
         additionalComponent {
+          id
           code
           additional_component_group {
             code

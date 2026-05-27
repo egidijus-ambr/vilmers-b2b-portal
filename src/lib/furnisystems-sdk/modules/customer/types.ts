@@ -130,6 +130,7 @@ export interface Customer {
   }
   additional_components?: {
     additionalComponent: {
+      id: number
       code?: string
       additional_component_group?: { code?: string }
     }
@@ -469,6 +470,7 @@ export type SearchCustomerResult = {
   price_listId: number | null
   group_price_listId?: string | null
   role: string | null
+  tags?: { id: number }[]
   fabric_palettes?: Customer["fabric_palettes"]
   customer_group?: Customer["customer_group"]
   additional_components?: Customer["additional_components"]
