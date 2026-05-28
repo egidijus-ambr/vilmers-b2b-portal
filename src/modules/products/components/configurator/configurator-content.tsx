@@ -48,6 +48,7 @@ type ConfiguratorContentProps = {
   languageCode: string
   priceListId: number
   isOpen: boolean
+  showAllProducts?: boolean
 }
 
 const ConfiguratorContent = ({
@@ -55,6 +56,7 @@ const ConfiguratorContent = ({
   languageCode,
   priceListId: priceListIdProp,
   isOpen,
+  showAllProducts = false,
 }: ConfiguratorContentProps) => {
   const isDebug = useDebugMode()
   const { actingCustomer: customer, actingCustomer, isImpersonatedByManager } = useActingCustomer() as { actingCustomer: any; isImpersonatedByManager: boolean }
@@ -116,7 +118,7 @@ const ConfiguratorContent = ({
         g,
         state.selectedAdditionalComponents,
         state.sofaCombinations,
-        { priceListIds: customerPriceListIds }
+        { priceListIds: customerPriceListIds, showAllProducts }
       ),
     }))
     const missingCodes = getMissingRequiredGroupCodes(
@@ -133,6 +135,7 @@ const ConfiguratorContent = ({
     state.selectedAdditionalComponents,
     state.sofaCombinations,
     customerPriceListIds,
+    showAllProducts,
     languageCode,
   ])
 
@@ -146,11 +149,11 @@ const ConfiguratorContent = ({
         isSofa,
         hasFabricSelection,
         customerComponentGroupCodes,
-        { priceListIds: customerPriceListIds }
+        { priceListIds: customerPriceListIds, showAllProducts }
       ),
       { id: "reference" as any, label: t("customer-reference"), groups: [] },
     ],
-    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, customerComponentGroupCodes, t]
+    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, customerComponentGroupCodes, customerPriceListIds, showAllProducts, t]
   )
 
   const currentStep = Math.min(state.currentStep, Math.max(steps.length - 1, 0))
@@ -314,7 +317,7 @@ const ConfiguratorContent = ({
         {/* Left panel: Shape selection + canvas */}
         <div className="w-full md:w-2/3 md:overflow-y-auto md:pr-2 py-6">
           {isSofa ? (
-            <SofaShapeSection languageCode={languageCode} />
+            <SofaShapeSection languageCode={languageCode} showAllProducts={showAllProducts} />
           ) : (
             <ProductPreviewSection languageCode={languageCode} />
           )}
@@ -447,6 +450,7 @@ const ConfiguratorContent = ({
               groups={currentStepDef.groups}
               languageCode={languageCode}
               priceListIds={customerPriceListIds}
+              showAllProducts={showAllProducts}
             />
           ) : hasFabricSelection ? (
             <FabricSection languageCode={languageCode} />

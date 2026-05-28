@@ -65,7 +65,7 @@ const ComponentSelector = ({
                     key={link.id}
                     src={targetSrc}
                     alt={target?.code ?? ""}
-                    className="h-full max-h-full max-w-[20%] object-contain object-left shrink-0"
+                    className="h-full w-[20%] object-cover object-left shrink-0"
                     loading="lazy"
                   />
                 )

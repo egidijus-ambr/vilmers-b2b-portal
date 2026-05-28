@@ -12,6 +12,7 @@ type SofaModulesSelectorProps = {
   languageCode: string
   armrestWidthOverride?: number
   armrestName?: string
+  showAllProducts?: boolean
 }
 
 // =============================================
@@ -126,6 +127,7 @@ const SofaModulesSelector = ({
   languageCode,
   armrestWidthOverride,
   armrestName,
+  showAllProducts = false,
 }: SofaModulesSelectorProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { state } = useConfigurator()
@@ -221,6 +223,7 @@ const SofaModulesSelector = ({
         armrestName={armrestName}
         selectedFabric={selectedFabric}
         currency={currency}
+        showAllProducts={showAllProducts}
       />
     </>
   )

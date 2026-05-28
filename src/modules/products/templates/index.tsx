@@ -31,6 +31,7 @@ export type ProductPageData = {
   languageCode: string
   isAdvancedProduct: boolean
   productContainerId: number
+  showAllProducts: boolean
 }
 
 type ProductTemplateProps = {
@@ -50,6 +51,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
                 productContainerId={product.productContainerId}
                 isAdvancedProduct={product.isAdvancedProduct}
                 languageCode={product.languageCode}
+                showAllProducts={product.showAllProducts}
               />
             </div>
             {product.description && (

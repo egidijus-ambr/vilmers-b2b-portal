@@ -309,6 +309,21 @@ export interface AdditionalComponentDetail {
     height?: number | null
     length?: number | null
   } | null
+  is_wrapper?: boolean | null
+  linked_components_source?: Array<{
+    display_order?: number | null
+    link_type: string
+    target_component: {
+      id: number
+      code: string | null
+      image: { src?: string | null; src_thumbnail?: string | null } | null
+      additional_component_profiles: Array<{
+        name: string | null
+        material_name?: string | null
+        language: string
+      }>
+    }
+  }> | null
 }
 
 export interface OrderDetailItem {

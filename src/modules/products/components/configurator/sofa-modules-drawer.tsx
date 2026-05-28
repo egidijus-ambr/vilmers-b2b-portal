@@ -22,6 +22,7 @@ type SofaModulesDrawerProps = {
   armrestName?: string
   selectedFabric: SelectedFabricState
   currency?: string
+  showAllProducts?: boolean
 }
 
 // =============================================
@@ -244,6 +245,7 @@ const SofaModulesDrawer = ({
   armrestName,
   selectedFabric,
   currency,
+  showAllProducts = false,
 }: SofaModulesDrawerProps) => {
   const [searchValue, setSearchValue] = useState("")
 
@@ -262,7 +264,7 @@ const SofaModulesDrawer = ({
     }
 
     // Filter out modules without a price for the selected fabric
-    if (selectedFabric.fabricGroupObject) {
+    if (selectedFabric.fabricGroupObject && !showAllProducts) {
       forms = forms.filter((f) => {
         const price = getPriceFromPriceCategories(selectedFabric, f.form_price_fabric_category)
         return price != null && price > 0
@@ -270,7 +272,7 @@ const SofaModulesDrawer = ({
     }
 
     return forms
-  }, [sofaForms, searchValue, selectedFabric])
+  }, [sofaForms, searchValue, selectedFabric, showAllProducts])
 
   // Group and sort modules
   const moduleGroups = useMemo(() => {

@@ -325,6 +325,24 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
                 height
                 length
               }
+              is_wrapper
+              linked_components_source {
+                display_order
+                link_type
+                target_component {
+                  id
+                  code
+                  image {
+                    src
+                    src_thumbnail
+                  }
+                  additional_component_profiles {
+                    name
+                    material_name
+                    language
+                  }
+                }
+              }
             }
             fabricCombination {
               image {

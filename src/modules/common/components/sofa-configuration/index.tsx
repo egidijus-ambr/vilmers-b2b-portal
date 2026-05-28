@@ -373,10 +373,58 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
           {t("type-label")}
         </h6>
         <div className="flex flex-row flex-wrap gap-3">
-          {visibleComponents.map((comp) => {
+          {visibleComponents.flatMap((comp) => {
+            const includedLinks = (comp.linked_components_source ?? []).filter(
+              (link) => link.link_type === "INCLUDES"
+            )
+            const isWrapper = !!comp.is_wrapper && includedLinks.length > 0
+
+            if (isWrapper) {
+              const groupName = getGroupName(comp)
+              const sortedLinks = [...includedLinks].sort(
+                (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+              )
+              return sortedLinks.map((link) => {
+                const subProfile =
+                  link.target_component.additional_component_profiles.find(
+                    (p) =>
+                      p.language.toLowerCase() === backendLang.toLowerCase()
+                  ) ?? link.target_component.additional_component_profiles[0]
+                const subName =
+                  subProfile?.name ??
+                  link.target_component.code ??
+                  `Component ${link.target_component.id}`
+                const imgSrc =
+                  link.target_component.image?.src_thumbnail ??
+                  link.target_component.image?.src ??
+                  undefined
+
+                return (
+                  <div
+                    key={`${comp.id}-${link.target_component.id}`}
+                    className="flex bg-white rounded border border-gray-100 overflow-hidden"
+                  >
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={subName}
+                        className="h-16 w-auto max-w-[6rem] small:max-w-none flex-shrink-0 object-contain"
+                      />
+                    ) : null}
+                    <div className="p-2 text-xs space-y-0.5 min-w-0 max-w-[360px]">
+                      {groupName && (
+                        <p className="text-dark-blue-70">{groupName}</p>
+                      )}
+                      <p className="font-semibold text-dark-blue">{subName}</p>
+                    </div>
+                  </div>
+                )
+              })
+            }
+
             const groupName = getGroupName(comp)
             const compName = getCompName(comp)
-            return (
+            return [
               <div
                 key={comp.id}
                 className="flex bg-white rounded border border-gray-100 overflow-hidden"
@@ -401,8 +449,8 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                   )}
                   <p className="font-semibold text-dark-blue">{compName}</p>
                 </div>
-              </div>
-            )
+              </div>,
+            ]
           })}
         </div>
       </div>

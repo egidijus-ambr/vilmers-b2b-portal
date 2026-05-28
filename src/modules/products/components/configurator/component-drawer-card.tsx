@@ -144,7 +144,7 @@ const ComponentDrawerCard = ({
                       <img
                         src={targetSrc}
                         alt={target?.code ?? ""}
-                        className="max-w-full max-h-full object-contain"
+                        className="w-full h-full object-cover"
                         loading="lazy"
                       />
                     </div>
@@ -181,7 +181,7 @@ const ComponentDrawerCard = ({
                   key={link.id}
                   src={targetSrc}
                   alt={target?.code ?? ""}
-                  className="h-full max-w-[48%] object-contain"
+                  className="h-full w-[48%] object-cover"
                   loading="lazy"
                 />
               ) : null
@@ -198,7 +198,7 @@ const ComponentDrawerCard = ({
           <img
             src={imageSrc}
             alt={name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
             loading="lazy"
           />
         </div>

@@ -12,6 +12,7 @@ type ConfiguratorModalProps = {
   isAdvancedProduct: boolean
   languageCode: string
   priceListId?: number
+  showAllProducts?: boolean
 }
 
 const ConfiguratorModal = ({
@@ -21,6 +22,7 @@ const ConfiguratorModal = ({
   isAdvancedProduct,
   languageCode,
   priceListId = 1,
+  showAllProducts = false,
 }: ConfiguratorModalProps) => {
   if (!isAdvancedProduct) return null
 
@@ -40,6 +42,7 @@ const ConfiguratorModal = ({
             languageCode={languageCode}
             priceListId={priceListId}
             isOpen={isOpen}
+            showAllProducts={showAllProducts}
           />
         </div>
       </ConfiguratorProvider>

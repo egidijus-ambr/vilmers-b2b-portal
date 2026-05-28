@@ -204,7 +204,59 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
           {t("type-label")}
         </h6>
         <div className="flex flex-row flex-wrap gap-3">
-          {visibleComponents.map((comp, idx) => {
+          {visibleComponents.flatMap((comp, idx) => {
+            const includedLinks = (comp.linked_components_source ?? []).filter(
+              (link) => link.link_type === "INCLUDES"
+            )
+            const isWrapper = !!comp.is_wrapper && includedLinks.length > 0
+
+            if (isWrapper) {
+              const group = additionalComponentGroups.find(
+                (g: ComponentGroup) => g.code === comp.groupCode
+              )
+              const groupName = group
+                ? getGroupName(group, backendLang)
+                : comp.groupCode
+              const sortedLinks = [...includedLinks].sort(
+                (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+              )
+              return sortedLinks.map((link) => {
+                const subProfile =
+                  link.target_component.additional_component_profiles.find(
+                    (p) => p.language === backendLang
+                  ) ?? link.target_component.additional_component_profiles[0]
+                const subName =
+                  subProfile?.name ??
+                  link.target_component.code ??
+                  `Component ${link.target_component.id}`
+                const imgSrc =
+                  link.target_component.image?.src_thumbnail ??
+                  link.target_component.image?.src_md ??
+                  undefined
+
+                return (
+                  <div
+                    key={`${comp.id}-${link.target_component.id}`}
+                    className="flex bg-gold-20 rounded border border-gray-100 overflow-hidden"
+                  >
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={subName}
+                        className="h-16 w-auto max-w-[6rem] flex-shrink-0 object-contain"
+                      />
+                    ) : null}
+                    <div className="p-2 text-xs space-y-0.5 min-w-0 max-w-[360px]">
+                      {groupName && (
+                        <p className="text-dark-blue-70">{groupName}</p>
+                      )}
+                      <p className="font-semibold text-dark-blue">{subName}</p>
+                    </div>
+                  </div>
+                )
+              })
+            }
+
             const group = additionalComponentGroups.find(
               (g: ComponentGroup) => g.code === comp.groupCode
             )
@@ -213,7 +265,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
               ? getGroupName(group, backendLang)
               : comp.groupCode
 
-            return (
+            return [
               <div
                 key={`${comp.id}-${idx}`}
                 className="flex bg-gold-20 rounded border border-gray-100 overflow-hidden"
@@ -236,8 +288,8 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
                   )}
                   <p className="font-semibold text-dark-blue">{compName}</p>
                 </div>
-              </div>
-            )
+              </div>,
+            ]
           })}
         </div>
       </div>

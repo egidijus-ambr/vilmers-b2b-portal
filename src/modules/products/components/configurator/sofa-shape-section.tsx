@@ -14,6 +14,7 @@ export interface Dropable {
 
 type SofaShapeSectionProps = {
   languageCode: string
+  showAllProducts?: boolean
 }
 
 /**
@@ -21,7 +22,7 @@ type SofaShapeSectionProps = {
  * Combines the module selector (compact row + drawer) with the
  * interactive Konva stage where users arrange sofa modules.
  */
-const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
+const SofaShapeSection = ({ languageCode, showAllProducts = false }: SofaShapeSectionProps) => {
   const { state, dispatch } = useConfigurator()
   const { sofaForms } = state
 
@@ -81,6 +82,7 @@ const SofaShapeSection = ({ languageCode }: SofaShapeSectionProps) => {
         languageCode={languageCode}
         armrestWidthOverride={effectiveArmrestWidth}
         armrestName={defaultArmrest?.name}
+        showAllProducts={showAllProducts}
       />
 
       {/* Interactive Konva stage with toolbar controls */}

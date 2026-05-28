@@ -15,6 +15,7 @@ type ConfiguratorButtonProps = {
   isAdvancedProduct: boolean
   languageCode: string
   priceListId?: number
+  showAllProducts?: boolean
 }
 
 const ConfiguratorButton = ({
@@ -22,6 +23,7 @@ const ConfiguratorButton = ({
   isAdvancedProduct,
   languageCode,
   priceListId = 1,
+  showAllProducts = false,
 }: ConfiguratorButtonProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const { customer } = useCustomer()
@@ -45,6 +47,7 @@ const ConfiguratorButton = ({
           isAdvancedProduct={isAdvancedProduct}
           languageCode={languageCode}
           priceListId={priceListId}
+          showAllProducts={showAllProducts}
         />
       )}
     </>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories } from "@lib/data/categories"
 import { getCustomerFilterData } from "@lib/data/customer"
+import { getShowAllProductsActive } from "@lib/data/show-all-products"
 import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
 import type { LinkedProductType, ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import type { CategoryData } from "@lib/furnisystems-sdk"
@@ -23,7 +24,8 @@ type Props = {
 function mapFurnisystemsProduct(
   container: FurnisystemsProductDetail,
   languageCode: string,
-  rootCategory?: CategoryData
+  rootCategory?: CategoryData,
+  showAllProducts: boolean = false
 ): ProductPageData {
   const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
 
@@ -171,6 +173,7 @@ function mapFurnisystemsProduct(
     languageCode,
     isAdvancedProduct: isAdvanced,
     productContainerId: container.id,
+    showAllProducts,
   }
 }
 
@@ -225,7 +228,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { handle, languageCode } = await params
-  const { priceListIds } = await getCustomerFilterData()
+  const [{ priceListIds }, showAllProducts] = await Promise.all([
+    getCustomerFilterData(),
+    getShowAllProductsActive(),
+  ])
   const [product, menuCategories] = await Promise.all([
     getProductByPermalink(handle, languageCode, priceListIds),
     listMenuCategories(languageCode),
@@ -236,7 +242,7 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const rootCategory = menuCategories.find((c) => c.is_root_category)
-  const productData = mapFurnisystemsProduct(product, languageCode, rootCategory)
+  const productData = mapFurnisystemsProduct(product, languageCode, rootCategory, showAllProducts)
 
   return <ProductTemplate product={productData} />
 }

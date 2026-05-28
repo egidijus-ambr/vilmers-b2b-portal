@@ -115,6 +115,24 @@ const CART_ITEM_FRAGMENT = gql`
         height
         length
       }
+      is_wrapper
+      linked_components_source {
+        display_order
+        link_type
+        target_component {
+          id
+          code
+          image {
+            src
+            src_thumbnail
+          }
+          additional_component_profiles {
+            name
+            material_name
+            language
+          }
+        }
+      }
     }
     cartItemFabrics {
       id
