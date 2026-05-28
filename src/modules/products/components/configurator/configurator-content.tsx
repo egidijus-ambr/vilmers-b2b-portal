@@ -256,6 +256,12 @@ const ConfiguratorContent = ({
         additionalComponentIds: state.selectedAdditionalComponents
           .filter((c) => c.id != null)
           .map((c) => c.id),
+        componentsByModule: state.selectedAdditionalComponents
+          .filter((c) => c.id != null && c.groupCode && c.groupCode.includes('-'))
+          .map((c) => ({
+            additionalComponentId: c.id as number,
+            groupCode: c.groupCode,
+          })),
         cartItemFabrics: state.selectedFabric.combinationFabrics
           ? Object.values(state.selectedFabric.combinationFabrics)
               .filter((f: any) => f?.fabricObject?.id)

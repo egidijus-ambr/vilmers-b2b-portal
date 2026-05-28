@@ -24,6 +24,7 @@ const CART_ITEM_FRAGMENT = gql`
       id
     }
     selected_sofa_combinations
+    components_by_module
     cartId
     productContainerId
     createdAt
@@ -212,6 +213,7 @@ const ADD_ITEM_TO_CART = gql`
     $fabric_group_name: String
     $selected_sofa_combinations: String
     $additionalComponentIds: [Int!]
+    $componentsByModule: [ComponentByModuleInput!]
     $cartItemFabrics: [CartItemFabricInput]
     $customerReference: String
   ) {
@@ -230,6 +232,7 @@ const ADD_ITEM_TO_CART = gql`
       fabric_group_name: $fabric_group_name
       selected_sofa_combinations: $selected_sofa_combinations
       additionalComponentIds: $additionalComponentIds
+      componentsByModule: $componentsByModule
       cartItemFabrics: $cartItemFabrics
       customerReference: $customerReference
     ) {
@@ -304,6 +307,7 @@ export class CartModule {
         fabric_group_name: input.fabric_group_name || null,
         selected_sofa_combinations: input.selected_sofa_combinations || null,
         additionalComponentIds: input.additionalComponentIds || [],
+        componentsByModule: input.componentsByModule || [],
         cartItemFabrics: input.cartItemFabrics || [],
         customerReference: input.customerReference || null,
       },

@@ -44,6 +44,14 @@ function buildAdvancedProductData(item: FurnisystemsCartItem) {
     ? item.additional_components.map((c) => ({ id: c.id }))
     : undefined
 
+  const componentsByModule =
+    Array.isArray(item.components_by_module) && item.components_by_module.length > 0
+      ? item.components_by_module.map((m) => ({
+          additionalComponentId: m.additionalComponentId,
+          groupCode: m.groupCode,
+        }))
+      : undefined
+
   const data = {
     advanced_product_type: item.advanced_product_type ?? undefined,
     selected_sofa_combinations: item.selected_sofa_combinations ?? undefined,
@@ -52,6 +60,7 @@ function buildAdvancedProductData(item: FurnisystemsCartItem) {
     fabric: item.fabric?.id != null ? { id: item.fabric.id } : undefined,
     fabricCombination,
     additional_components,
+    componentsByModule,
   }
 
   const hasAny = Object.values(data).some((v) => v !== undefined)

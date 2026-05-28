@@ -89,6 +89,10 @@ export interface FurnisystemsCartItem {
     id: number
     image?: { src?: string; src_xs?: string; src_thumbnail?: string }
   } | null
+  components_by_module?: Array<{
+    additionalComponentId: number
+    groupCode: string
+  }> | null
   reference?: string
   createdAt: string
   updatedAt: string
@@ -108,6 +112,10 @@ export interface AddCartItemInput {
   fabric_group_name?: string
   selected_sofa_combinations?: string
   additionalComponentIds?: number[]
+  componentsByModule?: Array<{
+    additionalComponentId: number
+    groupCode: string
+  }>
   cartItemFabrics?: { fabricId?: number; fabric_groupId?: number; combination_optionId?: number }[]
   customerReference?: string
 }
