@@ -12,6 +12,7 @@ type ComponentSectionProps = {
   languageCode: string
   priceListIds?: number[]
   showAllProducts?: boolean
+  multiEntryCustomerComponentCodesByGroup?: Map<string, Set<string>>
 }
 
 const ComponentSection = ({
@@ -19,19 +20,32 @@ const ComponentSection = ({
   languageCode,
   priceListIds,
   showAllProducts,
+  multiEntryCustomerComponentCodesByGroup = new Map(),
 }: ComponentSectionProps) => {
   const { state } = useConfigurator()
-  const options = { priceListIds, showAllProducts }
+  const applyMultiEntryFilter = (components: ReturnType<typeof getValidComponents>, groupCode: string) => {
+    const customerCodes = multiEntryCustomerComponentCodesByGroup.get(groupCode)
+    if (!customerCodes) return components
+    return components.filter((c) => customerCodes.has(c.code))
+  }
 
-  // Filter to only visible groups (>1 valid component, not hidden)
+  const getOptions = (groupCode: string) => ({
+    priceListIds,
+    showAllProducts,
+    customerComponentCodesForGroup: multiEntryCustomerComponentCodesByGroup.get(groupCode),
+  })
+
   const visibleGroups = groups
     .filter((group) => {
       if (isHidden(group.ui_type)) return false
-      const valid = getValidComponents(
-        group,
-        state.selectedAdditionalComponents,
-        state.sofaCombinations,
-        options
+      const valid = applyMultiEntryFilter(
+        getValidComponents(
+          group,
+          state.selectedAdditionalComponents,
+          state.sofaCombinations,
+          getOptions(group.code)
+        ),
+        group.code
       )
       return valid.length > 1
     })
@@ -48,11 +62,14 @@ const ComponentSection = ({
   return (
     <div className="space-y-3">
       {visibleGroups.map((group) => {
-        const validComponents = getValidComponents(
-          group,
-          state.selectedAdditionalComponents,
-          state.sofaCombinations,
-          options
+        const validComponents = applyMultiEntryFilter(
+          getValidComponents(
+            group,
+            state.selectedAdditionalComponents,
+            state.sofaCombinations,
+            getOptions(group.code)
+          ),
+          group.code
         )
         return (
           <ComponentSelector

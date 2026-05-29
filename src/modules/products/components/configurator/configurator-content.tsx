@@ -95,14 +95,25 @@ const ConfiguratorContent = ({
     productData?.advanced_product?.advanced_product_type === "SOFA" ||
     productData?.advanced_product?.advanced_product_type === "OTHER_WITH_FABRICS"
 
-  // Customer pre-selected component group codes — these groups are hidden from the configurator
-  const customerComponentGroupCodes = useMemo(() => {
-    const codes = new Set<string>()
+  const { singleEntryGroupCodes, multiEntryCustomerComponentCodesByGroup } = useMemo(() => {
+    const countByGroup = new Map<string, string[]>()
     customer?.additional_components?.forEach((ac: any) => {
       const groupCode = ac.additionalComponent?.additional_component_group?.code
-      if (groupCode) codes.add(groupCode)
+      const componentCode = ac.additionalComponent?.code
+      if (!groupCode || !componentCode) return
+      if (!countByGroup.has(groupCode)) countByGroup.set(groupCode, [])
+      countByGroup.get(groupCode)!.push(componentCode)
     })
-    return codes
+    const single = new Set<string>()
+    const multi = new Map<string, Set<string>>()
+    countByGroup.forEach((codes, groupCode) => {
+      if (codes.length === 1) {
+        single.add(groupCode)
+      } else {
+        multi.set(groupCode, new Set(codes))
+      }
+    })
+    return { singleEntryGroupCodes: single, multiEntryCustomerComponentCodesByGroup: multi }
   }, [customer?.additional_components])
 
   // Required-group validation: enforce a selection in `model` / `model-other`
@@ -139,7 +150,6 @@ const ConfiguratorContent = ({
     languageCode,
   ])
 
-  // Compute visible steps
   const steps = useMemo(
     () => [
       ...getStepsForProduct(
@@ -148,12 +158,13 @@ const ConfiguratorContent = ({
         state.sofaCombinations,
         isSofa,
         hasFabricSelection,
-        customerComponentGroupCodes,
-        { priceListIds: customerPriceListIds, showAllProducts }
+        singleEntryGroupCodes,
+        { priceListIds: customerPriceListIds, showAllProducts },
+        multiEntryCustomerComponentCodesByGroup
       ),
       { id: "reference" as any, label: t("customer-reference"), groups: [] },
     ],
-    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, customerComponentGroupCodes, customerPriceListIds, showAllProducts, t]
+    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, singleEntryGroupCodes, customerPriceListIds, showAllProducts, multiEntryCustomerComponentCodesByGroup, t]
   )
 
   const currentStep = Math.min(state.currentStep, Math.max(steps.length - 1, 0))
@@ -457,6 +468,7 @@ const ConfiguratorContent = ({
               languageCode={languageCode}
               priceListIds={customerPriceListIds}
               showAllProducts={showAllProducts}
+              multiEntryCustomerComponentCodesByGroup={multiEntryCustomerComponentCodesByGroup}
             />
           ) : hasFabricSelection ? (
             <FabricSection languageCode={languageCode} />

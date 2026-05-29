@@ -25,6 +25,7 @@ import { MODEL_CODE, MODEL_CODE_OTHER } from "./vilmers"
 export interface ValidComponentsOptions {
   priceListIds?: number[]
   showAllProducts?: boolean
+  customerComponentCodesForGroup?: Set<string>
 }
 
 /**
@@ -182,7 +183,11 @@ export function getValidComponents(
   // Filter by price if hide_components_without_price.
   // In showAllProducts (sales-manager) mode we skip this filter entirely so
   // managers see every configuration option even when un-priced.
-  if (group.hide_components_without_price && !options?.showAllProducts) {
+  if (
+    group.hide_components_without_price &&
+    !options?.showAllProducts &&
+    !options?.customerComponentCodesForGroup?.size
+  ) {
     const priceListIds = options?.priceListIds
     const hasPriceListFilter = Array.isArray(priceListIds)
     const priceListIdSet = hasPriceListFilter ? new Set(priceListIds) : null
@@ -274,7 +279,8 @@ export function getStepsForProduct(
   isSofa?: boolean,
   hasFabricSelection?: boolean,
   customerComponentGroupCodes?: Set<string>,
-  options?: ValidComponentsOptions
+  options?: ValidComponentsOptions,
+  multiEntryCustomerComponentCodesByGroup?: Map<string, Set<string>>
 ): StepDefinition[] {
   // Categorize groups into steps
   const stepGroups = new Map<StepId, ComponentGroup[]>()
@@ -288,12 +294,14 @@ export function getStepsForProduct(
     // Skip groups where customer has a pre-selected component
     if (customerComponentGroupCodes?.has(group.code)) continue
 
+    const customerCodes = multiEntryCustomerComponentCodesByGroup?.get(group.code)
+
     // Check if group has >1 valid component
     const validComponents = getValidComponents(
       group,
       selectedComponents,
       sofaCombinations,
-      options
+      { ...options, customerComponentCodesForGroup: customerCodes }
     )
     if (validComponents.length <= 1) continue
 

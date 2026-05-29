@@ -93,10 +93,12 @@ export function useConfiguratorData(
           // take precedence over selectDefaultComponents defaults.
           if (customerAdditionalComponents && customerAdditionalComponents.length > 0) {
             const seeds: SelectedComponent[] = []
+            const seenGroupCodes = new Set<string>()
             for (const customerAc of customerAdditionalComponents) {
               const groupCode = customerAc.additionalComponent?.additional_component_group?.code
               const componentCode = customerAc.additionalComponent?.code
               if (!groupCode || !componentCode) continue
+              if (seenGroupCodes.has(groupCode)) continue
 
               const matchedGroup = mergedGroups.find((g) => g.code === groupCode)
               if (!matchedGroup) continue
@@ -106,6 +108,7 @@ export function useConfiguratorData(
               )
               if (!matchedComponent) continue
 
+              seenGroupCodes.add(groupCode)
               seeds.push({ ...matchedComponent, groupCode: matchedGroup.code })
             }
             if (seeds.length > 0) {
