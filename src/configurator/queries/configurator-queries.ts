@@ -163,7 +163,7 @@ export const GET_CONFIGURATOR_DATA = gql`
           }
         }
 
-        # Component-to-product associations (with pricing)
+        # Component-to-product associations (with pricing and full component detail)
         additional_component_to_advanced_product(
           where: { enabled: { equals: true } }
         ) {
@@ -176,6 +176,7 @@ export const GET_CONFIGURATOR_DATA = gql`
             where: { price_listId: { equals: $priceListId } }
           ) {
             price
+            price_listId
             fabrice_price_category {
               group_number
             }
@@ -185,54 +186,6 @@ export const GET_CONFIGURATOR_DATA = gql`
           conditions
           isDefault
           additional_component {
-            id
-          }
-        }
-
-        # Group-level associations (which groups are enabled for this product)
-        additional_component_group_to_advanced_product(
-          where: { enabled: { equals: true } }
-        ) {
-          additional_component_group {
-            id
-          }
-        }
-
-        # Dimensions
-        dimensions {
-          id
-          width
-          height
-          length
-          seat_height
-          armrest_width
-          backrest_width
-        }
-      }
-
-      # Manufacturer data (component groups + fabric categories)
-      manufacturer {
-        id
-
-        # Component groups with all components
-        additional_component_groups {
-          id
-          ui_type
-          code
-          order
-          use_fabric_prices_for_components
-          hide_components_without_price
-          enable_custom_dimensions_for_components
-          enabled_dimensions_in_group
-          additional_component_group_profiles(
-            where: { language: { equals: $language } }
-          ) {
-            id
-            name
-            description
-            language
-          }
-          additional_components {
             id
             additionalComponentGroupId
             is_wrapper
@@ -311,6 +264,46 @@ export const GET_CONFIGURATOR_DATA = gql`
             }
           }
         }
+
+        # Group-level associations (which groups are enabled for this product, with full group detail)
+        additional_component_group_to_advanced_product(
+          where: { enabled: { equals: true } }
+        ) {
+          additional_component_group {
+            id
+            ui_type
+            code
+            order
+            use_fabric_prices_for_components
+            hide_components_without_price
+            enable_custom_dimensions_for_components
+            enabled_dimensions_in_group
+            additional_component_group_profiles(
+              where: { language: { equals: $language } }
+            ) {
+              id
+              name
+              description
+              language
+            }
+          }
+        }
+
+        # Dimensions
+        dimensions {
+          id
+          width
+          height
+          length
+          seat_height
+          armrest_width
+          backrest_width
+        }
+      }
+
+      # Manufacturer data (fabric categories only; component groups moved to product-scoped join tables)
+      manufacturer {
+        id
 
         # Fabric price categories with fabric groups
         fabric_price_category {

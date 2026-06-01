@@ -29,41 +29,41 @@ export interface ValidComponentsOptions {
 }
 
 /**
- * Merge manufacturer-level component groups with per-product associations.
+ * Build component groups from product-scoped join tables.
  *
- * manufacturerGroups: from data.manufacturer.additional_component_groups
- * productAssociations: from data.advanced_product.additional_component_to_advanced_product
- *   Each has: { additional_component: { id }, extra_price, extra_prices: [{ price }],
- *              price_fabric_category, conditions, isDefault, metadata, enabled }
- * priceListId: to resolve extra_prices
+ * groupAssociations: from data.advanced_product.additional_component_group_to_advanced_product
+ *   Each has: { additional_component_group: { id, ui_type, code, order, ... } }
+ *   Already filtered to enabled=true by the query WHERE clause.
+ * componentAssociations: from data.advanced_product.additional_component_to_advanced_product
+ *   Each has: { additional_component: { id, additionalComponentGroupId, code, ... },
+ *              extra_price, extra_prices: [{ price }], price_fabric_category,
+ *              conditions, isDefault, metadata, enabled }
+ *   Already filtered to enabled=true by the query WHERE clause.
+ * priceListId: used to resolve extra_prices (already pre-filtered by query, index [0])
  */
 export function mergeComponentGroups(
-  manufacturerGroups: any[],
-  productAssociations: any[],
+  groupAssociations: any[],
+  componentAssociations: any[],
   priceListId: number
 ): ComponentGroup[] {
-  // Build lookup: component.id → product association data
-  const associationMap = new Map<number, any>()
-  for (const assoc of productAssociations) {
-    if (assoc.enabled && assoc.additional_component?.id) {
-      associationMap.set(assoc.additional_component.id, assoc)
-    }
-  }
-
   const mergedGroups: ComponentGroup[] = []
 
-  for (const group of manufacturerGroups) {
-    // Filter components to only those enabled for this product
+  for (const groupAssoc of groupAssociations) {
+    const group = groupAssoc.additional_component_group
+    if (!group?.id) continue
+
+    // Filter component associations to those belonging to this group
     const enabledComponents: AdditionalComponent[] = []
 
-    for (const component of group.additional_components ?? []) {
-      const assoc = associationMap.get(component.id)
-      if (!assoc) continue // Not enabled for this product
+    for (const compAssoc of componentAssociations) {
+      const component = compAssoc.additional_component
+      if (!component) continue
+      if (component.additionalComponentGroupId !== group.id) continue
 
       // Resolve extra_price from extra_prices for the given priceListId
-      let resolvedExtraPrice = assoc.extra_price ?? 0
-      if (assoc.extra_prices?.length > 0) {
-        const priceEntry = assoc.extra_prices[0] // Already filtered by priceListId in query
+      let resolvedExtraPrice = compAssoc.extra_price ?? 0
+      if (compAssoc.extra_prices?.length > 0) {
+        const priceEntry = compAssoc.extra_prices[0] // Already filtered by priceListId in query
         if (priceEntry?.price != null) {
           resolvedExtraPrice = priceEntry.price
         }
@@ -72,12 +72,12 @@ export function mergeComponentGroups(
       enabledComponents.push({
         ...component,
         extra_price: resolvedExtraPrice,
-        price_fabric_category: assoc.price_fabric_category ?? [],
-        conditions: assoc.conditions ?? null,
-        isDefault: assoc.isDefault ?? false,
+        price_fabric_category: compAssoc.price_fabric_category ?? [],
+        conditions: compAssoc.conditions ?? null,
+        isDefault: compAssoc.isDefault ?? false,
         groupCode: group.code,
         additionalComponentGroupId: group.id,
-        metadata: assoc.metadata ?? null,
+        metadata: compAssoc.metadata ?? null,
       })
     }
 
@@ -135,8 +135,7 @@ export function getValidComponents(
   // Skip groups already handled by specialized logic (armrests, legs, threads).
   if (sofaCombinations && sofaCombinations.length > 0) {
     const isSpecializedGroup =
-      group.code.startsWith("armrest") ||
-      group.code.startsWith("threads")
+      group.code.startsWith("armrest") || group.code.startsWith("threads")
 
     if (!isSpecializedGroup) {
       let supportedCodes: string[] | undefined
@@ -146,7 +145,11 @@ export function getValidComponents(
           const metadata = module?.attrs?.originalSofaForm?.metadata
           const moduleSupportedComponents = metadata?.[group.code]
 
-          if (!moduleSupportedComponents || !Array.isArray(moduleSupportedComponents)) continue
+          if (
+            !moduleSupportedComponents ||
+            !Array.isArray(moduleSupportedComponents)
+          )
+            continue
 
           const moduleCodes: string[] = moduleSupportedComponents.map(
             (c: any) => c.code ?? c
@@ -255,7 +258,14 @@ export function categorizeStep(groupCode: string): StepId {
   return "design"
 }
 
-const STEP_ORDER: StepId[] = ["sofa-modules", "fabric", "threads", "armrest-legs", "design", "other"]
+const STEP_ORDER: StepId[] = [
+  "sofa-modules",
+  "fabric",
+  "threads",
+  "armrest-legs",
+  "design",
+  "other",
+]
 const STEP_LABELS: Record<StepId, string> = {
   "sofa-modules": "Sofa Modules",
   fabric: "Fabrics",
@@ -294,7 +304,9 @@ export function getStepsForProduct(
     // Skip groups where customer has a pre-selected component
     if (customerComponentGroupCodes?.has(group.code)) continue
 
-    const customerCodes = multiEntryCustomerComponentCodesByGroup?.get(group.code)
+    const customerCodes = multiEntryCustomerComponentCodesByGroup?.get(
+      group.code
+    )
 
     // Check if group has >1 valid component
     const validComponents = getValidComponents(
@@ -303,6 +315,8 @@ export function getStepsForProduct(
       sofaCombinations,
       { ...options, customerComponentCodesForGroup: customerCodes }
     )
+
+    console.log("group", group.code, group.additional_components)
     if (validComponents.length <= 1) continue
 
     if (!stepGroups.has(stepId)) {
@@ -321,13 +335,18 @@ export function getStepsForProduct(
     : ["design", "fabric", "threads", "armrest-legs", "other"]
 
   // Filter out fabric and threads steps when hasFabricSelection is false
-  const orderedStepIds = hasFabricSelection === false
-    ? baseStepIds.filter((id) => id !== "fabric" && id !== "threads")
-    : baseStepIds
+  const orderedStepIds =
+    hasFabricSelection === false
+      ? baseStepIds.filter((id) => id !== "fabric" && id !== "threads")
+      : baseStepIds
 
   for (const stepId of orderedStepIds) {
     if (stepId === "sofa-modules") {
-      steps.push({ id: "sofa-modules", label: STEP_LABELS["sofa-modules"], groups: [] })
+      steps.push({
+        id: "sofa-modules",
+        label: STEP_LABELS["sofa-modules"],
+        groups: [],
+      })
       continue
     }
     if (stepId === "fabric") {

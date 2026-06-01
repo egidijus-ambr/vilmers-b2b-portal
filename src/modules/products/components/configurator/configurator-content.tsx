@@ -49,6 +49,7 @@ type ConfiguratorContentProps = {
   priceListId: number
   isOpen: boolean
   showAllProducts?: boolean
+  embedded?: boolean
 }
 
 const ConfiguratorContent = ({
@@ -57,6 +58,7 @@ const ConfiguratorContent = ({
   priceListId: priceListIdProp,
   isOpen,
   showAllProducts = false,
+  embedded = false,
 }: ConfiguratorContentProps) => {
   const isDebug = useDebugMode()
   const { actingCustomer: customer, actingCustomer, isImpersonatedByManager } = useActingCustomer() as { actingCustomer: any; isImpersonatedByManager: boolean }
@@ -328,11 +330,11 @@ const ConfiguratorContent = ({
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto md:overflow-hidden">
+    <div className={clx("flex flex-col", !embedded && "h-full overflow-y-auto md:overflow-hidden")}>
       {/* Main content area — 2 panel layout */}
-      <div className="flex flex-col md:flex-row md:flex-1 gap-6 md:overflow-hidden px-4 md:px-6">
+      <div className={clx("flex flex-col md:flex-row md:flex-1 gap-6", !embedded && "md:overflow-hidden px-4 md:px-6")}>
         {/* Left panel: Shape selection + canvas */}
-        <div className="w-full md:w-2/3 md:overflow-y-auto md:pr-2 py-6">
+        <div className={clx("w-full md:w-2/3 md:pr-2 py-6", !embedded && "md:overflow-y-auto")}>
           {isSofa ? (
             <SofaShapeSection languageCode={languageCode} showAllProducts={showAllProducts} />
           ) : (
@@ -353,7 +355,7 @@ const ConfiguratorContent = ({
         </div>
 
         {/* Right panel: Stepper + Step Content */}
-        <div className="w-full md:w-1/3 md:overflow-y-auto md:pl-2 space-y-6 pt-6">
+        <div className={clx("w-full md:w-1/3 md:pl-2 space-y-6 pt-6", !embedded && "md:overflow-y-auto", embedded && "pb-20")}>
           {/* Stepper navigation */}
           {steps.length > 1 && (
             <ConfiguratorStepper
@@ -528,18 +530,20 @@ const ConfiguratorContent = ({
       )}
 
       {/* Sticky price footer */}
-      <PriceFooter
-        currency={productData.manufacturer?.currency ?? "EUR"}
-        volume={totalVolume}
-        missingRequiredGroupNames={missingRequiredGroupNames}
-        onAddToCart={async () => {
-          if (!state.referenceText.trim()) {
-            setShowReferenceModal(true)
-            return
-          }
-          await handleAddToCart(state.referenceText.trim())
-        }}
-      />
+      <div className={clx(embedded && "sticky bottom-0 z-20")}>
+        <PriceFooter
+          currency={productData.manufacturer?.currency ?? "EUR"}
+          volume={totalVolume}
+          missingRequiredGroupNames={missingRequiredGroupNames}
+          onAddToCart={async () => {
+            if (!state.referenceText.trim()) {
+              setShowReferenceModal(true)
+              return
+            }
+            await handleAddToCart(state.referenceText.trim())
+          }}
+        />
+      </div>
 
       <MissingReferenceModal
         isOpen={showReferenceModal}

@@ -3,31 +3,14 @@
 import React from "react"
 import { createPortal } from "react-dom"
 import { clx } from "@medusajs/ui"
+import type { AdditionalComponent } from "@configurator/lib/types"
+import { useConfigurator } from "@configurator/context/configurator-context"
+import { getPriceFromPriceCategories, applyDiscount } from "@configurator/lib/price-utils"
+import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
+import PriceDisplay from "@modules/common/components/price-display"
 
 type ComponentDrawerCardProps = {
-  component: {
-    id: number
-    code: string
-    image: { src: string; src_md: string | null; src_xs: string | null } | null
-    color?: { hex: string; background: string | null } | null
-    is_wrapper?: boolean
-    linked_components_source?:
-      | {
-          id: number
-          link_type: string
-          target_component: {
-            id: number
-            code: string | null
-            image: { src_thumbnail?: string; src_md: string | null } | null
-            additional_component_profiles: {
-              name: string
-              description?: string | null
-              language: string
-            }[]
-          }
-        }[]
-      | null
-  }
+  component: AdditionalComponent
   name: string
   description?: string | null
   isSelected: boolean
@@ -35,6 +18,7 @@ type ComponentDrawerCardProps = {
   zoomEnabled?: boolean
   tall?: boolean
   languageCode?: string
+  currency?: string
 }
 
 const ZOOM_W = 320
@@ -50,7 +34,11 @@ const ComponentDrawerCard = ({
   zoomEnabled = false,
   tall = false,
   languageCode,
+  currency,
 }: ComponentDrawerCardProps) => {
+  const { state } = useConfigurator()
+  const { discountPct } = useCustomerDiscount()
+  const price = getPriceFromPriceCategories(state.selectedFabric, component.price_fabric_category)
   const imageHeightClass = tall ? "h-44" : "h-32"
   const buttonRef = React.useRef<HTMLButtonElement>(null)
   const [zoomVisible, setZoomVisible] = React.useState(false)
@@ -249,6 +237,17 @@ const ComponentDrawerCard = ({
               {description}
             </p>
           )}
+          {price != null && price > 0 && (() => {
+            const priced = applyDiscount(price, discountPct)
+            return (
+              <PriceDisplay
+                regular={priced.regular}
+                discounted={priced.hasDiscount ? priced.discounted : null}
+                currencyCode={currency ?? "EUR"}
+                size="sm"
+              />
+            )
+          })()}
         </div>
       )}
 

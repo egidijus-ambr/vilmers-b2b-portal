@@ -28,6 +28,7 @@ const ComponentDrawer = ({
   uiType,
 }: ComponentDrawerProps) => {
   const { state, dispatch } = useConfigurator()
+  const currency = state.productData?.manufacturer?.currency ?? "EUR"
   const wide = isWideView(uiType)
   const zoom = isZoomEnabled(uiType)
 
@@ -110,6 +111,7 @@ const ComponentDrawer = ({
                           zoomEnabled={zoom}
                           tall={wide}
                           languageCode={languageCode}
+                          currency={currency}
                         />
                       ))}
                     </div>

@@ -1,35 +1,32 @@
-import { getComponentGroupCode } from './utils/getComponentGroupName'
-import { getProfileFromLanguage } from './utils/getProfile'
-import { getPriceFromPriceCategories } from './price-utils'
-import {
-  ArmrestsPosition,
-  getArmrestsPosition,
-} from './utils/sofaShapeUtils'
-import type { ConfiguratorState } from '../context/configurator-context'
+import { getComponentGroupCode } from "./utils/getComponentGroupName"
+import { getProfileFromLanguage } from "./utils/getProfile"
+import { getPriceFromPriceCategories } from "./price-utils"
+import { ArmrestsPosition, getArmrestsPosition } from "./utils/sofaShapeUtils"
+import type { ConfiguratorState } from "../context/configurator-context"
 
 const getProductName = (product: any) => {
   const profiles = product?.advanced_product?.advanced_product_profiles
   const name = Array.isArray(profiles) ? profiles[0]?.name : profiles?.name
-  return name?.split(' ')[0]
+  return name?.split(" ")[0]
 }
 
-export const SITTING_CUSHION_DESIGN_CODE = 'sitting-cushion-design'
-export const BACK_CUSHION_DESIGN_CODE = 'back-cushion-design'
-export const SITTING_CUSHION_COMFORT_CODE = 'sitting-cushion-comfort'
-export const BACK_CUSHION_COMFORT_CODE = 'back-cushion-comfort'
-export const ARMREST_CODE = 'armrest'
-export const LEGS_CODE = 'legs'
-export const THREADS_CODE = 'threads-type'
-export const THREADS_COLOR_CODE = 'threads-colors'
-export const LOGOS_CODE = 'logos'
-export const SHOOTING_CODE = 'shooting'
-export const DIRECTION_CODE = 'direction'
-export const MODEL_CODE = 'model'
-export const MODEL_CODE_OTHER = 'model-other'
-export const MATTRESS_COVER = 'product-mattress-cover'
-export const MATTRESS = 'product-mattress'
-export const TOP_MATTRESS = 'product-top-mattress'
-export const DESIGN_COMFORT = 'design-comfort'
+export const SITTING_CUSHION_DESIGN_CODE = "sitting-cushion-design"
+export const BACK_CUSHION_DESIGN_CODE = "back-cushion-design"
+export const SITTING_CUSHION_COMFORT_CODE = "sitting-cushion-comfort"
+export const BACK_CUSHION_COMFORT_CODE = "back-cushion-comfort"
+export const ARMREST_CODE = "armrest"
+export const LEGS_CODE = "legs"
+export const THREADS_CODE = "threads-type"
+export const THREADS_COLOR_CODE = "threads-colors"
+export const LOGOS_CODE = "logos"
+export const SHOOTING_CODE = "shooting"
+export const DIRECTION_CODE = "direction"
+export const MODEL_CODE = "model"
+export const MODEL_CODE_OTHER = "model-other"
+export const MATTRESS_COVER = "product-mattress-cover"
+export const MATTRESS = "product-mattress"
+export const TOP_MATTRESS = "product-top-mattress"
+export const DESIGN_COMFORT = "design-comfort"
 
 const getSingleComponentConfigString = (
   product: any,
@@ -58,80 +55,82 @@ const getSingleComponentConfigString = (
   }))
 
   // find group with name porankiai
-  let armRestLeft = ''
-  let armRestRight = ''
+  let armRestLeft = ""
+  let armRestRight = ""
 
   const armrests = additionalComponents?.find(
-    (c: any) => c.groupCode === ARMREST_CODE + '-' + item.code
+    (c: any) => c.groupCode === ARMREST_CODE + "-" + item.code
   )
 
-  let armrestConfig = ''
-  const armrestsPosition = shape?.attrs.armrestPosition ?? ''
+  let armrestConfig = ""
+  const armrestsPosition = shape?.attrs.armrestPosition ?? ""
 
   if (armrests) {
     armRestLeft =
-      armrestsPosition === 'L' || armrestsPosition === 'LR'
-        ? armrests.code.split(':')[1] + 'X1' // replace last symbol with 1 (left armrest)
-        : ''
+      armrestsPosition === "L" || armrestsPosition === "LR"
+        ? armrests.code.split(":")[1] + "X1" // replace last symbol with 1 (left armrest)
+        : ""
 
     armRestRight =
-      armrestsPosition === 'R' || armrestsPosition === 'LR'
-        ? armrests.code.split(':')[1] + 'X2' // replace last symbol with 2 (right armrest)
-        : ''
+      armrestsPosition === "R" || armrestsPosition === "LR"
+        ? armrests.code.split(":")[1] + "X2" // replace last symbol with 2 (right armrest)
+        : ""
 
     armrestConfig = `${armRestLeft}${armRestRight}`
   }
 
   // baldam turintiems abu porankius (baigiasi penketu) reikia paduoti abu defaultinius porankiu id
   if (armrestConfig.length === 0) {
-    if (item.code?.[item.code?.length - 1] === '5') {
-      armrestConfig = 'AXXXXXAXXXXX'
+    if (item.code?.[item.code?.length - 1] === "5") {
+      armrestConfig = "AXXXXXAXXXXX"
     } else {
-      armrestConfig = 'AXXXXX'
+      armrestConfig = "AXXXXX"
     }
   }
 
   // get armrest design from metadata
-  let frameDesign = 'XX'
+  let frameDesign = "XX"
 
   try {
-    frameDesign = armrests?.metadata?.frame_design ?? 'XX'
+    frameDesign = armrests?.metadata?.frame_design ?? "XX"
   } catch (e) {
-    console.error('Error parsing armrest metadata', e)
+    console.error("Error parsing armrest metadata", e)
   }
 
   const getSelectedComponent = (groupCode: string) =>
     withGroupNames.find((group: any) => group?.groupCode === groupCode)
 
   const getSelectedComponentMulti = (groupCode: string) =>
-    withGroupNames.filter((group: any) => group?.groupCode?.startsWith(groupCode))
+    withGroupNames.filter((group: any) =>
+      group?.groupCode?.startsWith(groupCode)
+    )
 
   const getSelectedCode = (groupCode: string) =>
     getSelectedComponent(groupCode)?.code
 
-  const itemCategory = item.code?.split('-')[0]
+  const itemCategory = item.code?.split("-")[0]
 
   // --- SHOOTING ---
   let shootingOrig = getSelectedCode(SHOOTING_CODE)
   let shooting = shootingOrig
 
-  if (shooting !== '0') {
+  if (shooting !== "0") {
     if (
-      (itemCategory === '51' && item.code.endsWith('5')) ||
-      itemCategory === '53' ||
-      itemCategory === '54' ||
-      itemCategory === '56'
+      (itemCategory === "51" && item.code.endsWith("5")) ||
+      itemCategory === "53" ||
+      itemCategory === "54" ||
+      itemCategory === "56"
     ) {
-      shooting = '1'
-    } else if (itemCategory === '91') {
-      shooting = '0'
+      shooting = "1"
+    } else if (itemCategory === "91") {
+      shooting = "0"
     } else {
-      shooting = '2'
+      shooting = "2"
     }
   }
 
-  if (itemCategory === '57') {
-    shooting = '0' // no shooting for matrasses
+  if (itemCategory === "57") {
+    shooting = "0" // no shooting for matrasses
   }
 
   // Hnadling cases when module has only one shooting code, like 51-NEWPORT-B095X3, that has only one shooting code: 2
@@ -151,12 +150,12 @@ const getSingleComponentConfigString = (
   // ---
   const getConstrtainsValue = (propertyvalue: string, armrest: string) => {
     if (!propertyvalue) return null
-    if (typeof propertyvalue === 'string') {
+    if (typeof propertyvalue === "string") {
       return propertyvalue
-    } else if (typeof propertyvalue === 'object') {
+    } else if (typeof propertyvalue === "object") {
       const keys = Object.keys(propertyvalue)
       const values = Object.values(propertyvalue)
-      const index = keys.findIndex(key => key === armrest)
+      const index = keys.findIndex((key) => key === armrest)
 
       if (index !== -1) {
         return values[index]
@@ -164,7 +163,7 @@ const getSingleComponentConfigString = (
     }
   }
 
-  let designComfort = getSelectedCode(DESIGN_COMFORT)?.split(':')?.[1]
+  let designComfort = getSelectedCode(DESIGN_COMFORT)?.split(":")?.[1]
 
   if (item.metadata) {
     designComfort =
@@ -177,24 +176,24 @@ const getSingleComponentConfigString = (
   let sittingCushionComfort = designComfort?.[1]
   let backCushionDesign = designComfort?.[3]
   let backCushionComfort = designComfort?.[4]
-  if (itemCategory === '57') {
+  if (itemCategory === "57") {
     // For Matrasses
-    backCushionDesign = 'X'
-    backCushionComfort = 'X'
+    backCushionDesign = "X"
+    backCushionComfort = "X"
     // sittingCushionDesign = 'X'
     // sittingCushionComfort = 'X'
   }
 
   // --- LEGS ---
-  let leg = getSelectedCode(LEGS_CODE) ?? '000'
+  let leg = getSelectedCode(LEGS_CODE) ?? "000"
   // if module code ends with 0, then it is a middle frame (corner, seater, etc.)
   const isComponentWithoutArmerst =
-    item.code?.endsWith('0') ||
-    item.code?.endsWith('1') ||
-    item.code?.endsWith('2')
+    item.code?.endsWith("0") ||
+    item.code?.endsWith("1") ||
+    item.code?.endsWith("2")
 
   const legForArmrest = additionalComponents?.find((c: any) =>
-    c.groupCode.startsWith(LEGS_CODE + '-' + item.code)
+    c.groupCode.startsWith(LEGS_CODE + "-" + item.code)
   )
   if (legForArmrest) {
     leg = legForArmrest.code
@@ -209,12 +208,12 @@ const getSingleComponentConfigString = (
     let additionalLeg
 
     if (legName) {
-      const nameParts = legName.split(' ')
+      const nameParts = legName.split(" ")
       const legHeight = nameParts[0]
       const legNumber = nameParts[1]
 
       // cut off two first elements and join the rest
-      const legColor = nameParts.slice(2).join(' ')
+      const legColor = nameParts.slice(2).join(" ")
 
       //filter out module legs that are same height and color
       const matchingColorAndHeighLegs = item.metadata.additionalLegs?.filter(
@@ -267,21 +266,21 @@ const getSingleComponentConfigString = (
 
   // get logo name
   let logoComponent = getSelectedComponent(LOGOS_CODE)
-  let nologoCode = '0'
+  let nologoCode = "0"
   // Additional exeptions for logo codes, when USA or CAN logos are selected, no logo code should be not 0 but 21 or 23
-  if (logoComponent?.code === '20' || logoComponent?.code === '21') {
+  if (logoComponent?.code === "20" || logoComponent?.code === "21") {
     //USA+VIlmers
-    nologoCode = '21'
+    nologoCode = "21"
   }
-  if (logoComponent?.code === '22' || logoComponent?.code === '23') {
+  if (logoComponent?.code === "22" || logoComponent?.code === "23") {
     //CAN+Vilmers
-    nologoCode = '23'
+    nologoCode = "23"
   }
 
-  const logo = containsLogo ? getSelectedCode(LOGOS_CODE) ?? '0' : nologoCode
+  const logo = containsLogo ? getSelectedCode(LOGOS_CODE) ?? "0" : nologoCode
   const logoName = getProfileFromLanguage(
     logoComponent?.additional_component_profiles,
-    'lt'
+    "lt"
   )?.name
 
   //get thread colors // we need at least two colors. event they are 0|0
@@ -294,11 +293,11 @@ const getSingleComponentConfigString = (
   )
 
   if (threads_colors.length === 0) {
-    threads_colors.push('0')
-    threads_colors.push('0')
+    threads_colors.push("0")
+    threads_colors.push("0")
   }
   if (threads_colors.length === 1) {
-    threads_colors.push('0')
+    threads_colors.push("0")
   }
 
   // module name for generic models
@@ -352,33 +351,33 @@ const getSingleComponentConfigString = (
     fabricCombination: fabricCombination?.code,
   }
 
-  let fabricColors = ''
+  let fabricColors = ""
   c.fabrics.map((f: any, i: number) => {
     fabricColors += `${f.fabric}-${f.fabricColor}`
     if (i < c.fabrics.length - 1) {
-      fabricColors += '|'
+      fabricColors += "|"
     }
   })
   let configuration
-  if (c?.moduleCode?.startsWith('9')) {
-    configuration = ''
+  if (c?.moduleCode?.startsWith("9")) {
+    configuration = ""
   } else {
     configuration =
       `${c.armrestConfig}` +
       `.${c.sittingCushionDesign}${c.sittingCushionComfort}.${c.backCushionDesign}${c.backCushionComfort}` +
       `.${c.frameDesign}.${c.shooting}.${
         c.fabricCombination
-      }.${fabricColors}.${c.threads_colors.join('|')}` +
+      }.${fabricColors}.${c.threads_colors.join("|")}` +
       `.${c.logo}.${c.leg}.${c.direction}`
   }
   return { ...c, configuration }
 }
 
 const hasLeftArmrest = (attrs: any) => {
-  return attrs.armrestPosition?.includes('L')
+  return attrs.armrestPosition?.includes("L")
 }
 const hasRightArmrest = (attrs: any) => {
-  return attrs.armrestPosition?.includes('R')
+  return attrs.armrestPosition?.includes("R")
 }
 
 export const getConfigString = ({
@@ -403,7 +402,7 @@ export const getConfigString = ({
   let setId = 1
   // console.log('getConfigString', product)
 
-  if (product.advanced_product.advanced_product_type === 'SOFA') {
+  if (product.advanced_product.advanced_product_type === "SOFA") {
     for (const [i, combination = []] of sofaCombinations.entries() ?? []) {
       const newSet: any[] = []
       const mudulesCount = Object.entries(combination).length
@@ -416,7 +415,9 @@ export const getConfigString = ({
       // Jeigu klientas užsakytų nepilną kombinaciją/set'ą, reiktų logo dėti tik ant porankio, vadinasi tik ant X3 arba X4 modulio,
       // jei set'as susidarytų tik iš modulių be porankio X0 - logo nededame (būna atvejų kai pasipildo turimą kombinaciją arba baldas visada yra baigtais šonais ir galima sakytis kombinacijas be porankių)
       const shapes = Object.values(combination) as any
-      const shapesLogos = (Object.values(combination) as any).map((_s: any) => false)
+      const shapesLogos = (Object.values(combination) as any).map(
+        (_s: any) => false
+      )
 
       if (hasLeftArmrest(shapes[0]?.attrs)) {
         shapesLogos[0] = true
@@ -453,14 +454,14 @@ export const getConfigString = ({
           (p: any) => p.shape === item.code
         )?.price
 
-        const categoryCode = item.code?.split('-')[0]
+        const categoryCode = item.code?.split("-")[0]
 
         let isLogoModule = shapesLogos[j]
 
         if (
-          (categoryCode === '51' && item.code.endsWith('5')) ||
-          categoryCode === '53' ||
-          categoryCode === '54'
+          (categoryCode === "51" && item.code.endsWith("5")) ||
+          categoryCode === "53" ||
+          categoryCode === "54"
         ) {
           isLogoModule = true
         }
@@ -482,7 +483,7 @@ export const getConfigString = ({
       sets.push(newSet)
     }
   } else if (
-    product.advanced_product.advanced_product_type === 'OTHER_WITH_FABRICS'
+    product.advanced_product.advanced_product_type === "OTHER_WITH_FABRICS"
   ) {
     const newSet: any[] = []
 
@@ -490,6 +491,8 @@ export const getConfigString = ({
     const modelComponent = additionalComponents.find(
       (component: any) => component.groupCode === MODEL_CODE
     )
+
+    console.log("model", modelComponent)
 
     let price = getCompoentPrice(modelComponent, fabrics, pricelists)
 
@@ -511,14 +514,14 @@ export const getConfigString = ({
     const mattressCover = additionalComponents.find(
       (component: any) => component.groupCode === MATTRESS_COVER
     )
-    if (mattressCover && mattressCover.code !== '0') {
+    if (mattressCover && mattressCover.code !== "0") {
       const price = getCompoentPrice(mattressCover, fabrics, pricelists)
       const mattressCoverConfig = getSingleComponentConfigString(
         product,
         fabrics,
         additionalComponents.map((component: any) => ({
           ...component,
-          code: component.groupCode === LEGS_CODE ? '000' : component.code,
+          code: component.groupCode === LEGS_CODE ? "000" : component.code,
         })),
         fabricCombination,
         setId,
@@ -533,7 +536,7 @@ export const getConfigString = ({
     )
 
     // MATTRESS ========================
-    if (mattress && mattress.code !== '0') {
+    if (mattress && mattress.code !== "0") {
       setId += 1
       const price = getCompoentPrice(mattress, fabrics, pricelists)
       const mattressConfig = getSingleComponentConfigString(
@@ -541,7 +544,7 @@ export const getConfigString = ({
         fabrics,
         additionalComponents.map((component: any) => ({
           ...component,
-          code: component.groupCode === LEGS_CODE ? '000' : component.code,
+          code: component.groupCode === LEGS_CODE ? "000" : component.code,
         })),
         fabricCombination,
         setId,
@@ -556,7 +559,7 @@ export const getConfigString = ({
     )
 
     // TOP MATTRESS ========================
-    if (topMattress && topMattress.code !== '0') {
+    if (topMattress && topMattress.code !== "0") {
       setId += 1
       const price = getCompoentPrice(topMattress, fabrics, pricelists)
       const topMattressConfig = getSingleComponentConfigString(
@@ -564,7 +567,7 @@ export const getConfigString = ({
         fabrics,
         additionalComponents.map((component: any) => ({
           ...component,
-          code: component.groupCode === LEGS_CODE ? '000' : component.code,
+          code: component.groupCode === LEGS_CODE ? "000" : component.code,
         })),
         fabricCombination,
         setId,
@@ -576,7 +579,7 @@ export const getConfigString = ({
     }
 
     sets.push(newSet)
-  } else if (product.advanced_product?.advanced_product_type === 'OTHER') {
+  } else if (product.advanced_product?.advanced_product_type === "OTHER") {
     const newSet: any[] = []
 
     // find model component
@@ -600,7 +603,7 @@ export const getConfigString = ({
     sets.push(newSet)
   } else {
     console.warn(
-      '[vilmers] Unknown advanced_product_type',
+      "[vilmers] Unknown advanced_product_type",
       product.advanced_product?.advanced_product_type
     )
   }
@@ -642,8 +645,7 @@ export function buildIntegrationConfiguration(
     ...state.productData,
     advanced_product: {
       ...state.productData.advanced_product,
-      additional_component_groups:
-        state.productData.manufacturer?.additional_component_groups ?? [],
+      additional_component_groups: state.additionalComponentGroups ?? [],
     },
   }
 

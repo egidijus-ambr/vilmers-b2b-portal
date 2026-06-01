@@ -65,23 +65,15 @@ export function useConfiguratorData(
 
         dispatch({ type: "SET_PRODUCT_DATA", payload: data })
 
-        // Initialize additional component groups
-        const manufacturerGroups = data.manufacturer?.additional_component_groups ?? []
-        const productAssociations = data.advanced_product?.additional_component_to_advanced_product ?? []
-        const productGroupAssociations = data.advanced_product?.additional_component_group_to_advanced_product ?? []
+        // Initialize additional component groups from product-scoped join tables.
+        // Both arrays are already filtered to enabled=true by the query WHERE clause.
+        const groupAssociations = data.advanced_product?.additional_component_group_to_advanced_product ?? []
+        const componentAssociations = data.advanced_product?.additional_component_to_advanced_product ?? []
 
-        // Filter to only groups associated with this product
-        const enabledGroupIds = new Set(
-          productGroupAssociations.map((a: any) => a.additional_component_group?.id).filter(Boolean)
-        )
-        const filteredManufacturerGroups = enabledGroupIds.size > 0
-          ? manufacturerGroups.filter((g: any) => enabledGroupIds.has(g.id))
-          : manufacturerGroups
-
-        if (filteredManufacturerGroups.length > 0) {
+        if (groupAssociations.length > 0) {
           const mergedGroups = mergeComponentGroups(
-            filteredManufacturerGroups,
-            productAssociations,
+            groupAssociations,
+            componentAssociations,
             priceListId
           )
           dispatch({ type: "SET_COMPONENT_GROUPS", payload: mergedGroups })

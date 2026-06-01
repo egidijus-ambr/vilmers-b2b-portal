@@ -25,7 +25,8 @@ function mapFurnisystemsProduct(
   container: FurnisystemsProductDetail,
   languageCode: string,
   rootCategory?: CategoryData,
-  showAllProducts: boolean = false
+  showAllProducts: boolean = false,
+  handle: string = ""
 ): ProductPageData {
   const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
 
@@ -174,6 +175,7 @@ function mapFurnisystemsProduct(
     isAdvancedProduct: isAdvanced,
     productContainerId: container.id,
     showAllProducts,
+    handle,
   }
 }
 
@@ -242,7 +244,7 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const rootCategory = menuCategories.find((c) => c.is_root_category)
-  const productData = mapFurnisystemsProduct(product, languageCode, rootCategory, showAllProducts)
+  const productData = mapFurnisystemsProduct(product, languageCode, rootCategory, showAllProducts, handle)
 
   return <ProductTemplate product={productData} />
 }
