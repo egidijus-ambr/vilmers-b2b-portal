@@ -17,6 +17,8 @@ import {
   canShowAllProductsToggle,
   getShowAllProductsCookie,
 } from "@lib/data/show-all-products"
+import { getGoToConfiguratorActive } from "@lib/data/go-to-configurator"
+import { GoToConfiguratorProvider } from "@lib/context/go-to-configurator-context"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -58,26 +60,35 @@ export default async function PageLayout({
   // Fetch menu categories for navigation
   const categories = await listMenuCategories(validLanguage)
 
-  const [canShowAllProducts, showAllProductsActive] = await Promise.all([
-    canShowAllProductsToggle(),
-    getShowAllProductsCookie(),
-  ])
+  const [canShowAllProducts, showAllProductsActive, goToConfiguratorActive] =
+    await Promise.all([
+      canShowAllProductsToggle(),
+      getShowAllProductsCookie(),
+      getGoToConfiguratorActive(),
+    ])
+
+  const canShowGoToConfigurator =
+    canShowAllProducts &&
+    process.env.NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED === "true"
 
   return (
     <CustomerProvider customer={customer}>
       <ActingCustomerProvider initialActingCustomer={acting} isImpersonatedByManager={impersonated}>
         <ShopSettingsProvider initialShopSettings={shopSettings}>
           <CartProvider>
-            <div className="flex flex-col min-h-screen">
-              <Nav
-                customer={customer}
-                categories={categories}
-                canShowAllProducts={canShowAllProducts}
-                showAllProductsActive={showAllProductsActive}
-              />
-              <main className="flex-1">{children}</main>
-              <Footer language={validLanguage} />
-            </div>
+            <GoToConfiguratorProvider initialActive={goToConfiguratorActive}>
+              <div className="flex flex-col min-h-screen">
+                <Nav
+                  customer={customer}
+                  categories={categories}
+                  canShowAllProducts={canShowAllProducts}
+                  showAllProductsActive={showAllProductsActive}
+                  canShowGoToConfigurator={canShowGoToConfigurator}
+                />
+                <main className="flex-1">{children}</main>
+                <Footer language={validLanguage} />
+              </div>
+            </GoToConfiguratorProvider>
             {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
           </CartProvider>
         </ShopSettingsProvider>

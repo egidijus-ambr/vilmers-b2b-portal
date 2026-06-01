@@ -9,6 +9,7 @@ import PdfCatalogueButton from "@modules/categories/components/pdf-catalogue-but
 import SelectionCheckbox from "@modules/categories/components/catalog-builder/selection-checkbox"
 import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
 import { useCustomer } from "@lib/context/customer-context"
+import { useGoToConfigurator } from "@lib/context/go-to-configurator-context"
 import { getCustomerMarket } from "@lib/util/customer-market"
 
 function extractProductDisplayData(
@@ -42,6 +43,7 @@ function extractProductDisplayData(
         language,
       }),
       isFromPrice: true,
+      isAdvanced,
       categoryName,
     }
   }
@@ -56,6 +58,7 @@ function extractProductDisplayData(
       image: null,
       priceLabel: "",
       isFromPrice: false,
+      isAdvanced,
       categoryName,
     }
 
@@ -82,6 +85,7 @@ function extractProductDisplayData(
     image: image?.src_md || image?.src || null,
     priceLabel: formatPrice({ amount: price, language }),
     isFromPrice: false,
+    isAdvanced,
     categoryName,
   }
 }
@@ -99,9 +103,10 @@ export default function B2BProductCard({
   cardClassName,
   imageBackgroundClass,
 }: B2BProductCardProps) {
-  const { name, handle, image, priceLabel, isFromPrice, categoryName } =
+  const { name, handle, image, priceLabel, isFromPrice, isAdvanced, categoryName } =
     extractProductDisplayData(container, language)
 
+  const { enabled: goToConfigurator } = useGoToConfigurator()
   const catalogBuilder = useCatalogBuilder()
   const inSelectionMode = !!catalogBuilder?.selectionMode
   const hasCatalogues = (catalogBuilder?.catalogueMap[name] ?? []).length > 0
@@ -109,6 +114,16 @@ export default function B2BProductCard({
   const customerMarket = getCustomerMarket(customer)
   const catalogues = catalogBuilder?.catalogueMap[name] ?? []
   const marketCodes = Array.from(new Set(catalogues.map((c) => c.market)))
+
+  const configuratorEnabled =
+    process.env.NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED === "true"
+
+  const href =
+    inSelectionMode || !handle
+      ? null
+      : goToConfigurator && isAdvanced && configuratorEnabled
+      ? `/products/${handle}/configurator`
+      : `/products/${handle}`
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (inSelectionMode && hasCatalogues) {
@@ -135,7 +150,7 @@ export default function B2BProductCard({
       </div>
 
       <LocalizedClientLink
-        href={inSelectionMode ? null : handle ? `/products/${handle}` : null}
+        href={href}
         className="flex flex-col gap-2 no-underline"
       >
         <div

@@ -11,6 +11,7 @@ import TopBar from "@modules/layout/components/top-bar"
 import CustomerSelector from "@modules/layout/components/customer-selector"
 import ActingCustomerCallout from "@modules/layout/components/acting-customer-callout"
 import ShowAllProductsToggle from "@modules/layout/components/show-all-products-toggle"
+import GoToConfiguratorToggle from "@modules/layout/components/go-to-configurator-toggle"
 import SearchModal from "@modules/search/components/search-modal"
 import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
 import type { CategoryData } from "@lib/furnisystems-sdk"
@@ -30,9 +31,10 @@ interface NavProps {
   categories?: CategoryData[]
   canShowAllProducts: boolean
   showAllProductsActive: boolean
+  canShowGoToConfigurator: boolean
 }
 
-export default function Nav({ customer, categories, canShowAllProducts, showAllProductsActive }: NavProps) {
+export default function Nav({ customer, categories, canShowAllProducts, showAllProductsActive, canShowGoToConfigurator }: NavProps) {
   const pathname = usePathname()
   const { t, isReady } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -215,6 +217,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
           {canShowAllProducts && (
             <ShowAllProductsToggle initialChecked={showAllProductsActive} />
           )}
+          {canShowGoToConfigurator && <GoToConfiguratorToggle />}
           <CustomerSelector />
         </div>
       )}

@@ -316,7 +316,6 @@ export function getStepsForProduct(
       { ...options, customerComponentCodesForGroup: customerCodes }
     )
 
-    console.log("group", group.code, group.additional_components)
     if (validComponents.length <= 1) continue
 
     if (!stepGroups.has(stepId)) {
