@@ -334,7 +334,7 @@ const ConfiguratorContent = ({
       {/* Main content area — 2 panel layout */}
       <div className={clx("flex flex-col md:flex-row md:flex-1 gap-6", !embedded && "md:overflow-hidden px-4 md:px-6")}>
         {/* Left panel: Shape selection + canvas */}
-        <div className={clx("w-full md:w-2/3 md:pr-2 py-6", !embedded && "md:overflow-y-auto")}>
+        <div className={clx("w-full md:w-2/3 md:pr-2 pt-6 pb-2 md:pb-6", !embedded && "md:overflow-y-auto")}>
           {isSofa ? (
             <SofaShapeSection languageCode={languageCode} showAllProducts={showAllProducts} />
           ) : (
@@ -351,11 +351,14 @@ const ConfiguratorContent = ({
               ))}
             </div>
           )}
-          <ConfigurationSummary languageCode={languageCode} />
+          {/* Desktop only — mobile copy is rendered at the bottom of the outer container */}
+          <div className="hidden md:block">
+            <ConfigurationSummary languageCode={languageCode} />
+          </div>
         </div>
 
         {/* Right panel: Stepper + Step Content */}
-        <div className={clx("w-full md:w-1/3 md:pl-2 space-y-6 pt-6", !embedded && "md:overflow-y-auto", embedded && "pb-20")}>
+        <div className={clx("w-full md:w-1/3 md:pl-2 space-y-6 pt-2 md:pt-6", !embedded && "md:overflow-y-auto", embedded && "pb-20")}>
           {/* Stepper navigation */}
           {steps.length > 1 && (
             <ConfiguratorStepper
@@ -517,6 +520,11 @@ const ConfiguratorContent = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Mobile only — Selected Options summary at the bottom, below stepper/content */}
+      <div className="md:hidden px-4">
+        <ConfigurationSummary languageCode={languageCode} />
       </div>
 
       {toast && (

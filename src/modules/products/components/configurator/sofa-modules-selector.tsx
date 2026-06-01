@@ -148,7 +148,7 @@ const SofaModulesSelector = ({
         className="w-full flex gap-3 pr-4 border border-gray-200 hover:border-gray-400 transition-colors text-left"
       >
         {/* Label block */}
-        <div className="w-48 shrink-0 h-28 flex flex-col justify-end pb-2 pl-3 border-r border-gray-200 bg-gold-20">
+        <div className="w-[134px] small:w-48 shrink-0 h-[78px] small:h-28 flex flex-col justify-end pb-2 pl-3 border-r border-gray-200 bg-gold-20">
           <p className="text-xs font-semibold text-gold uppercase tracking-wide mb-0.5">
             Sofa Modules
           </p>
@@ -158,7 +158,7 @@ const SofaModulesSelector = ({
         </div>
 
         {/* Thumbnails row with fade-out on right edge */}
-        <div className="relative flex-1 min-w-0 overflow-hidden h-28 flex items-center">
+        <div className="relative flex-1 min-w-0 overflow-hidden h-[78px] small:h-28 flex items-center">
           {/* Fade-out gradient overlay */}
           <div
             className="absolute inset-y-0 right-0 w-32 pointer-events-none z-10"
@@ -173,10 +173,10 @@ const SofaModulesSelector = ({
             {previewForms.map((form) => (
               <div
                 key={form.id}
-                className="w-20 shrink-0 flex flex-col items-center gap-0.5"
+                className="w-[56px] small:w-20 shrink-0 flex flex-col items-center gap-0.5"
                 title={form.name}
               >
-                <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
+                <div className="w-[56px] h-[56px] small:w-20 small:h-20 flex items-center justify-center overflow-hidden">
                   <SelectorPreview
                     sofaForm={form}
                     armrestWidthOverride={armrestWidthOverride}

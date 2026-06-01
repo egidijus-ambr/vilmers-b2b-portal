@@ -1,18 +1,20 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signout } from "@lib/data/customer"
 import { useTranslations, CompactLanguageSwitcher } from "@lib/i18n"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
+import type { MenuItem } from "@modules/layout/components/nav-menu-item"
 
 interface MobileMenuProps {
   customer: ExtendedStoreCustomer | null
   isOpen: boolean
   onClose: () => void
   isLoggedIn: boolean
+  navItems?: MenuItem[]
 }
 
 const MobileMenu = ({
@@ -20,10 +22,16 @@ const MobileMenu = ({
   isOpen,
   onClose,
   isLoggedIn,
+  navItems = [],
 }: MobileMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null)
   const { languageCode } = useParams() as { languageCode: string }
   const { t } = useTranslations("common")
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
+
+  const toggleItem = (id: string) => {
+    setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
 
   const handleLogout = async () => {
     await signout(languageCode)
@@ -111,67 +119,140 @@ const MobileMenu = ({
             </h2>
           </div>
 
-          {/* Menu Items */}
-          <div className="flex-1 py-4">
-            <LocalizedClientLink
-              href="/account"
-              className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-              onClick={onClose}
-              data-testid="mobile-menu-overview-link"
-            >
-              <Image
-                src="/images/profile-icon.svg"
-                alt="Profile"
-                width={20}
-                height={20}
-              />
-              <span>{t("overview")}</span>
-            </LocalizedClientLink>
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Site Navigation Items */}
+            {navItems.length > 0 && (
+              <div className="py-4">
+                {navItems.map((item) => {
+                  if (item.type === "link") {
+                    return (
+                      <LocalizedClientLink
+                        key={item.id}
+                        href={item.href}
+                        className="flex items-center px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                        onClick={onClose}
+                        data-testid={`mobile-menu-nav-${item.id}-link`}
+                      >
+                        <span>{item.label}</span>
+                      </LocalizedClientLink>
+                    )
+                  }
 
-            {/* <LocalizedClientLink
-              href="/account/profile"
-              className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-              onClick={onClose}
-              data-testid="mobile-menu-profile-link"
-            >
-              <Image
-                src="/images/profile-icon.svg"
-                alt="Profile"
-                width={20}
-                height={20}
-              />
-              <span>Profile</span>
-            </LocalizedClientLink> */}
+                  if (item.type === "dropdown" && item.dropdown) {
+                    const isExpanded = !!expandedItems[item.id]
+                    const subItems = item.dropdown.items
 
-            <LocalizedClientLink
-              href="/account/orders"
-              className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-              onClick={onClose}
-              data-testid="mobile-menu-orders-link"
-            >
-              <Image
-                src="/images/orders-icon.svg"
-                alt="Orders"
-                width={20}
-                height={20}
-              />
-              <span>{t("orders")}</span>
-            </LocalizedClientLink>
+                    return (
+                      <div key={item.id}>
+                        {/* Toggle row */}
+                        <button
+                          type="button"
+                          className="flex items-center justify-between w-full px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors text-left"
+                          onClick={() => toggleItem(item.id)}
+                          data-testid={`mobile-menu-nav-${item.id}-toggle`}
+                          aria-expanded={isExpanded}
+                        >
+                          <span>{item.label}</span>
+                          <svg
+                            className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${
+                              isExpanded ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
 
-            <LocalizedClientLink
-              href="/account/fabric-palettes"
-              className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-              onClick={onClose}
-              data-testid="mobile-menu-fabric-palettes-link"
-            >
-              <Image
-                src="/images/fabric-palettes-icon.svg"
-                alt="Fabric Palette"
-                width={20}
-                height={20}
-              />
-              <span>{t("fabric-palettes")}</span>
-            </LocalizedClientLink>
+                        {/* Expanded sub-items */}
+                        {isExpanded && subItems.length > 0 && (
+                          <div className="bg-ui-bg-subtle">
+                            {subItems.map((subItem, index) => (
+                              <LocalizedClientLink
+                                key={index}
+                                href={
+                                  typeof subItem.href === "string"
+                                    ? subItem.href
+                                    : null
+                                }
+                                className="flex items-center pl-10 pr-6 py-3 text-sm text-dark-blue hover:bg-ui-bg-base transition-colors"
+                                onClick={onClose}
+                                data-testid={`mobile-menu-nav-${item.id}-subitem-${index}`}
+                              >
+                                {subItem.label}
+                              </LocalizedClientLink>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+
+                  return null
+                })}
+              </div>
+            )}
+
+            {/* Separator between site-nav and account items */}
+            {navItems.length > 0 && (
+              <div className="border-t border-ui-border-base" />
+            )}
+
+            {/* Account Items */}
+            <div className="py-4">
+              <LocalizedClientLink
+                href="/account"
+                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                onClick={onClose}
+                data-testid="mobile-menu-overview-link"
+              >
+                <Image
+                  src="/images/profile-icon.svg"
+                  alt="Profile"
+                  width={20}
+                  height={20}
+                />
+                <span>{t("overview")}</span>
+              </LocalizedClientLink>
+
+              <LocalizedClientLink
+                href="/account/orders"
+                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                onClick={onClose}
+                data-testid="mobile-menu-orders-link"
+              >
+                <Image
+                  src="/images/orders-icon.svg"
+                  alt="Orders"
+                  width={20}
+                  height={20}
+                />
+                <span>{t("orders")}</span>
+              </LocalizedClientLink>
+
+              <LocalizedClientLink
+                href="/account/fabric-palettes"
+                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                onClick={onClose}
+                data-testid="mobile-menu-fabric-palettes-link"
+              >
+                <Image
+                  src="/images/fabric-palettes-icon.svg"
+                  alt="Fabric Palette"
+                  width={20}
+                  height={20}
+                />
+                <span>{t("fabric-palettes")}</span>
+              </LocalizedClientLink>
+            </div>
           </div>
 
           {/* Language Switcher */}

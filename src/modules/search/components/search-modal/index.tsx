@@ -128,7 +128,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       {/* Uses absolute positioning with top-[32px] to align with the header element */}
       {/* The TopBar is 36px tall, so the header (72px) starts at top-[32px] */}
       {/* This positions the search panel to start exactly where the header begins */}
-      <div className="absolute inset-x-0 top-[32px] z-50 bg-white shadow-lg">
+      <div className="absolute inset-x-0 top-0 small:top-[32px] z-50 bg-white shadow-lg">
         {/* Search input bar - same height as the nav header (72px) */}
         <div className="h-[72px] max-w-[1440px] mx-auto flex items-center px-6 gap-4 border-b border-gray-200">
           {/* Search icon */}

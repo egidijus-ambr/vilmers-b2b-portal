@@ -31,9 +31,11 @@ interface OrdersPageState {
 interface OrdersTableProps {
   /** Optional prop to show only limited number of orders (for overview page) */
   pageSize?: number
+  /** When true, hides the internal "Orders" h2 and description paragraph. Search inputs are still rendered. Used on the orders page where PageHeader already shows the title. */
+  hideTitle?: boolean
 }
 
-const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
+const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => {
   const { customer } = useCustomer()
   const { t } = useTranslations("account")
   const { language } = useI18n()
@@ -148,16 +150,18 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
   return (
     <div className="bg-white pb-6">
       {/* Header */}
-      <div className="p-4 md:p-6">
+      <div className={hideTitle ? "px-4 md:px-6 py-4" : "p-4 md:p-6"}>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between">
-          <div className="mb-4 md:mb-0">
-            <h2 className="text-xl md:text-2xl font-medium text-gray-900">
-              {t("orders")}
-            </h2>
-            <p className="text-gray-600 mt-2 max-w-md text-sm md:text-base">
-              {t("orders-description")}
-            </p>
-          </div>
+          {!hideTitle && (
+            <div className="mb-4 md:mb-0">
+              <h2 className="text-xl md:text-2xl font-medium text-gray-900">
+                {t("orders")}
+              </h2>
+              <p className="text-gray-600 mt-2 max-w-md text-sm md:text-base">
+                {t("orders-description")}
+              </p>
+            </div>
+          )}
 
           {/* Search - Hidden on mobile, shown on desktop */}
           <div className="hidden md:flex w-[368px]">
@@ -166,13 +170,146 @@ const OrdersTable = ({ pageSize = 10 }: OrdersTableProps) => {
         </div>
 
         {/* Search - Shown on mobile below description */}
-        <div className="md:hidden mt-4">
+        <div className={`md:hidden ${hideTitle ? "" : "mt-4"}`}>
           <SearchInput value={searchTerm} onChange={handleSearchChange} placeholder={t("search-placeholder")} />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto mx-4 md:mx-6 border border-zinc-300">
+      {/* Mobile card list — visible below xsmall (512px), hidden at xsmall+ */}
+      <div className="xsmall:hidden mx-4 flex flex-col gap-3">
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-dark-blue" />
+          </div>
+        ) : ordersData && orders.length === 0 ? (
+          <p className="text-center py-8 text-gray-500 text-sm">
+            {t("no-orders-found")}
+          </p>
+        ) : (
+          orders.map((order) => (
+            <div
+              key={order.id}
+              onClick={
+                isOrderDetailsEnabled
+                  ? () =>
+                      router.push(
+                        `/${languageCode}/account/orders/details/${order.id}`
+                      )
+                  : undefined
+              }
+              className={`border border-zinc-300 bg-white overflow-hidden ${
+                isOrderDetailsEnabled
+                  ? "cursor-pointer active:bg-gray-50"
+                  : ""
+              }`}
+            >
+              {/* Card header — Order ID + date */}
+              <div className="px-4 py-3 border-b border-zinc-200 flex items-start justify-between bg-gold-20">
+                <div>
+                  <div className="font-semibold text-sm text-gray-900">
+                    {order.display_id || order.id.slice(-8)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+                <StatusBadge
+                  status={order.order_status || "AWAITING_CONFIRMATION"}
+                />
+              </div>
+
+              {/* Card body — label / value rows */}
+              <div className="divide-y divide-zinc-100">
+                {/* Items */}
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">{t("items")}</span>
+                  <span className="text-sm text-dark-blue font-medium">
+                    {order.order_items_count ?? order.items?.length ?? 0}
+                  </span>
+                </div>
+
+                {/* Confirmed shipping date */}
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">
+                    {t("confirmed-delivery-date")}
+                  </span>
+                  <span className="text-sm text-dark-blue font-medium">
+                    {order.confirmed_delivery_date
+                      ? new Date(
+                          order.confirmed_delivery_date
+                        ).toLocaleDateString()
+                      : "-"}
+                  </span>
+                </div>
+
+                {/* Customer (agent) or Location (regular user) — no i18n key exists; hardcoded literal matching the table column header */}
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">
+                    {isAgent ? "Customer" : "Location"}
+                  </span>
+                  <span className="text-sm text-dark-blue font-medium text-right max-w-[55%] break-words leading-tight">
+                    {isAgent
+                      ? order.purchased_by?.name || "-"
+                      : order.purchased_subAccount?.name || "-"}
+                  </span>
+                </div>
+
+                {/* Order type */}
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">{t("type")}</span>
+                  <span className="text-sm text-dark-blue font-medium">
+                    {order.order_type
+                      ? capitalizeFirstLetter(order.order_type)
+                      : "-"}
+                  </span>
+                </div>
+
+                {/* Total amount */}
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">
+                    {t("total-price")}
+                  </span>
+                  <div
+                    className={`flex items-center gap-1 text-sm font-medium ${
+                      order.total_price_confirmed
+                        ? "text-green-700"
+                        : "text-dark-blue"
+                    }`}
+                    title={
+                      order.total_price_confirmed
+                        ? "Confirmed Price"
+                        : "Unconfirmed Price"
+                    }
+                  >
+                    {order.total_price_confirmed && (
+                      <svg
+                        className="h-4 w-4 text-green-600 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                    {formatPrice({
+                      amount:
+                        order.total_price_confirmed || order.total_price,
+                      currency_code: order.currency_code || "EUR",
+                      language,
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Table — hidden below xsmall (512px), visible at xsmall+ */}
+      <div className="hidden xsmall:block overflow-x-auto mx-4 md:mx-6 border border-zinc-300">
         <table className="min-w-full divide-y divide-gray-200">
           <TableHeader>
             <TableHeaderCell className="px-3 md:px-6">

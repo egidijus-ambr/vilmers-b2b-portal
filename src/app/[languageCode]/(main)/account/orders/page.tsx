@@ -30,8 +30,8 @@ export default function OrdersPage() {
         description={t("orders-description")}
         breadcrumbItems={breadcrumbItems}
       />
-      <PageContent>
-        <OrdersTable />
+      <PageContent noPaddingX>
+        <OrdersTable hideTitle />
       </PageContent>
     </>
   )

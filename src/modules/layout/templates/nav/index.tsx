@@ -22,6 +22,7 @@ import {
 import { useSessionValidation } from "@lib/hooks/use-session-validation"
 import { useCart } from "@lib/context/cart-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
+import Cart from "@modules/common/icons/cart"
 
 // Import NavMenu normally for SSR
 import NavMenu from "@modules/layout/components/nav-menu"
@@ -108,8 +109,19 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
           }`}
         >
           <div className="flex-1 basis-0 h-full flex items-center">
-            {/* Back Button */}
-            <BackButton isHomePage={isTransparent} className="mr-3" />
+            {/* Mobile Menu Button — mobile only, leftmost */}
+            <div className="flex small:hidden items-center h-full">
+              <MobileMenuButton
+                isOpen={isMobileMenuOpen}
+                onClick={handleMobileMenuToggle}
+                isHomePage={isTransparent}
+              />
+            </div>
+
+            {/* Back Button — desktop only */}
+            <div className="hidden small:flex items-center h-full mr-3">
+              <BackButton isHomePage={isTransparent} />
+            </div>
 
             {/* Desktop Navigation Menu */}
             <div className="hidden small:flex items-center h-full">
@@ -133,16 +145,16 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
               <img
                 src="/images/logo.svg"
                 alt="Store Logo"
-                className={`h-6 transition-[filter] duration-200 ${isTransparent ? "brightness-0 invert" : ""}`}
+                className={`h-5 small:h-6 transition-[filter] duration-200 ${isTransparent ? "brightness-0 invert" : ""}`}
               />
             </LocalizedClientLink>
           </div>
 
-          <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
-            {/* Desktop Search Button */}
+          <div className="flex items-center gap-x-2 small:gap-x-6 h-full flex-1 basis-0 justify-end">
+            {/* Search Button */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className={`hidden small:flex items-center justify-center w-10 h-10 transition-colors ${
+              className={`flex items-center justify-center w-8 h-8 small:w-10 small:h-10 transition-colors ${
                 isTransparent ? "text-white hover:text-white/80" : "text-dark-blue hover:text-dark-blue/80"
               }`}
               aria-label="Search products"
@@ -163,16 +175,19 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
               </svg>
             </button>
 
-            {/* Desktop Cart Button */}
+            {/* Cart Button */}
             {isLoggedIn && (
               <LocalizedClientLink
                 href="/cart"
-                className={`hidden small:flex items-center gap-x-2 text-base font-medium font-['Montserrat'] transition-colors ${
+                className={`flex items-center gap-x-2 text-base font-medium font-['Montserrat'] transition-colors ${
                   isTransparent ? "text-white hover:text-white/80" : "text-dark-blue hover:text-dark-blue/80"
                 }`}
                 data-testid="nav-cart-link"
               >
-                <span>Cart</span>
+                {/* Icon: visible on mobile, hidden on desktop */}
+                <Cart className="h-5 w-5 small:hidden" />
+                {/* Text label: hidden on mobile, visible on desktop */}
+                <span className="hidden small:inline">Cart</span>
                 {totalCartItems > 0 && (
                   <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-dark-blue text-white text-xs font-semibold leading-none">
                     {totalCartItems}
@@ -198,14 +213,6 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="flex small:hidden items-center h-full">
-              <MobileMenuButton
-                isOpen={isMobileMenuOpen}
-                onClick={handleMobileMenuToggle}
-                isHomePage={isTransparent}
-              />
-            </div>
           </div>
         </nav>
       </header>
@@ -228,6 +235,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
         isOpen={isMobileMenuOpen}
         onClose={handleMobileMenuClose}
         isLoggedIn={isLoggedIn}
+        navItems={menuItems}
       />
 
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />

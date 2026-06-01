@@ -71,36 +71,38 @@ export default async function CategoryProductGrid({
   return (
     <div data-testid="category-product-grid">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-gray-600">
+        <p className="hidden xsmall:block text-sm text-gray-600">
           {t("products-count", { count: totalCount })}
         </p>
-        <div className="flex items-center gap-x-3">
+        <div className="flex flex-col items-end gap-3 ml-auto xsmall:flex-row xsmall:items-center xsmall:ml-0">
           <CatalogBuilderToolbar />
-          <ProductFilterModal
-            initialFacets={
-              filterFacets || {
-                attributeGroups: [],
-                childCategories: [],
-                totalCount,
+          <div className="flex items-center gap-x-3">
+            <ProductFilterModal
+              initialFacets={
+                filterFacets || {
+                  attributeGroups: [],
+                  childCategories: [],
+                  totalCount,
+                }
               }
-            }
-            language={language}
-            labels={{
-              filter: t("filter"),
-              clearAll: t("clear-filters"),
-              showResults: t("show-results"),
-              category: t("category"),
-            }}
-            currentCategoryId={currentCategoryId}
-          />
-          <CategorySortSelect
-            labels={{
-              "sort-name-asc": t("sort-name-asc"),
-              "sort-name-desc": t("sort-name-desc"),
-              "sort-newest": t("sort-newest"),
-              "sort-oldest": t("sort-oldest"),
-            }}
-          />
+              language={language}
+              labels={{
+                filter: t("filter"),
+                clearAll: t("clear-filters"),
+                showResults: t("show-results"),
+                category: t("category"),
+              }}
+              currentCategoryId={currentCategoryId}
+            />
+            <CategorySortSelect
+              labels={{
+                "sort-name-asc": t("sort-name-asc"),
+                "sort-name-desc": t("sort-name-desc"),
+                "sort-newest": t("sort-newest"),
+                "sort-oldest": t("sort-oldest"),
+              }}
+            />
+          </div>
         </div>
       </div>
       {products.length === 0 ? (

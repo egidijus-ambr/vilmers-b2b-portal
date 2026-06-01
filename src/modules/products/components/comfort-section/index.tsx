@@ -28,11 +28,11 @@ export default function ComfortSection({ data }: Props) {
             {group.title && (
               <h3 className=" text-dark-blue text-base mb-4">{group.title}</h3>
             )}
-            <div className="grid grid-cols-1 small:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xsmall:grid-cols-2 gap-6">
               {group.items.map((item, i) => (
-                <div key={i} className="flex flex-row gap-6 items-start">
+                <div key={i} className="flex flex-col small:flex-row gap-6 items-start">
                   {item.imageUrl && (
-                    <div className="w-[323px] min-w-[323px] bg-gray-50 rounded">
+                    <div className="w-full small:w-2/5 small:max-w-[240px] bg-gray-50 rounded">
                       <Image
                         src={item.imageUrl}
                         alt={item.name}
@@ -42,7 +42,7 @@ export default function ComfortSection({ data }: Props) {
                       />
                     </div>
                   )}
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-dark-blue mb-3">
                       {item.name}
                     </h4>

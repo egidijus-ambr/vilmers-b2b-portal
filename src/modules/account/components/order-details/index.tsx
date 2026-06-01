@@ -213,78 +213,142 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
           if (activeStepIndex === -1) activeStepIndex = 0
 
           return (
-            <div className="px-2 sm:px-4 pb-4">
-              <div className="relative flex items-center justify-between">
-                {/* Background line */}
-                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] bg-gray-200" />
-                {/* Active line */}
-                <div
-                  className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] bg-gold transition-all"
-                  style={{
-                    width: `${(activeStepIndex / (steps.length - 1)) * 100}%`,
-                  }}
-                />
-                {/* Step dots */}
+            <>
+              {/* Horizontal layout — visible at xsmall (512px) and up */}
+              <div className="hidden xsmall:block px-2 sm:px-4 pb-4">
+                <div className="relative flex items-center justify-between">
+                  {/* Background line */}
+                  <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] bg-gray-200" />
+                  {/* Active line */}
+                  <div
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] bg-gold transition-all"
+                    style={{
+                      width: `${(activeStepIndex / (steps.length - 1)) * 100}%`,
+                    }}
+                  />
+                  {/* Step dots */}
+                  {steps.map((step, index) => {
+                    const isCompleted = index < activeStepIndex
+                    const isActive = index === activeStepIndex
+                    return (
+                      <div
+                        key={step.key}
+                        className="relative z-10 flex flex-col items-center"
+                      >
+                        {isCompleted ? (
+                          <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 14 14"
+                              fill="none"
+                            >
+                              <path
+                                d="M3 7L6 10L11 4"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </div>
+                        ) : isActive ? (
+                          <div className="w-6 h-6 rounded-full bg-gold" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-gray-300" />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                {/* Labels */}
+                <div className="flex justify-between mt-3">
+                  {steps.map((step, index) => {
+                    const isCompleted = index < activeStepIndex
+                    const isActive = index === activeStepIndex
+                    return (
+                      <span
+                        key={step.key}
+                        className={`text-xs sm:text-sm ${
+                          isCompleted || isActive
+                            ? "text-dark-blue font-medium"
+                            : "text-gray-400"
+                        } ${
+                          index === 0
+                            ? "text-left"
+                            : index === steps.length - 1
+                            ? "text-right"
+                            : "text-center"
+                        }`}
+                      >
+                        {t(step.key)}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Vertical layout — visible below xsmall (< 512px) */}
+              <div className="flex flex-col xsmall:hidden px-2 pb-4">
                 {steps.map((step, index) => {
                   const isCompleted = index < activeStepIndex
                   const isActive = index === activeStepIndex
+                  const isLast = index === steps.length - 1
                   return (
-                    <div
-                      key={step.key}
-                      className="relative z-10 flex flex-col items-center"
-                    >
-                      {isCompleted ? (
-                        <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center">
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                          >
-                            <path
-                              d="M3 7L6 10L11 4"
-                              stroke="white"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                    <div key={step.key} className="flex items-stretch">
+                      {/* Circle column with vertical connector */}
+                      <div className="flex flex-col items-center w-6 shrink-0">
+                        {/* Circle */}
+                        <div className="flex items-center justify-center w-6 h-6">
+                          {isCompleted ? (
+                            <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center">
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                              >
+                                <path
+                                  d="M3 7L6 10L11 4"
+                                  stroke="white"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </div>
+                          ) : isActive ? (
+                            <div className="w-6 h-6 rounded-full bg-gold" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-gray-300" />
+                          )}
                         </div>
-                      ) : isActive ? (
-                        <div className="w-6 h-6 rounded-full bg-gold" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-gray-300" />
-                      )}
+                        {/* Vertical connector line below the circle (except for last step) */}
+                        {!isLast && (
+                          <div
+                            className={`w-[3px] flex-1 min-h-[24px] ${
+                              isCompleted ? "bg-gold" : "bg-gray-200"
+                            }`}
+                          />
+                        )}
+                      </div>
+                      {/* Label to the right */}
+                      <span
+                        className={`ml-3 text-sm pb-6 ${
+                          isLast ? "pb-0" : ""
+                        } ${
+                          isCompleted || isActive
+                            ? "text-dark-blue font-medium"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {t(step.key)}
+                      </span>
                     </div>
                   )
                 })}
               </div>
-              {/* Labels */}
-              <div className="flex justify-between mt-3">
-                {steps.map((step, index) => {
-                  const isCompleted = index < activeStepIndex
-                  const isActive = index === activeStepIndex
-                  return (
-                    <span
-                      key={step.key}
-                      className={`text-xs sm:text-sm ${
-                        isCompleted || isActive
-                          ? "text-dark-blue font-medium"
-                          : "text-gray-400"
-                      } ${
-                        index === 0
-                          ? "text-left"
-                          : index === steps.length - 1
-                          ? "text-right"
-                          : "text-center"
-                      }`}
-                    >
-                      {t(step.key)}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
+            </>
           )
         })()}
       </div>
