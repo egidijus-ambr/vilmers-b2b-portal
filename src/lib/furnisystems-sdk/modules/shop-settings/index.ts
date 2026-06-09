@@ -1,6 +1,7 @@
 import { gql } from "@apollo/client"
 import { GraphQLClient } from "../../client"
 import { ShopSetting, ShopSettingsResponse } from "./types"
+import { normalizeLanguage } from "../../../i18n/config"
 
 export const APP_SHOP_SETTINGS = gql`
   query APP_SHOP_SETTINGS($language: Language) {
@@ -104,12 +105,13 @@ export class ShopSettingsModule {
   constructor(private client: GraphQLClient) {}
 
   async getShopSettings(language?: string): Promise<ShopSetting | null> {
+    const lang = normalizeLanguage(language)
     try {
       const response = await this.client.query<ShopSettingsResponse>(
         APP_SHOP_SETTINGS,
         {
           variables: {
-            ...(language ? { language: language.toLowerCase() } : {}),
+            language: lang,
           },
           fetchPolicy: "cache-first", // Use cache for shop settings as they don't change often
           errorPolicy: "all", // Return partial data even if there are errors

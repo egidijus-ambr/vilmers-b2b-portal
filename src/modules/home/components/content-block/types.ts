@@ -1,4 +1,7 @@
 import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
+import type { LinkPageAncestor } from "@lib/furnisystems-sdk/modules/shop-settings/types"
+
+export type { LinkPageAncestor }
 
 export type ContentBlockType =
   | "text_and_image"
@@ -11,6 +14,7 @@ export type ContentBlockType =
   | "photo_links"
   | "category_tiles"
   | "product_grid"
+  | "page_grid"
 
 export type ContentBlockStyle =
   | "1_column_title_top"
@@ -61,6 +65,13 @@ export interface CategoryTileItem {
   }[]
 }
 
+export interface GridPage {
+  id: string
+  page_profiles: { slug: string; title: string; language: string }[]
+  hero_image: { src: string } | null
+  ancestors?: LinkPageAncestor[] | null
+}
+
 export interface ContentBlockData {
   id: string
   type: ContentBlockType
@@ -93,12 +104,14 @@ export interface ContentBlockData {
   link_page: {
     id: string
     page_profiles: { slug: string; language: string }[]
+    ancestors?: LinkPageAncestor[] | null
   } | null
   extra_css: Record<string, unknown> | string | null
   linked_items?: ContentBlockLinkedItem[]
   config?: Record<string, unknown> | null
   categories?: CategoryTileItem[]
   products?: ProductContainer[]
+  grid_pages?: GridPage[]
 }
 
 export interface ContentBlockProps {

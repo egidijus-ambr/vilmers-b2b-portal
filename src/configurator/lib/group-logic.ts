@@ -525,3 +525,114 @@ export function selectDefaultComponents(
   }
   return selected
 }
+
+// =============================================
+// Selection Reconciliation
+// =============================================
+
+/**
+ * Drawer-identical valid-components for a group.
+ *
+ * `getValidComponents(options.customerComponentCodesForGroup)` only *guards*
+ * the price filter — it does NOT narrow the result to the customer's codes.
+ * The drawer (component-section.tsx `applyMultiEntryFilter`) applies that
+ * narrowing on top of `getValidComponents`. We replicate it here so the
+ * "valid" set the reconcile compares against is exactly what the user sees,
+ * otherwise we could pick a `validComponents[0]` the drawer would never show.
+ */
+function validComponentsForGroup(
+  group: ComponentGroup,
+  selectedComponents: SelectedComponent[],
+  sofaCombinations: any[][],
+  options?: ValidComponentsOptions
+): ReturnType<typeof getValidComponents> {
+  const valid = getValidComponents(
+    group,
+    selectedComponents,
+    sofaCombinations,
+    options
+  )
+  const customerCodes = options?.customerComponentCodesForGroup
+  if (!customerCodes) return valid
+  return valid.filter((c) => customerCodes.has(c.code))
+}
+
+/**
+ * Re-validate every currently-selected component against the drawer's valid
+ * set and replace any stale selection with the first valid option.
+ *
+ * Why this exists: on load `selectDefaultComponents` can pick a component
+ * (e.g. design-comfort `BURROW:2B4M`) while `sofaCombinations` is still empty,
+ * so the sofa-module-metadata filter in `getValidComponents` is skipped and
+ * the raw first component wins. Once the sofa module is placed,
+ * `sofaCombinations` carries `metadata["design-comfort"] = [2K3I]`, but nothing
+ * re-validates the already-stored `2B4M`. This reconciles it to `2K3I`.
+ *
+ * Idempotency / determinism (the property that prevents render loops):
+ *   - We iterate to a FIXPOINT. `getValidComponents` consumes
+ *     `selectedComponents` for the `onlyWithComponents` condition filter, so
+ *     fixing group A's selection can change group B's valid set. A single pass
+ *     would therefore NOT be idempotent for condition-driven staleness
+ *     (`reconcile(reconcile(x)) !== reconcile(x)`).
+ *   - Each pass is a SNAPSHOT pass: every group's valid set is computed
+ *     against the same `current` array, then all replacements are applied at
+ *     once. Snapshot-per-pass is order-independent, so the result is
+ *     deterministic. We loop until a pass produces no change (`isEqual`),
+ *     capped at `selectedComponents.length + 2` iterations as a safety net.
+ *   - The fixpoint is self-consistent: replacing with `validComponents[0]`
+ *     yields a value that is itself valid, so the next pass is a no-op →
+ *     `reconcile(reconcile(x)) === reconcile(x)`.
+ *
+ * Empty valid set → selection left UNTOUCHED (blanking it could break the
+ * config string built in vilmers.ts which tolerates the existing code).
+ *
+ * Order is preserved. A new array is always returned (callers guard the
+ * dispatch with `isEqual`).
+ */
+export function reconcileSelectedComponents(
+  groups: ComponentGroup[],
+  selectedComponents: SelectedComponent[],
+  sofaCombinations: any[][],
+  getOptionsForGroup: (groupCode: string) => ValidComponentsOptions | undefined
+): SelectedComponent[] {
+  let current = selectedComponents
+  const maxPasses = selectedComponents.length + 2
+
+  for (let pass = 0; pass < maxPasses; pass++) {
+    // Snapshot pass: compute every replacement against the SAME `current`
+    // array, then apply them all at once (order-independent → deterministic).
+    const next = current.map((selected) => {
+      const group = groups.find((g) => g.code === selected.groupCode)
+      if (!group) return selected
+
+      const validComponents = validComponentsForGroup(
+        group,
+        current,
+        sofaCombinations,
+        getOptionsForGroup(group.code)
+      )
+
+      // Empty valid set → leave the stored selection as-is.
+      if (validComponents.length === 0) return selected
+
+      // Already valid → keep it.
+      if (validComponents.some((c) => c.code === selected.code)) return selected
+
+      // Stale → replace with the first valid option, preserving group context.
+      return {
+        ...validComponents[0],
+        groupCode: selected.groupCode,
+        groupNameOverride: selected.groupNameOverride,
+      }
+    })
+
+    if (isEqual(next, current)) return next
+    current = next
+  }
+
+  // Fell through maxPasses without converging — non-convergent
+  // onlyWithComponents cycle (e.g. a 2-cycle with no fixpoint). Return the
+  // input unchanged so the caller's isEqual guard suppresses dispatch and we
+  // degrade to stale-persists rather than an infinite dispatch loop.
+  return selectedComponents
+}

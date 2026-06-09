@@ -105,13 +105,35 @@ export default function FloatingCatalogBar() {
   if (!selectionMode) return null
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-[70] flex justify-center px-4 pointer-events-none animate-fade-in-top">
-      <div className="bg-white rounded-full shadow-lg border border-gray-200 px-2 py-1.5 pointer-events-auto max-w-[95vw] flex flex-wrap items-center justify-center gap-y-1">
+    <div className="fixed bottom-6 left-0 right-0 z-[70] flex justify-start small:justify-center pl-4 pr-0 small:px-4 pointer-events-none animate-fade-in-top">
+      {/*
+        Mobile: vertical card (w-2/3, rounded-2xl, flex-col, p-4, gap-2, relative)
+        Desktop (small:): restore original horizontal pill
+          - small:w-auto          — remove 2/3 width cap
+          - small:max-w-[95vw]    — restore original safety cap
+          - small:rounded-full    — pill shape
+          - small:px-2 small:py-1.5 — original padding
+          - small:flex-row small:flex-wrap — horizontal layout
+          - small:items-center small:justify-center — original alignment
+          - small:gap-x-0 small:gap-y-1 — original gap (no x-gap, y-gap 1)
+          - relative              — needed to anchor the mobile absolute close button
+      */}
+      <div className="relative bg-white rounded-2xl shadow-lg border border-gray-200 p-4 pointer-events-auto w-2/3 flex flex-col gap-2 small:w-auto small:max-w-[95vw] small:rounded-full small:px-2 small:py-1.5 small:flex-row small:flex-wrap small:items-center small:justify-center small:gap-x-0 small:gap-y-1">
+
+        {/* Mobile-only close button — absolutely positioned top-right of the card */}
+        <button
+          onClick={toggleSelectionMode}
+          className="small:hidden absolute top-2 right-2 flex items-center justify-center w-9 h-9 text-gray-500 hover:text-gray-700 transition-colors"
+          title={t("cancel")}
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         {/* Select all / Deselect all */}
         <button
           onClick={selectedProducts.size > 0 ? deselectAll : () => selectAll()}
           disabled={allProductNamesLoading}
-          className="px-4 py-2 text-sm font-medium text-white bg-gold hover:bg-gold/90 rounded-full transition-colors whitespace-nowrap disabled:opacity-70"
+          className="w-1/2 small:w-auto px-4 py-2 text-sm font-medium text-white bg-gold hover:bg-gold/90 rounded-full transition-colors whitespace-nowrap disabled:opacity-70"
         >
           {allProductNamesLoading ? (
             <span className="flex items-center gap-2">
@@ -168,10 +190,10 @@ export default function FloatingCatalogBar() {
         <Divider />
 
         {/* Merge/Split dropdown */}
-        <div className="relative">
+        <div className="relative w-full small:w-auto">
           <button
             onClick={() => setModeOpen(!modeOpen)}
-            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 w-full justify-between small:w-auto small:justify-start px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
           >
             {selectedMode === "merge" ? t("merge-pages") : t("split-pages")}
             <ChevronDown
@@ -201,10 +223,10 @@ export default function FloatingCatalogBar() {
         </div>
 
         {/* Compression dropdown */}
-        <div className="relative">
+        <div className="relative w-full small:w-auto">
           <button
             onClick={() => setCompressionOpen(!compressionOpen)}
-            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 w-full justify-between small:w-auto small:justify-start px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
           >
             {compressed ? t("compressed") : t("uncompressed")}
             <ChevronDown
@@ -233,11 +255,14 @@ export default function FloatingCatalogBar() {
           )}
         </div>
 
-        {/* Download button */}
+        {/* Download button
+            Mobile: full-width gold button with label
+            Desktop (small:): original w-9 h-9 rounded-full icon-only button
+        */}
         <button
           onClick={handleDownload}
           disabled={selectedProducts.size === 0 || isDownloading}
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-gold hover:bg-gold/90 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-gold hover:bg-gold/90 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed small:w-9 small:h-9 small:py-0 small:rounded-full small:gap-0"
           title={t("download")}
         >
           {isDownloading ? (
@@ -253,12 +278,13 @@ export default function FloatingCatalogBar() {
               />
             </svg>
           )}
+          <span className="small:hidden text-sm font-medium">{t("download")}</span>
         </button>
 
-        {/* Close button */}
+        {/* Close button — desktop only (mobile uses the absolute button above) */}
         <button
           onClick={toggleSelectionMode}
-          className="flex items-center justify-center w-9 h-9 text-gray-500 hover:text-gray-700 transition-colors"
+          className="hidden small:flex items-center justify-center w-9 h-9 text-gray-500 hover:text-gray-700 transition-colors"
           title={t("cancel")}
         >
           <X className="w-4 h-4" />
@@ -269,5 +295,5 @@ export default function FloatingCatalogBar() {
 }
 
 function Divider() {
-  return <div className="w-px h-6 bg-gray-200 mx-1" />
+  return <div className="hidden small:block w-px h-6 bg-gray-200 mx-1" />
 }

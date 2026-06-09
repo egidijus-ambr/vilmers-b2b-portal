@@ -7,7 +7,9 @@ import {
   ContentBlockStyle,
   ContentBlockLinkedItem,
   CategoryTileItem,
+  LinkPageAncestor,
 } from "./types"
+import type { GridPage } from "./types"
 import VideoPlayer from "./video-player"
 import ArrowLeft from "@modules/common/icons/arrow-left"
 import ArrowRight from "@modules/common/icons/arrow-right"
@@ -172,6 +174,18 @@ export default function ContentBlock({
       {data.type === "product_grid" && (
         <ProductGrid
           products={data.products ?? []}
+          title={profile?.name ?? null}
+          description={profile?.description ?? null}
+          descriptionFormat={profile?.description_format ?? null}
+          languageCode={languageCode}
+          backgroundColor={data.background_color}
+          textColor={data.text_color}
+        />
+      )}
+
+      {data.type === "page_grid" && (
+        <PageGrid
+          pages={data.grid_pages ?? []}
           title={profile?.name ?? null}
           description={profile?.description ?? null}
           descriptionFormat={profile?.description_format ?? null}
@@ -779,6 +793,46 @@ function OnlyVideo({
 
 /* ─── Button Block ────────────────────────────────────────── */
 
+type LinkPage = {
+  id: string
+  page_profiles: { slug: string; language: string }[]
+  ancestors?: LinkPageAncestor[] | null
+}
+
+/**
+ * Build a full href for a link_page using the flat root-first `ancestors` array
+ * from the backend. Falls back gracefully when `ancestors` is absent (e.g.
+ * pages fetched via FIND_PAGE_BY_CODE which does not select `ancestors`).
+ */
+function buildLinkPageHref(
+  page: LinkPage,
+  languageCode: string
+): string | null {
+  const ancestorChain: LinkPageAncestor[] = page.ancestors ?? []
+
+  const segments: string[] = []
+
+  for (const ancestor of ancestorChain) {
+    const profile =
+      ancestor.page_profiles.find(
+        (pp) => pp.language.toLowerCase() === languageCode.toLowerCase()
+      ) ?? ancestor.page_profiles[0]
+    if (profile?.slug) {
+      segments.push(profile.slug)
+    }
+  }
+
+  const pageProfile =
+    page.page_profiles.find(
+      (pp) => pp.language.toLowerCase() === languageCode.toLowerCase()
+    ) ?? page.page_profiles[0]
+
+  if (!pageProfile?.slug) return null
+  segments.push(pageProfile.slug)
+
+  return `/${languageCode}/${segments.join("/")}`
+}
+
 function ButtonBlock({
   style,
   buttonText,
@@ -793,10 +847,7 @@ function ButtonBlock({
   buttonText: string | null
   link: string | null
   linkNewTab: boolean | null
-  page: {
-    id: string
-    page_profiles: { slug: string; language: string }[]
-  } | null
+  page: LinkPage | null
   languageCode: string
   backgroundColor: string | null
   textColor: string | null
@@ -806,12 +857,7 @@ function ButtonBlock({
   let target: string | undefined = undefined
 
   if (page) {
-    const pageProfile = page.page_profiles.find(
-      (pp) => pp.language.toLowerCase() === languageCode.toLowerCase()
-    )
-    if (pageProfile) {
-      href = `/${languageCode}/${pageProfile.slug}`
-    }
+    href = buildLinkPageHref(page, languageCode)
   } else if (link) {
     href = link
     if (linkNewTab) {
@@ -1360,6 +1406,95 @@ function ProductGrid({
           products={products}
           language={languageCode as SupportedLanguage}
         />
+      )}
+    </div>
+  )
+}
+
+/* ─── Page Grid ───────────────────────────────────────────── */
+
+function PageGrid({
+  pages,
+  title,
+  description,
+  descriptionFormat,
+  languageCode,
+  backgroundColor,
+  textColor,
+}: {
+  pages: GridPage[]
+  title: string | null
+  description: string | null
+  descriptionFormat?: "plain" | "markdown" | null
+  languageCode: string
+  backgroundColor: string | null
+  textColor: string | null
+}) {
+  if (pages.length === 0 && !title && !description) return null
+
+  return (
+    <div
+      className="py-10 small:py-12 content-container large:px-0 px-6"
+      style={backgroundColor ? { backgroundColor } : undefined}
+    >
+      {title && (
+        <h3
+          className="mb-6 text-left text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm "
+          style={textColor ? { color: textColor } : undefined}
+        >
+          {title.split("\\n").map((line, i) => (
+            <span key={i}>
+              {line}
+              {i < title.split("\\n").length - 1 && <br />}
+            </span>
+          ))}
+        </h3>
+      )}
+      <RichText
+        value={description}
+        format={descriptionFormat}
+        textColor={textColor}
+        className="mb-8"
+      />
+      {pages.length > 0 && (
+        <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+          {pages.map((page) => {
+            const pageProfile =
+              page.page_profiles.find(
+                (p) => p.language.toLowerCase() === languageCode.toLowerCase()
+              ) ?? page.page_profiles[0]
+
+            const href = buildLinkPageHref(page, languageCode) ?? "#"
+            const imageSrc = page.hero_image?.src
+
+            return (
+              <li key={page.id}>
+                <a href={href} className="group block">
+                  <div className="aspect-[4/3] w-full overflow-hidden">
+                    {imageSrc ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imageSrc}
+                        alt={pageProfile?.title ?? ""}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gray-200" />
+                    )}
+                  </div>
+                  {pageProfile?.title && (
+                    <h4
+                      className="mt-3 text-sm font-medium"
+                      style={textColor ? { color: textColor } : undefined}
+                    >
+                      {pageProfile.title}
+                    </h4>
+                  )}
+                </a>
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )

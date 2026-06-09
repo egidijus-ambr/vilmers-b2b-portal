@@ -5,6 +5,7 @@ import {
   FindManyCategoryResponse,
   FindFirstCategoryResponse,
 } from "./types"
+import { normalizeLanguage } from "../../../i18n/config"
 
 const FIND_MENU_CATEGORIES = gql`
   query FIND_MENU_CATEGORIES($language: Language) {
@@ -301,12 +302,13 @@ export class CategoriesModule {
   constructor(private client: GraphQLClient) {}
 
   async getMenuCategories(language?: string): Promise<CategoryData[]> {
+    const lang = normalizeLanguage(language)
     try {
       const response = await this.client.query<FindManyCategoryResponse>(
         FIND_MENU_CATEGORIES,
         {
           variables: {
-            ...(language ? { language: language.toLowerCase() } : {}),
+            language: lang,
           },
           fetchPolicy: "no-cache",
           errorPolicy: "all",

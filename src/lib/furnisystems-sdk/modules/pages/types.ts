@@ -9,6 +9,12 @@ export interface PageProfile {
   meta_description: string | null
 }
 
+/** Flat ancestor node returned by the backend `ancestors(language)` field (root-first). */
+export interface PageAncestor {
+  id: string
+  page_profiles: { language: string; slug: string | null; title: string | null }[]
+}
+
 export interface Page {
   id: string
   code: string | null
@@ -16,6 +22,10 @@ export interface Page {
   hero_image: { id: number; src: string } | null
   content_blocks: ContentBlock[]
   page_profiles: PageProfile[]
+  /** Present on pages fetched via getPageByPath */
+  parentId?: string | null
+  /** Flat, root-first ancestor chain (published only) from getPageByPath */
+  ancestors?: PageAncestor[] | null
 }
 
 export interface FindPageByCodeResponse {
@@ -24,4 +34,8 @@ export interface FindPageByCodeResponse {
 
 export interface FindFirstPageResponse {
   findFirstPage: Page | null
+}
+
+export interface FindPageByPathResponse {
+  findPageByPath: Page | null
 }

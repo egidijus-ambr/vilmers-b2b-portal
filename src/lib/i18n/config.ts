@@ -5,6 +5,12 @@ export type SupportedLanguage = (typeof supportedLanguages)[number]
 // Default language
 export const defaultLanguage: SupportedLanguage = "en"
 
+export const isSupportedLanguage = (value: string | null | undefined): value is SupportedLanguage =>
+  !!value && supportedLanguages.includes(value.toLowerCase() as SupportedLanguage)
+
+export const normalizeLanguage = (value: string | null | undefined): SupportedLanguage =>
+  isSupportedLanguage(value) ? (value.toLowerCase() as SupportedLanguage) : defaultLanguage
+
 // Mapping for backend translation loading (now uses local file structure)
 export const backendLanguageMapping: Record<SupportedLanguage, string> = {
   en: "en",

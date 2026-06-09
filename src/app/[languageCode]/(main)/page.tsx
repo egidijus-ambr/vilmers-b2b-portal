@@ -7,7 +7,7 @@ import ShopSettingsTest from "@modules/common/components/shop-settings-test"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { getShopSettings } from "@lib/data/shop-settings"
-import { getPageByCode } from "@lib/data/pages"
+import { getPageByCode, enrichContentBlocksWithPages } from "@lib/data/pages"
 import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { enrichContentBlocksWithProducts } from "@lib/data/products"
 
@@ -78,6 +78,7 @@ export default async function Home(props: {
     languageCode
   )
   contentBlocks = await enrichContentBlocksWithProducts(contentBlocks, languageCode)
+  contentBlocks = await enrichContentBlocksWithPages(contentBlocks, languageCode)
 
   // Always render Hero, make FeaturedProducts conditional
   return (

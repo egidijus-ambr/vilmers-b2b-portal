@@ -89,15 +89,16 @@ const ConfiguratorContent = ({
   const { state, dispatch } = useConfigurator()
   const { productData, isLoading, error } = state
 
-  // Activate dynamic group computation (armrests, legs, threads)
-  useDynamicGroups(state.originalComponentGroups)
-
   const isSofa = productData?.advanced_product?.advanced_product_type === "SOFA"
   const hasFabricSelection =
     productData?.advanced_product?.advanced_product_type === "SOFA" ||
     productData?.advanced_product?.advanced_product_type === "OTHER_WITH_FABRICS"
 
-  const { singleEntryGroupCodes, multiEntryCustomerComponentCodesByGroup } = useMemo(() => {
+  const {
+    singleEntryGroupCodes,
+    multiEntryCustomerComponentCodesByGroup,
+    allCustomerComponentCodesByGroup,
+  } = useMemo(() => {
     const countByGroup = new Map<string, string[]>()
     customer?.additional_components?.forEach((ac: any) => {
       const groupCode = ac.additionalComponent?.additional_component_group?.code
@@ -108,15 +109,49 @@ const ConfiguratorContent = ({
     })
     const single = new Set<string>()
     const multi = new Map<string, Set<string>>()
+    // ALL customer-locked codes, single- AND multi-entry, by group. Used only
+    // by the reconcile's getOptionsForGroup so it never strips a customer's
+    // mandatory pick: the drawer skips customer-locked groups entirely (see
+    // getStepsForProduct customerComponentGroupCodes), but the reconcile walks
+    // every stored selection, so it needs the customerComponentCodesForGroup
+    // guard for single-entry groups too — otherwise a priceless mandatory pick
+    // hits the price filter in getValidComponents and gets replaced.
+    const allCustomerCodes = new Map<string, Set<string>>()
     countByGroup.forEach((codes, groupCode) => {
+      allCustomerCodes.set(groupCode, new Set(codes))
       if (codes.length === 1) {
         single.add(groupCode)
       } else {
         multi.set(groupCode, new Set(codes))
       }
     })
-    return { singleEntryGroupCodes: single, multiEntryCustomerComponentCodesByGroup: multi }
+    return {
+      singleEntryGroupCodes: single,
+      multiEntryCustomerComponentCodesByGroup: multi,
+      allCustomerComponentCodesByGroup: allCustomerCodes,
+    }
   }, [customer?.additional_components])
+
+  // Drawer-identical options per group, fed to useDynamicGroups so its
+  // selection-reconcile validates against exactly what ComponentSection renders
+  // (see component-section.tsx `getOptions`). Uses the combined customer-code
+  // map (single + multi entry) so customer-locked groups the drawer never
+  // renders still get the price-filter guard and keep their mandatory pick.
+  // Memoized so the reconcile effect's dependency stays stable.
+  const getOptionsForGroup = useCallback(
+    (groupCode: string) => ({
+      priceListIds: customerPriceListIds,
+      showAllProducts,
+      customerComponentCodesForGroup:
+        allCustomerComponentCodesByGroup.get(groupCode),
+    }),
+    [customerPriceListIds, showAllProducts, allCustomerComponentCodesByGroup]
+  )
+
+  // Activate dynamic group computation (armrests, legs, threads) + selection
+  // reconcile. Placed here so getOptionsForGroup has access to the same
+  // pricelist / manager-mode / customer-code inputs the drawer uses.
+  useDynamicGroups(state.originalComponentGroups, undefined, getOptionsForGroup)
 
   // Required-group validation: enforce a selection in `model` / `model-other`
   // when those groups have at least one user-selectable component. We MUST

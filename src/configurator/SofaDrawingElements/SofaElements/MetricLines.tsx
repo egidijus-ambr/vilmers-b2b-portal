@@ -110,6 +110,11 @@ export const VerticalMetricKonvaNode = ({
   labelBackground = '#F5F3EE',
 }: MetricKonvaNodeProps) => {
   //-----
+  const num = (n: number) => (Number.isFinite(n) ? n : 0)
+  x = num(x)
+  y = num(y)
+  width = num(width)
+  height = num(height)
 
   let group = new Konva.Group({
     name: 'metricLine',
@@ -227,6 +232,12 @@ export const HorizontalMetricKonvaNode = ({
   labelBackground = '#F5F3EE',
 }: MetricKonvaNodeProps) => {
   //-----
+  const num = (n: number) => (Number.isFinite(n) ? n : 0)
+  x = num(x)
+  y = num(y)
+  width = num(width)
+  height = num(height)
+
   let group = new Konva.Group({
     name: 'metricLine',
     x: x,

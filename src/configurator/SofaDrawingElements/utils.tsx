@@ -513,6 +513,10 @@ export const drawMetricLinesForGroups = (
     relativeTo,
   })
 
+  if (!Number.isFinite(topLeftRect.x) || !Number.isFinite(topLeftRect.y)) {
+    return { width: 0, height: 0 }
+  }
+
   let topRightRect = topLeftRect
   let topLeftGroup = groupOfGroups[0]
 

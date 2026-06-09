@@ -52,9 +52,14 @@ export interface CategoryTileItem {
   }[]
 }
 
+/** Flat ancestor node for link_page — root-first from the backend `ancestors` field */
+export interface LinkPageAncestor {
+  page_profiles: { slug: string; language: string }[]
+}
+
 export interface ContentBlock {
   id: string
-  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button" | "photo_links" | "category_tiles" | "product_grid"
+  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button" | "photo_links" | "category_tiles" | "product_grid" | "page_grid"
   style: string | null
   video_link: string | null
   video_type: "uploaded" | "youtube" | "vimeo" | null
@@ -81,13 +86,23 @@ export interface ContentBlock {
   media_min_width: number | null
   object_fit_cover: boolean | null
   link_new_tab: boolean | null
-  link_page: { id: string; page_profiles: { slug: string; language: string }[] } | null
+  link_page: {
+    id: string
+    page_profiles: { slug: string; language: string }[]
+    ancestors?: LinkPageAncestor[] | null
+  } | null
   extra_css: Record<string, unknown> | string | null
   linked_items?: ContentBlockLinkedItem[]
   config?: Record<string, unknown> | null
   categories?: CategoryTileItem[]
   products?: ProductContainer[]
   product_containers?: { id: number }[]
+  grid_pages?: {
+    id: string
+    page_profiles: { slug: string; title: string; language: string }[]
+    hero_image: { src: string } | null
+    ancestors?: LinkPageAncestor[] | null
+  }[]
 }
 
 export interface ShopSetting {
