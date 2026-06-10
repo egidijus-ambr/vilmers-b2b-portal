@@ -14,6 +14,7 @@ export const FIND_PAGE_BY_CODE = gql`
         id
         src
       }
+      hero_display
       page_profiles {
         id
         language
@@ -119,6 +120,7 @@ export const FIND_PAGE_BY_SLUG = gql`
         id
         src
       }
+      hero_display
       page_profiles {
         id
         language
@@ -215,6 +217,7 @@ export const FIND_PAGE_BY_PATH = gql`
         id
         src
       }
+      hero_display
       page_profiles {
         id
         language

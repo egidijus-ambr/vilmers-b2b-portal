@@ -109,6 +109,7 @@ export default async function CmsPage(props: Props) {
         title={profile?.title ?? null}
         subtitle={profile?.subtitle ?? null}
         heroImageSrc={page.hero_image?.src ?? null}
+        heroDisplay={page.hero_display ?? "full_width"}
         breadcrumbItems={breadcrumbItems}
       />
       {contentBlocks.length > 0 ? (

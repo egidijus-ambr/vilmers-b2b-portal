@@ -4,11 +4,13 @@ import { Heading } from "@medusajs/ui"
 import Breadcrumb, {
   BreadcrumbItem,
 } from "@modules/common/components/breadcrumb"
+import PageHeader from "@modules/common/components/page-header"
 
 interface PageHeroProps {
   title: string | null
   subtitle: string | null
   heroImageSrc: string | null
+  heroDisplay?: "full_width" | "content_width" | "none" | null
   breadcrumbItems?: BreadcrumbItem[]
 }
 
@@ -16,20 +18,29 @@ const PageHero = ({
   title,
   subtitle,
   heroImageSrc,
+  heroDisplay,
   breadcrumbItems,
 }: PageHeroProps) => {
   if (!title && !subtitle) {
     return null
   }
 
-  if (heroImageSrc) {
-    return (
-      <div className="relative w-full">
+  const showImage = !!heroImageSrc && heroDisplay !== "none"
+
+  if (showImage) {
+    const isContentWidth = heroDisplay === "content_width"
+
+    const imageHero = (
+      <div
+        className={`relative w-full${
+          isContentWidth ? " overflow-hidden rounded-lg" : ""
+        }`}
+      >
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           role="img"
           aria-label={title ?? "Page hero image"}
-          style={{ backgroundImage: `url('${encodeURI(heroImageSrc)}')` }}
+          style={{ backgroundImage: `url('${encodeURI(heroImageSrc!)}')` }}
         />
         <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 w-full max-w-[1360px] mx-auto  min-h-[350px] md:min-h-[500px] flex flex-col py-8 px-6 large:px-0">
@@ -53,6 +64,24 @@ const PageHero = ({
           </div>
         </div>
       </div>
+    )
+
+    if (isContentWidth) {
+      return <div className="content-container">{imageHero}</div>
+    }
+
+    return imageHero
+  }
+
+  // No hero: reuse the shared PageHeader (breadcrumbs + left-aligned title),
+  // matching the account/orders and product page layout.
+  if (heroDisplay === "none") {
+    return (
+      <PageHeader
+        title={title ?? undefined}
+        description={subtitle}
+        breadcrumbItems={breadcrumbItems}
+      />
     )
   }
 

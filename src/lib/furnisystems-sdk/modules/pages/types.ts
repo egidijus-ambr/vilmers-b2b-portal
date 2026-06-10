@@ -20,6 +20,7 @@ export interface Page {
   code: string | null
   published: boolean | null
   hero_image: { id: number; src: string } | null
+  hero_display?: 'full_width' | 'content_width' | 'none' | null
   content_blocks: ContentBlock[]
   page_profiles: PageProfile[]
   /** Present on pages fetched via getPageByPath */
