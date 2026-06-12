@@ -239,6 +239,21 @@ const MobileMenu = ({
               </LocalizedClientLink>
 
               <LocalizedClientLink
+                href="/account/carts"
+                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                onClick={onClose}
+                data-testid="mobile-menu-carts-link"
+              >
+                <Image
+                  src="/images/orders-icon.svg"
+                  alt="Carts"
+                  width={20}
+                  height={20}
+                />
+                <span>{t("carts")}</span>
+              </LocalizedClientLink>
+
+              <LocalizedClientLink
                 href="/account/fabric-palettes"
                 className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
                 onClick={onClose}

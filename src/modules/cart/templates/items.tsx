@@ -7,28 +7,11 @@ import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
 import SofaConfigurationDetail from "@modules/common/components/sofa-configuration"
 import { InlineReferenceEdit } from "@modules/common/components/product-items-table/inline-reference-edit"
 import Spinner from "@modules/common/icons/spinner"
+import { getItemName, localeMap } from "@lib/util/cart-item-display"
 
-const localeMap: Record<string, string> = {
-  en: "en-GB",
-  de: "de-DE",
-  fr: "fr-FR",
-  lt: "lt-LT",
-  da: "da-DK",
-}
-
-function getItemName(item: FurnisystemsCartItem, language: string): string {
-  const container = item.product_container
-  const singleProduct = container?.single_product
-  const advancedProduct = container?.advanced_product
-  const profiles =
-    singleProduct?.product_profiles ||
-    advancedProduct?.advanced_product_profiles ||
-    []
-  const localProfile =
-    profiles.find((p) => p.language.toLowerCase() === language) || profiles[0]
-  return localProfile?.name || "-"
-}
-
+// NOTE: this copy differs from the shared getItemName helper in
+// `@lib/util/cart-item-display` — it prefers `src_xs` before `src_thumbnail`.
+// Kept local (not consolidated) to preserve that existing behavior.
 function getItemImage(item: FurnisystemsCartItem): string | undefined {
   const container = item.product_container
   const categoryPhoto =
@@ -109,7 +92,13 @@ function buildOrderDetailItem(item: FurnisystemsCartItem): any {
   }
 }
 
-function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
+function CartItemCard({
+  item,
+  readOnly = false,
+}: {
+  item: FurnisystemsCartItem
+  readOnly?: boolean
+}) {
   const { t, language } = useTranslations("account")
   const { updateItemQuantity, updateItemReference, removeItem } = useCart()
   const [updating, setUpdating] = useState(false)
@@ -173,13 +162,19 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
           <div className="flex flex-col min-w-0">
             <span className="text-base font-normal text-dark-blue">{name}</span>
             {item.reference ? (
-              <InlineReferenceEdit
-                reference={item.reference}
-                label={t("customer-reference")}
-                onSave={async (newRef) => {
-                  await updateItemReference(item.id, newRef)
-                }}
-              />
+              readOnly ? (
+                <span className="text-sm font-light text-gray-500 mt-1 block">
+                  {t("customer-reference")}: {item.reference}
+                </span>
+              ) : (
+                <InlineReferenceEdit
+                  reference={item.reference}
+                  label={t("customer-reference")}
+                  onSave={async (newRef) => {
+                    await updateItemReference(item.id, newRef)
+                  }}
+                />
+              )
             ) : null}
             {item.volume != null && item.volume > 0 && (
               <span className="text-sm text-gray-500 mt-1 block">
@@ -192,34 +187,41 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
 
         {/* Quantity + Price row */}
         <div className="flex items-center justify-between mt-4">
-          <div>
-            <div className="flex items-center border rounded border-gray-300">
-              <button
-                className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
-                onClick={() => handleQuantityChange(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1 || updating}
-              >
-                &mdash;
-              </button>
-              <span className="w-10 h-10 flex items-center justify-center text-sm font-medium text-dark-blue border-x border-gray-300">
-                {quantity}
-              </span>
-              <button
-                className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
-                onClick={() => handleQuantityChange(quantity + 1)}
-                disabled={updating}
-              >
-                +
-              </button>
+          {readOnly ? (
+            <span className="text-sm font-light text-gray-500">
+              {t("quantity")}: {quantity}
+            </span>
+          ) : (
+            <div>
+              <div className="flex items-center border rounded border-gray-300">
+                <button
+                  className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
+                  onClick={() => handleQuantityChange(Math.max(1, quantity - 1))}
+                  disabled={quantity <= 1 || updating}
+                >
+                  &mdash;
+                </button>
+                <span className="w-10 h-10 flex items-center justify-center text-sm font-medium text-dark-blue border-x border-gray-300">
+                  {quantity}
+                </span>
+                <button
+                  className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  disabled={updating}
+                >
+                  +
+                </button>
+              </div>
+              {updating && <Spinner className="mt-1" />}
             </div>
-            {updating && <Spinner className="mt-1" />}
-          </div>
+          )}
           <span className="text-lg font-medium text-dark-blue">
             {formatPrice(price)}
           </span>
         </div>
 
         {/* Actions row */}
+        {(isAdvanced || !readOnly) && (
         <div className="flex border-t border-gray-200 mt-4">
           {isAdvanced && (
             <button
@@ -247,6 +249,7 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
               {isExpanded ? t("hide-configuration") : t("show-configuration")}
             </button>
           )}
+          {!readOnly && (
           <button
             onClick={handleRemove}
             disabled={deleting}
@@ -271,7 +274,9 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
               </svg>
             )}
           </button>
+          )}
         </div>
+        )}
       </div>
 
       {/* Desktop layout — small: and up, unchanged */}
@@ -300,13 +305,19 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
             <div>
               <h3 className="text-lg font-medium text-dark-blue">{name}</h3>
               {item.reference ? (
-                <InlineReferenceEdit
-                  reference={item.reference}
-                  label={t("customer-reference")}
-                  onSave={async (newRef) => {
-                    await updateItemReference(item.id, newRef)
-                  }}
-                />
+                readOnly ? (
+                  <span className="text-sm font-light text-gray-500 mt-1 block">
+                    {t("customer-reference")}: {item.reference}
+                  </span>
+                ) : (
+                  <InlineReferenceEdit
+                    reference={item.reference}
+                    label={t("customer-reference")}
+                    onSave={async (newRef) => {
+                      await updateItemReference(item.id, newRef)
+                    }}
+                  />
+                )
               ) : null}
               {item.volume != null && item.volume > 0 && (
                 <span className="text-sm text-gray-500 mt-1 block">
@@ -321,28 +332,36 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
                 <span className="text-sm text-gray-500 block mb-2">
                   {t("quantity")}
                 </span>
-                <div className="flex items-center border rounded border-gray-300">
-                  <button
-                    className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
-                    onClick={() =>
-                      handleQuantityChange(Math.max(1, quantity - 1))
-                    }
-                    disabled={quantity <= 1 || updating}
-                  >
-                    &mdash;
-                  </button>
-                  <span className="w-10 h-10 flex items-center justify-center text-sm font-medium text-dark-blue border-x border-gray-300">
+                {readOnly ? (
+                  <span className="text-lg font-medium text-dark-blue">
                     {quantity}
                   </span>
-                  <button
-                    className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={updating}
-                  >
-                    +
-                  </button>
-                </div>
-                {updating && <Spinner className="mt-1" />}
+                ) : (
+                  <>
+                    <div className="flex items-center border rounded border-gray-300">
+                      <button
+                        className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
+                        onClick={() =>
+                          handleQuantityChange(Math.max(1, quantity - 1))
+                        }
+                        disabled={quantity <= 1 || updating}
+                      >
+                        &mdash;
+                      </button>
+                      <span className="w-10 h-10 flex items-center justify-center text-sm font-medium text-dark-blue border-x border-gray-300">
+                        {quantity}
+                      </span>
+                      <button
+                        className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
+                        onClick={() => handleQuantityChange(quantity + 1)}
+                        disabled={updating}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {updating && <Spinner className="mt-1" />}
+                  </>
+                )}
               </div>
               <span className="text-lg font-medium text-dark-blue">
                 {formatPrice(price)}
@@ -351,6 +370,7 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
           </div>
 
           {/* Actions */}
+          {(isAdvanced || !readOnly) && (
           <div className="flex border-t border-gray-200">
             {isAdvanced && (
               <button
@@ -378,6 +398,7 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
                 {isExpanded ? t("hide-configuration") : t("show-configuration")}
               </button>
             )}
+            {!readOnly && (
             <button
               onClick={handleRemove}
               disabled={deleting}
@@ -402,7 +423,9 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
               )}
               {t("remove")}
             </button>
+            )}
           </div>
+          )}
         </div>
       </div>
 
@@ -416,8 +439,16 @@ function CartItemCard({ item }: { item: FurnisystemsCartItem }) {
   )
 }
 
-const ItemsTemplate = () => {
-  const { items, isLoading } = useCart()
+const ItemsTemplate = ({
+  items: itemsProp,
+  readOnly = false,
+}: {
+  items?: FurnisystemsCartItem[]
+  readOnly?: boolean
+} = {}) => {
+  const ctx = useCart()
+  const items = itemsProp ?? ctx.items
+  const isLoading = itemsProp ? false : ctx.isLoading
 
   if (isLoading) {
     return (
@@ -436,7 +467,7 @@ const ItemsTemplate = () => {
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
         .map((item) => (
-          <CartItemCard key={item.id} item={item} />
+          <CartItemCard key={item.id} item={item} readOnly={readOnly} />
         ))}
     </div>
   )

@@ -10,6 +10,7 @@ interface SearchInputProps {
   label?: string
   autoFocus?: boolean
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  "data-testid"?: string
 }
 
 const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
@@ -20,6 +21,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
   label,
   autoFocus,
   onKeyDown,
+  "data-testid": dataTestId,
 }, ref) => {
   return (
     <div className="w-full">
@@ -54,6 +56,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
           onChange={(e) => onChange(e.target.value)}
           autoFocus={autoFocus}
           onKeyDown={onKeyDown}
+          data-testid={dataTestId}
           className={`block w-full h-14 text-base ${showSearchIcon ? "pl-10" : "pl-3"} pr-3 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
         />
       </div>

@@ -7,10 +7,25 @@ import Divider from "@modules/common/components/divider"
 import CartSummary from "@modules/cart/components/cart-summary"
 import { useCustomer } from "@lib/context/customer-context"
 import { useCart } from "@lib/context/cart-context"
+import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
+import { useTranslations } from "@lib/i18n"
 
-const CartTemplate = () => {
+const CartTemplate = ({
+  items: itemsProp,
+  readOnly = false,
+  children,
+  summaryTitle,
+}: {
+  items?: FurnisystemsCartItem[]
+  readOnly?: boolean
+  children?: React.ReactNode
+  summaryTitle?: string
+} = {}) => {
   const { customer } = useCustomer()
-  const { items, isLoading } = useCart()
+  const { t } = useTranslations("account")
+  const ctx = useCart()
+  const items = itemsProp ?? ctx.items
+  const isLoading = itemsProp ? false : ctx.isLoading
 
   return (
     <div className="pb-12" data-testid="cart-container">
@@ -23,13 +38,17 @@ const CartTemplate = () => {
                 <Divider />
               </>
             )}
-            <ItemsTemplate />
+            <ItemsTemplate items={itemsProp} readOnly={readOnly} />
           </div>
           <div className="relative">
             <div className="flex flex-col gap-y-8 sticky top-[120px]">
-              <CartSummary />
+              <CartSummary items={itemsProp} title={summaryTitle}>{children}</CartSummary>
             </div>
           </div>
+        </div>
+      ) : readOnly ? (
+        <div>
+          <p className="text-gray-500 text-sm py-8">{t("cart-empty")}</p>
         </div>
       ) : (
         <div>

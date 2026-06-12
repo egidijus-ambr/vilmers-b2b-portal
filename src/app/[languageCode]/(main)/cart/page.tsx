@@ -34,7 +34,7 @@ export default function Cart() {
         breadcrumbItems={breadcrumbItems}
       />
       <PageContent>
-        <CartTemplate />
+        <CartTemplate summaryTitle={t("cart-summary")} />
       </PageContent>
     </>
   )

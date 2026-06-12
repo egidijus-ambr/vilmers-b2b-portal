@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { sdk } from "@lib/config"
 import { FurnisystemsCart, FurnisystemsCartItem, AddCartItemInput } from "@lib/furnisystems-sdk/modules/cart/types"
+import { renameCartAction, setActiveCartAction, startNewCartAction } from "@lib/data/carts"
 import { useActingCustomer } from "./acting-customer-context"
 
 interface CartContextValue {
@@ -14,6 +15,9 @@ interface CartContextValue {
   updateItemReference: (cartItemId: number, reference: string) => Promise<void>
   removeItem: (cartItemId: number) => Promise<void>
   refreshCart: () => Promise<void>
+  saveActiveCart: (name: string) => Promise<{ ok: boolean; error?: string }>
+  startNewCart: () => Promise<{ ok: boolean; error?: string }>
+  switchActiveCart: (cartId: number) => Promise<{ ok: boolean; error?: string }>
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
@@ -111,6 +115,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshCart])
 
+  const saveActiveCart = useCallback(async (name: string) => {
+    if (!cart) return { ok: false, error: "No active cart" }
+    const res = await renameCartAction(cart.id, name)
+    if (res.ok) await refreshCart()
+    return res
+  }, [cart, refreshCart])
+
+  const startNewCart = useCallback(async () => {
+    const res = await startNewCartAction()
+    if (res.ok) await refreshCart()
+    return res
+  }, [refreshCart])
+
+  const switchActiveCart = useCallback(async (cartId: number) => {
+    const res = await setActiveCartAction(cartId)
+    if (res.ok) await refreshCart()
+    return res
+  }, [refreshCart])
+
   return (
     <CartContext.Provider
       value={{
@@ -122,6 +145,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateItemReference,
         removeItem,
         refreshCart,
+        saveActiveCart,
+        startNewCart,
+        switchActiveCart,
       }}
     >
       {children}

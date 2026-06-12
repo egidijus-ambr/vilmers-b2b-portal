@@ -74,6 +74,20 @@ const AccountDropdown = ({
             label: (
               <div className="flex items-center gap-x-2">
                 <Image
+                  src="/images/orders-icon.svg"
+                  alt="Carts"
+                  width={16}
+                  height={16}
+                />
+                <span>{t("carts")}</span>
+              </div>
+            ) as any,
+            href: "/account/carts",
+          },
+          {
+            label: (
+              <div className="flex items-center gap-x-2">
+                <Image
                   src="/images/fabric-palettes-icon.svg"
                   alt="Fabric Palette"
                   width={16}

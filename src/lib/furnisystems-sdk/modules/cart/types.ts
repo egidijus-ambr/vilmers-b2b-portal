@@ -1,5 +1,13 @@
 import { ProductCardImage } from "../products/types"
 
+export type CartSummary = {
+  id: number
+  name: string | null
+  isActive: boolean
+  updatedAt: string
+  itemCount: number
+}
+
 export interface FurnisystemsCart {
   id: number
   name: string | null

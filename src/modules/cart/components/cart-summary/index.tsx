@@ -5,60 +5,31 @@ import { useCart } from "@lib/context/cart-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
-import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Button from "@modules/common/components/button"
+import SaveCartButton from "@modules/cart/components/save-cart-button"
 import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
 import { applyDiscount } from "@configurator/lib/price-utils"
 import PriceDisplay from "@modules/common/components/price-display"
+import {
+  getItemName,
+  getItemImage,
+  localeMap,
+} from "@lib/util/cart-item-display"
+import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
 
-const localeMap: Record<string, string> = {
-  en: "en-GB",
-  de: "de-DE",
-  fr: "fr-FR",
-  lt: "lt-LT",
-  da: "da-DK",
-}
-
-function getItemName(item: FurnisystemsCartItem, language: string): string {
-  const container = item.product_container
-  const singleProduct = container?.single_product
-  const advancedProduct = container?.advanced_product
-  const profiles =
-    singleProduct?.product_profiles ||
-    advancedProduct?.advanced_product_profiles ||
-    []
-  const localProfile =
-    profiles.find((p) => p.language.toLowerCase() === language) || profiles[0]
-  return localProfile?.name || "-"
-}
-
-function getItemImage(item: FurnisystemsCartItem): string | undefined {
-  const container = item.product_container
-  const categoryPhoto =
-    container?.single_product?.category_photo ||
-    container?.advanced_product?.category_photo
-  if (categoryPhoto) {
-    return (
-      categoryPhoto.src_thumbnail ||
-      categoryPhoto.src_xs ||
-      categoryPhoto.src ||
-      undefined
-    )
-  }
-  const images =
-    container?.single_product?.images || container?.advanced_product?.images
-  return (
-    images?.[0]?.src_thumbnail ||
-    images?.[0]?.src_xs ||
-    images?.[0]?.src ||
-    undefined
-  )
-}
-
-export default function CartSummary({ children }: { children?: React.ReactNode }) {
+export default function CartSummary({
+  children,
+  items: itemsProp,
+  title,
+}: {
+  children?: React.ReactNode
+  items?: FurnisystemsCartItem[]
+  title?: string
+}) {
   const { t, language } = useTranslations("account")
-  const { items } = useCart()
+  const ctx = useCart()
+  const items = itemsProp ?? ctx.items
   const { discountPct } = useCustomerDiscount()
   const { customer } = useCustomer()
   const { actingCustomer } = useActingCustomer()
@@ -85,7 +56,7 @@ export default function CartSummary({ children }: { children?: React.ReactNode }
   return (
     <div className="bg-white pb-6 p-4 md:p-6">
       <h2 className="text-xl md:text-2xl font-medium text-gray-900 mb-6">
-        {t("order-summary")}
+        {title ?? t("order-summary")}
       </h2>
 
       {/* Product list */}
@@ -171,22 +142,28 @@ export default function CartSummary({ children }: { children?: React.ReactNode }
         </div>
       </div>
       <div className="mt-6">
-        {children ??
-          (blockedNoActingCustomer ? (
-            <Button
-              className="w-full"
-              disabled
-              title="Select a customer first"
-            >
-              Proceed to checkout
-            </Button>
-          ) : (
-            <LocalizedClientLink href="/checkout" className="block">
-              <Button className="w-full">
+        {children ?? (
+          <>
+            {blockedNoActingCustomer ? (
+              <Button
+                className="w-full"
+                disabled
+                title="Select a customer first"
+              >
                 Proceed to checkout
               </Button>
-            </LocalizedClientLink>
-          ))}
+            ) : (
+              <LocalizedClientLink href="/checkout" className="block">
+                <Button className="w-full">
+                  Proceed to checkout
+                </Button>
+              </LocalizedClientLink>
+            )}
+            <div className="mt-3">
+              <SaveCartButton />
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

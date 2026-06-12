@@ -67,19 +67,6 @@ function buildAdvancedProductData(item: FurnisystemsCartItem) {
   return hasAny ? data : undefined
 }
 
-function getItemName(item: FurnisystemsCartItem, language: string): string {
-  const container = item.product_container
-  const singleProduct = container?.single_product
-  const advancedProduct = container?.advanced_product
-  const profiles =
-    singleProduct?.product_profiles ||
-    advancedProduct?.advanced_product_profiles ||
-    []
-  const localProfile =
-    profiles.find((p) => p.language.toLowerCase() === language) || profiles[0]
-  return localProfile?.name || "-"
-}
-
 interface CheckoutFormProps {
   onStateChange?: (state: CheckoutFormState) => void
 }
