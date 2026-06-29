@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
 import {
   ContentBlockProps,
   ContentBlockImage,
@@ -53,6 +55,7 @@ export default function ContentBlock({
   data,
   index,
   languageCode,
+  selectedTagSlug = null,
 }: ContentBlockProps) {
   const profile = getProfile(data.content_block_profiles, languageCode)
   const extraCss = parseExtraCss(data.extra_css)
@@ -186,12 +189,15 @@ export default function ContentBlock({
       {data.type === "page_grid" && (
         <PageGrid
           pages={data.grid_pages ?? []}
+          tags={data.grid_tags ?? []}
           title={profile?.name ?? null}
           description={profile?.description ?? null}
           descriptionFormat={profile?.description_format ?? null}
           languageCode={languageCode}
           backgroundColor={data.background_color}
           textColor={data.text_color}
+          showTags={Boolean((data.config as any)?.show_tags)}
+          selectedTagSlug={selectedTagSlug}
         />
       )}
     </section>
@@ -1413,24 +1419,76 @@ function ProductGrid({
 
 /* ─── Page Grid ───────────────────────────────────────────── */
 
+// Resolve a tag's localized display name: profile matching the active
+// language, else the first profile's name, else null (skip).
+function resolveTagLabel(
+  tag: NonNullable<GridPage["tags"]>[number],
+  languageCode: string
+): string | null {
+  const profiles = tag.page_tag_profiles ?? []
+  const match = profiles.find(
+    (p) => p.language?.toLowerCase() === languageCode.toLowerCase()
+  )
+  return match?.name || profiles[0]?.name || null
+}
+
+type GridTag = NonNullable<GridPage["tags"]>[number]
+
 function PageGrid({
   pages,
+  tags,
   title,
   description,
   descriptionFormat,
   languageCode,
   backgroundColor,
   textColor,
+  showTags,
+  selectedTagSlug,
 }: {
   pages: GridPage[]
+  tags: GridTag[]
   title: string | null
   description: string | null
   descriptionFormat?: "plain" | "markdown" | null
   languageCode: string
   backgroundColor: string | null
   textColor: string | null
+  showTags: boolean
+  selectedTagSlug?: string | null
 }) {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Build an href for the current path with `tag` set to the given slug, or
+  // removed entirely (slug === null = the "All" pill). Other query params are
+  // preserved so unrelated state in the URL survives a pill click.
+  const buildTagHref = useCallback(
+    (slug: string | null) => {
+      const params = new URLSearchParams(searchParams?.toString() ?? "")
+      if (slug) {
+        params.set("tag", slug)
+      } else {
+        params.delete("tag")
+      }
+      const query = params.toString()
+      return query ? `${pathname}?${query}` : pathname
+    },
+    [pathname, searchParams]
+  )
+
   if (pages.length === 0 && !title && !description) return null
+
+  // Pills come pre-computed from the server (distinct in-scope tags). Resolve
+  // each tag's localized label, skipping tags with no usable profile.
+  const pillTags = showTags
+    ? tags
+        .map((tag) => ({ slug: tag.slug, label: resolveTagLabel(tag, languageCode) }))
+        .filter((t): t is { slug: string; label: string } => Boolean(t.label))
+    : []
+
+  // Pages already arrive filtered from the server; render them directly.
+  const visiblePages = pages
 
   return (
     <div
@@ -1456,9 +1514,38 @@ function PageGrid({
         textColor={textColor}
         className="mb-8"
       />
-      {pages.length > 0 && (
+      {showTags && pillTags.length > 0 && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          <Link
+            href={buildTagHref(null)}
+            scroll={false}
+            className={`rounded-full px-3 py-2 text-sm ${
+              !selectedTagSlug
+                ? "bg-gold text-white"
+                : "bg-white/80 text-gray-600 border border-gray-300"
+            }`}
+          >
+            All
+          </Link>
+          {pillTags.map((tag) => (
+            <Link
+              key={tag.slug}
+              href={buildTagHref(tag.slug)}
+              scroll={false}
+              className={`rounded-full px-3 py-2 text-sm ${
+                selectedTagSlug === tag.slug
+                  ? "bg-gold text-white"
+                  : "bg-white/80 text-gray-600 border border-gray-300"
+              }`}
+            >
+              {tag.label}
+            </Link>
+          ))}
+        </div>
+      )}
+      {visiblePages.length > 0 && (
         <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-          {pages.map((page) => {
+          {visiblePages.map((page) => {
             const pageProfile =
               page.page_profiles.find(
                 (p) => p.language.toLowerCase() === languageCode.toLowerCase()
@@ -1467,10 +1554,20 @@ function PageGrid({
             const href = buildLinkPageHref(page, languageCode) ?? "#"
             const imageSrc = page.hero_image?.src
 
+            const badgeLabel =
+              showTags && page.tags?.[0]
+                ? resolveTagLabel(page.tags[0], languageCode)
+                : null
+
             return (
               <li key={page.id}>
                 <a href={href} className="group block">
-                  <div className="aspect-[4/3] w-full overflow-hidden">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden">
+                    {badgeLabel && (
+                      <span className="absolute top-3 left-3 z-10 rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue">
+                        {badgeLabel}
+                      </span>
+                    )}
                     {imageSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img

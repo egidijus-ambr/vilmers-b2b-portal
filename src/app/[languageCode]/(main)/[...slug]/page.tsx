@@ -12,6 +12,7 @@ import type { ContentBlockData } from "@modules/home/components/content-block/ty
 
 type Props = {
   params: Promise<{ languageCode: string; slug: string[] }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 /**
@@ -67,8 +68,12 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function CmsPage(props: Props) {
   const params = await props.params
+  const searchParams = await props.searchParams
   const { languageCode, slug } = params
   const path = slug.join("/")
+
+  const selectedTagSlug =
+    typeof searchParams?.tag === "string" ? searchParams.tag : null
 
   const page = await getPageByPath(path, languageCode)
 
@@ -91,7 +96,8 @@ export default async function CmsPage(props: Props) {
   contentBlocks = await enrichContentBlocksWithPages(
     contentBlocks,
     languageCode,
-    page.id
+    page.id,
+    selectedTagSlug
   )
 
   // Build breadcrumbs: Home → ancestors (root-first, published-only) → current page
@@ -120,6 +126,7 @@ export default async function CmsPage(props: Props) {
               data={block as unknown as ContentBlockData}
               index={index}
               languageCode={languageCode}
+              selectedTagSlug={selectedTagSlug}
             />
           ))}
         </div>

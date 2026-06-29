@@ -3,6 +3,8 @@ import { Metadata } from "next"
 import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
 import ContentBlock from "@modules/home/components/content-block"
+import NewsletterBlock from "@modules/home/components/newsletter-block"
+import type { ContentBlockData } from "@modules/home/components/content-block/types"
 import ShopSettingsTest from "@modules/common/components/shop-settings-test"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
@@ -56,10 +58,15 @@ export const metadata: Metadata = {
 
 export default async function Home(props: {
   params: Promise<{ languageCode: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const params = await props.params
+  const searchParams = await props.searchParams
 
   const { languageCode } = params
+
+  const selectedTagSlug =
+    typeof searchParams?.tag === "string" ? searchParams.tag : null
 
   const [{ collections }, shopSettings, homePage] = await Promise.all([
     listCollections({ fields: "id, handle, title" }),
@@ -78,7 +85,12 @@ export default async function Home(props: {
     languageCode
   )
   contentBlocks = await enrichContentBlocksWithProducts(contentBlocks, languageCode)
-  contentBlocks = await enrichContentBlocksWithPages(contentBlocks, languageCode)
+  contentBlocks = await enrichContentBlocksWithPages(
+    contentBlocks,
+    languageCode,
+    undefined,
+    selectedTagSlug
+  )
 
   // Always render Hero, make FeaturedProducts conditional
   return (
@@ -90,12 +102,17 @@ export default async function Home(props: {
           {contentBlocks.map((block, index) => (
             <ContentBlock
               key={block.id}
-              data={block}
+              data={block as unknown as ContentBlockData}
               index={index}
               languageCode={languageCode}
+              selectedTagSlug={selectedTagSlug}
             />
           ))}
         </div>
+      )}
+
+      {process.env.NEXT_PUBLIC_NEWSLETTER_ENABLED === "true" && (
+        <NewsletterBlock languageCode={languageCode} />
       )}
 
       {/* {collections && region ? (

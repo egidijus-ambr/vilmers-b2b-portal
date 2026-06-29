@@ -65,10 +65,17 @@ export const getPageByPath = async (
   return cached()
 }
 
+// When a page_grid block has show_tags enabled we load the ENTIRE in-scope set
+// (no max_pages cap) so the pill row and server-side tag filter operate over all
+// matching articles. For children mode this means raising the GraphQL `take`
+// well above any configured max_pages.
+const SHOW_TAGS_CHILD_TAKE = 1000
+
 export async function enrichContentBlocksWithPages(
   blocks: ContentBlock[],
   language: string,
-  currentPageId?: string
+  currentPageId?: string,
+  selectedTagSlug?: string | null
 ): Promise<ContentBlock[]> {
   // 1. Bail out early if there is nothing to enrich
   if (!blocks.some((block) => block.type === "page_grid")) {
@@ -112,31 +119,40 @@ export async function enrichContentBlocksWithPages(
   }
 
   // 3. CHILDREN mode — each children block's parent is config.parent_id (if
-  //    set) else the current page. Fetch each DISTINCT parent's children once.
-  const childrenParentIds = new Set<string>()
-  let maxChildTake = 8
+  //    set) else the current page. Fetch each DISTINCT parent's children once,
+  //    using a per-parent `take`. For show_tags blocks we must load ALL children
+  //    (not just max_pages) so the pill list + tag filter see the full set; a
+  //    parent referenced by any show_tags block therefore gets the large take.
+  const childTakeByParent = new Map<string, number>()
   for (const block of blocks) {
     if (block.type !== "page_grid") continue
     const config = block.config as {
       mode?: string
       max_pages?: number
       parent_id?: string | null
+      show_tags?: boolean
     } | null
     if (config?.mode !== "children") continue
-    maxChildTake = Math.max(maxChildTake, config?.max_pages ?? 8)
     const parentId = config?.parent_id || currentPageId
-    if (parentId) childrenParentIds.add(parentId)
+    if (!parentId) continue
+    const take = config?.show_tags
+      ? SHOW_TAGS_CHILD_TAKE
+      : Math.max(8, config?.max_pages ?? 8)
+    childTakeByParent.set(
+      parentId,
+      Math.max(childTakeByParent.get(parentId) ?? 0, take)
+    )
   }
 
   const childPagesByParent = new Map<string, GridPage[]>()
-  if (childrenParentIds.size > 0) {
+  if (childTakeByParent.size > 0) {
     await Promise.all(
-      Array.from(childrenParentIds).map(async (parentId) => {
+      Array.from(childTakeByParent.entries()).map(async ([parentId, take]) => {
         try {
           const children = await sdk.pages.getChildPages(
             parentId,
             language,
-            maxChildTake
+            take
           )
           childPagesByParent.set(parentId, children)
         } catch (error) {
@@ -150,7 +166,7 @@ export async function enrichContentBlocksWithPages(
     )
   }
 
-  // 4. Attach grid_pages to each page_grid block
+  // 4. Attach grid_pages (and, for show_tags blocks, grid_tags) per block
   return blocks.map((block) => {
     if (block.type !== "page_grid") {
       return block
@@ -161,30 +177,62 @@ export async function enrichContentBlocksWithPages(
       max_pages?: number
       page_ids?: string[]
       parent_id?: string | null
+      show_tags?: boolean
     } | null
     const mode = config?.mode ?? "manual"
     const maxPages = config?.max_pages ?? 8
+    const showTags = Boolean(config?.show_tags)
 
-    let gridPages: GridPage[] = []
-
+    // All in-scope pages for this block, BEFORE any max_pages cap or tag filter.
+    let scopedPages: GridPage[] = []
     if (mode === "children") {
       const parentId = config?.parent_id || currentPageId
-      const children = parentId
-        ? childPagesByParent.get(parentId) ?? []
-        : []
-      gridPages = children.slice(0, maxPages)
+      scopedPages = parentId ? childPagesByParent.get(parentId) ?? [] : []
     } else {
       // manual (default)
       const ids = Array.isArray(config?.page_ids) ? config!.page_ids : []
-      gridPages = ids
+      scopedPages = ids
         .map((id) => pageMap.get(id))
         .filter((page): page is GridPage => page != null)
-        .slice(0, maxPages)
     }
+
+    if (!showTags) {
+      // Unchanged behavior: slice by max_pages, no pills, no filtering.
+      return {
+        ...block,
+        grid_pages: scopedPages.slice(0, maxPages),
+      }
+    }
+
+    // show_tags: distinct tags across ALL in-scope pages (computed before the
+    // tag filter so selecting a pill never collapses the pill row). Deduped by
+    // id and sorted by first profile name for a deterministic, locale-stable
+    // pill order.
+    const tagsById = new Map<string, NonNullable<GridPage["tags"]>[number]>()
+    for (const page of scopedPages) {
+      for (const tag of page.tags ?? []) {
+        const id = String(tag.id)
+        if (!tagsById.has(id)) tagsById.set(id, tag)
+      }
+    }
+    const gridTags = Array.from(tagsById.values()).sort((a, b) => {
+      const an = a.page_tag_profiles?.[0]?.name ?? ""
+      const bn = b.page_tag_profiles?.[0]?.name ?? ""
+      return an.localeCompare(bn)
+    })
+
+    // Filtered grid: only pages whose tags include the selected slug. No
+    // selection => all in-scope pages.
+    const gridPages = selectedTagSlug
+      ? scopedPages.filter((p) =>
+          p.tags?.some((t) => t.slug === selectedTagSlug)
+        )
+      : scopedPages
 
     return {
       ...block,
       grid_pages: gridPages,
+      grid_tags: gridTags,
     }
   })
 }

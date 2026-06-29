@@ -70,6 +70,7 @@ export interface GridPage {
   page_profiles: { slug: string; title: string; language: string }[]
   hero_image: { src: string } | null
   ancestors?: LinkPageAncestor[] | null
+  tags?: { id: string; slug: string; page_tag_profiles: { name: string; language: string }[] }[]
 }
 
 export interface ContentBlockData {
@@ -112,12 +113,18 @@ export interface ContentBlockData {
   categories?: CategoryTileItem[]
   products?: ProductContainer[]
   grid_pages?: GridPage[]
+  grid_tags?: {
+    id: string
+    slug: string
+    page_tag_profiles: { name: string; language: string }[]
+  }[]
 }
 
 export interface ContentBlockProps {
   data: ContentBlockData
   index: number
   languageCode: string
+  selectedTagSlug?: string | null
 }
 
 export interface VideoPlayerProps {

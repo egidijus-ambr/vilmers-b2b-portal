@@ -310,28 +310,46 @@ export const FIND_PAGE_BY_PATH = gql`
   }
 `
 
-export const GET_PAGES_BY_IDS = gql`
-  query GET_PAGES_BY_IDS($ids: [String!], $language: Language!) {
-    findManyPage(where: { id: { in: $ids }, published: { equals: true } }) {
-      id
-      published
-      parentId # required: backend 'ancestors' resolver reads parentId; without it ancestors returns [] and child page links lose their parent path
+// Shared field selection for grid pages (manual + children modes). Both
+// GET_PAGES_BY_IDS and GET_CHILD_PAGES render the same GridPage cards, so the
+// field list is extracted here to avoid drift between the two queries.
+const GRID_PAGE_FIELDS = gql`
+  fragment GridPageFields on Page {
+    id
+    published
+    parentId # required: backend 'ancestors' resolver reads parentId; without it ancestors returns [] and child page links lose their parent path
+    page_profiles {
+      slug
+      title
+      language
+    }
+    hero_image {
+      src
+    }
+    ancestors(language: $language) {
       page_profiles {
         slug
-        title
         language
       }
-      hero_image {
-        src
-      }
-      ancestors(language: $language) {
-        page_profiles {
-          slug
-          language
-        }
+    }
+    tags {
+      id
+      slug
+      page_tag_profiles {
+        name
+        language
       }
     }
   }
+`
+
+export const GET_PAGES_BY_IDS = gql`
+  query GET_PAGES_BY_IDS($ids: [String!], $language: Language!) {
+    findManyPage(where: { id: { in: $ids }, published: { equals: true } }) {
+      ...GridPageFields
+    }
+  }
+  ${GRID_PAGE_FIELDS}
 `
 
 export const GET_CHILD_PAGES = gql`
@@ -343,26 +361,11 @@ export const GET_CHILD_PAGES = gql`
         orderBy: { arrangement: asc }
         take: $take
       ) {
-        id
-        published
-        parentId # required: backend 'ancestors' resolver reads parentId; without it ancestors returns [] and child page links lose their parent path
-        page_profiles {
-          slug
-          title
-          language
-        }
-        hero_image {
-          src
-        }
-        ancestors(language: $language) {
-          page_profiles {
-            slug
-            language
-          }
-        }
+        ...GridPageFields
       }
     }
   }
+  ${GRID_PAGE_FIELDS}
 `
 
 export class PagesModule {
