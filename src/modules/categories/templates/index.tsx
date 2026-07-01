@@ -141,9 +141,6 @@ export default async function CategoryPageTemplate({
             ))}
           </div>
         )}
-        {process.env.NEXT_PUBLIC_NEWSLETTER_ENABLED === "true" && (
-          <NewsletterBlock languageCode={language} />
-        )}
         {category.is_root_category && menuCategories ? (
           <ChildCategoriesCarousel
             categories={menuCategories.filter((c) => c.id !== category.id)}
@@ -171,6 +168,9 @@ export default async function CategoryPageTemplate({
             />
           </Suspense>
         </PageContent>
+        {process.env.NEXT_PUBLIC_NEWSLETTER_ENABLED === "true" && (
+          <NewsletterBlock languageCode={language} />
+        )}
       </div>
     </div>
   )

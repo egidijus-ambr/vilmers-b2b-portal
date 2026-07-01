@@ -22,7 +22,7 @@ export default function NewsletterBlock({
 
   return (
     <section
-      className="w-full flex flex-col md:flex-row"
+      className="content-container large:px-0 px-6 flex flex-col md:flex-row"
       data-testid="newsletter-block"
       data-language={languageCode}
     >
@@ -38,7 +38,7 @@ export default function NewsletterBlock({
       </div>
 
       {/* Right: cream panel */}
-      <div className="w-full md:w-1/2 bg-[#f2f0eb] flex items-center px-6 py-12 small:px-12 small:py-16">
+      <div className="w-full md:w-1/2 flex items-center px-6 py-12 small:px-12 small:py-16">
         <div className="w-full max-w-lg">
           <span className="block text-xs font-medium uppercase tracking-[0.2em] text-dark-blue-70">
             {t("newsletter-eyebrow", "NEWSLETTER")}
