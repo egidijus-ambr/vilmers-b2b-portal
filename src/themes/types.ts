@@ -38,4 +38,51 @@ export interface Theme {
   spacing?: Record<string, string>
   /** RESERVED for v1 — maps to current `borderRadius` values. Not yet consumed. */
   radius?: Record<string, string>
+  /**
+   * Navbar/header layout configuration — lets each brand configure whether
+   * the top bar shows, where the language switcher lives, where the logo
+   * sits, and how tall the nav is (driven by logo size). Rendered as raw px
+   * CSS variables (`--nav-height`, `--nav-logo-height`,
+   * `--nav-logo-height-mobile`, `--top-bar-height`) by `themeToCssVars` — NOT
+   * run through the color channel/`rgb()` wrapper — and consumed via
+   * Tailwind arbitrary values (`h-[var(--nav-height)]`). The
+   * enum/boolean fields (`topBar.show`, `languageSwitcher.placement`,
+   * `logo.position`) are read directly from `activeTheme.layout` (a
+   * build-time constant, same model as `features`), not emitted as CSS.
+   */
+  layout: ThemeLayout
+}
+
+export interface ThemeLayout {
+  /** Whether the desktop top bar (today: language-switcher-only) renders. */
+  topBar: { show: boolean }
+  /** Whether the desktop-only Back button (left cluster, before the nav menu) renders. */
+  backButton: { show: boolean }
+  /** Whether the Search button (right cluster, either placement) renders. */
+  searchButton: { show: boolean }
+  /**
+   * Whether the nav is transparent-over-hero at the top of the homepage
+   * (animating to solid on scroll) or always solid. When `false`, the nav
+   * never goes transparent (logo never inverts) and the homepage hero does
+   * not slide under it — see `nav/index.tsx` and `home/components/hero`.
+   */
+  homepageHeader: { transparent: boolean }
+  /**
+   * Where the language switcher lives: in the top bar (today) or in the
+   * navbar's right cluster (desktop-only; mobile always keeps the drawer
+   * copy). Placing it in the navbar while `topBar.show` is `false` is a
+   * contradiction if it were left in the top bar with the bar hidden — see
+   * the fail-fast guard in `src/themes/index.ts`.
+   */
+  languageSwitcher: { placement: "top-bar" | "navbar" }
+  logo: {
+    /** `"center"` (today): equal-flex trick. `"left"`: start of left cluster. */
+    position: "left" | "center"
+    /** px, desktop — drives nav height together with `paddingY`. */
+    height: number
+    /** px, optional — defaults to `height` when omitted. */
+    heightMobile?: number
+    /** px — `navHeight = height + 2 * paddingY`. */
+    paddingY: number
+  }
 }

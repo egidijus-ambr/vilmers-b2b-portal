@@ -159,10 +159,21 @@ export function CompactLanguageSwitcher({
   className = "",
   size = "default",
   dropdownAlign = "right",
+  variant = "default",
 }: {
   className?: string
   size?: "default" | "small"
   dropdownAlign?: "left" | "right"
+  /**
+   * `"default"` (top-bar/mobile-drawer usages, unchanged): trigger keeps its
+   * current appearance. `"nav"` (navbar placement, `layout.languageSwitcher
+   * .placement === "navbar"`): trigger text uses `text-inherit`/currentColor
+   * instead so it follows the surrounding nav text color — `text-white` on
+   * the transparent homepage, `text-nav-foreground` when solid — set by the
+   * nav on the wrapping element. Do not use `"nav"` outside the navbar
+   * placement.
+   */
+  variant?: "default" | "nav"
 }) {
   const { language } = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
@@ -186,17 +197,28 @@ export function CompactLanguageSwitcher({
     languageNames[a].localeCompare(languageNames[b])
   )
 
+  // Nav variant: font size matches the nav-menu links (`text-sm`, see
+  // `nav-menu-item/index.tsx`) instead of the size-driven `text-[10px]`/
+  // `text-base` — height/width from `size` are kept as-is (layout only).
+  // Non-"nav" variants (top-bar, mobile-drawer) are untouched.
+  const triggerTextSizeClass =
+    variant === "nav" ? "text-sm" : size === "small" ? "text-[10px]" : "text-base"
+  const labelTextSizeClass =
+    variant === "nav" ? "text-sm" : size === "small" ? "text-[10px]" : "text-sm"
+
   return (
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={clx(
           "flex items-center font-medium",
-          size === "small" ? "h-6 text-[10px]" : "w-16 h-10 text-base"
+          size === "small" ? "h-6" : "w-16 h-10",
+          triggerTextSizeClass,
+          variant === "nav" && "text-inherit"
         )}
         title={languageNames[language]}
       >
-        <span className={clx("pr-1", size === "small" ? "text-[10px]" : "text-sm")}>
+        <span className={clx("pr-1", labelTextSizeClass)}>
           {language.toUpperCase()}
         </span>
         <ChevronDown

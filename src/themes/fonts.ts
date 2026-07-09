@@ -23,6 +23,12 @@ const montserrat = Montserrat({
 
 const fontsByTheme: Record<string, typeof montserrat> = {
   vilmers: montserrat,
+  // dominari currently copies Vilmers' colors/surfaces/radius (see
+  // src/themes/dominari.ts) — reuse the same Montserrat loader instance
+  // rather than declaring a second, identical `next/font` loader. Both keys
+  // point at the same loader; only one theme (hence one font) is active per
+  // build.
+  dominari: montserrat,
 }
 
 /**

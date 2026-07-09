@@ -5,6 +5,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { retrieveCustomer } from "@lib/data/customer"
 import { getServerT } from "@lib/i18n/server-translations"
 import { SupportedLanguage } from "@lib/i18n"
+import { activeTheme } from "themes"
 
 interface HeroProps {
   params: Promise<{ languageCode: string }>
@@ -15,8 +16,17 @@ const Hero = async ({ params }: HeroProps) => {
   const resolvedParams = await params
   const language = resolvedParams.languageCode as SupportedLanguage
   const t = await getServerT("common", language)
+  // The hero slides UNDER the nav (negative margin + compensating top
+  // padding) only when the nav is transparent-over-hero at the top of the
+  // homepage (see nav/index.tsx). When the nav is always solid, the overlap
+  // is dropped so the solid nav doesn't cover the top of the hero.
+  const { transparent } = activeTheme.layout.homepageHeader
   return (
-    <div className="h-screen w-full border-b border-ui-border-base relative bg-ui-bg-subtle -mt-[72px]">
+    <div
+      className={`h-screen w-full border-b border-ui-border-base relative bg-ui-bg-subtle ${
+        transparent ? "-mt-[var(--nav-height)]" : ""
+      }`}
+    >
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -29,7 +39,11 @@ const Hero = async ({ params }: HeroProps) => {
       <div className="absolute inset-0" />
 
       {/* Content */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-center items-center text-center small:p-32 gap-6 pt-[72px]">
+      <div
+        className={`absolute inset-0 z-10 flex flex-col justify-center items-center text-center small:p-32 gap-6 ${
+          transparent ? "pt-[var(--nav-height)]" : ""
+        }`}
+      >
         <span>
           <Heading
             level="h1"

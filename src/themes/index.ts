@@ -1,5 +1,6 @@
 import type { Theme } from "./types"
 import { vilmers } from "./vilmers"
+import { dominari } from "./dominari"
 
 /**
  * Theme registry. New brands: add a preset file (copy `vilmers.ts`) and
@@ -7,6 +8,7 @@ import { vilmers } from "./vilmers"
  */
 export const themes: Record<string, Theme> = {
   vilmers,
+  dominari,
 }
 
 /**
@@ -31,6 +33,24 @@ function resolveActiveThemeName(): string {
 
 export const activeThemeName = resolveActiveThemeName()
 export const activeTheme: Theme = themes[activeThemeName]
+
+/**
+ * Fail-fast guard (same place/style as the unknown-`NEXT_PUBLIC_THEME` throw
+ * above): a language switcher assigned to the top bar while the top bar is
+ * hidden would render nowhere — that's a contradiction in the preset, not a
+ * state to silently drop or auto-relocate the switcher out of.
+ */
+if (
+  activeTheme.layout.languageSwitcher.placement === "top-bar" &&
+  !activeTheme.layout.topBar.show
+) {
+  throw new Error(
+    `Invalid layout config for theme "${activeTheme.name}": ` +
+      `languageSwitcher.placement is "top-bar" but topBar.show is false. ` +
+      `The language switcher would have nowhere to render. Either set ` +
+      `topBar.show to true, or move languageSwitcher.placement to "navbar".`
+  )
+}
 
 const HEX_COLOR_RE = /^#([0-9a-fA-F]{6})$/
 
@@ -78,6 +98,12 @@ function toChannels(value: string): string {
  * `var(--color-*)` references resolve correctly. The semantic surface block
  * below is unaffected by the channel conversion — surfaces inherit whatever
  * form (channels or full value) their referenced primitive uses.
+ *
+ * A final, separate branch emits the `layout` block's PIXEL values as raw
+ * (unitless-free, i.e. `<n>px`) CSS variables — deliberately NOT run through
+ * `toChannels`/the `rgb(var() / <alpha-value>)` wrapper used for colors,
+ * since these aren't colors and Tailwind consumes them directly via
+ * arbitrary values (`h-[var(--nav-height)]`).
  */
 export function themeToCssVars(theme: Theme): string {
   const colorDeclarations = Object.entries(theme.colors)
@@ -98,5 +124,17 @@ export function themeToCssVars(theme: Theme): string {
     })
     .join("\n")
 
-  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n}`
+  const { topBar, logo } = theme.layout
+  const navHeight = logo.height + 2 * logo.paddingY
+  const navLogoHeightMobile = logo.heightMobile ?? logo.height
+  const topBarHeight = topBar.show ? 32 : 0
+
+  const layoutDeclarations = [
+    `  --nav-logo-height: ${logo.height}px;`,
+    `  --nav-logo-height-mobile: ${navLogoHeightMobile}px;`,
+    `  --nav-height: ${navHeight}px;`,
+    `  --top-bar-height: ${topBarHeight}px;`,
+  ].join("\n")
+
+  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n${layoutDeclarations}\n}`
 }

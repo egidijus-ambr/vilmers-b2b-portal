@@ -124,13 +124,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       {/* Backdrop - semi-transparent overlay behind the dropdown, clicking closes search */}
       <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
 
-      {/* Search panel - positioned over the nav header area */}
-      {/* Uses absolute positioning with top-[32px] to align with the header element */}
-      {/* The TopBar is 36px tall, so the header (72px) starts at top-[32px] */}
-      {/* This positions the search panel to start exactly where the header begins */}
-      <div className="absolute inset-x-0 top-0 small:top-[32px] z-50 bg-white shadow-lg">
-        {/* Search input bar - same height as the nav header (72px) */}
-        <div className="h-[72px] max-w-[1440px] mx-auto flex items-center px-6 gap-4 border-b border-gray-200">
+      {/* Search panel - positioned OVER the nav header band (overlay, not below it) */}
+      {/* Mobile has no top bar, so the panel starts at the viewport top (top-0), same as the header. */}
+      {/* Desktop starts right where the header begins — below the top bar when shown */}
+      {/* (--top-bar-height: 32px), flush with the top when it's hidden (0px) — so the panel */}
+      {/* always overlays exactly the header band, never the top bar, and never leaves a gap. */}
+      <div className="absolute inset-x-0 top-0 small:top-[var(--top-bar-height)] z-50 bg-white shadow-lg">
+        {/* Search input bar - same height as the nav header (--nav-height) */}
+        <div className="h-[var(--nav-height)] max-w-[1440px] mx-auto flex items-center px-6 gap-4 border-b border-gray-200">
           {/* Search icon */}
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -18,6 +18,7 @@ import type { CategoryData } from "@lib/furnisystems-sdk"
 import {
   supportedLanguages,
   useTranslations,
+  CompactLanguageSwitcher,
 } from "@lib/i18n"
 import { useSessionValidation } from "@lib/hooks/use-session-validation"
 import { useCart } from "@lib/context/cart-context"
@@ -25,6 +26,7 @@ import { useShopSettings } from "@lib/context/shop-settings-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import Cart from "@modules/common/icons/cart"
 import { features } from "@lib/features"
+import { activeTheme } from "themes"
 
 // Import NavMenu normally for SSR
 import NavMenu from "@modules/layout/components/nav-menu"
@@ -55,6 +57,9 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   const logoSrc =
     shopSettings?.default_manufacturer?.logo_image?.src || "/images/logo.svg"
 
+  const { topBar, backButton, searchButton, homepageHeader, languageSwitcher, logo } =
+    activeTheme.layout
+
   useEffect(() => {
     setIsClient(true)
   }, [])
@@ -74,6 +79,9 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
+    // homepageHeader.transparent is a build-time constant: when false, the
+    // nav is always solid, so there's no scroll-driven state to track.
+    if (!homepageHeader.transparent) return
     if (!isHomePage) return
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
     handleScroll() // check initial position (refresh while scrolled)
@@ -81,7 +89,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
     return () => window.removeEventListener("scroll", handleScroll)
   }, [isHomePage])
 
-  const isTransparent = isHomePage && !isScrolled
+  const isTransparent = homepageHeader.transparent && isHomePage && !isScrolled
 
   const handleMobileMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -98,26 +106,95 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
       ? buildDynamicMenuItems(categories, t)
       : getNavigationConfig(t).menuItems
 
+  // Logo-left layout (Dominari): the nav menu moves into the right cluster
+  // and is trimmed to Store only (Inspiration/Contact dropped everywhere —
+  // desktop AND mobile drawer). Filtered by stable `id`, not the translated
+  // label. Logo-center (Vilmers): unchanged, full menuItems, untouched.
+  const isLogoLeft = logo.position === "left"
+  const navMenuItems = isLogoLeft
+    ? menuItems.filter((i) => i.id === "store")
+    : menuItems
+
+  // Logo — shared between the "center" cluster and the "left" cluster
+  // (see `logo.position` below); the DB logo src chain and the
+  // transparent-homepage inverted treatment are identical either way.
+  const logoElement = (
+    <LocalizedClientLink
+      href="/"
+      className={`text-xl font-semibold uppercase ${
+        isTransparent ? "hover:text-gray-200 text-white" : "hover:text-ui-fg-base"
+      }`}
+      data-testid="nav-store-link"
+    >
+      <img
+        src={logoSrc}
+        alt="Store Logo"
+        className={`h-[var(--nav-logo-height-mobile)] small:h-[var(--nav-logo-height)] transition-[filter] duration-200 ${
+          isTransparent ? "brightness-0 invert" : ""
+        }`}
+      />
+    </LocalizedClientLink>
+  )
+
+  // Right-cluster order depends on where the language switcher lives:
+  // "top-bar" (Vilmers, unchanged): Search, Cart, Account/Login.
+  // "navbar" (e.g. Dominari): Cart, Account/Login, Search, Switcher — the
+  // Search button moves to sit right before the switcher (see below).
+  const isNavbarSwitcher = languageSwitcher.placement === "navbar"
+
+  const searchButtonElement = (
+    <button
+      onClick={() => setIsSearchOpen(true)}
+      className={`flex items-center justify-center w-8 h-8 small:w-10 small:h-10 transition-colors ${
+        isTransparent ? "text-white hover:text-white/80" : "text-nav-foreground hover:text-nav-foreground/80"
+      }`}
+      aria-label="Search products"
+      data-testid="nav-search-button"
+    >
+      <svg
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+    </button>
+  )
+
   return (
     <div
-      className={`sticky top-0 inset-x-0 z-50 group transition-[background-color] duration-200 ${
-        isTransparent ? "bg-transparent" : "bg-base"
-      }`}
+      className={`sticky top-0 inset-x-0 z-50 group ${
+        homepageHeader.transparent ? "transition-[background-color] duration-200" : ""
+      } ${isTransparent ? "bg-transparent" : "bg-base"}`}
     >
-      <TopBar />
+      {topBar.show && <TopBar />}
       <header
-        className={`relative h-[72px] mx-auto border-b duration-200 transition-[background-color,border-color] ${
+        className={`relative h-[var(--nav-height)] mx-auto border-b ${
+          homepageHeader.transparent
+            ? "duration-200 transition-[background-color,border-color]"
+            : ""
+        } ${
           isTransparent
             ? "bg-transparent border-transparent"
             : "bg-nav-background border-ui-border-base"
         }`}
       >
         <nav
-          className={`w-full px-6 text-xs flex items-center justify-between h-full transition-colors duration-200 ${
-            isTransparent ? "text-white" : "text-ui-fg-subtle"
-          }`}
+          className={`w-full px-6 text-xs flex items-center justify-between h-full ${
+            homepageHeader.transparent ? "transition-colors duration-200" : ""
+          } ${isTransparent ? "text-white" : "text-ui-fg-subtle"}`}
         >
-          <div className="flex-1 basis-0 h-full flex items-center">
+          <div
+            className={`h-full flex items-center ${
+              logo.position === "left" ? "" : "flex-1 basis-0"
+            }`}
+          >
             {/* Mobile Menu Button — mobile only, leftmost */}
             <div className="flex small:hidden items-center h-full">
               <MobileMenuButton
@@ -127,62 +204,62 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
               />
             </div>
 
-            {/* Back Button — desktop only */}
-            <div className="hidden small:flex items-center h-full mr-3">
-              <BackButton isHomePage={isTransparent} />
-            </div>
+            {/* Logo — "left" position: start of the left cluster, before the
+                desktop nav menu. Visible on mobile too (right after the
+                hamburger) and on desktop (before the back button/nav menu). */}
+            {logo.position === "left" && (
+              <div className="flex items-center h-full mr-3">
+                {logoElement}
+              </div>
+            )}
 
-            {/* Desktop Navigation Menu */}
-            <div className="hidden small:flex items-center h-full">
-              <NavMenu
-                menuItems={menuItems}
-                isHomePage={isTransparent}
-                isInteractive={isClient && isReady}
-              />
-            </div>
+            {/* Back Button — desktop only */}
+            {backButton.show && (
+              <div className="hidden small:flex items-center h-full mr-3">
+                <BackButton isHomePage={isTransparent} />
+              </div>
+            )}
+
+            {/* Desktop Navigation Menu — logo-center only (Vilmers, unchanged,
+                full menuItems). Logo-left (Dominari) moves this into the
+                right cluster instead, trimmed to Store only (see below). */}
+            {!isLogoLeft && (
+              <div className="hidden small:flex items-center h-full">
+                <NavMenu
+                  menuItems={navMenuItems}
+                  isHomePage={isTransparent}
+                  isInteractive={isClient && isReady}
+                />
+              </div>
+            )}
           </div>
-          <div className="flex items-center h-full">
-            <LocalizedClientLink
-              href="/"
-              className={`text-xl font-semibold uppercase ${
-                isTransparent
-                  ? "hover:text-gray-200 text-white"
-                  : "hover:text-ui-fg-base"
-              }`}
-              data-testid="nav-store-link"
-            >
-              <img
-                src={logoSrc}
-                alt="Store Logo"
-                className={`h-5 small:h-6 transition-[filter] duration-200 ${isTransparent ? "brightness-0 invert" : ""}`}
-              />
-            </LocalizedClientLink>
-          </div>
+
+          {/* Logo — "center" position: its own equal-flex cluster, balanced
+              against the left/right clusters (both flex-1 basis-0). */}
+          {logo.position === "center" && (
+            <div className="flex items-center h-full">{logoElement}</div>
+          )}
 
           <div className="flex items-center gap-x-2 small:gap-x-6 h-full flex-1 basis-0 justify-end">
-            {/* Search Button */}
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className={`flex items-center justify-center w-8 h-8 small:w-10 small:h-10 transition-colors ${
-                isTransparent ? "text-white hover:text-white/80" : "text-nav-foreground hover:text-nav-foreground/80"
-              }`}
-              aria-label="Search products"
-              data-testid="nav-search-button"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            {/* Desktop Navigation Menu — logo-left only (Dominari): moved out
+                of the left cluster (which becomes logo-only there) and into
+                the START of the right cluster, trimmed to Store only, so it
+                leads the group: Store, Login/account, Search, switcher. */}
+            {isLogoLeft && (
+              <div className="hidden small:flex items-center h-full">
+                <NavMenu
+                  menuItems={navMenuItems}
+                  isHomePage={isTransparent}
+                  isInteractive={isClient && isReady}
                 />
-              </svg>
-            </button>
+              </div>
+            )}
+
+            {/* Search Button — "top-bar" placement (Vilmers, unchanged): first
+                in the cluster. "navbar" placement: moved to just before the
+                switcher (after Cart/Account), see below. Gated on
+                `searchButton.show` in both placements. */}
+            {!isNavbarSwitcher && searchButton.show && searchButtonElement}
 
             {/* Cart Button */}
             {isLoggedIn && (
@@ -212,7 +289,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
               ) : (
                 <LocalizedClientLink
                   href="/account"
-                  className={`text-base font-medium px-4 py-2 transition-colors ${
+                  className={`${isNavbarSwitcher ? "text-sm" : "text-base"} font-medium px-4 py-2 transition-colors ${
                     isTransparent ? "text-white " : "text-nav-foreground  "
                   }`}
                   data-testid="nav-login-link"
@@ -221,6 +298,27 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
                 </LocalizedClientLink>
               )}
             </div>
+
+            {/* Search Button — "navbar" placement only: after Cart/Account,
+                immediately before the switcher. Gated on `searchButton.show`. */}
+            {isNavbarSwitcher && searchButton.show && searchButtonElement}
+
+            {/* Language Switcher — navbar placement, desktop only. Mobile
+                keeps the drawer's own copy (see mobile-menu). Top-bar
+                placement renders it in <TopBar/> instead (see top-bar). */}
+            {isNavbarSwitcher && (
+              <div
+                className={`hidden small:flex items-center h-full ${
+                  isTransparent ? "text-white" : "text-nav-foreground"
+                }`}
+              >
+                <CompactLanguageSwitcher
+                  size="small"
+                  dropdownAlign="right"
+                  variant="nav"
+                />
+              </div>
+            )}
 
           </div>
         </nav>
@@ -238,13 +336,14 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
         </div>
       )}
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — same filtered navMenuItems as desktop (logo-left
+          drops Inspiration/Contact everywhere; logo-center is unchanged). */}
       <MobileMenu
         customer={customer}
         isOpen={isMobileMenuOpen}
         onClose={handleMobileMenuClose}
         isLoggedIn={isLoggedIn}
-        navItems={menuItems}
+        navItems={navMenuItems}
       />
 
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />

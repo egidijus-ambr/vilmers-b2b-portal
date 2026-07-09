@@ -96,7 +96,7 @@ const MobileMenu = ({
         className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-        style={{ top: "72px" }} // Start below navigation
+        style={{ top: "var(--nav-height)" }} // Start below navigation (mobile has no top bar)
       />
 
       {/* Mobile Menu */}
@@ -106,8 +106,8 @@ const MobileMenu = ({
           isOpen ? "transform translate-x-0" : "transform -translate-x-full"
         }`}
         style={{
-          top: "72px", // Start below navigation
-          height: "calc(100vh - 72px)", // Full height minus navigation
+          top: "var(--nav-height)", // Start below navigation (mobile has no top bar)
+          height: "calc(100vh - var(--nav-height))", // Full height minus navigation
           width: "280px",
         }}
       >

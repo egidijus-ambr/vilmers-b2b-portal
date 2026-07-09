@@ -88,4 +88,19 @@ export const vilmers: Theme = {
     large: "16px",
     circle: "9999px",
   },
+  // Navbar/layout config (see src/themes/types.ts). These are the CURRENT
+  // live values — this block is a visual no-op for Vilmers.
+  layout: {
+    topBar: { show: true },
+    backButton: { show: true },
+    searchButton: { show: true },
+    homepageHeader: { transparent: true },
+    languageSwitcher: { placement: "top-bar" },
+    logo: {
+      position: "center",
+      height: 24,
+      heightMobile: 20,
+      paddingY: 24, // navHeight = 24 + 2*24 = 72
+    },
+  },
 }
