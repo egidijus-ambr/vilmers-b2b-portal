@@ -120,6 +120,13 @@ export interface ShopSetting {
   currency: string
   enabled_languages: EnabledLanguage[]
   homepage_content_blocks?: ContentBlock[]
+  favicon?: ContentBlockImage | null
+  footer_logo_image?: ContentBlockImage | null
+  footer_copyright_text?: string | null
+  default_manufacturer?: {
+    company_name?: string | null
+    logo_image?: ContentBlockImage | null
+  } | null
 }
 
 export interface ShopSettingsResponse {

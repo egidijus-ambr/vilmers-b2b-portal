@@ -26,7 +26,7 @@ const ActionCard = ({
     >
       <div className="self-stretch flex-1 flex flex-col justify-between items-start">
         <div className="self-stretch flex flex-col justify-start items-start gap-2">
-          <div className="self-stretch justify-start text-dark-blue text-lg sm:text-xl font-medium font-['Montserrat'] leading-7 sm:leading-9">
+          <div className="self-stretch justify-start text-dark-blue text-lg sm:text-xl font-medium leading-7 sm:leading-9">
             {title}
           </div>
           <p className="self-stretch justify-start text-dark-blue-70 text-sm sm:text-base font-normal line-clamp-3">
@@ -38,7 +38,7 @@ const ActionCard = ({
             onClick={onClick}
             className="inline-flex items-center hover:opacity-70 transition-opacity"
           >
-            <span className="pr-2 text-slate-800 text-sm sm:text-base font-medium font-['Montserrat'] leading-normal">
+            <span className="pr-2 text-slate-800 text-sm sm:text-base font-medium leading-normal">
               {buttonText}
             </span>
             <ArrowRight color="dark-blue" />

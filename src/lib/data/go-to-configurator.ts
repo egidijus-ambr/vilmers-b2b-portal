@@ -2,6 +2,7 @@
 import { cookies } from "next/headers"
 import { canShowAllProductsToggle } from "@lib/data/show-all-products"
 import { GO_TO_CONFIGURATOR_COOKIE } from "@lib/util/go-to-configurator-cookie"
+import { features } from "@lib/features"
 
 /**
  * Reads the goToConfigurator cookie. Returns true iff the cookie value is "1".
@@ -14,10 +15,10 @@ export async function getGoToConfiguratorCookie(): Promise<boolean> {
 
 /**
  * True iff the configurator feature is enabled, the gate passes, AND the cookie is set.
- * Returns false immediately if NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED !== "true".
+ * Returns false immediately if features.configurator is false.
  */
 export async function getGoToConfiguratorActive(): Promise<boolean> {
-  if (process.env.NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED !== "true") return false
+  if (!features.configurator) return false
   const [allowed, on] = await Promise.all([
     canShowAllProductsToggle(),
     getGoToConfiguratorCookie(),

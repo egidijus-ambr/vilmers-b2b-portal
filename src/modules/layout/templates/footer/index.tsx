@@ -6,12 +6,14 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import MedusaCTA from "@modules/layout/components/medusa-cta"
 import { getServerT } from "@lib/i18n/server-translations"
 import { SupportedLanguage } from "@lib/i18n"
+import { ShopSetting } from "@lib/furnisystems-sdk"
 
 interface FooterProps {
   language: SupportedLanguage
+  shopSettings?: ShopSetting | null
 }
 
-export default async function Footer({ language }: FooterProps) {
+export default async function Footer({ language, shopSettings }: FooterProps) {
   const { collections } = await listCollections({
     fields: "*products",
   })
@@ -20,12 +22,17 @@ export default async function Footer({ language }: FooterProps) {
 
   const t = await getServerT("common", language)
 
+  const brandName = shopSettings?.default_manufacturer?.company_name || "Vilmers"
+  const copyrightText =
+    shopSettings?.footer_copyright_text ||
+    `© ${new Date().getFullYear()} ${brandName}. All rights reserved.`
+
   return (
-    <footer className="bg-primary w-full">
+    <footer className="bg-footer-background w-full">
       <div className="content-container flex flex-col w-full px-10">
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-center justify-between py-24  ">
           <div className="flex items-center gap-2">
-            <Text className="text-white text-2xl">
+            <Text className="text-footer-foreground text-2xl">
               {t("how-can-we-help")}{" "}
               <a
                 href="mailto:support@vilmers.com"
@@ -42,7 +49,7 @@ export default async function Footer({ language }: FooterProps) {
               href="https://lt-lt.facebook.com/vilmersuab"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white hover:text-gray-300 transition-colors"
+              className="text-footer-foreground hover:text-gray-300 transition-colors"
               aria-label="Facebook"
             >
               <svg
@@ -58,7 +65,7 @@ export default async function Footer({ language }: FooterProps) {
             {/* X (Twitter) */}
             {/* <a
               href="#"
-              className="text-white hover:text-gray-300 transition-colors"
+              className="text-footer-foreground hover:text-gray-300 transition-colors"
               aria-label="X (Twitter)"
             >
               <svg
@@ -76,7 +83,7 @@ export default async function Footer({ language }: FooterProps) {
               href="https://www.linkedin.com/company/vilmers-uab"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white hover:text-gray-300 transition-colors"
+              className="text-footer-foreground hover:text-gray-300 transition-colors"
               aria-label="LinkedIn"
             >
               <svg
@@ -94,7 +101,7 @@ export default async function Footer({ language }: FooterProps) {
               href="https://www.instagram.com/vilmers_furniture/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white hover:text-gray-300 transition-colors"
+              className="text-footer-foreground hover:text-gray-300 transition-colors"
               aria-label="Instagram"
             >
               <svg
@@ -240,13 +247,13 @@ export default async function Footer({ language }: FooterProps) {
             </div>
           </div> */}
         </div>
-        <div className="flex w-full mb-4 justify-between text-white-80">
+        <div className="flex w-full mb-4 justify-between text-footer-foreground/80">
           <Text className="txt-compact-small">
-            © {new Date().getFullYear()} Vilmers. All rights reserved.
+            {copyrightText}
           </Text>
           <LocalizedClientLink
             href="https://vilmers.com/privacy-policy"
-            className="txt-compact-small hover:text-white transition-colors"
+            className="txt-compact-small hover:text-footer-foreground transition-colors"
           >
             {t("privacy-policy")}
           </LocalizedClientLink>

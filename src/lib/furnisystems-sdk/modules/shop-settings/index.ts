@@ -9,6 +9,26 @@ export const APP_SHOP_SETTINGS = gql`
       id
       currency
 
+      favicon {
+        id
+        src
+      }
+
+      footer_logo_image {
+        id
+        src
+      }
+
+      footer_copyright_text
+
+      default_manufacturer {
+        company_name
+        logo_image {
+          id
+          src
+        }
+      }
+
       enabled_languages {
         id
         language

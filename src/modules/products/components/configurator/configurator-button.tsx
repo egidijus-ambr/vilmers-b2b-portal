@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useCustomer } from "@lib/context/customer-context"
 import Button from "@modules/common/components/button"
+import { features } from "@lib/features"
 
 // Lazy-load the configurator modal to avoid loading Konva etc. on initial page load
 const ConfiguratorModal = dynamic(() => import("./configurator-modal"), {
@@ -33,7 +34,7 @@ const ConfiguratorButton = ({
 
   if (!isAdvancedProduct || !customer) return null
 
-  if (process.env.NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED === "true") {
+  if (features.configurator) {
     return (
       <Link
         href={`/${languageCode}/products/${handle}/configurator`}

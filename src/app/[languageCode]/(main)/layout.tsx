@@ -19,6 +19,7 @@ import {
 } from "@lib/data/show-all-products"
 import { getGoToConfiguratorActive } from "@lib/data/go-to-configurator"
 import { GoToConfiguratorProvider } from "@lib/context/go-to-configurator-context"
+import { features } from "@lib/features"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -67,9 +68,7 @@ export default async function PageLayout({
       getGoToConfiguratorActive(),
     ])
 
-  const canShowGoToConfigurator =
-    canShowAllProducts &&
-    process.env.NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED === "true"
+  const canShowGoToConfigurator = canShowAllProducts && features.configurator
 
   return (
     <CustomerProvider customer={customer}>
@@ -86,10 +85,10 @@ export default async function PageLayout({
                   canShowGoToConfigurator={canShowGoToConfigurator}
                 />
                 <main className="flex-1">{children}</main>
-                <Footer language={validLanguage} />
+                <Footer language={validLanguage} shopSettings={shopSettings} />
               </div>
             </GoToConfiguratorProvider>
-            {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && <TawkToChat />}
+            {features.tawk && <TawkToChat />}
           </CartProvider>
         </ShopSettingsProvider>
       </ActingCustomerProvider>

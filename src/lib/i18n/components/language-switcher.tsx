@@ -191,7 +191,7 @@ export function CompactLanguageSwitcher({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={clx(
-          "flex items-center font-medium font-['Montserrat']",
+          "flex items-center font-medium",
           size === "small" ? "h-6 text-[10px]" : "w-16 h-10 text-base"
         )}
         title={languageNames[language]}

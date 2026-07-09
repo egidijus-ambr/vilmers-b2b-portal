@@ -2,25 +2,6 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-/* #3b1e2a; */
-
-:root {
-  --gold-10: #f5f3ee;
-  --gold-20: #ebe7dc;
-  --beige-20: #f0ede8;
-  --dark-blue: #3b1e2a;
-  --dark-blue-70: rgba(30, 41, 59, 0.7);
-  --white: #ffffff;
-  --line: #e2e8f0;
-  --status-completed: #dcfce7;
-  --status-awaiting-payment: #fef3c7;
-  --status-pending: #dbeafe;
-  --status-shipping: #e0e7ff;
-  --status-canceled: #fee2e2;
-  --status-paid: #d1fae5;
-  --status-delivered: #ecfdf5;
-}
-
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -187,4 +168,57 @@
   .td-cell {
     @apply px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900;
   }
+}
+
+/* ============================================================
+   Offer PDF print layout
+   ============================================================ */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* Hide site chrome so only the offer pages print.
+     .sticky.z-50 targets the Nav wrapper (contains TopBar + header);
+     the Tawk.to widget is injected into <body>, so target it by title/id. */
+  header,
+  footer,
+  .sticky.z-50,
+  .print-hidden,
+  iframe[title*="chat" i],
+  [id^="tawk"],
+  .widget-visible {
+    display: none !important;
+  }
+
+  .offer-page {
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .offer-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
+
+/* Screen preview of the headless print layout (?print=1):
+   hide the same site chrome on screen so a headless engine gets a clean render. */
+body.offer-print-mode header,
+body.offer-print-mode footer,
+body.offer-print-mode .sticky.z-50,
+body.offer-print-mode .print-hidden,
+body.offer-print-mode iframe[title*="chat" i],
+body.offer-print-mode [id^="tawk"],
+body.offer-print-mode .widget-visible {
+  display: none !important;
 }

@@ -10,9 +10,9 @@ import PageContent from "@modules/common/components/page-content"
 import PageHeader from "@modules/common/components/page-header"
 import OrderPlacedBanner from "@modules/account/components/order-placed-banner"
 import { useTranslations } from "@lib/i18n"
+import { features } from "@lib/features"
 
-const isFeatureEnabled =
-  process.env.NEXT_PUBLIC_FEATURE_ORDER_DETAILS === "true"
+const isFeatureEnabled = features.orderDetails
 
 export default function OrderDetailsPage() {
   const { customer } = useCustomer()

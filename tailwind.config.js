@@ -21,48 +21,85 @@ module.exports = {
         padding: "padding-top padding-right padding-bottom padding-left",
       },
       colors: {
-        primary: "#222D37",
+        // Channel form (`rgb(var(--color-x) / <alpha-value>)`) is required
+        // for Tailwind opacity modifiers (`bg-gold/10`, `text-white/80`,
+        // `hover:bg-accent/90`, …) to work: `src/themes/index.ts`
+        // (`themeToCssVars`) emits hex-derived tokens as raw RGB channels
+        // (e.g. `--color-gold: 154 133 85`), and this wrapper combines them
+        // with Tailwind's injected alpha. A bare `var(--color-*)` full-color
+        // reference silently DROPS the alpha modifier instead (Tailwind
+        // can't parse channels out of a full color value).
+        //
+        // `primary` is a redundant alias for `dark-blue` (both were
+        // `#222D37`) — collapsed to resolve to the same CSS variable so
+        // `bg-primary`/`text-primary` usages keep working with zero
+        // per-file edits, without emitting a separate `--color-primary` var.
+        // See src/themes/vilmers.ts and src/themes/index.ts (themeToCssVars).
+        primary: "rgb(var(--color-dark-blue) / <alpha-value>)",
         // Figma Design System Colors
-        "dark-blue": "#222D37",
-        "dark-blue-70": "#646C73",
-        gold: "#9A8555",
-        "gold-10": "#F5F3EE",
-        "gold-20": "#EBE7DD",
-        "gold-30": "#E1DACC",
-        line: "#D3D5D7",
-        beige: "#DFD6C7",
-        "beige-20": "#F9F7F4",
-        white: "#FFFFFF",
-        sale: "#E07E5A",
-        divider: "rgba(34, 45, 55, 0.1)", // #222D37 · 10%
-        "image-overlay": "rgba(0, 0, 0, 0.4)", // #000000 · 40%
-        "beige-80": "#E5DED2",
-        "white-20": "rgba(255, 255, 255, 0.2)", // #FFFFFF · 20%
-        "white-80": "rgba(255, 255, 255, 0.8)", // #FFFFFF · 80%
-        "beige-10": "#FCFBF9",
-        "gray-inactive": "#F4F4F5",
+        "dark-blue": "rgb(var(--color-dark-blue) / <alpha-value>)",
+        "dark-blue-70": "rgb(var(--color-dark-blue-70) / <alpha-value>)",
+        gold: "rgb(var(--color-gold) / <alpha-value>)",
+        "gold-10": "rgb(var(--color-gold-10) / <alpha-value>)",
+        "gold-20": "rgb(var(--color-gold-20) / <alpha-value>)",
+        "gold-30": "rgb(var(--color-gold-30) / <alpha-value>)",
+        line: "rgb(var(--color-line) / <alpha-value>)",
+        beige: "rgb(var(--color-beige) / <alpha-value>)",
+        "beige-20": "rgb(var(--color-beige-20) / <alpha-value>)",
+        white: "rgb(var(--color-white) / <alpha-value>)",
+        sale: "rgb(var(--color-sale) / <alpha-value>)",
+        // Already-`rgba()` tokens — full value, referenced bare (never used
+        // with an opacity modifier; wrapping them in `rgb(... / a)` would be
+        // invalid CSS since their value is itself `rgba(...)`, not channels).
+        divider: "var(--color-divider)",
+        "image-overlay": "var(--color-image-overlay)",
+        "beige-80": "rgb(var(--color-beige-80) / <alpha-value>)",
+        "white-20": "var(--color-white-20)",
+        "white-80": "var(--color-white-80)",
+        "beige-10": "rgb(var(--color-beige-10) / <alpha-value>)",
+        "gray-inactive": "rgb(var(--color-gray-inactive) / <alpha-value>)",
         // Status Colors
-        "status-completed": "#A8C014",
-        "status-awaiting-payment": "#E07E5A",
-        "status-pending": "#D5C3B8",
-        "status-shipping": "#879BB9",
-        "status-canceled": "#DCDFEA",
-        "status-paid": "#B58575",
-        "status-delivered": "#C0BCC1",
+        "status-completed": "rgb(var(--color-status-completed) / <alpha-value>)",
+        "status-awaiting-payment":
+          "rgb(var(--color-status-awaiting-payment) / <alpha-value>)",
+        "status-pending": "rgb(var(--color-status-pending) / <alpha-value>)",
+        "status-shipping": "rgb(var(--color-status-shipping) / <alpha-value>)",
+        "status-canceled": "rgb(var(--color-status-canceled) / <alpha-value>)",
+        "status-paid": "rgb(var(--color-status-paid) / <alpha-value>)",
+        "status-delivered": "rgb(var(--color-status-delivered) / <alpha-value>)",
         // Legacy colors (keeping for backward compatibility)
         grey: {
-          0: "#FFFFFF",
-          5: "#F9FAFB",
-          10: "#F3F4F6",
-          20: "#E5E7EB",
-          30: "#D1D5DB",
-          40: "#9CA3AF",
-          50: "#6B7280",
-          60: "#4B5563",
-          70: "#374151",
-          80: "#1F2937",
-          90: "#111827",
+          0: "rgb(var(--color-grey-0) / <alpha-value>)",
+          5: "rgb(var(--color-grey-5) / <alpha-value>)",
+          10: "rgb(var(--color-grey-10) / <alpha-value>)",
+          20: "rgb(var(--color-grey-20) / <alpha-value>)",
+          30: "rgb(var(--color-grey-30) / <alpha-value>)",
+          40: "rgb(var(--color-grey-40) / <alpha-value>)",
+          50: "rgb(var(--color-grey-50) / <alpha-value>)",
+          60: "rgb(var(--color-grey-60) / <alpha-value>)",
+          70: "rgb(var(--color-grey-70) / <alpha-value>)",
+          80: "rgb(var(--color-grey-80) / <alpha-value>)",
+          90: "rgb(var(--color-grey-90) / <alpha-value>)",
         },
+        // Layer 4 — semantic surface tokens (role-based tier on top of the
+        // primitives above). Additive: primitives keep working unchanged.
+        // Each defaults to a primitive via `--<token>: var(--color-<key>)`
+        // (see src/themes/vilmers.ts + src/themes/index.ts), inheriting that
+        // primitive's channels, so the channel wrapper applies here too and
+        // this is a visual no-op until a brand overrides a role in its preset.
+        "page-background": "rgb(var(--page-background) / <alpha-value>)",
+        "page-foreground": "rgb(var(--page-foreground) / <alpha-value>)",
+        "top-menu-background":
+          "rgb(var(--top-menu-background) / <alpha-value>)",
+        "top-menu-foreground":
+          "rgb(var(--top-menu-foreground) / <alpha-value>)",
+        "nav-background": "rgb(var(--nav-background) / <alpha-value>)",
+        "nav-foreground": "rgb(var(--nav-foreground) / <alpha-value>)",
+        "product-card-background":
+          "rgb(var(--product-card-background) / <alpha-value>)",
+        "footer-background": "rgb(var(--footer-background) / <alpha-value>)",
+        "footer-foreground": "rgb(var(--footer-foreground) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
       },
       borderRadius: {
         none: "0px",
@@ -89,7 +126,7 @@ module.exports = {
       },
       fontFamily: {
         sans: [
-          "Montserrat",
+          "var(--font-brand)",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",

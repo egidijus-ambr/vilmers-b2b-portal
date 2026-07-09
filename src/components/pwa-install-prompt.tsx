@@ -178,10 +178,10 @@ export function PWAInstallPrompt() {
 
         {/* Content section */}
         <div className="flex-1 px-6 py-5 flex flex-col gap-2">
-          <h2 className="text-xl font-semibold text-black font-['Montserrat']">
+          <h2 className="text-xl font-semibold text-black">
             Install App
           </h2>
-          <p className="text-md font-normal text-black font-['Montserrat'] leading-snug">
+          <p className="text-md font-normal text-black leading-snug">
             {isIOS
               ? "Tap Share → Add to Home Screen → Add"
               : "Install our app for faster access and offline functionality."}
@@ -192,18 +192,18 @@ export function PWAInstallPrompt() {
         <div className="px-6 pb-5 flex gap-3">
           <button
             onClick={handleInstall}
-            className="flex-1 h-8 px-6 bg-[#9A8555] hover:bg-[#8a7545] rounded-full flex items-center justify-center transition-colors cursor-pointer"
+            className="flex-1 h-8 px-6 bg-gold hover:bg-[#8a7545] rounded-full flex items-center justify-center transition-colors cursor-pointer"
           >
-            <span className="text-white text-sm font-normal font-['Montserrat']">
+            <span className="text-white text-sm font-normal">
               Install Now
             </span>
           </button>
 
           <button
             onClick={handleDismiss}
-            className="px-6 h-8 rounded-full border border-[#9A8555] hover:bg-stone-50 flex items-center justify-center transition-colors cursor-pointer"
+            className="px-6 h-8 rounded-full border border-gold hover:bg-stone-50 flex items-center justify-center transition-colors cursor-pointer"
           >
-            <span className="text-[#9A8555] text-sm font-normal font-['Montserrat']">
+            <span className="text-gold text-sm font-normal">
               Later
             </span>
           </button>

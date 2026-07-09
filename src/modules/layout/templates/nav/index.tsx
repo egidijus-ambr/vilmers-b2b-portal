@@ -21,8 +21,10 @@ import {
 } from "@lib/i18n"
 import { useSessionValidation } from "@lib/hooks/use-session-validation"
 import { useCart } from "@lib/context/cart-context"
+import { useShopSettings } from "@lib/context/shop-settings-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import Cart from "@modules/common/icons/cart"
+import { features } from "@lib/features"
 
 // Import NavMenu normally for SSR
 import NavMenu from "@modules/layout/components/nav-menu"
@@ -44,6 +46,14 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   const { isSessionValid, isSessionLoading } = useSessionValidation()
   const { items } = useCart()
   const totalCartItems = items.reduce((sum, item) => sum + (item.quantity ?? 1), 0)
+  const { shopSettings } = useShopSettings()
+  // NOTE: footer_logo_image is intentionally NOT used here. It's authored for the
+  // dark footer background (bg-footer-background) and is often a white/light mark —
+  // using it as the nav logo would render invisible on the nav's light (non-transparent)
+  // state. default_manufacturer.logo_image is the general-purpose dark wordmark that
+  // matches the hardcoded fallback's color/shape. Verified against live data.
+  const logoSrc =
+    shopSettings?.default_manufacturer?.logo_image?.src || "/images/logo.svg"
 
   useEffect(() => {
     setIsClient(true)
@@ -82,8 +92,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   }
 
   // Determine menu items based on feature flag
-  const useProductCatalog =
-    process.env.NEXT_PUBLIC_FEATURE_PRODUCT_CATALOG === "true"
+  const useProductCatalog = features.productCatalog
   const menuItems =
     useProductCatalog && categories && categories.length > 0
       ? buildDynamicMenuItems(categories, t)
@@ -100,7 +109,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
         className={`relative h-[72px] mx-auto border-b duration-200 transition-[background-color,border-color] ${
           isTransparent
             ? "bg-transparent border-transparent"
-            : "bg-white border-ui-border-base"
+            : "bg-nav-background border-ui-border-base"
         }`}
       >
         <nav
@@ -143,7 +152,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
               data-testid="nav-store-link"
             >
               <img
-                src="/images/logo.svg"
+                src={logoSrc}
                 alt="Store Logo"
                 className={`h-5 small:h-6 transition-[filter] duration-200 ${isTransparent ? "brightness-0 invert" : ""}`}
               />
@@ -155,7 +164,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
             <button
               onClick={() => setIsSearchOpen(true)}
               className={`flex items-center justify-center w-8 h-8 small:w-10 small:h-10 transition-colors ${
-                isTransparent ? "text-white hover:text-white/80" : "text-dark-blue hover:text-dark-blue/80"
+                isTransparent ? "text-white hover:text-white/80" : "text-nav-foreground hover:text-nav-foreground/80"
               }`}
               aria-label="Search products"
               data-testid="nav-search-button"
@@ -179,8 +188,8 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
             {isLoggedIn && (
               <LocalizedClientLink
                 href="/cart"
-                className={`flex items-center gap-x-2 text-base font-medium font-['Montserrat'] transition-colors ${
-                  isTransparent ? "text-white hover:text-white/80" : "text-dark-blue hover:text-dark-blue/80"
+                className={`flex items-center gap-x-2 text-base font-medium transition-colors ${
+                  isTransparent ? "text-white hover:text-white/80" : "text-nav-foreground hover:text-nav-foreground/80"
                 }`}
                 data-testid="nav-cart-link"
               >
@@ -203,8 +212,8 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
               ) : (
                 <LocalizedClientLink
                   href="/account"
-                  className={`text-base font-medium font-['Montserrat'] px-4 py-2 transition-colors ${
-                    isTransparent ? "text-white " : "text-dark-blue  "
+                  className={`text-base font-medium px-4 py-2 transition-colors ${
+                    isTransparent ? "text-white " : "text-nav-foreground  "
                   }`}
                   data-testid="nav-login-link"
                 >

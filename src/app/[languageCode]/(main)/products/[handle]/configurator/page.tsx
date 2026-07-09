@@ -5,6 +5,7 @@ import { getCustomerFilterData } from "@lib/data/customer"
 import { getShowAllProductsActive } from "@lib/data/show-all-products"
 import Breadcrumb, { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import ConfiguratorPageClient from "./configurator-page-client"
+import { features } from "@lib/features"
 
 type Props = {
   params: Promise<{ handle: string; languageCode: string }>
@@ -13,7 +14,7 @@ type Props = {
 export default async function ConfiguratorPage({ params }: Props) {
   const { handle, languageCode } = await params
 
-  if (process.env.NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED !== "true") {
+  if (!features.configurator) {
     redirect(`/${languageCode}/products/${handle}`)
   }
 

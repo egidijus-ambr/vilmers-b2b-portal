@@ -1,17 +1,14 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata, Viewport } from "next"
-import { Montserrat } from "next/font/google"
 import { I18nProvider } from "@lib/i18n"
 import { HtmlLangUpdater } from "@lib/i18n/components/html-lang-updater"
 import { PWAInstallPrompt } from "../components/pwa-install-prompt"
 import { AgentationToolbar } from "../components/agentation-toolbar"
 import Script from "next/script"
+import { activeTheme, themeToCssVars } from "themes"
+import { brandFont } from "themes/fonts"
+import { features } from "@lib/features"
 import "styles/globals.css"
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  display: "swap",
-})
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -82,8 +79,16 @@ export const viewport: Viewport = {
 
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-mode="light" suppressHydrationWarning={true}>
-      <body className={`${montserrat.className} bg-gold-10`}>
+    <html
+      lang="en"
+      data-mode="light"
+      suppressHydrationWarning={true}
+      className={brandFont.variable}
+    >
+      <head>
+        <style>{themeToCssVars(activeTheme)}</style>
+      </head>
+      <body className="bg-page-background">
         <I18nProvider>
           <HtmlLangUpdater />
           <main className="relative">{props.children}</main>
@@ -92,7 +97,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         </I18nProvider>
 
         {/* Tawk.to Chat Widget - set NEXT_PUBLIC_TAWK_ENABLED=false to disable */}
-        {process.env.NEXT_PUBLIC_TAWK_ENABLED !== "false" && (
+        {features.tawk && (
           <Script
             id="tawk-to"
             strategy="afterInteractive"

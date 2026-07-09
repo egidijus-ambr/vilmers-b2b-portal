@@ -11,6 +11,7 @@ import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { useGoToConfigurator } from "@lib/context/go-to-configurator-context"
 import { getCustomerMarket } from "@lib/util/customer-market"
+import { features } from "@lib/features"
 
 function extractProductDisplayData(
   container: ProductContainer,
@@ -115,8 +116,7 @@ export default function B2BProductCard({
   const catalogues = catalogBuilder?.catalogueMap[name] ?? []
   const marketCodes = Array.from(new Set(catalogues.map((c) => c.market)))
 
-  const configuratorEnabled =
-    process.env.NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED === "true"
+  const configuratorEnabled = features.configurator
 
   const href =
     inSelectionMode || !handle
@@ -155,7 +155,7 @@ export default function B2BProductCard({
       >
         <div
           className={`relative aspect-[325/380] w-full overflow-hidden ${
-            imageBackgroundClass ?? "bg-gold-20"
+            imageBackgroundClass ?? "bg-product-card-background"
           }`}
         >
           {image ? (

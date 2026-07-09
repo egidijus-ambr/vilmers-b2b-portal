@@ -11,6 +11,7 @@ import InfoRow from "@modules/common/components/info-row"
 import { useCustomer } from "@lib/context/customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import { BuildingStorefront } from "@medusajs/icons"
+import { features } from "@lib/features"
 
 interface OrderDetailsProps {
   order: OrderDetail
@@ -65,10 +66,9 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
     }).format(price)
   }
 
-  const showPvm = process.env.NEXT_PUBLIC_SHOW_PVM === "true"
-  const showShipping =
-    process.env.NEXT_PUBLIC_SHOW_DELIVERY_SHIPPING_INFORMATION === "true"
-  const showVolume = process.env.NEXT_PUBLIC_SHOW_VOLUME === "true"
+  const showPvm = features.showPvm
+  const showShipping = features.showDeliveryShippingInfo
+  const showVolume = features.showVolume
 
   const orderItems = order.order_items_detail || []
   const subtotal = orderItems.reduce(

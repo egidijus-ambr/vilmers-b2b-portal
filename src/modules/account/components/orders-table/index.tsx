@@ -17,6 +17,7 @@ import {
 import SearchInput from "@modules/common/components/search-input"
 import TablePagination from "@modules/common/components/table-pagination"
 import { listOrdersWithPagination } from "@lib/data/orders"
+import { features } from "@lib/features"
 
 interface OrdersPageState {
   orders: Order[]
@@ -139,8 +140,7 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
   const isAgent = isAgentOrAdmin(customer)
 
   // Check if order details feature is enabled
-  const isOrderDetailsEnabled =
-    process.env.NEXT_PUBLIC_FEATURE_ORDER_DETAILS === "true"
+  const isOrderDetailsEnabled = features.orderDetails
 
   // Use ordersData if available, otherwise fall back to empty state
   const orders = ordersData?.orders || []

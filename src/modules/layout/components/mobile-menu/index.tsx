@@ -114,7 +114,7 @@ const MobileMenu = ({
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="px-6 py-6 border-b border-ui-border-base">
-            <h2 className="text-lg font-medium text-dark-blue font-['Montserrat']">
+            <h2 className="text-lg font-medium text-dark-blue">
               {displayName}
             </h2>
           </div>

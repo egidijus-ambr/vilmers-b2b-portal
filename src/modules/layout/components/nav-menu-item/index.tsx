@@ -85,7 +85,7 @@ export default function NavMenuItem({
           onClick={item.href ? () => router.push(`/${languageCode}${item.href}`) : undefined}
           className={
             triggerClassName ||
-            `h-full px-4 py-2 text-sm font-medium font-['Montserrat'] whitespace-nowrap ${
+            `h-full px-4 py-2 text-sm font-medium whitespace-nowrap ${
               isHomePage
                 ? "text-white hover:text-gray-200"
                 : "text-ui-fg-subtle hover:text-ui-fg-base"

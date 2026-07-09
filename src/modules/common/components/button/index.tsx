@@ -12,7 +12,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       primary:
         "border-dark-blue bg-dark-blue text-white hover:opacity-90",
       secondary:
-        "border-gold bg-gold text-white hover:bg-gold/90",
+        "border-accent bg-accent text-white hover:bg-accent/90",
       outline:
         "border-dark-blue text-dark-blue hover:bg-gray-50",
     }

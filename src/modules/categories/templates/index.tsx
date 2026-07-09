@@ -10,6 +10,7 @@ import ContentBlock from "@modules/home/components/content-block"
 import NewsletterBlock from "@modules/home/components/newsletter-block"
 import ChildCategoriesCarousel from "@modules/categories/components/child-categories-carousel"
 import { getCategoryFilterFacets } from "@lib/data/category-filters"
+import { features } from "@lib/features"
 
 interface CategoryPageTemplateProps {
   category: CategoryData
@@ -168,7 +169,7 @@ export default async function CategoryPageTemplate({
             />
           </Suspense>
         </PageContent>
-        {process.env.NEXT_PUBLIC_NEWSLETTER_ENABLED === "true" && (
+        {features.newsletter && (
           <NewsletterBlock languageCode={language} />
         )}
       </div>

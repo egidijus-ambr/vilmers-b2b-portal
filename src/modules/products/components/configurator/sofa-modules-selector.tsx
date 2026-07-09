@@ -163,8 +163,12 @@ const SofaModulesSelector = ({
           <div
             className="absolute inset-y-0 right-0 w-32 pointer-events-none z-10"
             style={{
+              // `--color-gold-10` now holds RGB channels (not a full color),
+              // for Tailwind's `rgb(var(--color-x) / <alpha-value>)` opacity
+              // wrapper — so it must be wrapped in `rgb(...)` here too when
+              // used directly in a raw CSS value like a gradient stop.
               background:
-                "linear-gradient(to right, transparent, var(--color-gold-10))",
+                "linear-gradient(to right, transparent, rgb(var(--color-gold-10)))",
             }}
           />
 
