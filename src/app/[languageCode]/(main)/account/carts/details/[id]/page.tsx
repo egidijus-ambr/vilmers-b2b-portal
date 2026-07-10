@@ -127,14 +127,28 @@ export default function CartDetailsPage() {
       <PageHeader title={title} breadcrumbItems={breadcrumbItems} />
       <PageContent>
         <CartTemplate items={detailCart.items} readOnly summaryTitle={t("cart-summary")}>
-          <Button
-            className="w-full"
-            onClick={handleUseCart}
-            disabled={switching}
-            data-testid="cart-detail-use-button"
-          >
-            {t("use-this-cart")}
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Button
+              className="w-full"
+              onClick={handleUseCart}
+              disabled={switching}
+              data-testid="cart-detail-use-button"
+            >
+              {t("use-this-cart")}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() =>
+                router.push(
+                  `/${languageCode}/account/carts/details/${detailCart.id}/offer`
+                )
+              }
+              data-testid="cart-detail-offer-button"
+            >
+              {t("preview-offer-pdf")}
+            </Button>
+          </div>
         </CartTemplate>
       </PageContent>
     </>

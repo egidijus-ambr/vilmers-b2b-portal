@@ -15,6 +15,9 @@ export const FIND_PAGE_BY_CODE = gql`
         src
       }
       hero_display
+      hero_height_value
+      hero_height_unit
+      hero_video_link
       page_profiles {
         id
         language

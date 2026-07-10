@@ -21,6 +21,9 @@ export interface Page {
   published: boolean | null
   hero_image: { id: number; src: string } | null
   hero_display?: 'full_width' | 'content_width' | 'none' | null
+  hero_height_value: number | null
+  hero_height_unit: 'px' | 'vh' | null
+  hero_video_link: string | null
   content_blocks: ContentBlock[]
   page_profiles: PageProfile[]
   /** Present on pages fetched via getPageByPath */

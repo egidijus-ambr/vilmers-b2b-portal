@@ -68,6 +68,7 @@ export const dominari: Theme = {
     product_card_background: "gold-20",
     footer_background: "dark-blue",
     footer_foreground: "white",
+    hero_background: "dark-blue", // home hero bg — hero headings are text-white, so dark-blue (dominari's own #22232c) keeps them readable, same primitive as footer_background
     accent: "gold",
   },
   // RESERVED for v1 — copied from Vilmers, not yet consumed.

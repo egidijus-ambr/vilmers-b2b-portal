@@ -77,6 +77,7 @@ export const vilmers: Theme = {
     product_card_background: "gold-20", // applied to the product/category card container (B2BProductCard) — INTENTIONAL user decision: the card becomes a warm gold-20 panel, distinct from the gold-10 page background
     footer_background: "dark-blue", // footer bg (was `bg-primary`, alias of dark-blue)
     footer_foreground: "white", // footer text (headline + social icons)
+    hero_background: "dark-blue", // home hero bg (shows behind/beside the capped hero photo) — hero headings are text-white, so dark-blue keeps them readable, same primitive as footer_background
     accent: "gold", // primary/gold button variant (common/components/button)
   },
   // RESERVED for v1 — today's `borderRadius` values, not yet consumed.

@@ -99,6 +99,7 @@ module.exports = {
           "rgb(var(--product-card-background) / <alpha-value>)",
         "footer-background": "rgb(var(--footer-background) / <alpha-value>)",
         "footer-foreground": "rgb(var(--footer-foreground) / <alpha-value>)",
+        "hero-background": "rgb(var(--hero-background) / <alpha-value>)",
         accent: "rgb(var(--accent) / <alpha-value>)",
       },
       borderRadius: {

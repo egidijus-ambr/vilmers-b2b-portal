@@ -1,3 +1,4 @@
+import { Fragment } from "react"
 import { Github } from "@medusajs/icons"
 import { Button, Heading } from "@medusajs/ui"
 import OutlineButton from "@modules/common/components/outline-button"
@@ -6,12 +7,37 @@ import { retrieveCustomer } from "@lib/data/customer"
 import { getServerT } from "@lib/i18n/server-translations"
 import { SupportedLanguage } from "@lib/i18n"
 import { activeTheme } from "themes"
+import HeroVideo from "./hero-video"
 
 interface HeroProps {
   params: Promise<{ languageCode: string }>
+  heroImageSrc?: string | null
+  title?: string | null
+  subtitle?: string | null
+  heroHeight?: string | null
+  heroVideoSrc?: string | null
 }
 
-const Hero = async ({ params }: HeroProps) => {
+// CMS "Title"/"Subtitle" fields are single-line inputs, so authors type the
+// literal two-character sequence `\n` where they want a line break. Also
+// tolerate real newline characters in case the field is ever a textarea.
+function renderWithLineBreaks(text: string) {
+  return text.split(/\\n|\r?\n/).map((line, i, arr) => (
+    <Fragment key={i}>
+      {line}
+      {i < arr.length - 1 && <br />}
+    </Fragment>
+  ))
+}
+
+const Hero = async ({
+  params,
+  heroImageSrc,
+  title,
+  subtitle,
+  heroHeight,
+  heroVideoSrc,
+}: HeroProps) => {
   const customer = await retrieveCustomer()
   const resolvedParams = await params
   const language = resolvedParams.languageCode as SupportedLanguage
@@ -21,19 +47,27 @@ const Hero = async ({ params }: HeroProps) => {
   // homepage (see nav/index.tsx). When the nav is always solid, the overlap
   // is dropped so the solid nav doesn't cover the top of the hero.
   const { transparent } = activeTheme.layout.homepageHeader
+  const backgroundImageSrc =
+    heroImageSrc || "/images/home_page_background.png"
   return (
     <div
-      className={`h-screen w-full border-b border-ui-border-base relative bg-ui-bg-subtle ${
+      className={`w-full border-b border-ui-border-base relative bg-hero-background ${
         transparent ? "-mt-[var(--nav-height)]" : ""
       }`}
+      style={{ height: heroHeight ?? "70vh" }}
     >
-      {/* Background Image */}
+      {/* Background Image (always present: instant paint + video fallback/poster) */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[2150px] bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/home_page_background.png')",
+          backgroundImage: `url('${backgroundImageSrc}')`,
         }}
       />
+
+      {/* Hero Video (optional, progressive enhancement over the image above) */}
+      {heroVideoSrc && (
+        <HeroVideo videoSrc={heroVideoSrc} poster={backgroundImageSrc} />
+      )}
 
       {/* Overlay for better text readability */}
       <div className="absolute inset-0" />
@@ -45,18 +79,39 @@ const Hero = async ({ params }: HeroProps) => {
         }`}
       >
         <span>
-          <Heading
-            level="h1"
-            className="text-6xl font-medium  text-white font-normal drop-shadow-lg "
-          >
-            Comfort and quality
-          </Heading>
-          <Heading
-            level="h2"
-            className="text-6xl font-medium  text-white font-normal drop-shadow-lg leading-[72px]"
-          >
-            with smart design.
-          </Heading>
+          {title ? (
+            <>
+              <Heading
+                level="h1"
+                className="text-6xl font-medium  text-white font-normal drop-shadow-lg "
+              >
+                {renderWithLineBreaks(title)}
+              </Heading>
+              {subtitle && (
+                <Heading
+                  level="h2"
+                  className="text-6xl font-medium  text-white font-normal drop-shadow-lg leading-[72px]"
+                >
+                  {renderWithLineBreaks(subtitle)}
+                </Heading>
+              )}
+            </>
+          ) : (
+            <>
+              <Heading
+                level="h1"
+                className="text-6xl font-medium  text-white font-normal drop-shadow-lg "
+              >
+                Comfort and quality
+              </Heading>
+              <Heading
+                level="h2"
+                className="text-6xl font-medium  text-white font-normal drop-shadow-lg leading-[72px]"
+              >
+                with smart design.
+              </Heading>
+            </>
+          )}
           <div className="flex items-center justify-center gap-x-4 mt-10">
             <LocalizedClientLink href={customer ? "/account" : "/account"}>
               <OutlineButton showArrow>

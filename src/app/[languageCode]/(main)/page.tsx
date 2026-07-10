@@ -92,10 +92,25 @@ export default async function Home(props: {
     selectedTagSlug
   )
 
+  const homePageProfile = homePage?.page_profiles?.find(
+    (profile) => profile.language?.toLowerCase() === languageCode?.toLowerCase()
+  )
+
+  const heroHeight = homePage?.hero_height_value
+    ? `${homePage.hero_height_value}${homePage.hero_height_unit ?? "vh"}`
+    : null
+
   // Always render Hero, make FeaturedProducts conditional
   return (
     <>
-      <Hero params={props.params} />
+      <Hero
+        params={props.params}
+        heroImageSrc={homePage?.hero_image?.src ?? null}
+        title={homePageProfile?.title ?? null}
+        subtitle={homePageProfile?.subtitle ?? null}
+        heroHeight={heroHeight}
+        heroVideoSrc={homePage?.hero_video_link ?? null}
+      />
 
       {contentBlocks.length > 0 && (
         <div>

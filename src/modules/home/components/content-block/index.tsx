@@ -20,6 +20,7 @@ import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import { SupportedLanguage } from "@lib/i18n"
 import ProductCarouselGrid from "@modules/common/components/product-carousel-grid"
 import RichText from "@modules/common/components/rich-text"
+import { splitSections } from "./sectionMarker"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -51,6 +52,18 @@ function parseExtraCss(raw: unknown): React.CSSProperties {
   return {}
 }
 
+type TitleAlignment = "left" | "center" | "right" | undefined
+
+// Resolve the horizontal text-alignment utility for a block title. When the
+// block-level `titleAlignment` config is set it wins; otherwise the style's
+// current alignment (`fallback`) is preserved exactly as before.
+function titleAlignClass(alignment: TitleAlignment, fallback: string): string {
+  if (alignment === "left") return "text-left"
+  if (alignment === "center") return "text-center"
+  if (alignment === "right") return "text-right"
+  return fallback
+}
+
 export default function ContentBlock({
   data,
   index,
@@ -59,6 +72,10 @@ export default function ContentBlock({
 }: ContentBlockProps) {
   const profile = getProfile(data.content_block_profiles, languageCode)
   const extraCss = parseExtraCss(data.extra_css)
+
+  // Block-level title settings (from data.config, not per-language).
+  const titleAlignment = (data.config as any)?.titleAlignment as TitleAlignment
+  const hideTitle = Boolean((data.config as any)?.hideTitle)
 
   const hasMaxHeight = data.max_height != null || extraCss.maxHeight != null
 
@@ -95,6 +112,8 @@ export default function ContentBlock({
           mediaMinWidth={data.media_min_width}
           objectFitCover={data.object_fit_cover}
           containerMaxHeight={data.max_height ?? extraCss.maxHeight}
+          titleAlignment={titleAlignment}
+          hideTitle={hideTitle}
         />
       )}
 
@@ -115,6 +134,8 @@ export default function ContentBlock({
           videoLink={data.video_link}
           videoAutoplay={data.video_autoplay}
           videoLoop={data.video_loop}
+          titleAlignment={titleAlignment}
+          hideTitle={hideTitle}
         />
       )}
 
@@ -126,6 +147,8 @@ export default function ContentBlock({
           descriptionFormat={profile?.description_format ?? null}
           backgroundColor={data.background_color}
           textColor={data.text_color}
+          titleAlignment={titleAlignment}
+          hideTitle={hideTitle}
         />
       )}
 
@@ -183,6 +206,8 @@ export default function ContentBlock({
           languageCode={languageCode}
           backgroundColor={data.background_color}
           textColor={data.text_color}
+          titleAlignment={titleAlignment}
+          hideTitle={hideTitle}
         />
       )}
 
@@ -198,6 +223,8 @@ export default function ContentBlock({
           textColor={data.text_color}
           showTags={Boolean((data.config as any)?.show_tags)}
           selectedTagSlug={selectedTagSlug}
+          titleAlignment={titleAlignment}
+          hideTitle={hideTitle}
         />
       )}
     </section>
@@ -214,6 +241,8 @@ function TextSection({
   widthClass = "flex-1",
   verticalJustifyClass = "justify-center",
   paddingClass = "px-6 py-10 small:px-12 small:py-16",
+  titleAlignment,
+  hideTitle = false,
 }: {
   name: string | null
   description: string | null
@@ -222,15 +251,20 @@ function TextSection({
   widthClass?: string
   verticalJustifyClass?: string
   paddingClass?: string
+  titleAlignment?: TitleAlignment
+  hideTitle?: boolean
 }) {
   return (
     <div
       className={`flex flex-col ${paddingClass} ${widthClass} ${verticalJustifyClass}`}
     >
       <div>
-        {name && (
+        {!hideTitle && name && (
           <h3
-            className="mb-4 text-2xl font-medium"
+            className={`mb-4 text-2xl font-medium ${titleAlignClass(
+              titleAlignment,
+              "text-left"
+            )}`}
             style={textColor ? { color: textColor } : undefined}
           >
             {name.split("\\n").map((line, i) => (
@@ -283,6 +317,8 @@ function TextAndImage({
   mediaMinWidth,
   objectFitCover,
   containerMaxHeight,
+  titleAlignment,
+  hideTitle,
 }: {
   style: string | null
   sectionImage: string | null
@@ -297,6 +333,8 @@ function TextAndImage({
   mediaMinWidth: number | null
   objectFitCover: boolean | null
   containerMaxHeight?: number | string | null
+  titleAlignment: TitleAlignment
+  hideTitle: boolean
 }) {
   // Text on image (overlay) style
   if (style === "text_on_image") {
@@ -348,9 +386,12 @@ function TextAndImage({
         className="content-container large:px-0 px-6"
         style={backgroundColor ? { backgroundColor } : undefined}
       >
-        {sectionName && (
+        {!hideTitle && sectionName && (
           <h3
-            className="mb-6 text-2xl font-medium small:mb-8"
+            className={`mb-6 text-2xl font-medium small:mb-8 ${titleAlignClass(
+              titleAlignment,
+              "text-left"
+            )}`}
             style={textColor ? { color: textColor } : undefined}
           >
             {sectionName.split("\\n").map((line, i) => (
@@ -403,9 +444,12 @@ function TextAndImage({
       className="content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      {sectionName && (
+      {!hideTitle && sectionName && (
         <h3
-          className="mb-6 text-2xl font-medium small:mb-8"
+          className={`mb-6 text-2xl font-medium small:mb-8 ${titleAlignClass(
+            titleAlignment,
+            "text-left"
+          )}`}
           style={textColor ? { color: textColor } : undefined}
         >
           {sectionName.split("\\n").map((line, i) => (
@@ -470,6 +514,8 @@ function TextAndVideo({
   videoLink,
   videoAutoplay,
   videoLoop,
+  titleAlignment,
+  hideTitle,
 }: {
   alignImage: "left" | "right"
   sectionName: string | null
@@ -486,6 +532,8 @@ function TextAndVideo({
   videoLink: string | null
   videoAutoplay: boolean | null
   videoLoop: boolean | null
+  titleAlignment: TitleAlignment
+  hideTitle: boolean
 }) {
   return (
     <div
@@ -499,6 +547,8 @@ function TextAndVideo({
         description={sectionDescription}
         descriptionFormat={descriptionFormat}
         textColor={textColor}
+        titleAlignment={titleAlignment}
+        hideTitle={hideTitle}
       />
 
       <div className="flex w-full items-center justify-center small:w-1/2">
@@ -533,6 +583,8 @@ function OnlyText({
   descriptionFormat,
   backgroundColor,
   textColor,
+  titleAlignment,
+  hideTitle,
 }: {
   style: ContentBlockStyle | null
   sectionName: string | null
@@ -540,6 +592,8 @@ function OnlyText({
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
+  titleAlignment: TitleAlignment
+  hideTitle: boolean
 }) {
   if (style === "3_columns_title_left") {
     return (
@@ -549,6 +603,8 @@ function OnlyText({
         descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
+        titleAlignment={titleAlignment}
+        hideTitle={hideTitle}
       />
     )
   }
@@ -561,6 +617,8 @@ function OnlyText({
         descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
+        titleAlignment={titleAlignment}
+        hideTitle={hideTitle}
       />
     )
   }
@@ -571,9 +629,12 @@ function OnlyText({
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className="mx-auto max-w-2xl">
-        {sectionName && (
+        {!hideTitle && sectionName && (
           <h3
-            className="mb-4 text-2xl font-medium"
+            className={`mb-4 text-2xl font-medium ${titleAlignClass(
+              titleAlignment,
+              "text-center"
+            )}`}
             style={textColor ? { color: textColor } : undefined}
           >
             {sectionName.split("\\n").map((line, i) => (
@@ -602,18 +663,27 @@ function ThreeColumnsTitleLeft({
   descriptionFormat,
   backgroundColor,
   textColor,
+  titleAlignment,
+  hideTitle,
 }: {
   sectionName: string | null
   sectionDescription: string | null
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
+  titleAlignment: TitleAlignment
+  hideTitle: boolean
 }) {
   // Split description into two roughly equal halves for the two text columns
   const lines = sectionDescription ? sectionDescription.split(/\\n|\n/) : []
   const midpoint = Math.ceil(lines.length / 2)
   const leftLines = lines.slice(0, midpoint)
   const rightLines = lines.slice(midpoint)
+
+  // Markdown: split the stored description into its two column sections
+  const sections = splitSections(sectionDescription)
+  const colA = sections[0] ?? ""
+  const colB = sections[1] ?? ""
 
   return (
     <div
@@ -623,9 +693,12 @@ function ThreeColumnsTitleLeft({
       <div className="grid grid-cols-1 gap-8 small:grid-cols-3 small:gap-12">
         {/* Left column — title */}
         <div className="flex items-start">
-          {sectionName && (
+          {!hideTitle && sectionName && (
             <h3
-              className="text-xs font-medium uppercase tracking-[0.2em] small:text-sm"
+              className={`w-full text-xs font-medium uppercase tracking-[0.2em] small:text-sm ${titleAlignClass(
+                titleAlignment,
+                "text-left"
+              )}`}
               style={textColor ? { color: textColor } : undefined}
             >
               {sectionName.split("\\n").map((line, i) => (
@@ -639,13 +712,17 @@ function ThreeColumnsTitleLeft({
         </div>
 
         {descriptionFormat === "markdown" ? (
-          <div className="small:col-span-2">
-            <RichText
-              value={sectionDescription}
-              format="markdown"
-              textColor={textColor}
-            />
-          </div>
+          <>
+            {/* Middle column — first section of description */}
+            <div>
+              <RichText value={colA} format="markdown" textColor={textColor} />
+            </div>
+
+            {/* Right column — second section of description */}
+            <div>
+              <RichText value={colB} format="markdown" textColor={textColor} />
+            </div>
+          </>
         ) : (
           <>
             {/* Middle column — first half of description */}
@@ -688,17 +765,26 @@ function TwoColumnsTitleTopCenter({
   descriptionFormat,
   backgroundColor,
   textColor,
+  titleAlignment,
+  hideTitle,
 }: {
   sectionName: string | null
   sectionDescription: string | null
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
+  titleAlignment: TitleAlignment
+  hideTitle: boolean
 }) {
   const lines = sectionDescription ? sectionDescription.split(/\\n|\n/) : []
   const midpoint = Math.ceil(lines.length / 2)
   const leftLines = lines.slice(0, midpoint)
   const rightLines = lines.slice(midpoint)
+
+  // Markdown: split the stored description into its two column sections
+  const sections = splitSections(sectionDescription)
+  const colA = sections[0] ?? ""
+  const colB = sections[1] ?? ""
 
   return (
     <div
@@ -706,9 +792,12 @@ function TwoColumnsTitleTopCenter({
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {/* Centered title */}
-      {sectionName && (
+      {!hideTitle && sectionName && (
         <h3
-          className="mb-8 text-center text-xs font-medium uppercase tracking-[0.2em] small:mb-12 small:text-sm"
+          className={`mb-8 text-xs font-medium uppercase tracking-[0.2em] small:mb-12 small:text-sm ${titleAlignClass(
+            titleAlignment,
+            "text-center"
+          )}`}
           style={textColor ? { color: textColor } : undefined}
         >
           {sectionName.split("\\n").map((line, i) => (
@@ -721,11 +810,14 @@ function TwoColumnsTitleTopCenter({
       )}
 
       {descriptionFormat === "markdown" ? (
-        <RichText
-          value={sectionDescription}
-          format="markdown"
-          textColor={textColor}
-        />
+        <div className="grid grid-cols-1 gap-8 small:grid-cols-2 small:gap-12">
+          <div>
+            <RichText value={colA} format="markdown" textColor={textColor} />
+          </div>
+          <div>
+            <RichText value={colB} format="markdown" textColor={textColor} />
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-8 small:grid-cols-2 small:gap-12">
           <div>
@@ -1372,6 +1464,8 @@ function ProductGrid({
   languageCode,
   backgroundColor,
   textColor,
+  titleAlignment,
+  hideTitle,
 }: {
   products: ProductContainer[]
   title: string | null
@@ -1380,6 +1474,8 @@ function ProductGrid({
   languageCode: string
   backgroundColor: string | null
   textColor: string | null
+  titleAlignment: TitleAlignment
+  hideTitle: boolean
 }) {
   if (products.length === 0 && !title && !description) return null
 
@@ -1388,9 +1484,12 @@ function ProductGrid({
       className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      {title && (
+      {!hideTitle && title && (
         <h3
-          className="mb-6 text-left text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm "
+          className={`mb-6 text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm ${titleAlignClass(
+            titleAlignment,
+            "text-left"
+          )}`}
           style={textColor ? { color: textColor } : undefined}
         >
           {title.split("\\n").map((line, i) => (
@@ -1445,6 +1544,8 @@ function PageGrid({
   textColor,
   showTags,
   selectedTagSlug,
+  titleAlignment,
+  hideTitle,
 }: {
   pages: GridPage[]
   tags: GridTag[]
@@ -1456,6 +1557,8 @@ function PageGrid({
   textColor: string | null
   showTags: boolean
   selectedTagSlug?: string | null
+  titleAlignment: TitleAlignment
+  hideTitle: boolean
 }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -1495,9 +1598,12 @@ function PageGrid({
       className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      {title && (
+      {!hideTitle && title && (
         <h3
-          className="mb-6 text-left text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm "
+          className={`mb-6 text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm ${titleAlignClass(
+            titleAlignment,
+            "text-left"
+          )}`}
           style={textColor ? { color: textColor } : undefined}
         >
           {title.split("\\n").map((line, i) => (
