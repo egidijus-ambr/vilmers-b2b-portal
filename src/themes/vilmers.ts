@@ -102,5 +102,6 @@ export const vilmers: Theme = {
       heightMobile: 20,
       paddingY: 24, // navHeight = 24 + 2*24 = 72
     },
+    newsletter: { show: true },
   },
 }

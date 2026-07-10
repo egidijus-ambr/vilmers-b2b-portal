@@ -5,6 +5,7 @@ import Image from "next/image"
 import { useTranslation } from "react-i18next"
 import { subscribeNewsletter, NewsletterState } from "@lib/data/newsletter"
 import Button from "@modules/common/components/button"
+import { activeTheme } from "themes"
 
 interface NewsletterBlockProps {
   languageCode: string
@@ -19,6 +20,14 @@ export default function NewsletterBlock({
     NewsletterState | null,
     FormData
   >(subscribeNewsletter, null)
+
+  // Self-gates per-brand, alongside the page-level `features.newsletter`
+  // flag at each render site (`(main)/page.tsx`, `categories/templates`).
+  // Effective visibility = `features.newsletter && layout.newsletter.show`.
+  // `activeTheme` is a build-time constant (same value on every render, so
+  // this never changes the hooks called above across renders) — placed
+  // after the hooks, before any JSX, to keep hook calls unconditional.
+  if (!activeTheme.layout.newsletter.show) return null
 
   return (
     <section

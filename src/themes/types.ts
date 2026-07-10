@@ -85,4 +85,12 @@ export interface ThemeLayout {
     /** px — `navHeight = height + 2 * paddingY`. */
     paddingY: number
   }
+  /**
+   * Per-brand visibility for the `NewsletterBlock` component, self-gated
+   * (see `home/components/newsletter-block/index.tsx`). Works ALONGSIDE the
+   * existing `features.newsletter` page-level flag (AND semantics): the
+   * block only renders when both `features.newsletter` is on AND
+   * `layout.newsletter.show` is `true`.
+   */
+  newsletter: { show: boolean }
 }
