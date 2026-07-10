@@ -94,6 +94,6 @@ export const dominari: Theme = {
       heightMobile: 32,
       paddingY: 24, // navHeight = 40 + 2*24 = 88
     },
-    newsletter: { show: true },
+    newsletter: { show: false },
   },
 }

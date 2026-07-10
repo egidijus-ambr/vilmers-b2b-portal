@@ -30,7 +30,7 @@ export interface ThemeLayout {
   backButton:       { show: boolean }                    // Vilmers: true; Dominari: false
   searchButton:     { show: boolean }                    // Vilmers: true; Dominari: true (knob available)
   homepageHeader:   { transparent: boolean }             // Vilmers: true (transparent+animated); Dominari: false (solid)
-  newsletter:       { show: boolean }                    // content knob: Vilmers/Dominari true (knob available). AND-ed with features.newsletter
+  newsletter:       { show: boolean }                    // content knob (SOLE control): Vilmers true (show), Dominari false (hide)
   languageSwitcher: { placement: "top-bar" | "navbar" }  // Vilmers: "top-bar"
   logo: {
     position:     "left" | "center"   // Vilmers: "center"
@@ -113,13 +113,13 @@ Two channels, split by data type (mirrors the existing colors-vs-enums split):
 
 ### 5b. Newsletter block — `layout.newsletter.show` (content knob, not navbar)
 - Per-brand show/hide for the `NewsletterBlock` (`src/modules/home/components/newsletter-block/index.tsx`),
-  rendered on home + category pages. The component SELF-GATES: `if (!activeTheme.layout.newsletter.show) return null`
-  at the top — so both render sites respect it without editing them (avoids touching the
-  CMS-dirty `page.tsx`).
-- Works ALONGSIDE the existing `features.newsletter` (`NEXT_PUBLIC_NEWSLETTER_ENABLED`, default off)
-  flag: effective visibility = `features.newsletter && layout.newsletter.show`.
-- Default `true` for both brands → strict no-op (the flag still governs). Set a brand's to
-  `false` to force-hide the newsletter for that brand regardless of the flag.
+  rendered on home + category pages. The component SELF-GATES (`if (!activeTheme.layout.newsletter.show) return null`,
+  placed after its hooks to respect rules-of-hooks) — so both render sites just render
+  `<NewsletterBlock/>` and the knob governs.
+- This is the SOLE control: the former `NEXT_PUBLIC_NEWSLETTER_ENABLED` / `features.newsletter`
+  flag was removed once the theme knob superseded it (dropped from `features.ts`, `env.ts`,
+  `.env.template`, and the two render-site wrappers).
+- Values: Vilmers `true` (show), Dominari `false` (hide).
 
 ### 5. Homepage header transparency — `layout.homepageHeader.transparent`
 - `true` (Vilmers, current): on the homepage, the header starts transparent over the hero

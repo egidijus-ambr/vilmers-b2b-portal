@@ -12,7 +12,6 @@ import { getShopSettings } from "@lib/data/shop-settings"
 import { getPageByCode, enrichContentBlocksWithPages } from "@lib/data/pages"
 import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { enrichContentBlocksWithProducts } from "@lib/data/products"
-import { features } from "@lib/features"
 
 export const metadata: Metadata = {
   title: "Vilmers - Comfort and Quality with Smart Design",
@@ -112,9 +111,7 @@ export default async function Home(props: {
         </div>
       )}
 
-      {features.newsletter && (
-        <NewsletterBlock languageCode={languageCode} />
-      )}
+      <NewsletterBlock languageCode={languageCode} />
 
       {/* {collections && region ? (
         <div className="py-0">

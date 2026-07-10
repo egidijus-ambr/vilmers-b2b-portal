@@ -21,9 +21,9 @@ export default function NewsletterBlock({
     FormData
   >(subscribeNewsletter, null)
 
-  // Self-gates per-brand, alongside the page-level `features.newsletter`
-  // flag at each render site (`(main)/page.tsx`, `categories/templates`).
-  // Effective visibility = `features.newsletter && layout.newsletter.show`.
+  // Self-gates per-brand: `layout.newsletter.show` is the SOLE control for
+  // this block's visibility at both render sites (`(main)/page.tsx`,
+  // `categories/templates`) — there is no page-level feature flag anymore.
   // `activeTheme` is a build-time constant (same value on every render, so
   // this never changes the hooks called above across renders) — placed
   // after the hooks, before any JSX, to keep hook calls unconditional.

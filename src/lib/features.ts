@@ -17,7 +17,6 @@ export const features = {
   orderDetails: getBool("NEXT_PUBLIC_FEATURE_ORDER_DETAILS", false),
   productCatalog: getBool("NEXT_PUBLIC_FEATURE_PRODUCT_CATALOG", false),
   configurator: getBool("NEXT_PUBLIC_CONFIGURATOR_PAGE_ENABLED", false),
-  newsletter: getBool("NEXT_PUBLIC_NEWSLETTER_ENABLED", false),
   tawk: getBool("NEXT_PUBLIC_TAWK_ENABLED", true),
   showVolume: getBool("NEXT_PUBLIC_SHOW_VOLUME", false),
   showDeliveryShippingInfo: getBool(

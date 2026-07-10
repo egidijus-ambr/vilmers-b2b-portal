@@ -86,11 +86,10 @@ export interface ThemeLayout {
     paddingY: number
   }
   /**
-   * Per-brand visibility for the `NewsletterBlock` component, self-gated
-   * (see `home/components/newsletter-block/index.tsx`). Works ALONGSIDE the
-   * existing `features.newsletter` page-level flag (AND semantics): the
-   * block only renders when both `features.newsletter` is on AND
-   * `layout.newsletter.show` is `true`.
+   * Per-brand visibility for the `NewsletterBlock` component. This is the
+   * SOLE control for the block (self-gated — see
+   * `home/components/newsletter-block/index.tsx`); there is no page-level
+   * feature flag anymore.
    */
   newsletter: { show: boolean }
 }
