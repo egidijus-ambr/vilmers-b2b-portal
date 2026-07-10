@@ -49,13 +49,17 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   const { items } = useCart()
   const totalCartItems = items.reduce((sum, item) => sum + (item.quantity ?? 1), 0)
   const { shopSettings } = useShopSettings()
-  // NOTE: footer_logo_image is intentionally NOT used here. It's authored for the
-  // dark footer background (bg-footer-background) and is often a white/light mark —
-  // using it as the nav logo would render invisible on the nav's light (non-transparent)
-  // state. default_manufacturer.logo_image is the general-purpose dark wordmark that
+  // Dark logo for the solid/white nav state (and the invert-fallback below).
+  // default_manufacturer.logo_image is the general-purpose dark wordmark that
   // matches the hardcoded fallback's color/shape. Verified against live data.
-  const logoSrc =
+  const solidLogoSrc =
     shopSettings?.default_manufacturer?.logo_image?.src || "/images/logo.svg"
+  // footer_logo_image is authored white/light for the dark footer background
+  // (bg-footer-background) — reused here for the transparent nav state
+  // (also a dark/see-through background) so we render it as-is instead of
+  // `brightness-0 invert`-ing the opaque-background manufacturer logo, which
+  // previously produced a solid white rectangle instead of a white wordmark.
+  const whiteLogoSrc = shopSettings?.footer_logo_image?.src
 
   const { topBar, backButton, searchButton, homepageHeader, languageSwitcher, logo } =
     activeTheme.layout
@@ -115,9 +119,15 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
     ? menuItems.filter((i) => i.id === "store")
     : menuItems
 
-  // Logo — shared between the "center" cluster and the "left" cluster
-  // (see `logo.position` below); the DB logo src chain and the
-  // transparent-homepage inverted treatment are identical either way.
+  // Logo — shared between the "center" cluster and the "left" cluster (see
+  // `logo.position` below). Transparent state: prefer the already-white
+  // `footer_logo_image` (rendered as-is, no filter); only fall back to
+  // inverting the (opaque-background) solid logo when no white logo is set.
+  // Solid state: always the dark solid logo, never inverted.
+  const useWhiteLogo = isTransparent && !!whiteLogoSrc
+  const logoImgSrc = useWhiteLogo ? whiteLogoSrc : solidLogoSrc
+  const shouldInvertLogo = isTransparent && !whiteLogoSrc
+
   const logoElement = (
     <LocalizedClientLink
       href="/"
@@ -127,10 +137,10 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
       data-testid="nav-store-link"
     >
       <img
-        src={logoSrc}
+        src={logoImgSrc}
         alt="Store Logo"
         className={`h-[var(--nav-logo-height-mobile)] small:h-[var(--nav-logo-height)] transition-[filter] duration-200 ${
-          isTransparent ? "brightness-0 invert" : ""
+          shouldInvertLogo ? "brightness-0 invert" : ""
         }`}
       />
     </LocalizedClientLink>
