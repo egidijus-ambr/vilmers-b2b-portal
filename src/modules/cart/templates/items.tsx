@@ -146,7 +146,7 @@ function CartItemCard({
       <div className="small:hidden p-4">
         {/* Top row: image + text details */}
         <div className="flex gap-x-4">
-          <div className="w-[120px] h-[120px] flex-shrink-0 bg-gold-10 rounded">
+          <div className="w-[120px] h-[120px] flex-shrink-0 bg-product-card-background rounded">
             {image ? (
               <img
                 src={image}
@@ -283,7 +283,7 @@ function CartItemCard({
       <div className="hidden small:flex">
         {/* Image */}
         <div className="w-[280px] flex-shrink-0 p-6">
-          <div className="w-full h-full bg-gold-10 rounded flex items-center justify-center p-4">
+          <div className="w-full h-full bg-product-card-background rounded flex items-center justify-center p-4">
             {image ? (
               <img
                 src={image}

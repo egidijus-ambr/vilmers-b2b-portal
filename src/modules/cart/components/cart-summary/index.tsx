@@ -69,7 +69,7 @@ export default function CartSummary({
 
           return (
             <div key={item.id} className="flex gap-x-4">
-              <div className="w-[120px] h-[120px] flex-shrink-0 bg-gold-10 rounded">
+              <div className="w-[120px] h-[120px] flex-shrink-0 bg-product-card-background rounded">
                 {image ? (
                   <img
                     src={image}
