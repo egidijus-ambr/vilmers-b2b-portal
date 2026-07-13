@@ -86,7 +86,7 @@ const PageHero = ({
   }
 
   return (
-    <div className="w-full bg-ui-bg-subtle py-8 sm:py-10 px-10 sm:px-12 lg:px-14">
+    <div className="w-full bg-page-background py-8 sm:py-10 px-10 sm:px-12 lg:px-14">
       <div className="max-w-[1360px] mx-auto">
         {breadcrumbItems && breadcrumbItems.length > 0 && (
           <Breadcrumb items={breadcrumbItems} />
