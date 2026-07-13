@@ -12,6 +12,7 @@ import { useCustomer } from "@lib/context/customer-context"
 import { useGoToConfigurator } from "@lib/context/go-to-configurator-context"
 import { getCustomerMarket } from "@lib/util/customer-market"
 import { features } from "@lib/features"
+import { activeTheme } from "themes"
 
 function extractProductDisplayData(
   container: ProductContainer,
@@ -171,7 +172,7 @@ export default function B2BProductCard({
               No image
             </div>
           )}
-          {categoryName && (
+          {activeTheme.layout.productCard.showCategory && categoryName && (
             <span className="absolute top-3 left-3 z-10 rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue ">
               {categoryName}
             </span>

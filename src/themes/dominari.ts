@@ -18,7 +18,7 @@ export const dominari: Theme = {
     // Figma Design System Colors
     "dark-blue": "#22232c",
     "dark-blue-70": "#646C73",
-    gold: "#9A8555",
+    gold: "#d1aa66",
     "gold-10": "#F5F3EE",
     "gold-20": "#EBE7DD",
     "gold-30": "#E1DACC",
@@ -45,7 +45,7 @@ export const dominari: Theme = {
     // Legacy `grey` 0-90 scale (flattened; tailwind.config.js re-nests these
     // under the `grey.<n>` object using the same `var(--color-grey-<n>)` refs).
     "grey-0": "#FFFFFF",
-    "grey-5": "#F9FAFB",
+    "grey-5": "#f9f9f9",
     "grey-10": "#F3F4F6",
     "grey-20": "#E5E7EB",
     "grey-30": "#D1D5DB",
@@ -59,16 +59,16 @@ export const dominari: Theme = {
   // Semantic surface tokens (Layer 4) — copied from Vilmers as a starting
   // point; not yet brand-differentiated.
   surfaces: {
-    page_background: "white",
-    page_foreground: "dark-blue",
+    page_background: "grey-5",
+    page_foreground: "grey-80",
     top_menu_background: "dark-blue",
     top_menu_foreground: "white",
     nav_background: "white",
-    nav_foreground: "dark-blue",
-    product_card_background: "gold-20",
+    nav_foreground: "grey-80",
+    product_card_background: "grey-20",
     footer_background: "dark-blue",
     footer_foreground: "white",
-    hero_background: "dark-blue", // home hero bg — hero headings are text-white, so dark-blue (dominari's own #22232c) keeps them readable, same primitive as footer_background
+    hero_background: "grey-90", // home hero bg — hero headings are text-white, so dark-blue (dominari's own #22232c) keeps them readable, same primitive as footer_background
     accent: "gold",
   },
   // RESERVED for v1 — copied from Vilmers, not yet consumed.
@@ -96,5 +96,14 @@ export const dominari: Theme = {
       paddingY: 24, // navHeight = 40 + 2*24 = 88
     },
     newsletter: { show: false },
+    productCard: { showCategory: true },
+    footer: {
+      facebook: "https://www.facebook.com/dominarigrupe/",
+      linkedin: "https://www.linkedin.com/company/dominari/",
+      instagram: "https://www.instagram.com/dominari_official/",
+      footer_support_email: "info@dominari.lt",
+      footer_privacy_url: "",
+    },
   },
+  demoMode: true,
 }

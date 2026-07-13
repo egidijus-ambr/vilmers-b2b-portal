@@ -73,7 +73,8 @@
     "stock-available": "{{qty}} m disponibles",
     "stock-check-button": "Vérifier la disponibilité",
     "stock-low-message": "Rupture de stock - délai de fabrication sur commande 6 semaines.",
-    "stock-plenty-message": "En stock - délai de fabrication actuel pour les nouvelles commandes 2 semaines."
+    "stock-plenty-message": "En stock - délai de fabrication actuel pour les nouvelles commandes 2 semaines.",
+    "demo-action-disabled": "Cette action est désactivée en mode démo."
   },
   "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",

@@ -104,5 +104,14 @@ export const vilmers: Theme = {
       paddingY: 24, // navHeight = 24 + 2*24 = 72
     },
     newsletter: { show: true },
+    productCard: { showCategory: true },
+    footer: {
+      facebook: "https://lt-lt.facebook.com/vilmersuab",
+      linkedin: "https://www.linkedin.com/company/vilmers-uab",
+      instagram: "https://www.instagram.com/vilmers_furniture/",
+      footer_support_email: "support@vilmers.com",
+      footer_privacy_url: "https://vilmers.com/privacy-policy",
+    },
   },
+  demoMode: false,
 }

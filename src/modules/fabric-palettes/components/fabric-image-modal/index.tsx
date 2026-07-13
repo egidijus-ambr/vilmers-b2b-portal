@@ -16,6 +16,8 @@ import type {
   FabricCalloutSettings,
   LocaleMap,
 } from "@lib/data/fabric-callout-settings"
+import { activeTheme } from "themes"
+import { toast } from "@medusajs/ui"
 
 function resolveCalloutMessage(
   map: LocaleMap | null | undefined,
@@ -97,6 +99,10 @@ export default function FabricImageModal({
   }
 
   const handleCheckStock = async () => {
+    if (activeTheme.demoMode) {
+      toast.info(t("fabric-palettes.demo-action-disabled"))
+      return
+    }
     if (!itemId || !configId) return
     requestIdRef.current += 1
     const myRequestId = requestIdRef.current

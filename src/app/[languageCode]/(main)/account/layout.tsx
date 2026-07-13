@@ -1,12 +1,13 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Toaster } from "@medusajs/ui"
 import AccountLayout from "@modules/account/templates/account-layout"
 import { CustomerProvider } from "@lib/context/customer-context"
-import { retrieveCustomer } from "@lib/data/customer"
+import { retrieveCustomer, getLoginPage } from "@lib/data/customer"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
+import { Page } from "@lib/furnisystems-sdk"
 
 type CustomerType = ExtendedStoreCustomer | null
 
@@ -16,17 +17,24 @@ export default function AccountPageLayout({
   children: React.ReactNode
 }) {
   const [customer, setCustomer] = useState<CustomerType>(null)
+  const [loginPage, setLoginPage] = useState<Page | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const params = useParams()
+  const languageCode = params.languageCode as string
 
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
         setLoading(true)
         setError(null)
-        const customerData = await retrieveCustomer()
+        const [customerData, loginPageData] = await Promise.all([
+          retrieveCustomer(),
+          getLoginPage(languageCode),
+        ])
         setCustomer(customerData)
+        setLoginPage(loginPageData)
       } catch (error) {
         console.error("[AccountPageLayout] Error retrieving customer:", error)
         setCustomer(null)
@@ -37,7 +45,7 @@ export default function AccountPageLayout({
     }
 
     fetchCustomer()
-  }, [])
+  }, [languageCode])
 
   if (loading) {
     return (
@@ -72,7 +80,7 @@ export default function AccountPageLayout({
       }
     >
       <CustomerProvider customer={customer}>
-        <AccountLayout customer={customer}>
+        <AccountLayout customer={customer} loginPage={loginPage}>
           {children}
           <Toaster />
         </AccountLayout>

@@ -9,14 +9,17 @@ import UnderlineLink from "@modules/common/components/interactive-link"
 import OutlineButton from "@modules/common/components/outline-button"
 
 import { ExtendedStoreCustomer } from "@lib/types/customer"
+import { Page } from "@lib/furnisystems-sdk"
 
 interface AccountLayoutProps {
   customer: ExtendedStoreCustomer | null
+  loginPage?: Page | null
   children: React.ReactNode
 }
 
 const AccountLayout: React.FC<AccountLayoutProps> = ({
   customer,
+  loginPage,
   children,
 }) => {
   const pathname = usePathname()
@@ -26,6 +29,14 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
 
   // Check if this is the login page (when customer is null)
   const isLoginPage = !customer
+
+  // CMS-driven hero (mirrors the home page's "home-page" pattern), with the
+  // hardcoded image/text as fallback when the "login" CMS page is missing or
+  // unpublished.
+  const loginProfile = loginPage?.page_profiles?.find(
+    (profile) => profile.language?.toLowerCase() === languageCode?.toLowerCase()
+  )
+  const heroImageSrc = loginPage?.hero_image?.src || "/images/login_background.png"
 
   // Show loading state while translations are loading to prevent flicker
   if (!isReady) {
@@ -37,11 +48,13 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
   }
 
   if (isLoginPage) {
+    const heroTitle = loginProfile?.title || t("login-welcome-main-text")
+
     return (
       <div
         className="min-h-screen bg-cover bg-center bg-no-repeat relative flex items-center"
         data-testid="account-page"
-        style={{ backgroundImage: "url(/images/login_background.png)" }}
+        style={{ backgroundImage: `url(${heroImageSrc})` }}
       >
         {/* Optional overlay for better readability */}
         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
@@ -52,7 +65,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
             {/* Left side - Text content */}
             <div className="hidden lg:block flex-1 max-w-2xl">
               <h1 className="w-full max-w-[670px] font-medium text-[28px] lg:text-[40px] leading-[40px] lg:leading-[56px] text-white mb-8">
-                {t("login-welcome-main-text")}
+                {heroTitle}
               </h1>
               <div>
                 <Link href={`/${languageCode}/become-partner`}>
@@ -75,7 +88,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
 
   // Default layout for logged-in users (dashboard)
   return (
-    <div className="min-h-screen bg-gold-10 pb-20" data-testid="account-page">
+    <div className="min-h-screen bg-page-background pb-20" data-testid="account-page">
       {children}
     </div>
   )

@@ -73,7 +73,8 @@
     "stock-available": "{{qty}} m verfügbar",
     "stock-check-button": "Lagerverfügbarkeit prüfen",
     "stock-low-message": "Nicht vorrätig – Lieferzeit bei Neubestellung: 6 Wochen.",
-    "stock-plenty-message": "Auf Lager – aktuelle Lieferzeit für Neubestellungen: 2 Wochen."
+    "stock-plenty-message": "Auf Lager – aktuelle Lieferzeit für Neubestellungen: 2 Wochen.",
+    "demo-action-disabled": "Diese Aktion ist im Demo-Modus deaktiviert."
   },
   "breadcrumb-fabric-palettes": "Stoffpalette",
   "breadcrumb-home": "Startseite",

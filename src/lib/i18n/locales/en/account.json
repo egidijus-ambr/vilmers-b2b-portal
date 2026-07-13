@@ -73,7 +73,8 @@
     "stock-available": "{{qty}} m available",
     "stock-check-button": "Check stock availability",
     "stock-low-message": "Out of stock - new order production lead time 6 weeks.",
-    "stock-plenty-message": "In stock - current production lead time for new order 2 weeks."
+    "stock-plenty-message": "In stock - current production lead time for new order 2 weeks.",
+    "demo-action-disabled": "This action is disabled in demo mode."
   },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",

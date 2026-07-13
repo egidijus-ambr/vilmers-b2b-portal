@@ -51,6 +51,13 @@ export interface Theme {
    * build-time constant, same model as `features`), not emitted as CSS.
    */
   layout: ThemeLayout
+  /**
+   * Demo mode — when `true`, certain destructive/real-world-effect controls
+   * (currently: the fabric-palettes PDF download and "Check stock
+   * availability" buttons) are disabled and show a toast instead of
+   * performing their real action. See `account/fabric-palettes`.
+   */
+  demoMode: boolean
 }
 
 export interface ThemeLayout {
@@ -92,4 +99,16 @@ export interface ThemeLayout {
    * feature flag anymore.
    */
   newsletter: { show: boolean }
+  /** Per-brand visibility for the category pill on B2BProductCard (category-product-card). */
+  productCard: { showCategory: boolean }
+  /** Footer links; each link is hidden when its value is absent/empty. */
+  footer?: {
+    facebook?: string
+    twitter?: string
+    instagram?: string
+    pinterest?: string
+    linkedin?: string
+    footer_support_email?: string // rendered as a mailto: link
+    footer_privacy_url?: string
+  }
 }

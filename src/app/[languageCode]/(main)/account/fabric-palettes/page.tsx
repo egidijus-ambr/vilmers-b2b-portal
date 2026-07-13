@@ -22,6 +22,8 @@ import { groupSelectedFeatures, matchesFeatureSelection, buildFeatureToGroupMap 
 import { getFabricCalloutSettings } from "@lib/data/fabric-callout-settings"
 import type { FabricCalloutSettings } from "@lib/data/fabric-callout-settings"
 import { Info } from 'lucide-react'
+import { activeTheme } from "themes"
+import { toast } from "@medusajs/ui"
 
 export default function FabricPalettesPage() {
   const { customer } = useCustomer()
@@ -281,6 +283,10 @@ export default function FabricPalettesPage() {
                         key={p.id}
                         disabled={downloadingCode === p.code}
                         onClick={async () => {
+                          if (activeTheme.demoMode) {
+                            toast.info(t("fabric-palettes.demo-action-disabled"))
+                            return
+                          }
                           setDownloadingCode(p.code)
                           try {
                             const response = await fetch(

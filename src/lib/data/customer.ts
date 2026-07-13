@@ -24,6 +24,8 @@ import { ExtendedStoreCustomer } from "@lib/types/customer"
 import { getDefaultPriceListId } from "./default-pricelist"
 import { getActingCustomer } from "./acting-customer"
 import { getShowAllProductsActive } from "./show-all-products"
+import { getPageByCode } from "./pages"
+import { Page } from "@lib/furnisystems-sdk"
 
 export const retrieveCustomer =
   async (): Promise<ExtendedStoreCustomer | null> => {
@@ -53,6 +55,15 @@ export const retrieveCustomer =
       return null
     }
   }
+
+/**
+ * Server action wrapper around `getPageByCode` for the "login" CMS page,
+ * so client components (e.g. the account layout) can fetch it without
+ * importing the server-only `pages.ts` helpers directly.
+ */
+export const getLoginPage = async (language?: string): Promise<Page | null> => {
+  return getPageByCode("login", language)
+}
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   // const headers = {

@@ -73,7 +73,8 @@
     "stock-available": "{{qty}} m tilgængelig",
     "stock-check-button": "Tjek lagerbeholdning",
     "stock-low-message": "Lav lagerbeholdning. Møbler med denne polstring kan tage op til 8 uger at fremstille.",
-    "stock-plenty-message": "Rigeligt på lager. Vi starter produktionen med det samme."
+    "stock-plenty-message": "Rigeligt på lager. Vi starter produktionen med det samme.",
+    "demo-action-disabled": "Denne handling er deaktiveret i demo-tilstand."
   },
   "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",
