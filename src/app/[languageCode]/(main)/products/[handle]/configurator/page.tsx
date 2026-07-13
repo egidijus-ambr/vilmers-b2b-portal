@@ -90,7 +90,7 @@ export default async function ConfiguratorPage({ params }: Props) {
 
   return (
     <>
-      <div className="bg-gold-10 w-full px-6 large:px-0">
+      <div className="bg-page-background w-full px-6 large:px-0">
         <div className="content-container py-4">
           <Breadcrumb items={breadcrumbs} />
         </div>

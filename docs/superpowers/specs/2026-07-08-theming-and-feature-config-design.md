@@ -279,8 +279,12 @@ at runtime (still needs the v2 runtime-injection path); spacing/radius roles.
 - Runtime DB color-override (`theme_main_color`/`theme_secondary_color`/`theme_override`)
   — needs runtime CSS-var injection; deferred to v2.
 - Themed spacing adoption across components (reserved only).
-- Configurator (Konva) canvas colors — colors live in TS data
-  (`configurator/lib/vilmers.ts`), immune to CSS-variable theming; separate config path.
+- Configurator (Konva/SVG) element FILL colors — these are genuinely data-driven and
+  live in TS data (`configurator/lib/vilmers.ts`), immune to CSS-variable theming;
+  separate config path. This does NOT include the configurator's page/modal/canvas
+  Tailwind BACKGROUND chrome (breadcrumb band, `ResponsiveDialog` modal background,
+  canvas backdrop) — that chrome IS themed via `bg-page-background` like the rest of
+  the app and must not be re-skipped in future audits.
 - `supportEmail` as a DB field (backend change).
 - `zod`/typed env-validation library.
 

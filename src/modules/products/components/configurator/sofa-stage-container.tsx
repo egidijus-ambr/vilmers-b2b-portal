@@ -202,7 +202,7 @@ const SofaStageContainer = ({
         {sofaShapes.length < 1 && (
           <div className="absolute inset-0 z-[3] flex items-center justify-center text-center">
             {showInstructions ? (
-              <div className="relative border border-gold-20 p-6 lg:p-8 w-[280px] lg:w-[380px] bg-gold-10 shadow-sm">
+              <div className="relative border border-gold-20 p-6 lg:p-8 w-[280px] lg:w-[380px] bg-page-background shadow-sm">
                 {/* Close button */}
                 <button
                   onClick={() => setShowInstructions(false)}

@@ -10,7 +10,7 @@ interface ResponsiveDialogProps {
   onClose: () => void
   title: string
   children: React.ReactNode
-  /** Additional classes for the Dialog.Panel (e.g., "bg-white" to override default bg-gold-10) */
+  /** Additional classes for the Dialog.Panel (e.g., "bg-white" to override default bg-page-background) */
   className?: string
   /** "medium" = md:max-w-2xl, "default" = md:max-w-5xl, "full" = almost full screen */
   size?: "medium" | "default" | "full"
@@ -64,7 +64,7 @@ export default function ResponsiveDialog({
                 className={clx(
                   "flex flex-col w-full h-full md:h-auto transform text-left align-middle transition-all md:shadow-xl md:border md:rounded-rounded",
                   sizeClasses,
-                  className ?? "bg-gold-10"
+                  className ?? "bg-page-background"
                 )}
               >
                 {/* Header */}

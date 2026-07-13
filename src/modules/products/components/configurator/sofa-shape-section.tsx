@@ -86,7 +86,7 @@ const SofaShapeSection = ({ languageCode, showAllProducts = false }: SofaShapeSe
       />
 
       {/* Interactive Konva stage with toolbar controls */}
-      <div className="bg-gold-10 mx-auto m-0">
+      <div className="bg-page-background mx-auto m-0">
         <SofaStageContainer
           sofaShapes={dropables}
           onSofaDelete={onSofaDelete}
