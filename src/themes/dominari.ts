@@ -91,9 +91,9 @@ export const dominari: Theme = {
     languageSwitcher: { placement: "navbar" },
     logo: {
       position: "left",
-      height: 40,
-      heightMobile: 32,
-      paddingY: 24, // navHeight = 40 + 2*24 = 88
+      height: 30,
+      heightMobile: 25,
+      paddingY: 20, // navHeight = 40 + 2*24 = 88
     },
     newsletter: { show: false },
     productCard: { showCategory: false },
