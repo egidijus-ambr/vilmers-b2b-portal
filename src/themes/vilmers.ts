@@ -95,7 +95,7 @@ export const vilmers: Theme = {
     topBar: { show: true },
     backButton: { show: true },
     searchButton: { show: true },
-    homepageHeader: { transparent: true },
+    homepageHeader: { transparent: true, showCta: true },
     languageSwitcher: { placement: "top-bar" },
     logo: {
       position: "center",

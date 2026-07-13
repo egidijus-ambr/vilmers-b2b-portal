@@ -72,8 +72,9 @@ export interface ThemeLayout {
    * (animating to solid on scroll) or always solid. When `false`, the nav
    * never goes transparent (logo never inverts) and the homepage hero does
    * not slide under it — see `nav/index.tsx` and `home/components/hero`.
+   * `showCta` — when `false`, hides the hero CTA button (Login/Overview).
    */
-  homepageHeader: { transparent: boolean }
+  homepageHeader: { transparent: boolean; showCta: boolean }
   /**
    * Where the language switcher lives: in the top bar (today) or in the
    * navbar's right cluster (desktop-only; mobile always keeps the drawer

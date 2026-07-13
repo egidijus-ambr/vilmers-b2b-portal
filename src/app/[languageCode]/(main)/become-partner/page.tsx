@@ -1,10 +1,14 @@
 "use client"
 
-import React, { useActionState } from "react"
+import React, { useActionState, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { sendPartnerRequest, PartnerRequestState } from "@lib/data/partner"
+import {
+  sendPartnerRequest,
+  getBecomePartnerPage,
+  PartnerRequestState,
+} from "@lib/data/partner"
 import Button from "@modules/common/components/button"
 import { useFormStatus } from "react-dom"
 import {
@@ -13,6 +17,7 @@ import {
   FormTextarea,
 } from "@modules/common/components/form-input"
 import Back from "@modules/common/icons/back"
+import { Page } from "@lib/furnisystems-sdk"
 
 function SubmitButton({ children, className }: { children: React.ReactNode; className?: string }) {
   const { pending } = useFormStatus()
@@ -63,6 +68,13 @@ export default function BecomePartnerPage() {
   const params = useParams()
   const languageCode = params.languageCode as string
 
+  const [becomePartnerPage, setBecomePartnerPage] = useState<Page | null>(
+    null
+  )
+  useEffect(() => {
+    getBecomePartnerPage(languageCode).then(setBecomePartnerPage)
+  }, [languageCode])
+
   const [state, formAction] = useActionState<
     PartnerRequestState | null,
     FormData
@@ -72,11 +84,18 @@ export default function BecomePartnerPage() {
   const errorMessage = state?.error
   const fieldErrors = state?.fieldErrors || {}
 
+  const partnerProfile = becomePartnerPage?.page_profiles?.find(
+    (p) => p.language?.toLowerCase() === languageCode?.toLowerCase()
+  )
+  const heroImageSrc =
+    becomePartnerPage?.hero_image?.src || "/images/login_background.png"
+  const heroTitle = partnerProfile?.title || t("become-partner-title")
+
   if (isSuccess) {
     return (
       <div
         className="min-h-screen bg-cover bg-center bg-no-repeat relative flex items-center"
-        style={{ backgroundImage: "url(/images/login_background.png)" }}
+        style={{ backgroundImage: `url(${heroImageSrc})` }}
       >
         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
 
@@ -124,7 +143,7 @@ export default function BecomePartnerPage() {
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat relative flex items-center"
-      style={{ backgroundImage: "url(/images/login_background.png)" }}
+      style={{ backgroundImage: `url(${heroImageSrc})` }}
     >
       <div className="absolute inset-0 bg-black bg-opacity-40"></div>
 
@@ -142,7 +161,7 @@ export default function BecomePartnerPage() {
           <div className="w-full max-w-[670px]">
             <div className="bg-white shadow-xl p-8 sm:p-10">
               <h1 className="text-2xl font-medium text-gray-900 mb-2">
-                {t("become-partner-title")}
+                {heroTitle}
               </h1>
               <p className="text-gray-600 mb-6 text-sm">
                 {t("become-partner-description")}

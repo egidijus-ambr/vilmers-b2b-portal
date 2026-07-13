@@ -2,6 +2,8 @@
 
 import { gql } from "@apollo/client"
 import { sdk } from "@lib/config"
+import { getPageByCode } from "./pages"
+import { Page } from "@lib/furnisystems-sdk"
 
 const SEND_PARTNER_REQUEST_MUTATION = gql`
   mutation SendPartnerRequest(
@@ -29,6 +31,17 @@ export interface PartnerRequestState {
   success: boolean
   error?: string
   fieldErrors?: Record<string, string>
+}
+
+/**
+ * Server action wrapper around `getPageByCode` for the "become-partner" CMS
+ * page, so the client component (become-partner page) can fetch it without
+ * importing the server-only `pages.ts` helpers directly.
+ */
+export const getBecomePartnerPage = async (
+  language?: string
+): Promise<Page | null> => {
+  return getPageByCode("become-partner", language)
 }
 
 export async function sendPartnerRequest(

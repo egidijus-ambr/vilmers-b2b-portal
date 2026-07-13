@@ -87,7 +87,7 @@ export const dominari: Theme = {
     topBar: { show: false },
     backButton: { show: false },
     searchButton: { show: true },
-    homepageHeader: { transparent: false },
+    homepageHeader: { transparent: false, showCta: false },
     languageSwitcher: { placement: "navbar" },
     logo: {
       position: "left",
@@ -96,7 +96,7 @@ export const dominari: Theme = {
       paddingY: 24, // navHeight = 40 + 2*24 = 88
     },
     newsletter: { show: false },
-    productCard: { showCategory: true },
+    productCard: { showCategory: false },
     footer: {
       facebook: "https://www.facebook.com/dominarigrupe/",
       linkedin: "https://www.linkedin.com/company/dominari/",

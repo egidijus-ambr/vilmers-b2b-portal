@@ -46,7 +46,7 @@ const Hero = async ({
   // padding) only when the nav is transparent-over-hero at the top of the
   // homepage (see nav/index.tsx). When the nav is always solid, the overlap
   // is dropped so the solid nav doesn't cover the top of the hero.
-  const { transparent } = activeTheme.layout.homepageHeader
+  const { transparent, showCta } = activeTheme.layout.homepageHeader
   const backgroundImageSrc =
     heroImageSrc || "/images/home_page_background.png"
   return (
@@ -112,13 +112,15 @@ const Hero = async ({
               </Heading>
             </>
           )}
-          <div className="flex items-center justify-center gap-x-4 mt-10">
-            <LocalizedClientLink href={customer ? "/account" : "/account"}>
-              <OutlineButton showArrow>
-                {customer ? t("overview") : t("log-in")}
-              </OutlineButton>
-            </LocalizedClientLink>
-          </div>
+          {showCta && (
+            <div className="flex items-center justify-center gap-x-4 mt-10">
+              <LocalizedClientLink href={customer ? "/account" : "/account"}>
+                <OutlineButton showArrow>
+                  {customer ? t("overview") : t("log-in")}
+                </OutlineButton>
+              </LocalizedClientLink>
+            </div>
+          )}
         </span>
         <a
           href="https://github.com/medusajs/nextjs-starter-medusa"
