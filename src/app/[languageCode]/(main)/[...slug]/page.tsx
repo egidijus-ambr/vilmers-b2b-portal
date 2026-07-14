@@ -117,6 +117,11 @@ export default async function CmsPage(props: Props) {
         heroImageSrc={page.hero_image?.src ?? null}
         heroDisplay={page.hero_display ?? "full_width"}
         breadcrumbItems={breadcrumbItems}
+        ctaLabel={profile?.cta_label ?? null}
+        ctaLink={profile?.cta_link ?? null}
+        ctaLinkPage={page.cta_link_page ?? null}
+        ctaNewTab={page.cta_new_tab ?? null}
+        languageCode={languageCode}
       />
       {contentBlocks.length > 0 ? (
         <div>

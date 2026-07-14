@@ -37,9 +37,9 @@ const ConfiguratorStepper = ({
                 className={clx(
                   "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors z-10",
                   {
-                    "bg-[#1e2a3a] text-white":
+                    "bg-configurator-accent text-configurator-accent-foreground":
                       (isActive || isCompleted) && !isLocked,
-                    "bg-gold-20 text-gray-500":
+                    "bg-configurator-surface text-gray-500":
                       (!isActive && !isCompleted) || isLocked,
                     "cursor-not-allowed": isLocked,
                   }
@@ -83,8 +83,8 @@ const ConfiguratorStepper = ({
                   className={clx(
                     "absolute top-4 h-px left-[calc(50%+16px)] right-[calc(-50%+16px)]",
                     {
-                      "bg-[#1e2a3a]": index < currentStep,
-                      "bg-gold-20": index >= currentStep,
+                      "bg-configurator-accent": index < currentStep,
+                      "bg-configurator-surface": index >= currentStep,
                     }
                   )}
                 />

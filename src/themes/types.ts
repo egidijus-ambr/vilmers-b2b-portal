@@ -104,6 +104,7 @@ export interface ThemeLayout {
   productCard: { showCategory: boolean }
   /** Footer links; each link is hidden when its value is absent/empty. */
   footer?: {
+    variant?: "full" | "compact" // defaults to "full" when omitted
     facebook?: string
     twitter?: string
     instagram?: string

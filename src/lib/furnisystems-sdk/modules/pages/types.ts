@@ -1,4 +1,5 @@
 import { ContentBlock } from "../shop-settings/types"
+import type { LinkPageAncestor } from "../shop-settings/types"
 
 export interface PageProfile {
   id: string
@@ -7,6 +8,8 @@ export interface PageProfile {
   title: string | null
   subtitle: string | null
   meta_description: string | null
+  cta_label: string | null
+  cta_link: string | null
 }
 
 /** Flat ancestor node returned by the backend `ancestors(language)` field (root-first). */
@@ -30,6 +33,14 @@ export interface Page {
   parentId?: string | null
   /** Flat, root-first ancestor chain (published only) from getPageByPath */
   ancestors?: PageAncestor[] | null
+  cta_new_tab: boolean | null
+  /** Not currently selected by any query below; declared for forward compatibility. */
+  cta_link_page_id?: string | null
+  cta_link_page?: {
+    id: string
+    page_profiles: { slug: string; language: string }[]
+    ancestors?: LinkPageAncestor[] | null
+  } | null
 }
 
 export interface FindPageByCodeResponse {

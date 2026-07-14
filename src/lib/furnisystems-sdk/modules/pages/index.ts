@@ -4,8 +4,130 @@ import { Page, FindPageByCodeResponse, FindFirstPageResponse, FindPageByPathResp
 import type { GridPage } from "@modules/home/components/content-block/types"
 import { isSupportedLanguage } from "../../../i18n/config"
 
+// Shared field selection for content blocks. FIND_PAGE_BY_CODE,
+// FIND_PAGE_BY_SLUG, and FIND_PAGE_BY_PATH all render the same content block
+// list, so the field list is extracted here to avoid drift between the three
+// queries. Requires the enclosing operation to declare `$language: Language!`
+// (used by `link_page.ancestors` / `cta_link_page.ancestors`).
+const CONTENT_BLOCK_FIELDS = gql`
+  fragment ContentBlockFields on ContentBlock {
+    id
+    type
+    style
+    video_link
+    video_type
+    video_autoplay
+    video_loop
+    arrangement
+    main_image {
+      id
+      src
+    }
+    gallery_images(orderBy: { display_order: asc }) {
+      id
+      src
+      display_order
+    }
+    content_block_profiles {
+      id
+      name
+      description
+      description_format
+      link
+      language
+      cta_label
+      cta_link
+    }
+    default_margins
+    max_height
+    max_width
+    min_height
+    min_width
+    top_margin
+    bottom_margin
+    left_margin
+    right_margin
+    background_color
+    text_color
+    media_max_height
+    media_max_width
+    media_min_height
+    media_min_width
+    object_fit_cover
+    link_new_tab
+    link_page {
+      id
+      parentId # required: backend 'ancestors' resolver reads root.parentId; without it ancestors returns [] and nested page links lose their parent path
+      page_profiles {
+        slug
+        language
+      }
+      ancestors(language: $language) {
+        page_profiles { slug language }
+      }
+    }
+    cta_new_tab
+    cta_link_page {
+      id
+      parentId # required: backend 'ancestors' resolver reads root.parentId; without it ancestors returns [] and nested page links lose their parent path
+      page_profiles {
+        slug
+        language
+      }
+      ancestors(language: $language) {
+        page_profiles { slug language }
+      }
+    }
+    extra_css
+    linked_items {
+      id
+      title
+      link
+      arrangement
+      image {
+        id
+        src
+      }
+    }
+    config
+    product_containers {
+      id
+    }
+  }
+`
+
+// Shared Page-level hero CTA field selection (page_profiles incl. cta_label /
+// cta_link, plus cta_new_tab / cta_link_page for the internal-link case).
+// Requires the enclosing operation to declare `$language: Language!`.
+const PAGE_HERO_CTA_FIELDS = gql`
+  fragment PageHeroCtaFields on Page {
+    page_profiles {
+      id
+      language
+      slug
+      title
+      subtitle
+      meta_description
+      cta_label
+      cta_link
+    }
+    cta_new_tab
+    cta_link_page {
+      id
+      parentId # required: backend 'ancestors' resolver reads root.parentId; without it ancestors returns [] and nested page links lose their parent path
+      page_profiles {
+        slug
+        language
+      }
+      ancestors(language: $language) {
+        page_profiles { slug language }
+      }
+    }
+  }
+`
+
 export const FIND_PAGE_BY_CODE = gql`
-  query FIND_PAGE_BY_CODE($code: String!, $language: Language) {
+  query FIND_PAGE_BY_CODE($code: String!, $language: Language!) {
     findUniquePage(where: { code: $code }) {
       id
       code
@@ -18,14 +140,7 @@ export const FIND_PAGE_BY_CODE = gql`
       hero_height_value
       hero_height_unit
       hero_video_link
-      page_profiles {
-        id
-        language
-        slug
-        title
-        subtitle
-        meta_description
-      }
+      ...PageHeroCtaFields
       content_blocks(
         where: {
           content_block_profiles: {
@@ -34,77 +149,16 @@ export const FIND_PAGE_BY_CODE = gql`
         }
         orderBy: { arrangement: asc }
       ) {
-        id
-        type
-        style
-        video_link
-        video_type
-        video_autoplay
-        video_loop
-        arrangement
-        main_image {
-          id
-          src
-        }
-        gallery_images(orderBy: { display_order: asc }) {
-          id
-          src
-          display_order
-        }
-        content_block_profiles {
-          id
-          name
-          description
-          description_format
-          link
-          language
-        }
-        default_margins
-        max_height
-        max_width
-        min_height
-        min_width
-        top_margin
-        bottom_margin
-        left_margin
-        right_margin
-        background_color
-        text_color
-        media_max_height
-        media_max_width
-        media_min_height
-        media_min_width
-        object_fit_cover
-        link_new_tab
-        link_page {
-          id
-          page_profiles {
-            slug
-            language
-          }
-        }
-        extra_css
-        linked_items {
-          id
-          title
-          link
-          arrangement
-          image {
-            id
-            src
-          }
-        }
-        config
-        product_containers {
-          id
-        }
+        ...ContentBlockFields
       }
     }
   }
+  ${PAGE_HERO_CTA_FIELDS}
+  ${CONTENT_BLOCK_FIELDS}
 `
 
 export const FIND_PAGE_BY_SLUG = gql`
-  query FIND_PAGE_BY_SLUG($slug: String!, $language: Language) {
+  query FIND_PAGE_BY_SLUG($slug: String!, $language: Language!) {
     findFirstPage(
       where: {
         published: { equals: true }
@@ -124,14 +178,7 @@ export const FIND_PAGE_BY_SLUG = gql`
         src
       }
       hero_display
-      page_profiles {
-        id
-        language
-        slug
-        title
-        subtitle
-        meta_description
-      }
+      ...PageHeroCtaFields
       content_blocks(
         where: {
           content_block_profiles: {
@@ -140,73 +187,12 @@ export const FIND_PAGE_BY_SLUG = gql`
         }
         orderBy: { arrangement: asc }
       ) {
-        id
-        type
-        style
-        video_link
-        video_type
-        video_autoplay
-        video_loop
-        arrangement
-        main_image {
-          id
-          src
-        }
-        gallery_images(orderBy: { display_order: asc }) {
-          id
-          src
-          display_order
-        }
-        content_block_profiles {
-          id
-          name
-          description
-          description_format
-          link
-          language
-        }
-        default_margins
-        max_height
-        max_width
-        min_height
-        min_width
-        top_margin
-        bottom_margin
-        left_margin
-        right_margin
-        background_color
-        text_color
-        media_max_height
-        media_max_width
-        media_min_height
-        media_min_width
-        object_fit_cover
-        link_new_tab
-        link_page {
-          id
-          page_profiles {
-            slug
-            language
-          }
-        }
-        extra_css
-        linked_items {
-          id
-          title
-          link
-          arrangement
-          image {
-            id
-            src
-          }
-        }
-        config
-        product_containers {
-          id
-        }
+        ...ContentBlockFields
       }
     }
   }
+  ${PAGE_HERO_CTA_FIELDS}
+  ${CONTENT_BLOCK_FIELDS}
 `
 
 export const FIND_PAGE_BY_PATH = gql`
@@ -221,14 +207,7 @@ export const FIND_PAGE_BY_PATH = gql`
         src
       }
       hero_display
-      page_profiles {
-        id
-        language
-        slug
-        title
-        subtitle
-        meta_description
-      }
+      ...PageHeroCtaFields
       ancestors(language: $language) {
         id
         page_profiles { language slug title }
@@ -241,76 +220,12 @@ export const FIND_PAGE_BY_PATH = gql`
         }
         orderBy: { arrangement: asc }
       ) {
-        id
-        type
-        style
-        video_link
-        video_type
-        video_autoplay
-        video_loop
-        arrangement
-        main_image {
-          id
-          src
-        }
-        gallery_images(orderBy: { display_order: asc }) {
-          id
-          src
-          display_order
-        }
-        content_block_profiles {
-          id
-          name
-          description
-          description_format
-          link
-          language
-        }
-        default_margins
-        max_height
-        max_width
-        min_height
-        min_width
-        top_margin
-        bottom_margin
-        left_margin
-        right_margin
-        background_color
-        text_color
-        media_max_height
-        media_max_width
-        media_min_height
-        media_min_width
-        object_fit_cover
-        link_new_tab
-        link_page {
-          id
-          page_profiles {
-            slug
-            language
-          }
-          ancestors(language: $language) {
-            page_profiles { slug language }
-          }
-        }
-        extra_css
-        linked_items {
-          id
-          title
-          link
-          arrangement
-          image {
-            id
-            src
-          }
-        }
-        config
-        product_containers {
-          id
-        }
+        ...ContentBlockFields
       }
     }
   }
+  ${PAGE_HERO_CTA_FIELDS}
+  ${CONTENT_BLOCK_FIELDS}
 `
 
 // Shared field selection for grid pages (manual + children modes). Both
@@ -385,7 +300,7 @@ export class PagesModule {
         {
           variables: {
             code,
-            ...(language ? { language: language.toLowerCase() } : {}),
+            language: language.toLowerCase(),
           },
           fetchPolicy: "no-cache",
           errorPolicy: "all",
@@ -410,7 +325,7 @@ export class PagesModule {
         {
           variables: {
             slug,
-            ...(language ? { language: language.toLowerCase() } : {}),
+            language: language.toLowerCase(),
           },
           fetchPolicy: "no-cache",
           errorPolicy: "all",

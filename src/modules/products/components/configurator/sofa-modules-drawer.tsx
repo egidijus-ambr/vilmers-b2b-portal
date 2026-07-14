@@ -7,6 +7,15 @@ import type { SofaFormExtended, SelectedFabricState } from "@configurator/lib/ty
 import { getPriceFromPriceCategories, applyDiscount } from "@configurator/lib/price-utils"
 import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
 import PriceDisplay from "@modules/common/components/price-display"
+import { activeTheme } from "themes"
+
+// Konva can't consume a Tailwind class — it needs a literal color string.
+// Resolve the `configurator_card` surface token to its underlying hex from
+// the active theme (build-time constant) so this can't drift from the
+// `bg-configurator-card` token used elsewhere in this file.
+const CONFIGURATOR_CARD_HEX =
+  activeTheme.colors[activeTheme.surfaces.configurator_card] ??
+  activeTheme.surfaces.configurator_card
 
 // =============================================
 // Types
@@ -98,7 +107,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
     const shapes = layer.find(".sofa_shape_group")
     if (shapes.length === 0) return
     layer.find(".metricLine").forEach((l: any) => l.destroy())
-    drawMetricLinesForGroups(shapes, layer, scale, null, 18, "#EBE7DD")
+    drawMetricLinesForGroups(shapes, layer, scale, null, 18, CONFIGURATOR_CARD_HEX)
   }, [layer, sofaForm.id, armrestWidthOverride, scale])
 
   if (!SofaElement) {
@@ -198,7 +207,7 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
   return (
     <div
       style={{ width: cardWidth }}
-      className="flex flex-col overflow-hidden bg-gold-20 flex-shrink-0"
+      className="flex flex-col overflow-hidden bg-configurator-card flex-shrink-0"
     >
       {/* Shape preview area — height adapts to module size */}
       <div className="flex-1 min-h-[60px] flex items-start overflow-hidden">
@@ -223,7 +232,7 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
         })()}
         <button
           onClick={onAdd}
-          className="mt-1.5 w-full text-xs font-medium border border-[#1e2a3a] text-[#1e2a3a] hover:bg-[#1e2a3a] hover:text-white transition-colors py-1 px-2"
+          className="mt-1.5 w-full text-xs font-medium border border-configurator-accent text-configurator-accent hover:bg-configurator-accent hover:text-configurator-accent-foreground transition-colors py-1 px-2"
         >
           Add
         </button>
@@ -338,7 +347,7 @@ const SofaModulesDrawer = ({
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="w-screen max-w-[700px] bg-gold-20 shadow-xl flex flex-col">
+                <Dialog.Panel className="w-screen max-w-[700px] bg-configurator-surface shadow-xl flex flex-col">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">
@@ -372,7 +381,7 @@ const SofaModulesDrawer = ({
                       placeholder="Search modules..."
                       value={searchValue}
                       onChange={(e) => setSearchValue(e.target.value)}
-                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1e2a3a] focus:border-[#1e2a3a]"
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-configurator-accent focus:border-configurator-accent"
                     />
                   </div>
 

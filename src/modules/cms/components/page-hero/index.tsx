@@ -5,6 +5,8 @@ import Breadcrumb, {
   BreadcrumbItem,
 } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
+import CmsCtaButton from "@modules/common/components/cms-cta-button"
+import type { LinkPageLike } from "@modules/home/components/content-block/linkResolver"
 
 interface PageHeroProps {
   title: string | null
@@ -12,6 +14,11 @@ interface PageHeroProps {
   heroImageSrc: string | null
   heroDisplay?: "full_width" | "content_width" | "none" | null
   breadcrumbItems?: BreadcrumbItem[]
+  ctaLabel?: string | null
+  ctaLink?: string | null
+  ctaLinkPage?: LinkPageLike | null
+  ctaNewTab?: boolean | null
+  languageCode?: string
 }
 
 const PageHero = ({
@@ -20,7 +27,21 @@ const PageHero = ({
   heroImageSrc,
   heroDisplay,
   breadcrumbItems,
+  ctaLabel,
+  ctaLink,
+  ctaLinkPage,
+  ctaNewTab,
+  languageCode,
 }: PageHeroProps) => {
+  const cta = (
+    <CmsCtaButton
+      label={ctaLabel ?? null}
+      link={ctaLink ?? null}
+      linkPage={ctaLinkPage ?? null}
+      newTab={ctaNewTab ?? null}
+      languageCode={languageCode ?? "en"}
+    />
+  )
   if (!title && !subtitle) {
     return null
   }
@@ -61,6 +82,7 @@ const PageHero = ({
                 {subtitle}
               </p>
             )}
+            {cta}
           </div>
         </div>
       </div>
@@ -105,6 +127,7 @@ const PageHero = ({
               {subtitle}
             </p>
           )}
+          {cta}
         </div>
       </div>
     </div>

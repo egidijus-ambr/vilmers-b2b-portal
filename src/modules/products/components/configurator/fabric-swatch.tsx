@@ -24,7 +24,7 @@ const FabricSwatch = ({ fabric, isSelected, onClick }: FabricSwatchProps) => {
       className={clx(
         "relative w-12 h-12 border-2 overflow-hidden transition-all hover:scale-110 focus:outline-none",
         {
-          "border-[#1e2a3a] ring-1 ring-[#1e2a3a]": isSelected,
+          "border-configurator-accent ring-1 ring-configurator-accent": isSelected,
           "border-gray-200 hover:border-gray-400": !isSelected,
         }
       )}

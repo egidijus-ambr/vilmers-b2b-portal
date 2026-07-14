@@ -110,6 +110,11 @@ export default async function Home(props: {
         subtitle={homePageProfile?.subtitle ?? null}
         heroHeight={heroHeight}
         heroVideoSrc={homePage?.hero_video_link ?? null}
+        ctaLabel={homePageProfile?.cta_label ?? null}
+        ctaLink={homePageProfile?.cta_link ?? null}
+        ctaLinkPage={homePage?.cta_link_page ?? null}
+        ctaNewTab={homePage?.cta_new_tab ?? null}
+        languageCode={languageCode}
       />
 
       {contentBlocks.length > 0 && (

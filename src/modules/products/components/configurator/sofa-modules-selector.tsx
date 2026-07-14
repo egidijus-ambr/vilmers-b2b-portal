@@ -148,7 +148,7 @@ const SofaModulesSelector = ({
         className="w-full flex gap-3 pr-4 border border-gray-200 hover:border-gray-400 transition-colors text-left"
       >
         {/* Label block */}
-        <div className="w-[134px] small:w-48 shrink-0 h-[78px] small:h-28 flex flex-col justify-end pb-2 pl-3 border-r border-gray-200 bg-gold-20">
+        <div className="w-[134px] small:w-48 shrink-0 h-[78px] small:h-28 flex flex-col justify-end pb-2 pl-3 border-r border-gray-200 bg-configurator-surface">
           <p className="text-xs font-semibold text-gold uppercase tracking-wide mb-0.5">
             Sofa Modules
           </p>

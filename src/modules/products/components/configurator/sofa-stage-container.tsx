@@ -202,7 +202,7 @@ const SofaStageContainer = ({
         {sofaShapes.length < 1 && (
           <div className="absolute inset-0 z-[3] flex items-center justify-center text-center">
             {showInstructions ? (
-              <div className="relative border border-gold-20 p-6 lg:p-8 w-[280px] lg:w-[380px] bg-page-background shadow-sm">
+              <div className="relative border border-configurator-surface p-6 lg:p-8 w-[280px] lg:w-[380px] bg-page-background shadow-sm">
                 {/* Close button */}
                 <button
                   onClick={() => setShowInstructions(false)}
@@ -233,7 +233,7 @@ const SofaStageContainer = ({
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-gray-500 bg-gold-20/80 px-3 py-2 rounded shadow-sm">
+              <p className="text-sm text-gray-500 bg-configurator-surface/80 px-3 py-2 rounded shadow-sm">
                 Drag sofa modules onto the canvas to compose your configuration.
               </p>
             )}
@@ -277,9 +277,9 @@ const ToolbarButton = ({
 }: ToolbarButtonProps) => {
   let colorClass: string
   if (alwaysBlue) {
-    colorClass = "text-[#1e2a3a] hover:bg-[#1e2a3a]/10"
+    colorClass = "text-configurator-accent hover:bg-configurator-accent/10"
   } else if (active) {
-    colorClass = "text-[#1e2a3a] hover:bg-[#1e2a3a]/10"
+    colorClass = "text-configurator-accent hover:bg-configurator-accent/10"
   } else {
     colorClass = "text-red-500 hover:bg-red-50"
   }

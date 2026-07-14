@@ -3,6 +3,8 @@ import { Github } from "@medusajs/icons"
 import { Button, Heading } from "@medusajs/ui"
 import OutlineButton from "@modules/common/components/outline-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import CmsCtaButton from "@modules/common/components/cms-cta-button"
+import type { LinkPageLike } from "@modules/home/components/content-block/linkResolver"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getServerT } from "@lib/i18n/server-translations"
 import { SupportedLanguage } from "@lib/i18n"
@@ -16,6 +18,11 @@ interface HeroProps {
   subtitle?: string | null
   heroHeight?: string | null
   heroVideoSrc?: string | null
+  ctaLabel?: string | null
+  ctaLink?: string | null
+  ctaLinkPage?: LinkPageLike | null
+  ctaNewTab?: boolean | null
+  languageCode?: string
 }
 
 // CMS "Title"/"Subtitle" fields are single-line inputs, so authors type the
@@ -37,6 +44,11 @@ const Hero = async ({
   subtitle,
   heroHeight,
   heroVideoSrc,
+  ctaLabel,
+  ctaLink,
+  ctaLinkPage,
+  ctaNewTab,
+  languageCode,
 }: HeroProps) => {
   const customer = await retrieveCustomer()
   const resolvedParams = await params
@@ -49,6 +61,10 @@ const Hero = async ({
   const { transparent, showCta } = activeTheme.layout.homepageHeader
   const backgroundImageSrc =
     heroImageSrc || "/images/home_page_background.png"
+  // An authored CTA (label + resolvable link) takes precedence over the
+  // theme's hardcoded login/account button; falls back to current behavior
+  // (showCta) when no CTA is configured.
+  const hasCta = Boolean(ctaLabel && (ctaLinkPage || ctaLink))
   return (
     <div
       className={`w-full border-b border-ui-border-base relative bg-hero-background ${
@@ -112,14 +128,26 @@ const Hero = async ({
               </Heading>
             </>
           )}
-          {showCta && (
+          {hasCta ? (
             <div className="flex items-center justify-center gap-x-4 mt-10">
-              <LocalizedClientLink href={customer ? "/account" : "/account"}>
-                <OutlineButton showArrow>
-                  {customer ? t("overview") : t("log-in")}
-                </OutlineButton>
-              </LocalizedClientLink>
+              <CmsCtaButton
+                label={ctaLabel ?? null}
+                link={ctaLink ?? null}
+                linkPage={ctaLinkPage ?? null}
+                newTab={ctaNewTab ?? null}
+                languageCode={languageCode ?? language}
+              />
             </div>
+          ) : (
+            showCta && (
+              <div className="flex items-center justify-center gap-x-4 mt-10">
+                <LocalizedClientLink href={customer ? "/account" : "/account"}>
+                  <OutlineButton showArrow>
+                    {customer ? t("overview") : t("log-in")}
+                  </OutlineButton>
+                </LocalizedClientLink>
+              </div>
+            )
           )}
         </span>
         <a

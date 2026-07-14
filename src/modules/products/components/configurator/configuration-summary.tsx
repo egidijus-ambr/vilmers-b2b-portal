@@ -71,7 +71,7 @@ const FabricCard: React.FC<FabricCardProps> = ({
   const { t } = useTranslations("account")
 
   return (
-    <div className="flex bg-gold-20 rounded border border-gray-100 overflow-hidden">
+    <div className="flex bg-configurator-surface rounded border border-gray-100 overflow-hidden">
       {imgSrc && (
         <img
           src={imgSrc}
@@ -237,7 +237,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
                 return (
                   <div
                     key={`${comp.id}-${link.target_component.id}`}
-                    className="flex bg-gold-20 rounded border border-gray-100 overflow-hidden"
+                    className="flex bg-configurator-surface rounded border border-gray-100 overflow-hidden"
                   >
                     {imgSrc ? (
                       <img
@@ -268,7 +268,7 @@ const ConfigurationSummary = ({ languageCode }: ConfigurationSummaryProps) => {
             return [
               <div
                 key={`${comp.id}-${idx}`}
-                className="flex bg-gold-20 rounded border border-gray-100 overflow-hidden"
+                className="flex bg-configurator-surface rounded border border-gray-100 overflow-hidden"
               >
                 {comp.image?.src ? (
                   <img

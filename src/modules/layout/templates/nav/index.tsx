@@ -275,7 +275,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
             {isLoggedIn && (
               <LocalizedClientLink
                 href="/cart"
-                className={`flex items-center gap-x-2 text-base font-medium transition-colors ${
+                className={`flex items-center gap-x-2 text-sm font-medium transition-colors ${
                   isTransparent ? "text-white hover:text-white/80" : "text-nav-foreground hover:text-nav-foreground/80"
                 }`}
                 data-testid="nav-cart-link"

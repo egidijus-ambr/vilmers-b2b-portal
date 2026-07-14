@@ -101,6 +101,17 @@ module.exports = {
         "footer-foreground": "rgb(var(--footer-foreground) / <alpha-value>)",
         "hero-background": "rgb(var(--hero-background) / <alpha-value>)",
         accent: "rgb(var(--accent) / <alpha-value>)",
+        // Sofa configurator surfaces — see
+        // docs/superpowers/specs/2026-07-13-configurator-theme-tokens-design.md
+        "configurator-surface":
+          "rgb(var(--configurator-surface) / <alpha-value>)",
+        "configurator-card": "rgb(var(--configurator-card) / <alpha-value>)",
+        "configurator-accent":
+          "rgb(var(--configurator-accent) / <alpha-value>)",
+        "configurator-accent-hover":
+          "rgb(var(--configurator-accent-hover) / <alpha-value>)",
+        "configurator-accent-foreground":
+          "rgb(var(--configurator-accent-foreground) / <alpha-value>)",
       },
       borderRadius: {
         none: "0px",

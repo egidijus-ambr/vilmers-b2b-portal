@@ -20,7 +20,9 @@ import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import { SupportedLanguage } from "@lib/i18n"
 import ProductCarouselGrid from "@modules/common/components/product-carousel-grid"
 import RichText from "@modules/common/components/rich-text"
+import CmsCtaButton from "@modules/common/components/cms-cta-button"
 import { splitSections } from "./sectionMarker"
+import { buildLinkPageHref } from "./linkResolver"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -114,6 +116,11 @@ export default function ContentBlock({
           containerMaxHeight={data.max_height ?? extraCss.maxHeight}
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
+          ctaLabel={profile?.cta_label ?? null}
+          ctaLink={profile?.cta_link ?? null}
+          ctaLinkPage={data.cta_link_page}
+          ctaNewTab={data.cta_new_tab}
+          languageCode={languageCode}
         />
       )}
 
@@ -319,6 +326,11 @@ function TextAndImage({
   containerMaxHeight,
   titleAlignment,
   hideTitle,
+  ctaLabel,
+  ctaLink,
+  ctaLinkPage,
+  ctaNewTab,
+  languageCode,
 }: {
   style: string | null
   sectionImage: string | null
@@ -335,6 +347,11 @@ function TextAndImage({
   containerMaxHeight?: number | string | null
   titleAlignment: TitleAlignment
   hideTitle: boolean
+  ctaLabel?: string | null
+  ctaLink?: string | null
+  ctaLinkPage?: LinkPage | null
+  ctaNewTab?: boolean | null
+  languageCode?: string
 }) {
   // Text on image (overlay) style
   if (style === "text_on_image") {
@@ -373,6 +390,14 @@ function TextAndImage({
               format={descriptionFormat}
               textColor={textColor}
               paragraphClassName="text-base font-normal leading-6"
+            />
+            <CmsCtaButton
+              label={ctaLabel ?? null}
+              link={ctaLink ?? null}
+              linkPage={ctaLinkPage ?? null}
+              newTab={ctaNewTab ?? null}
+              languageCode={languageCode ?? "en"}
+              className="mt-6"
             />
           </div>
         </div>
@@ -895,40 +920,6 @@ type LinkPage = {
   id: string
   page_profiles: { slug: string; language: string }[]
   ancestors?: LinkPageAncestor[] | null
-}
-
-/**
- * Build a full href for a link_page using the flat root-first `ancestors` array
- * from the backend. Falls back gracefully when `ancestors` is absent (e.g.
- * pages fetched via FIND_PAGE_BY_CODE which does not select `ancestors`).
- */
-function buildLinkPageHref(
-  page: LinkPage,
-  languageCode: string
-): string | null {
-  const ancestorChain: LinkPageAncestor[] = page.ancestors ?? []
-
-  const segments: string[] = []
-
-  for (const ancestor of ancestorChain) {
-    const profile =
-      ancestor.page_profiles.find(
-        (pp) => pp.language.toLowerCase() === languageCode.toLowerCase()
-      ) ?? ancestor.page_profiles[0]
-    if (profile?.slug) {
-      segments.push(profile.slug)
-    }
-  }
-
-  const pageProfile =
-    page.page_profiles.find(
-      (pp) => pp.language.toLowerCase() === languageCode.toLowerCase()
-    ) ?? page.page_profiles[0]
-
-  if (!pageProfile?.slug) return null
-  segments.push(pageProfile.slug)
-
-  return `/${languageCode}/${segments.join("/")}`
 }
 
 function ButtonBlock({

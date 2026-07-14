@@ -653,7 +653,7 @@ function CartOfferContent() {
   return (
     <>
       {!printMode && (
-        <div className="print-hidden content-container flex flex-col items-stretch gap-3 pt-6 sm:flex-row sm:items-center sm:justify-start">
+        <div className="print-hidden mx-auto w-full max-w-[820px] flex flex-col items-stretch gap-3 pt-6 sm:flex-row sm:items-center sm:justify-start">
           <Button
             variant="outline"
             className="print-hidden"

@@ -545,8 +545,8 @@ const ConfiguratorContent = ({
                   className={clx(
                     "text-sm px-8 py-3 rounded-full font-medium transition-colors",
                     canNavigateToStep(currentStep + 1)
-                      ? "text-white bg-[#1e2a3a] hover:bg-[#2a3a4a]"
-                      : "text-gray-400 bg-gold-20 cursor-not-allowed"
+                      ? "text-configurator-accent-foreground bg-configurator-accent hover:bg-configurator-accent-hover"
+                      : "text-gray-400 bg-configurator-surface cursor-not-allowed"
                   )}
                 >
                   {steps[currentStep + 1]?.label} →

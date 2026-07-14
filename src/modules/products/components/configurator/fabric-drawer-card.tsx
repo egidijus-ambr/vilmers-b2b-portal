@@ -23,7 +23,7 @@ const FabricDrawerCard = ({ fabric, isSelected, onClick }: FabricDrawerCardProps
       className={clx(
         "relative w-full text-left overflow-hidden transition-all focus:outline-none",
         {
-          "ring-2 ring-[#1e2a3a]": isSelected,
+          "ring-2 ring-configurator-accent": isSelected,
           "hover:ring-1 hover:ring-gray-300": !isSelected,
         }
       )}
@@ -46,8 +46,8 @@ const FabricDrawerCard = ({ fabric, isSelected, onClick }: FabricDrawerCardProps
 
       {/* Selected check */}
       {isSelected && (
-        <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#1e2a3a] rounded-full flex items-center justify-center">
-          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+        <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-configurator-accent rounded-full flex items-center justify-center">
+          <svg className="w-3 h-3 text-configurator-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>

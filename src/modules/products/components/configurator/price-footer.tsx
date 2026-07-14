@@ -56,7 +56,7 @@ const PriceFooter = ({
     : null
 
   return (
-    <div className="sticky bottom-0 mt-4 border-t bg-gold-20 pt-4 pb-4 px-6 flex flex-col gap-2">
+    <div className="sticky bottom-0 mt-4 border-t bg-configurator-surface pt-4 pb-4 px-6 flex flex-col gap-2">
       {missingMessage && (
         <p
           className="text-xs text-red-700 text-right"

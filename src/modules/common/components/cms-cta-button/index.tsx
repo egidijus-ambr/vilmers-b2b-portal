@@ -1,0 +1,88 @@
+import {
+  buildLinkPageHref,
+  type LinkPageLike,
+} from "@modules/home/components/content-block/linkResolver"
+
+export interface CmsCtaButtonProps {
+  /** Per-language authored label. Nothing renders when this is missing. */
+  label: string | null
+  /** External URL (used only when `linkPage` is not set). */
+  link: string | null
+  /** Internal page target — takes precedence over `link` when present. */
+  linkPage: LinkPageLike | null
+  /** Open the (external) link in a new tab. Ignored for internal `linkPage` targets. */
+  newTab: boolean | null
+  languageCode: string
+  variant?: "primary" | "secondary" | "outline"
+  className?: string
+}
+
+// The CTA is always a link, so it must render as a single <a> — it cannot
+// wrap the shared `Button` (`@modules/common/components/button`), which
+// renders a native <button>. `<a><button>...</button></a>` is invalid
+// interactive-content-in-interactive-content DOM nesting. Since `Button`
+// has no polymorphic/anchor mode, this mirrors the same "styled <a>"
+// pattern `ButtonBlock` uses in
+// `@modules/home/components/content-block/index.tsx`, reusing Button's own
+// variant tokens below so the rendered styling stays identical.
+const BASE_CLASSES =
+  "inline-block px-8 py-3 text-sm font-medium rounded-full border transition-all"
+const VARIANT_CLASSES: Record<
+  NonNullable<CmsCtaButtonProps["variant"]>,
+  string
+> = {
+  primary: "border-dark-blue bg-dark-blue text-white hover:opacity-90",
+  secondary: "border-accent bg-accent text-white hover:bg-accent/90",
+  outline: "border-dark-blue text-dark-blue hover:bg-gray-50",
+}
+
+/**
+ * Server-safe (no hooks, no "use client") CTA button for CMS-authored
+ * content: the home hero, nested-CMS page hero, and the Text-on-Image
+ * content block. Resolves either an internal page (`linkPage`, localized via
+ * `buildLinkPageHref`) or an external URL (`link`), and renders a single
+ * styled `<a>` carrying the button styling. Renders nothing when there is
+ * no label or no resolvable href.
+ */
+export default function CmsCtaButton({
+  label,
+  link,
+  linkPage,
+  newTab,
+  languageCode,
+  variant,
+  className,
+}: CmsCtaButtonProps) {
+  if (!label) return null
+
+  let href: string | null = null
+  let target: string | undefined
+  let rel: string | undefined
+
+  if (linkPage) {
+    href = buildLinkPageHref(linkPage, languageCode)
+  } else if (link) {
+    href = link
+    if (newTab) {
+      target = "_blank"
+      rel = "noopener noreferrer"
+    }
+  }
+
+  if (!href) return null
+
+  const variantClasses = VARIANT_CLASSES[variant ?? "primary"]
+
+  return (
+    <a
+      href={href}
+      target={target}
+      rel={rel}
+      className={`${BASE_CLASSES} ${variantClasses}${
+        className ? ` ${className}` : ""
+      }`}
+    >
+      {label}
+    </a>
+  )
+}

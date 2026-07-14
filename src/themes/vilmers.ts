@@ -41,6 +41,13 @@ export const vilmers: Theme = {
     "white-80": "rgba(255, 255, 255, 0.8)", // #FFFFFF · 80%
     "beige-10": "#FCFBF9",
     "gray-inactive": "#F4F4F5",
+    // Configurator accent primitives (see `surfaces.configurator_accent*`
+    // below) — raw hex, not part of the Figma design-system palette above;
+    // same treatment as `gold-20` (hex, converted to RGB channels by
+    // `themeToCssVars`) so the `rgb(var() / <alpha-value>)` Tailwind wrapper
+    // and opacity modifiers (e.g. `hover:bg-configurator-accent/10`) work.
+    navy: "#1e2a3a",
+    "navy-hover": "#2a3a4a",
     // Status Colors
     "status-completed": "#A8C014",
     "status-awaiting-payment": "#E07E5A",
@@ -79,6 +86,14 @@ export const vilmers: Theme = {
     footer_foreground: "white", // footer text (headline + social icons)
     hero_background: "dark-blue", // home hero bg (shows behind/beside the capped hero photo) — hero headings are text-white, so dark-blue keeps them readable, same primitive as footer_background
     accent: "gold", // primary/gold button variant (common/components/button)
+    // Sofa configurator surfaces (see docs/superpowers/specs/2026-07-13-configurator-theme-tokens-design.md).
+    // Visual no-op for Vilmers — these are the raw values the configurator
+    // already rendered with (gold-20 / #1e2a3a / #2a3a4a) before tokenization.
+    configurator_surface: "gold-20", // 4 drawer panels, collapsed strip, chips, action bar, stepper inactive dots/connectors, disabled Next, canvas instruction pill/border, combination unselected chip
+    configurator_card: "gold-20", // module cards (sofa-modules-drawer) + Konva dimension-label bg
+    configurator_accent: "navy", // active stepper dot/connector, enabled Next/Add buttons, selected chips, selection rings/borders, focus rings
+    configurator_accent_hover: "navy-hover", // accent button hover background
+    configurator_accent_foreground: "white", // text/icons on the accent
   },
   // RESERVED for v1 — today's `borderRadius` values, not yet consumed.
   radius: {

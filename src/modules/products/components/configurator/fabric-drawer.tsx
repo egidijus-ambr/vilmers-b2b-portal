@@ -139,7 +139,7 @@ const FabricDrawer = ({
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="w-screen max-w-[700px] bg-gold-20 shadow-xl flex flex-col">
+                <Dialog.Panel className="w-screen max-w-[700px] bg-configurator-surface shadow-xl flex flex-col">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">
@@ -162,7 +162,7 @@ const FabricDrawer = ({
                       placeholder="Search fabrics..."
                       value={searchValue}
                       onChange={(e) => setSearchValue(e.target.value)}
-                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1e2a3a] focus:border-[#1e2a3a]"
+                      className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-configurator-accent focus:border-configurator-accent"
                     />
                   </div>
 

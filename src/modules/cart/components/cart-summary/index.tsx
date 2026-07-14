@@ -162,6 +162,27 @@ export default function CartSummary({
             <div className="mt-3">
               <SaveCartButton />
             </div>
+            <div className="mt-3">
+              {blockedNoActingCustomer || !ctx.cart?.id ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled
+                  title="Select a customer first"
+                >
+                  {t("preview-offer-pdf")}
+                </Button>
+              ) : (
+                <LocalizedClientLink
+                  href={`/account/carts/details/${ctx.cart.id}/offer`}
+                  className="block"
+                >
+                  <Button variant="outline" className="w-full">
+                    {t("preview-offer-pdf")}
+                  </Button>
+                </LocalizedClientLink>
+              )}
+            </div>
           </>
         )}
       </div>

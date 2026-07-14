@@ -56,7 +56,7 @@ const FabricCombinationDrawer = ({
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="w-screen max-w-[500px] bg-gold-20 shadow-xl flex flex-col">
+                <Dialog.Panel className="w-screen max-w-[500px] bg-configurator-surface shadow-xl flex flex-col">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">
@@ -84,7 +84,8 @@ const FabricCombinationDrawer = ({
                           className={clx(
                             "w-full text-left overflow-hidden border transition-all",
                             {
-                              "ring-2 ring-[#1e2a3a] border-[#1e2a3a]": isSelected,
+                              "ring-2 ring-configurator-accent border-configurator-accent":
+                                isSelected,
                               "border-gray-200 hover:border-gray-400": !isSelected,
                             }
                           )}
@@ -108,8 +109,10 @@ const FabricCombinationDrawer = ({
                           <div className={clx(
                             "px-3 py-2 flex items-center justify-between",
                             {
-                              "bg-[#1e2a3a] text-white": isSelected,
-                              "bg-gold-20 text-gray-700": !isSelected,
+                              "bg-configurator-accent text-configurator-accent-foreground":
+                                isSelected,
+                              "bg-configurator-surface text-gray-700":
+                                !isSelected,
                             }
                           )}>
                             <span className="text-sm font-medium">{name}</span>

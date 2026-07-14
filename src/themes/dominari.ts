@@ -34,6 +34,14 @@ export const dominari: Theme = {
     "white-80": "rgba(255, 255, 255, 0.8)", // #FFFFFF · 80%
     "beige-10": "#FCFBF9",
     "gray-inactive": "#F4F4F5",
+    // Configurator accent primitives (see `surfaces.configurator_accent*`
+    // below) — raw hex, not part of the Figma design-system palette above;
+    // same treatment as `gold-20` (hex, converted to RGB channels by
+    // `themeToCssVars`) so the `rgb(var() / <alpha-value>)` Tailwind wrapper
+    // and opacity modifiers (e.g. `hover:bg-configurator-accent/10`) work.
+    // Identical to Vilmers today, but tokenized independently per brand.
+    navy: "#1e2a3a",
+    "navy-hover": "#2a3a4a",
     // Status Colors
     "status-completed": "#A8C014",
     "status-awaiting-payment": "#E07E5A",
@@ -70,6 +78,15 @@ export const dominari: Theme = {
     footer_foreground: "white",
     hero_background: "grey-90", // home hero bg — hero headings are text-white, so dark-blue (dominari's own #22232c) keeps them readable, same primitive as footer_background
     accent: "gold",
+    // Sofa configurator surfaces (see docs/superpowers/specs/2026-07-13-configurator-theme-tokens-design.md).
+    // Surface/card use dominari's grey scale (matching product_card_background)
+    // instead of the warm gold-20 the configurator hardcoded before — that was
+    // the cross-theme bug this token set fixes.
+    configurator_surface: "grey-20",
+    configurator_card: "grey-20",
+    configurator_accent: "navy",
+    configurator_accent_hover: "navy-hover",
+    configurator_accent_foreground: "white",
   },
   // RESERVED for v1 — copied from Vilmers, not yet consumed.
   radius: {
@@ -98,6 +115,7 @@ export const dominari: Theme = {
     newsletter: { show: false },
     productCard: { showCategory: false },
     footer: {
+      variant: "compact",
       facebook: "https://www.facebook.com/dominarigrupe/",
       linkedin: "https://www.linkedin.com/company/dominari/",
       instagram: "https://www.instagram.com/dominari_official/",

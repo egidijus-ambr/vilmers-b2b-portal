@@ -35,6 +35,8 @@ export interface ContentBlockProfile {
   description_format?: "plain" | "markdown" | null
   link: string | null
   language: string
+  cta_label: string | null
+  cta_link: string | null
 }
 
 export interface ContentBlockImage {
@@ -103,6 +105,17 @@ export interface ContentBlockData {
   object_fit_cover: boolean | null
   link_new_tab: boolean | null
   link_page: {
+    id: string
+    page_profiles: { slug: string; language: string }[]
+    ancestors?: LinkPageAncestor[] | null
+  } | null
+  /**
+   * CTA fields are only selected by the pages module queries (home/CMS
+   * pages). Optional because other content-block producers (e.g. category
+   * pages) don't query them yet.
+   */
+  cta_new_tab?: boolean | null
+  cta_link_page?: {
     id: string
     page_profiles: { slug: string; language: string }[]
     ancestors?: LinkPageAncestor[] | null
