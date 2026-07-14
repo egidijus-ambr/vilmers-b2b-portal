@@ -46,22 +46,22 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
     return (
       <footer className="bg-footer-background w-full">
         <div className="content-container flex w-full px-10">
-          <div className="flex flex-col gap-y-3 xsmall:flex-row items-center justify-between py-6 w-full">
-            {show(footer?.footer_support_email) && (
-              <div className="flex items-center gap-2">
-                <Text className="text-footer-foreground text-2xl">
-                  {t("how-can-we-help")}{" "}
-                  <a
-                    href={`mailto:${footer?.footer_support_email}`}
-                    className="underline hover:no-underline"
-                  >
-                    {t("contact-us")}
-                  </a>
-                </Text>
-              </div>
-            )}
+          <div className="flex flex-col gap-y-3 py-6 w-full">
+            <div className="flex flex-col gap-y-3 xsmall:flex-row items-center justify-between">
+              {show(footer?.footer_support_email) && (
+                <div className="flex items-center gap-2">
+                  <Text className="text-footer-foreground text-2xl">
+                    {t("how-can-we-help")}{" "}
+                    <a
+                      href={`mailto:${footer?.footer_support_email}`}
+                      className="underline hover:no-underline"
+                    >
+                      {t("contact-us")}
+                    </a>
+                  </Text>
+                </div>
+              )}
 
-            <div className="flex items-center gap-x-6">
               {hasAnySocial && (
                 <div className="flex items-center gap-6">
                   {/* Facebook */}
@@ -165,9 +165,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
                   )}
                 </div>
               )}
-
-              <p className="text-sm text-footer-foreground/80">{copyrightText}</p>
             </div>
+
+            <p className="text-sm text-footer-foreground/80">{copyrightText}</p>
           </div>
         </div>
       </footer>
