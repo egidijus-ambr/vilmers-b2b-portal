@@ -397,6 +397,7 @@ function TextAndImage({
               linkPage={ctaLinkPage ?? null}
               newTab={ctaNewTab ?? null}
               languageCode={languageCode ?? "en"}
+              onImage
               className="mt-6"
             />
           </div>

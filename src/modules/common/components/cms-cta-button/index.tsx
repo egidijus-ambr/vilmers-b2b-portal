@@ -2,6 +2,7 @@ import {
   buildLinkPageHref,
   type LinkPageLike,
 } from "@modules/home/components/content-block/linkResolver"
+import ArrowRight from "@modules/common/icons/arrow-right"
 
 export interface CmsCtaButtonProps {
   /** Per-language authored label. Nothing renders when this is missing. */
@@ -14,6 +15,13 @@ export interface CmsCtaButtonProps {
   newTab: boolean | null
   languageCode: string
   variant?: "primary" | "secondary" | "outline"
+  /**
+   * When true, the CTA sits over an image and is rendered as the hero's
+   * transparent "OutlineButton" pill (white border, white text, trailing
+   * arrow) instead of the default filled style. Matches
+   * `@modules/common/components/outline-button` exactly.
+   */
+  onImage?: boolean
   className?: string
 }
 
@@ -26,7 +34,7 @@ export interface CmsCtaButtonProps {
 // `@modules/home/components/content-block/index.tsx`, reusing Button's own
 // variant tokens below so the rendered styling stays identical.
 const BASE_CLASSES =
-  "inline-block px-8 py-3 text-sm font-medium rounded-full border transition-all"
+  "inline-block px-8 py-3 text-sm font-medium rounded-button border transition-all"
 const VARIANT_CLASSES: Record<
   NonNullable<CmsCtaButtonProps["variant"]>,
   string
@@ -35,6 +43,12 @@ const VARIANT_CLASSES: Record<
   secondary: "border-accent bg-accent text-white hover:bg-accent/90",
   outline: "border-dark-blue text-dark-blue hover:bg-gray-50",
 }
+
+// Same classes as `@modules/common/components/outline-button` (the hero's
+// existing "Login →" pill): transparent bg, white border/text, rounded pill,
+// inverts on hover. Used verbatim so the "on image" CTA matches exactly.
+const ON_IMAGE_CLASSES =
+  "inline-flex items-center px-6 py-3 border border-white text-white hover:bg-white hover:text-black transition-colors duration-200 rounded-3xl"
 
 /**
  * Server-safe (no hooks, no "use client") CTA button for CMS-authored
@@ -51,6 +65,7 @@ export default function CmsCtaButton({
   newTab,
   languageCode,
   variant,
+  onImage = false,
   className,
 }: CmsCtaButtonProps) {
   if (!label) return null
@@ -70,6 +85,20 @@ export default function CmsCtaButton({
   }
 
   if (!href) return null
+
+  if (onImage) {
+    return (
+      <a
+        href={href}
+        target={target}
+        rel={rel}
+        className={`${ON_IMAGE_CLASSES}${className ? ` ${className}` : ""}`}
+      >
+        {label}
+        <ArrowRight className="ml-2 -translate-y-[1px]" color="currentColor" />
+      </a>
+    )
+  }
 
   const variantClasses = VARIANT_CLASSES[variant ?? "primary"]
 

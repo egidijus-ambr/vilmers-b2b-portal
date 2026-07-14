@@ -120,6 +120,12 @@ module.exports = {
         rounded: "8px",
         large: "16px",
         circle: "9999px",
+        // Role tokens (bare CSS var, no `rgb()` wrapper — these aren't
+        // colors). See `src/themes/index.ts` (`themeToCssVars`) and
+        // `src/themes/vilmers.ts`/`dominari.ts` (`radius.button_radius` /
+        // `radius.input_radius`).
+        button: "var(--button-radius)",
+        input: "var(--input-radius)",
       },
       maxWidth: {
         "8xl": "100rem",

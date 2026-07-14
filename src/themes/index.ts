@@ -136,5 +136,23 @@ export function themeToCssVars(theme: Theme): string {
     `  --top-bar-height: ${topBarHeight}px;`,
   ].join("\n")
 
-  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n${layoutDeclarations}\n}`
+  // `radius` role tokens (`button_radius`/`input_radius`) — resolved to the
+  // primitive value they reference (e.g. "circle" -> theme.radius.circle),
+  // one level deep, same idea as the surface-token primitive lookup above.
+  // Emitted as raw px values (like `layoutDeclarations`), NOT run through
+  // `toChannels`/the color `rgb(var() / <alpha-value>)` wrapper — these
+  // aren't colors.
+  const resolveRadius = (roleKey: string, fallback: string): string => {
+    const r = theme.radius
+    if (!r || r[roleKey] == null) return fallback
+    const v = r[roleKey]
+    return r[v] != null && v !== roleKey ? r[v] : v
+  }
+
+  const radiusDeclarations = [
+    `  --button-radius: ${resolveRadius("button_radius", "9999px")};`,
+    `  --input-radius: ${resolveRadius("input_radius", "0px")};`,
+  ].join("\n")
+
+  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n${layoutDeclarations}\n${radiusDeclarations}\n}`
 }

@@ -88,7 +88,9 @@ export const dominari: Theme = {
     configurator_accent_hover: "navy-hover",
     configurator_accent_foreground: "white",
   },
-  // RESERVED for v1 — copied from Vilmers, not yet consumed.
+  // Primitives copied from Vilmers, plus the `button_radius`/`input_radius`
+  // role tokens (same values as Vilmers today — see `themeToCssVars` in
+  // `src/themes/index.ts`).
   radius: {
     none: "0px",
     soft: "2px",
@@ -96,6 +98,8 @@ export const dominari: Theme = {
     rounded: "8px",
     large: "16px",
     circle: "9999px",
+    button_radius: "base", // → 9999px, reproduces today's pill Button
+    input_radius: "base", // → 0px, square
   },
   // Navbar/layout config (see src/themes/types.ts) — DISTINCT from Vilmers,
   // used to verify the mechanism: top bar hidden, switcher moved into the

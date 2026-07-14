@@ -136,6 +136,7 @@ const Hero = async ({
                 linkPage={ctaLinkPage ?? null}
                 newTab={ctaNewTab ?? null}
                 languageCode={languageCode ?? language}
+                onImage
               />
             </div>
           ) : (

@@ -95,7 +95,10 @@ export const vilmers: Theme = {
     configurator_accent_hover: "navy-hover", // accent button hover background
     configurator_accent_foreground: "white", // text/icons on the accent
   },
-  // RESERVED for v1 — today's `borderRadius` values, not yet consumed.
+  // Primitives (RESERVED for v1 — today's `borderRadius` values) plus the
+  // `button_radius`/`input_radius` role tokens, which ARE consumed today
+  // (see `themeToCssVars` in `src/themes/index.ts`) — they drive
+  // `--button-radius`/`--input-radius`, resolved to a primitive value below.
   radius: {
     none: "0px",
     soft: "2px",
@@ -103,6 +106,8 @@ export const vilmers: Theme = {
     rounded: "8px",
     large: "16px",
     circle: "9999px",
+    button_radius: "circle", // → 9999px, reproduces today's pill Button
+    input_radius: "none", // → 0px, square
   },
   // Navbar/layout config (see src/themes/types.ts). These are the CURRENT
   // live values — this block is a visual no-op for Vilmers.

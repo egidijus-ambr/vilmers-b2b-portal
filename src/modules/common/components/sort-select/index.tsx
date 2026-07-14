@@ -29,7 +29,7 @@ export default function SortSelect({ options, value, onChange }: SortSelectProps
   return (
     <Listbox value={currentOption} onChange={handleChange}>
       <div className="relative">
-        <ListboxButton className="flex items-center justify-center gap-x-2 h-[56px] border border-gray-300 px-5 text-sm text-gray-700 hover:border-gray-400 transition-colors">
+        <ListboxButton className="flex items-center justify-center gap-x-2 h-[56px] border border-gray-300 rounded-input px-5 text-sm text-gray-700 hover:border-gray-400 transition-colors">
           <span>
             {(() => {
               const label = currentOption?.label ?? ""

@@ -7,7 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = "primary", className = "", children, ...props }, ref) => {
     const base =
-      "px-8 py-3 text-sm font-medium rounded-full border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      "px-8 py-3 text-sm font-medium rounded-button border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     const variants = {
       primary:
         "border-dark-blue bg-dark-blue text-white hover:opacity-90",

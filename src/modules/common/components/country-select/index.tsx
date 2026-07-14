@@ -72,7 +72,7 @@ export default function CountrySelect({
         }}
       >
         <div className="relative">
-          <ListboxButton className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 bg-white text-left hover:border-gray-400 transition-colors">
+          <ListboxButton className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 rounded-input bg-white text-left hover:border-gray-400 transition-colors">
             <span className={selectedCountry ? "text-dark-blue" : "text-gray-500"}>
               {selectedCountry ? selectedCountry.name : placeholder}
             </span>

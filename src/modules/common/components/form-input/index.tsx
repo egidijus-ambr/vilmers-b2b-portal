@@ -34,7 +34,7 @@ export const FormInput: React.FC<FormInputProps> = ({
       </label>
       <input
         id={id}
-        className={`w-full h-14 px-3 text-base border shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${error ? "border-red-500" : "border-gray-300"} ${className}`}
+        className={`w-full h-14 px-3 text-base border rounded-input shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${error ? "border-red-500" : "border-gray-300"} ${className}`}
         {...props}
       />
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
@@ -61,7 +61,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
       <div className="relative">
         <select
           id={id}
-          className={`w-full h-14 px-3 pr-12 text-base border shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white invalid:text-gray-400 valid:text-gray-700 appearance-none ${error ? "border-red-500" : "border-gray-300"} ${className}`}
+          className={`w-full h-14 px-3 pr-12 text-base border rounded-input shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white invalid:text-gray-400 valid:text-gray-700 appearance-none ${error ? "border-red-500" : "border-gray-300"} ${className}`}
           {...props}
         >
           {children}
@@ -102,7 +102,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
       </label>
       <textarea
         id={id}
-        className={`w-full px-3 py-4 text-base border shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${error ? "border-red-500" : "border-gray-300"} ${className}`}
+        className={`w-full px-3 py-4 text-base border rounded-input shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${error ? "border-red-500" : "border-gray-300"} ${className}`}
         {...props}
       />
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}

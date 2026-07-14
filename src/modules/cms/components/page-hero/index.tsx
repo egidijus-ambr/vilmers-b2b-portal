@@ -33,13 +33,19 @@ const PageHero = ({
   ctaNewTab,
   languageCode,
 }: PageHeroProps) => {
-  const cta = (
+  // The CTA renders differently depending on whether it sits over the
+  // background image (transparent OutlineButton-style pill) or on a plain
+  // background (filled style), so it's built per-branch rather than as a
+  // single shared node.
+  const renderCta = (onImage: boolean) => (
     <CmsCtaButton
       label={ctaLabel ?? null}
       link={ctaLink ?? null}
       linkPage={ctaLinkPage ?? null}
       newTab={ctaNewTab ?? null}
       languageCode={languageCode ?? "en"}
+      onImage={onImage}
+      className="mt-6"
     />
   )
   if (!title && !subtitle) {
@@ -82,7 +88,7 @@ const PageHero = ({
                 {subtitle}
               </p>
             )}
-            {cta}
+            {renderCta(true)}
           </div>
         </div>
       </div>
@@ -127,7 +133,7 @@ const PageHero = ({
               {subtitle}
             </p>
           )}
-          {cta}
+          {renderCta(false)}
         </div>
       </div>
     </div>

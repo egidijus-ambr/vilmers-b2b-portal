@@ -38,7 +38,7 @@ const ConfiguratorButton = ({
     return (
       <Link
         href={`/${languageCode}/products/${handle}/configurator`}
-        className="inline-flex items-center px-8 py-3 text-sm font-medium rounded-full border border-dark-blue bg-dark-blue text-white hover:opacity-90 transition-all"
+        className="inline-flex items-center px-8 py-3 text-sm font-medium rounded-button border border-dark-blue bg-dark-blue text-white hover:opacity-90 transition-all"
         data-testid="configurator-button"
       >
         Product configurator

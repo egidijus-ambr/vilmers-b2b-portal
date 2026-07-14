@@ -525,7 +525,7 @@ const ConfiguratorContent = ({
                       payload: currentStep - 1,
                     })
                   }
-                  className="text-sm text-gray-600 hover:text-gray-900 px-8 py-3 rounded-full border border-gray-300 font-medium transition-colors"
+                  className="text-sm text-gray-600 hover:text-gray-900 px-8 py-3 rounded-button border border-gray-300 font-medium transition-colors"
                 >
                   ← {steps[currentStep - 1]?.label}
                 </button>
@@ -543,7 +543,7 @@ const ConfiguratorContent = ({
                   }
                   disabled={!canNavigateToStep(currentStep + 1)}
                   className={clx(
-                    "text-sm px-8 py-3 rounded-full font-medium transition-colors",
+                    "text-sm px-8 py-3 rounded-button font-medium transition-colors",
                     canNavigateToStep(currentStep + 1)
                       ? "text-configurator-accent-foreground bg-configurator-accent hover:bg-configurator-accent-hover"
                       : "text-gray-400 bg-configurator-surface cursor-not-allowed"
