@@ -6,7 +6,7 @@ import Breadcrumb, {
 } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
 import CmsCtaButton from "@modules/common/components/cms-cta-button"
-import type { LinkPageLike } from "@modules/home/components/content-block/linkResolver"
+import type { CtaLike, LinkPageLike } from "@modules/home/components/content-block/linkResolver"
 
 interface PageHeroProps {
   title: string | null
@@ -17,6 +17,8 @@ interface PageHeroProps {
   ctaLabel?: string | null
   ctaLink?: string | null
   ctaLinkPage?: LinkPageLike | null
+  ctaLinkType?: CtaLike["cta_link_type"]
+  ctaLinkCategory?: CtaLike["cta_link_category"]
   ctaNewTab?: boolean | null
   languageCode?: string
 }
@@ -30,6 +32,8 @@ const PageHero = ({
   ctaLabel,
   ctaLink,
   ctaLinkPage,
+  ctaLinkType,
+  ctaLinkCategory,
   ctaNewTab,
   languageCode,
 }: PageHeroProps) => {
@@ -42,6 +46,8 @@ const PageHero = ({
       label={ctaLabel ?? null}
       link={ctaLink ?? null}
       linkPage={ctaLinkPage ?? null}
+      linkType={ctaLinkType}
+      linkCategory={ctaLinkCategory}
       newTab={ctaNewTab ?? null}
       languageCode={languageCode ?? "en"}
       onImage={onImage}

@@ -49,3 +49,62 @@ export function buildLinkPageHref(
 
   return `/${languageCode}/${segments.join("/")}`
 }
+
+/**
+ * Shape of a CTA-bearing reference (Page hero CTA / ContentBlock CTA) as
+ * selected by the CMS GraphQL queries: the `cta_link_type` discriminator
+ * plus the two mutually-exclusive internal targets it can point at
+ * (`cta_link_page` for CMS pages, `cta_link_category` for categories).
+ * `cta_link_type` is optional/nullable to tolerate CTAs authored before this
+ * field existed (see the legacy fallback in `resolveCtaHref` below).
+ */
+export interface CtaLike {
+  cta_link_type?: "cms_page" | "category" | "store" | null
+  cta_link_page?: LinkPageLike | null
+  cta_link_category?: {
+    category_profiles?:
+      | {
+          language: string
+          meta_information?: { permalink?: string | null } | null
+        }[]
+      | null
+  } | null
+}
+
+/**
+ * Resolve a CTA's href from its typed target (`cta_link_type`): `store` goes
+ * to the all-products page, `category` goes to the category's localized
+ * permalink, `cms_page` reuses `buildLinkPageHref`. Falls back to treating
+ * the CTA as a `cms_page` link when `cta_link_type` is absent but
+ * `cta_link_page` is present, so CTAs authored before this discriminator
+ * existed keep resolving exactly as before.
+ *
+ * Pure and hook-free — safe to call from server components.
+ */
+export function resolveCtaHref(
+  cta: CtaLike,
+  languageCode: string
+): string | null {
+  const type =
+    cta.cta_link_type ?? (cta.cta_link_page ? "cms_page" : null)
+
+  if (type === "store") {
+    return `/${languageCode}/store`
+  }
+
+  if (type === "category") {
+    const profiles = cta.cta_link_category?.category_profiles ?? []
+    const profile =
+      profiles.find(
+        (p) => p.language.toLowerCase() === languageCode.toLowerCase()
+      ) ?? profiles[0]
+    const permalink = profile?.meta_information?.permalink
+    return permalink ? `/${languageCode}/categories/${permalink}` : null
+  }
+
+  if (type === "cms_page" && cta.cta_link_page) {
+    return buildLinkPageHref(cta.cta_link_page, languageCode)
+  }
+
+  return null
+}

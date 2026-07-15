@@ -78,6 +78,15 @@ const CONTENT_BLOCK_FIELDS = gql`
         page_profiles { slug language }
       }
     }
+    cta_link_type
+    cta_link_category {
+      category_profiles {
+        language
+        meta_information {
+          permalink
+        }
+      }
+    }
     extra_css
     linked_items {
       id
@@ -121,6 +130,15 @@ const PAGE_HERO_CTA_FIELDS = gql`
       }
       ancestors(language: $language) {
         page_profiles { slug language }
+      }
+    }
+    cta_link_type
+    cta_link_category {
+      category_profiles {
+        language
+        meta_information {
+          permalink
+        }
       }
     }
   }

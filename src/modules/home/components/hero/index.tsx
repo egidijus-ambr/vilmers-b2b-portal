@@ -4,7 +4,7 @@ import { Button, Heading } from "@medusajs/ui"
 import OutlineButton from "@modules/common/components/outline-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CmsCtaButton from "@modules/common/components/cms-cta-button"
-import type { LinkPageLike } from "@modules/home/components/content-block/linkResolver"
+import type { CtaLike, LinkPageLike } from "@modules/home/components/content-block/linkResolver"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getServerT } from "@lib/i18n/server-translations"
 import { SupportedLanguage } from "@lib/i18n"
@@ -21,6 +21,8 @@ interface HeroProps {
   ctaLabel?: string | null
   ctaLink?: string | null
   ctaLinkPage?: LinkPageLike | null
+  ctaLinkType?: CtaLike["cta_link_type"]
+  ctaLinkCategory?: CtaLike["cta_link_category"]
   ctaNewTab?: boolean | null
   languageCode?: string
 }
@@ -47,6 +49,8 @@ const Hero = async ({
   ctaLabel,
   ctaLink,
   ctaLinkPage,
+  ctaLinkType,
+  ctaLinkCategory,
   ctaNewTab,
   languageCode,
 }: HeroProps) => {
@@ -63,8 +67,9 @@ const Hero = async ({
     heroImageSrc || "/images/home_page_background.png"
   // An authored CTA (label + resolvable link) takes precedence over the
   // theme's hardcoded login/account button; falls back to current behavior
-  // (showCta) when no CTA is configured.
-  const hasCta = Boolean(ctaLabel && (ctaLinkPage || ctaLink))
+  // (showCta) when no CTA is configured. `ctaLinkType` covers the
+  // `category`/`store` targets, which resolve without a `ctaLinkPage`.
+  const hasCta = Boolean(ctaLabel && (ctaLinkPage || ctaLink || ctaLinkType))
   return (
     <div
       className={`w-full border-b border-ui-border-base relative bg-hero-background ${
@@ -134,6 +139,8 @@ const Hero = async ({
                 label={ctaLabel ?? null}
                 link={ctaLink ?? null}
                 linkPage={ctaLinkPage ?? null}
+                linkType={ctaLinkType}
+                linkCategory={ctaLinkCategory}
                 newTab={ctaNewTab ?? null}
                 languageCode={languageCode ?? language}
                 onImage

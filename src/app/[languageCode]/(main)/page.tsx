@@ -113,6 +113,8 @@ export default async function Home(props: {
         ctaLabel={homePageProfile?.cta_label ?? null}
         ctaLink={homePageProfile?.cta_link ?? null}
         ctaLinkPage={homePage?.cta_link_page ?? null}
+        ctaLinkType={homePage?.cta_link_type ?? null}
+        ctaLinkCategory={homePage?.cta_link_category ?? null}
         ctaNewTab={homePage?.cta_new_tab ?? null}
         languageCode={languageCode}
       />

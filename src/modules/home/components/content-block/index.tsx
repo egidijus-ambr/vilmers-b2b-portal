@@ -22,7 +22,7 @@ import ProductCarouselGrid from "@modules/common/components/product-carousel-gri
 import RichText from "@modules/common/components/rich-text"
 import CmsCtaButton from "@modules/common/components/cms-cta-button"
 import { splitSections } from "./sectionMarker"
-import { buildLinkPageHref } from "./linkResolver"
+import { buildLinkPageHref, type CtaLike } from "./linkResolver"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -54,6 +54,18 @@ function parseExtraCss(raw: unknown): React.CSSProperties {
   return {}
 }
 
+// The `3_columns_title_left` and `2_columns_title_top_center` sub-styles used
+// to split `description` into two columns at an in-string section-break
+// marker. Now that they render as a single flowing text column, the marker
+// itself must not leak into the rendered markdown — rejoin the sections with
+// a blank line so old CMS content (authored with the marker) still reads as
+// continuous text.
+function stripSectionMarker(raw: string | null): string | null {
+  if (!raw) return raw
+  const sections = splitSections(raw).filter(Boolean)
+  return sections.length > 0 ? sections.join("\n\n") : raw
+}
+
 type TitleAlignment = "left" | "center" | "right" | undefined
 
 // Resolve the horizontal text-alignment utility for a block title. When the
@@ -73,11 +85,25 @@ export default function ContentBlock({
   selectedTagSlug = null,
 }: ContentBlockProps) {
   const profile = getProfile(data.content_block_profiles, languageCode)
-  const extraCss = parseExtraCss(data.extra_css)
+  // `extra_css` may carry a nested `text` object whose styles should apply
+  // only to the text column, not the whole section. Split it out here so the
+  // section-level spread below never receives it.
+  const parsedExtra = parseExtraCss(data.extra_css) as Record<string, unknown>
+  const textStyle = (parsedExtra.text ?? undefined) as
+    | React.CSSProperties
+    | undefined
+  const { text: _omitText, ...sectionExtraCss } = parsedExtra
+  const extraCss = sectionExtraCss as React.CSSProperties
 
   // Block-level title settings (from data.config, not per-language).
   const titleAlignment = (data.config as any)?.titleAlignment as TitleAlignment
   const hideTitle = Boolean((data.config as any)?.hideTitle)
+  // Block-level display width setting (mirrors page hero's `hero_display`).
+  const display =
+    ((data.config as any)?.display as
+      | "full_width"
+      | "content_width"
+      | undefined) ?? "full_width"
 
   const hasMaxHeight = data.max_height != null || extraCss.maxHeight != null
 
@@ -108,6 +134,7 @@ export default function ContentBlock({
           descriptionFormat={profile?.description_format ?? null}
           backgroundColor={data.background_color}
           textColor={data.text_color}
+          textStyle={textStyle}
           mediaMaxHeight={data.media_max_height}
           mediaMaxWidth={data.media_max_width}
           mediaMinHeight={data.media_min_height}
@@ -116,9 +143,12 @@ export default function ContentBlock({
           containerMaxHeight={data.max_height ?? extraCss.maxHeight}
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
+          display={display}
           ctaLabel={profile?.cta_label ?? null}
           ctaLink={profile?.cta_link ?? null}
           ctaLinkPage={data.cta_link_page}
+          ctaLinkType={data.cta_link_type}
+          ctaLinkCategory={data.cta_link_category}
           ctaNewTab={data.cta_new_tab}
           languageCode={languageCode}
         />
@@ -149,13 +179,12 @@ export default function ContentBlock({
       {data.type === "only_text" && (
         <OnlyText
           style={data.style}
-          sectionName={profile?.name ?? null}
           sectionDescription={profile?.description ?? null}
           descriptionFormat={profile?.description_format ?? null}
           backgroundColor={data.background_color}
           textColor={data.text_color}
           titleAlignment={titleAlignment}
-          hideTitle={hideTitle}
+          textStyle={textStyle}
         />
       )}
 
@@ -250,6 +279,7 @@ function TextSection({
   paddingClass = "px-6 py-10 small:px-12 small:py-16",
   titleAlignment,
   hideTitle = false,
+  style,
 }: {
   name: string | null
   description: string | null
@@ -260,10 +290,12 @@ function TextSection({
   paddingClass?: string
   titleAlignment?: TitleAlignment
   hideTitle?: boolean
+  style?: React.CSSProperties
 }) {
   return (
     <div
       className={`flex flex-col ${paddingClass} ${widthClass} ${verticalJustifyClass}`}
+      style={style}
     >
       <div>
         {!hideTitle && name && (
@@ -326,11 +358,15 @@ function TextAndImage({
   containerMaxHeight,
   titleAlignment,
   hideTitle,
+  display = "full_width",
   ctaLabel,
   ctaLink,
   ctaLinkPage,
+  ctaLinkType,
+  ctaLinkCategory,
   ctaNewTab,
   languageCode,
+  textStyle,
 }: {
   style: string | null
   sectionImage: string | null
@@ -347,15 +383,21 @@ function TextAndImage({
   containerMaxHeight?: number | string | null
   titleAlignment: TitleAlignment
   hideTitle: boolean
+  display?: "full_width" | "content_width"
   ctaLabel?: string | null
   ctaLink?: string | null
   ctaLinkPage?: LinkPage | null
+  ctaLinkType?: CtaLike["cta_link_type"]
+  ctaLinkCategory?: CtaLike["cta_link_category"]
   ctaNewTab?: boolean | null
   languageCode?: string
+  textStyle?: React.CSSProperties
 }) {
   // Text on image (overlay) style
   if (style === "text_on_image") {
-    return (
+    const isContentWidth = display === "content_width"
+
+    const textOnImageBlock = (
       <div
         className="relative mx-auto w-full overflow-hidden"
         style={{
@@ -384,7 +426,7 @@ function TextAndImage({
 
         {/* Overlay text - centered */}
         <div className="absolute inset-0 flex items-center justify-center px-6 py-10">
-          <div className="max-w-2xl text-center">
+          <div className="max-w-2xl text-center" style={textStyle}>
             <RichText
               value={sectionDescription}
               format={descriptionFormat}
@@ -395,15 +437,23 @@ function TextAndImage({
               label={ctaLabel ?? null}
               link={ctaLink ?? null}
               linkPage={ctaLinkPage ?? null}
+              linkType={ctaLinkType}
+              linkCategory={ctaLinkCategory}
               newTab={ctaNewTab ?? null}
               languageCode={languageCode ?? "en"}
               onImage
-              className="mt-6"
+              className="mt-3"
             />
           </div>
         </div>
       </div>
     )
+
+    if (isContentWidth) {
+      return <div className="content-container">{textOnImageBlock}</div>
+    }
+
+    return textOnImageBlock
   }
 
   if (style === "image_left") {
@@ -412,22 +462,6 @@ function TextAndImage({
         className="content-container large:px-0 px-6"
         style={backgroundColor ? { backgroundColor } : undefined}
       >
-        {!hideTitle && sectionName && (
-          <h3
-            className={`mb-6 text-2xl font-medium small:mb-8 ${titleAlignClass(
-              titleAlignment,
-              "text-left"
-            )}`}
-            style={textColor ? { color: textColor } : undefined}
-          >
-            {sectionName.split("\\n").map((line, i) => (
-              <span key={i}>
-                {line}
-                {i < sectionName.split("\\n").length - 1 && <br />}
-              </span>
-            ))}
-          </h3>
-        )}
         <div className="flex flex-col-reverse small:flex-row-reverse">
           <TextSection
             name={null}
@@ -437,6 +471,7 @@ function TextAndImage({
             widthClass="w-full small:w-1/2"
             verticalJustifyClass="justify-start"
             paddingClass="pt-6 small:pt-0 small:pl-12"
+            style={textStyle}
           />
 
           <div className="flex w-full items-stretch justify-center small:w-1/2 small:self-stretch">
@@ -470,22 +505,6 @@ function TextAndImage({
       className="content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      {!hideTitle && sectionName && (
-        <h3
-          className={`mb-6 text-2xl font-medium small:mb-8 ${titleAlignClass(
-            titleAlignment,
-            "text-left"
-          )}`}
-          style={textColor ? { color: textColor } : undefined}
-        >
-          {sectionName.split("\\n").map((line, i) => (
-            <span key={i}>
-              {line}
-              {i < sectionName.split("\\n").length - 1 && <br />}
-            </span>
-          ))}
-        </h3>
-      )}
       <div className="flex flex-col small:flex-row">
         <TextSection
           name={null}
@@ -495,6 +514,7 @@ function TextAndImage({
           widthClass="w-full small:w-1/2"
           verticalJustifyClass="justify-start"
           paddingClass="pb-6 small:pb-0 small:pr-12"
+          style={textStyle}
         />
 
         <div className="flex w-full items-stretch justify-center small:w-1/2 small:self-stretch">
@@ -604,33 +624,30 @@ function TextAndVideo({
 
 function OnlyText({
   style,
-  sectionName,
   sectionDescription,
   descriptionFormat,
   backgroundColor,
   textColor,
   titleAlignment,
-  hideTitle,
+  textStyle,
 }: {
   style: ContentBlockStyle | null
-  sectionName: string | null
   sectionDescription: string | null
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
   titleAlignment: TitleAlignment
-  hideTitle: boolean
+  textStyle?: React.CSSProperties
 }) {
   if (style === "3_columns_title_left") {
     return (
       <ThreeColumnsTitleLeft
-        sectionName={sectionName}
         sectionDescription={sectionDescription}
         descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
         titleAlignment={titleAlignment}
-        hideTitle={hideTitle}
+        textStyle={textStyle}
       />
     )
   }
@@ -638,39 +655,28 @@ function OnlyText({
   if (style === "2_columns_title_top_center") {
     return (
       <TwoColumnsTitleTopCenter
-        sectionName={sectionName}
         sectionDescription={sectionDescription}
         descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
         titleAlignment={titleAlignment}
-        hideTitle={hideTitle}
+        textStyle={textStyle}
       />
     )
   }
 
   return (
     <div
-      className="mx-auto max-w-screen-xl py-10 text-center small:py-16 px-6 small:px-12"
+      className="mx-auto max-w-screen-xl py-10 small:py-16 px-6 small:px-12"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      <div className="mx-auto max-w-2xl">
-        {!hideTitle && sectionName && (
-          <h3
-            className={`mb-4 text-2xl font-medium ${titleAlignClass(
-              titleAlignment,
-              "text-center"
-            )}`}
-            style={textColor ? { color: textColor } : undefined}
-          >
-            {sectionName.split("\\n").map((line, i) => (
-              <span key={i}>
-                {line}
-                {i < sectionName.split("\\n").length - 1 && <br />}
-              </span>
-            ))}
-          </h3>
-        )}
+      <div
+        className={`mx-auto max-w-[900px] ${titleAlignClass(
+          titleAlignment,
+          "text-center"
+        )}`}
+        style={textStyle}
+      >
         <RichText
           value={sectionDescription}
           format={descriptionFormat}
@@ -684,100 +690,38 @@ function OnlyText({
 /* ─── 3 Columns Title Left ────────────────────────────────── */
 
 function ThreeColumnsTitleLeft({
-  sectionName,
   sectionDescription,
   descriptionFormat,
   backgroundColor,
   textColor,
   titleAlignment,
-  hideTitle,
+  textStyle,
 }: {
-  sectionName: string | null
   sectionDescription: string | null
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
   titleAlignment: TitleAlignment
-  hideTitle: boolean
+  textStyle?: React.CSSProperties
 }) {
-  // Split description into two roughly equal halves for the two text columns
-  const lines = sectionDescription ? sectionDescription.split(/\\n|\n/) : []
-  const midpoint = Math.ceil(lines.length / 2)
-  const leftLines = lines.slice(0, midpoint)
-  const rightLines = lines.slice(midpoint)
-
-  // Markdown: split the stored description into its two column sections
-  const sections = splitSections(sectionDescription)
-  const colA = sections[0] ?? ""
-  const colB = sections[1] ?? ""
-
+  // The title column that gave this style its name is gone — collapse to a
+  // single, aligned text column (no more left/right description split). Old
+  // content authored with a section-break marker is rejoined into continuous
+  // text so the marker itself never renders.
   return (
     <div
       className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      <div className="grid grid-cols-1 gap-8 small:grid-cols-3 small:gap-12">
-        {/* Left column — title */}
-        <div className="flex items-start">
-          {!hideTitle && sectionName && (
-            <h3
-              className={`w-full text-xs font-medium uppercase tracking-[0.2em] small:text-sm ${titleAlignClass(
-                titleAlignment,
-                "text-left"
-              )}`}
-              style={textColor ? { color: textColor } : undefined}
-            >
-              {sectionName.split("\\n").map((line, i) => (
-                <span key={i}>
-                  {line}
-                  {i < sectionName.split("\\n").length - 1 && <br />}
-                </span>
-              ))}
-            </h3>
-          )}
-        </div>
-
-        {descriptionFormat === "markdown" ? (
-          <>
-            {/* Middle column — first section of description */}
-            <div>
-              <RichText value={colA} format="markdown" textColor={textColor} />
-            </div>
-
-            {/* Right column — second section of description */}
-            <div>
-              <RichText value={colB} format="markdown" textColor={textColor} />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Middle column — first half of description */}
-            <div>
-              {leftLines.map((line, i) => (
-                <p
-                  key={i}
-                  className="text-base font-normal leading-6 text-gray-600"
-                  style={textColor ? { color: textColor } : undefined}
-                >
-                  {line}
-                </p>
-              ))}
-            </div>
-
-            {/* Right column — second half of description */}
-            <div>
-              {rightLines.map((line, i) => (
-                <p
-                  key={i}
-                  className="text-base font-normal leading-6 text-gray-600"
-                  style={textColor ? { color: textColor } : undefined}
-                >
-                  {line}
-                </p>
-              ))}
-            </div>
-          </>
-        )}
+      <div
+        className={titleAlignClass(titleAlignment, "text-left")}
+        style={textStyle}
+      >
+        <RichText
+          value={stripSectionMarker(sectionDescription)}
+          format={descriptionFormat}
+          textColor={textColor}
+        />
       </div>
     </div>
   )
@@ -786,90 +730,41 @@ function ThreeColumnsTitleLeft({
 /* ─── 2 Columns Title Top Center ──────────────────────────── */
 
 function TwoColumnsTitleTopCenter({
-  sectionName,
   sectionDescription,
   descriptionFormat,
   backgroundColor,
   textColor,
   titleAlignment,
-  hideTitle,
+  textStyle,
 }: {
-  sectionName: string | null
   sectionDescription: string | null
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
   titleAlignment: TitleAlignment
-  hideTitle: boolean
+  textStyle?: React.CSSProperties
 }) {
-  const lines = sectionDescription ? sectionDescription.split(/\\n|\n/) : []
-  const midpoint = Math.ceil(lines.length / 2)
-  const leftLines = lines.slice(0, midpoint)
-  const rightLines = lines.slice(midpoint)
-
-  // Markdown: split the stored description into its two column sections
-  const sections = splitSections(sectionDescription)
-  const colA = sections[0] ?? ""
-  const colB = sections[1] ?? ""
-
+  // The centered title that gave this style its name is gone — collapse to a
+  // single, aligned text column (no more two-column description split). The
+  // body previously rendered left-aligned (only the title was centered), so
+  // that remains the default. Old content authored with a section-break
+  // marker is rejoined into continuous text so the marker itself never
+  // renders.
   return (
     <div
       className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      {/* Centered title */}
-      {!hideTitle && sectionName && (
-        <h3
-          className={`mb-8 text-xs font-medium uppercase tracking-[0.2em] small:mb-12 small:text-sm ${titleAlignClass(
-            titleAlignment,
-            "text-center"
-          )}`}
-          style={textColor ? { color: textColor } : undefined}
-        >
-          {sectionName.split("\\n").map((line, i) => (
-            <span key={i}>
-              {line}
-              {i < sectionName.split("\\n").length - 1 && <br />}
-            </span>
-          ))}
-        </h3>
-      )}
-
-      {descriptionFormat === "markdown" ? (
-        <div className="grid grid-cols-1 gap-8 small:grid-cols-2 small:gap-12">
-          <div>
-            <RichText value={colA} format="markdown" textColor={textColor} />
-          </div>
-          <div>
-            <RichText value={colB} format="markdown" textColor={textColor} />
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-8 small:grid-cols-2 small:gap-12">
-          <div>
-            {leftLines.map((line, i) => (
-              <p
-                key={i}
-                className="text-base font-normal leading-6 text-gray-600"
-                style={textColor ? { color: textColor } : undefined}
-              >
-                {line}
-              </p>
-            ))}
-          </div>
-          <div>
-            {rightLines.map((line, i) => (
-              <p
-                key={i}
-                className="text-base font-normal leading-6 text-gray-600"
-                style={textColor ? { color: textColor } : undefined}
-              >
-                {line}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
+      <div
+        className={titleAlignClass(titleAlignment, "text-left")}
+        style={textStyle}
+      >
+        <RichText
+          value={stripSectionMarker(sectionDescription)}
+          format={descriptionFormat}
+          textColor={textColor}
+        />
+      </div>
     </div>
   )
 }
@@ -1578,7 +1473,10 @@ function PageGrid({
   // each tag's localized label, skipping tags with no usable profile.
   const pillTags = showTags
     ? tags
-        .map((tag) => ({ slug: tag.slug, label: resolveTagLabel(tag, languageCode) }))
+        .map((tag) => ({
+          slug: tag.slug,
+          label: resolveTagLabel(tag, languageCode),
+        }))
         .filter((t): t is { slug: string; label: string } => Boolean(t.label))
     : []
 

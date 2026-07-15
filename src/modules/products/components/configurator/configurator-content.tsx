@@ -8,6 +8,7 @@ import { useConfiguratorData } from "@configurator/hooks/use-configurator-data"
 import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price"
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
+import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
 import {
   getStepsForProduct,
   getMissingRequiredGroupCodes,
@@ -286,6 +287,29 @@ const ConfiguratorContent = ({
   const handleAddToCart = useCallback(async (reference: string) => {
     if (!productData?.id) return
     try {
+      // Bake armrest-width overrides into each module's attrs before
+      // serializing so the shared drawing component (SofaDrawingPreview +
+      // per-module shapes) renders the same widened armrest in the
+      // cart/offer preview as it does live on the canvas. Without this,
+      // modules are positioned using the override width but drawn at the
+      // base width, leaving a visible gap. Mirrors the proven approach in
+      // furnibay-frontend-shop's StickyPricePreview.tsx. Clone (not mutate)
+      // the live Konva nodes — state.sofaCombinations still backs the canvas.
+      const armrestWidthOverrideArr = getArmrestOverides(
+        state.selectedAdditionalComponents ?? []
+      )
+      const sofaCombinationsWithArmrestWidth = state.sofaCombinations.map(
+        (combination) =>
+          combination.map((item) => {
+            const clone = item.clone()
+            const armrestWidthOverride = armrestWidthOverrideArr.find(
+              (m: any) => m.moduleId === clone.attrs.id
+            )
+            clone.attrs.new_armrest_width = armrestWidthOverride?.armrestWidth
+            return clone
+          })
+      )
+
       await addItem({
         productContainerId: productData.id,
         product_type: productData.product_type || "SIMPLE_PRODUCT",
@@ -298,8 +322,8 @@ const ConfiguratorContent = ({
         fabricCombinationId: state.selectedFabricCombination?.fabricCombination?.id,
         fabric_code: state.selectedFabric.fabricObject?.code,
         fabric_group_name: state.selectedFabric.fabricGroupObject?.name,
-        selected_sofa_combinations: state.sofaCombinations.length > 0
-          ? JSON.stringify(state.sofaCombinations)
+        selected_sofa_combinations: sofaCombinationsWithArmrestWidth.length > 0
+          ? JSON.stringify(sofaCombinationsWithArmrestWidth)
           : undefined,
         additionalComponentIds: state.selectedAdditionalComponents
           .filter((c) => c.id != null)

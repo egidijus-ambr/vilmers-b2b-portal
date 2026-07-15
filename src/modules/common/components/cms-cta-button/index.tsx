@@ -1,5 +1,6 @@
 import {
-  buildLinkPageHref,
+  resolveCtaHref,
+  type CtaLike,
   type LinkPageLike,
 } from "@modules/home/components/content-block/linkResolver"
 import ArrowRight from "@modules/common/icons/arrow-right"
@@ -7,11 +8,20 @@ import ArrowRight from "@modules/common/icons/arrow-right"
 export interface CmsCtaButtonProps {
   /** Per-language authored label. Nothing renders when this is missing. */
   label: string | null
-  /** External URL (used only when `linkPage` is not set). */
+  /** External URL (used only when no internal target resolves). */
   link: string | null
   /** Internal page target — takes precedence over `link` when present. */
   linkPage: LinkPageLike | null
-  /** Open the (external) link in a new tab. Ignored for internal `linkPage` targets. */
+  /**
+   * Discriminator selecting which internal target `linkPage`/`linkCategory`
+   * refers to (`cms_page` | `category` | `store`). Optional/nullable so
+   * CTAs authored before this field existed keep resolving via `linkPage`
+   * (see `resolveCtaHref`'s legacy fallback).
+   */
+  linkType?: CtaLike["cta_link_type"]
+  /** Internal category target — used when `linkType` is `"category"`. */
+  linkCategory?: CtaLike["cta_link_category"]
+  /** Open the (external) link in a new tab. Ignored for internal targets. */
   newTab: boolean | null
   languageCode: string
   variant?: "primary" | "secondary" | "outline"
@@ -53,15 +63,18 @@ const ON_IMAGE_CLASSES =
 /**
  * Server-safe (no hooks, no "use client") CTA button for CMS-authored
  * content: the home hero, nested-CMS page hero, and the Text-on-Image
- * content block. Resolves either an internal page (`linkPage`, localized via
- * `buildLinkPageHref`) or an external URL (`link`), and renders a single
- * styled `<a>` carrying the button styling. Renders nothing when there is
- * no label or no resolvable href.
+ * content block. Resolves an internal target (`linkType` discriminating
+ * between `linkPage`/`linkCategory`/the store, via `resolveCtaHref`) or an
+ * external URL (`link`), and renders a single styled `<a>` carrying the
+ * button styling. Renders nothing when there is no label or no resolvable
+ * href.
  */
 export default function CmsCtaButton({
   label,
   link,
   linkPage,
+  linkType,
+  linkCategory,
   newTab,
   languageCode,
   variant,
@@ -74,8 +87,17 @@ export default function CmsCtaButton({
   let target: string | undefined
   let rel: string | undefined
 
-  if (linkPage) {
-    href = buildLinkPageHref(linkPage, languageCode)
+  const internalHref = resolveCtaHref(
+    {
+      cta_link_type: linkType ?? null,
+      cta_link_page: linkPage,
+      cta_link_category: linkCategory ?? null,
+    },
+    languageCode
+  )
+
+  if (internalHref) {
+    href = internalHref
   } else if (link) {
     href = link
     if (newTab) {

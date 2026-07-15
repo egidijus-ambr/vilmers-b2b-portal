@@ -556,7 +556,7 @@ function CartOfferContent() {
         >
           {/* Header row — title left, date right */}
           <div className="flex items-baseline justify-between">
-            <h2 className="text-[2rem] font-bold uppercase leading-tight text-dark-blue">
+            <h2 className="font-bold uppercase leading-tight text-dark-blue">
               {t("offer-overview")}
             </h2>
             <p className="text-[0.7875rem] text-dark-blue-70">{offerDate}</p>
@@ -578,7 +578,7 @@ function CartOfferContent() {
             return (
               <div
                 key={item.cartItemId ?? idx}
-                className="grid grid-cols-[1fr_96px_96px_110px] items-start gap-6 border-b border-line py-6"
+                className="grid grid-cols-[1fr_96px_96px_110px] items-start gap-6 border-b border-line py-3"
               >
                 <div className="flex items-start gap-4">
                   {item.imageUrl ? (
@@ -590,7 +590,7 @@ function CartOfferContent() {
                         item.imageUrl
                       )}`}
                       alt={item.name}
-                      className="h-44 w-64 object-contain"
+                      className="h-44 w-64 object-conver"
                     />
                   ) : (
                     <div className="flex h-44 w-64 items-center justify-center border border-dashed border-line text-[0.525rem]/[0.7rem] text-dark-blue-70">

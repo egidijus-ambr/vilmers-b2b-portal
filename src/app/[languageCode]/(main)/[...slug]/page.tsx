@@ -120,6 +120,8 @@ export default async function CmsPage(props: Props) {
         ctaLabel={profile?.cta_label ?? null}
         ctaLink={profile?.cta_link ?? null}
         ctaLinkPage={page.cta_link_page ?? null}
+        ctaLinkType={page.cta_link_type ?? null}
+        ctaLinkCategory={page.cta_link_category ?? null}
         ctaNewTab={page.cta_new_tab ?? null}
         languageCode={languageCode}
       />

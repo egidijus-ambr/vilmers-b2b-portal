@@ -41,6 +41,16 @@ export interface Page {
     page_profiles: { slug: string; language: string }[]
     ancestors?: LinkPageAncestor[] | null
   } | null
+  /** Discriminator for the CTA's internal target; see `resolveCtaHref`. */
+  cta_link_type?: "cms_page" | "category" | "store" | null
+  cta_link_category?: {
+    category_profiles?:
+      | {
+          language: string
+          meta_information?: { permalink?: string | null } | null
+        }[]
+      | null
+  } | null
 }
 
 export interface FindPageByCodeResponse {
