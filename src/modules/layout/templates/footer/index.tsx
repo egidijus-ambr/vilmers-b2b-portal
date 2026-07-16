@@ -26,7 +26,8 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
 
   const t = await getServerT("common", language)
 
-  const brandName = shopSettings?.default_manufacturer?.company_name || "Vilmers"
+  const brandName =
+    shopSettings?.default_manufacturer?.company_name || "Vilmers"
   const copyrightText =
     shopSettings?.footer_copyright_text ||
     `© ${new Date().getFullYear()} ${brandName}. All rights reserved.`
@@ -303,7 +304,7 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
               href="/"
               className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
             >
-              Medusa Store
+            
             </LocalizedClientLink>
           </div>
           <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
@@ -429,9 +430,7 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
           </div> */}
         </div>
         <div className="flex w-full mb-4 justify-between text-footer-foreground/80">
-          <Text className="txt-compact-small">
-            {copyrightText}
-          </Text>
+          <Text className="txt-compact-small">{copyrightText}</Text>
           {show(footer?.footer_privacy_url) && (
             <LocalizedClientLink
               href={footer!.footer_privacy_url!}

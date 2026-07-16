@@ -129,6 +129,12 @@ module.exports = {
       },
       maxWidth: {
         "8xl": "100rem",
+        // Shared content-width ceiling for the nav bar / top utility bar,
+        // matching the hero photo's max-width (2150px = 134.375rem) so the
+        // two bars align with the hero and with each other. Single source of
+        // truth — see src/modules/layout/components/top-bar/index.tsx and
+        // src/modules/layout/templates/nav/index.tsx.
+        "9xl": "134.375rem",
       },
       screens: {
         "2xsmall": "320px",
@@ -141,6 +147,44 @@ module.exports = {
       },
       fontSize: {
         "3xl": "2rem",
+        // Heading typography tokens — values are theme-driven CSS vars (see
+        // `src/themes/index.ts` `themeToCssVars` / `src/themes/types.ts`
+        // `ThemeTypography`), same precedent as the `borderRadius.button`/
+        // `.input` var-valued tokens above. The second arg of each `var()` is
+        // the canonical default (today's live global heading scale) — the
+        // SINGLE source of default truth. `themeToCssVars` emits a
+        // `--heading-*` var ONLY when a brand actually overrides that field,
+        // so the CSS is self-sufficient (correct even with zero `--heading-*`
+        // vars in `:root`, e.g. a stale/missing theme `<style>` block) and a
+        // brand override simply wins over the inline fallback.
+        "heading-1": [
+          "var(--heading-h1-size, 2.5rem)",
+          { lineHeight: "var(--heading-h1-leading, 1.25)" },
+        ],
+        "heading-1-lg": [
+          "var(--heading-h1-size-lg, 3.5rem)",
+          { lineHeight: "var(--heading-h1-leading, 1.25)" },
+        ],
+        "heading-2": [
+          "var(--heading-h2-size, 2rem)",
+          { lineHeight: "var(--heading-h2-leading, 1.25)" },
+        ],
+        "heading-2-lg": [
+          "var(--heading-h2-size-lg, 2.5rem)",
+          { lineHeight: "var(--heading-h2-leading, 1.25)" },
+        ],
+        "heading-3": [
+          "var(--heading-h3-size, 1.5rem)",
+          { lineHeight: "var(--heading-h3-leading, 1.25)" },
+        ],
+        "heading-eyebrow": [
+          "var(--heading-eyebrow-size, 18px)",
+          {
+            lineHeight: "var(--heading-eyebrow-leading, 1.25)",
+            letterSpacing: "var(--heading-eyebrow-tracking, 0.2em)",
+            fontWeight: "var(--heading-eyebrow-weight, 400)",
+          },
+        ],
       },
       fontFamily: {
         sans: [

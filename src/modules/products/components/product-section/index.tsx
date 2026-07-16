@@ -15,7 +15,7 @@ const ProductSection = ({
 }: ProductSectionProps) => (
   <section className={`pb-8 ${className ?? ""}`}>
     {divider && <hr className="border-t border-gray-300 mb-8" />}
-    {title && <h2 className="section-title mb-6 text-2xl">{title}</h2>}
+    {title && <h3 className="mb-6 font-medium text-dark-blue">{title}</h3>}
     {children}
   </section>
 )

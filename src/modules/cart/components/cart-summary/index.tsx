@@ -55,9 +55,9 @@ export default function CartSummary({
 
   return (
     <div className="bg-white pb-6 p-4 md:p-6">
-      <h2 className="text-xl md:text-2xl font-medium text-gray-900 mb-6">
+      <h3 className="font-medium text-gray-900 mb-6">
         {title ?? t("order-summary")}
-      </h2>
+      </h3>
 
       {/* Product list */}
       <div className="flex flex-col gap-y-6 mb-6">

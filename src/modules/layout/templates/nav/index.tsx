@@ -196,7 +196,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
         }`}
       >
         <nav
-          className={`w-full px-6 text-xs flex items-center justify-between h-full ${
+          className={`w-full max-w-9xl mx-auto px-6 text-xs flex items-center justify-between h-full ${
             homepageHeader.transparent ? "transition-colors duration-200" : ""
           } ${isTransparent ? "text-white" : "text-ui-fg-subtle"}`}
         >

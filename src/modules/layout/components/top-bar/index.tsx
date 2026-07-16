@@ -9,7 +9,7 @@ export default function TopBar() {
 
   return (
     <div className="hidden small:block bg-top-menu-background">
-      <div className="h-8 w-full px-10 flex items-center justify-between text-xs text-top-menu-foreground">
+      <div className="h-8 w-full max-w-9xl mx-auto px-6 flex items-center justify-between text-xs text-top-menu-foreground">
         {languageSwitcher.placement === "top-bar" && (
           <CompactLanguageSwitcher size="small" dropdownAlign="left" />
         )}

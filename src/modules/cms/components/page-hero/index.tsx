@@ -84,7 +84,7 @@ const PageHero = ({
             {title && (
               <Heading
                 level="h1"
-                className="text-4xl font-medium text-white drop-shadow-lg"
+                className="text-[2.5rem] small:text-[3.5rem] font-medium text-white drop-shadow-lg leading-tight"
               >
                 {title}
               </Heading>
@@ -129,7 +129,7 @@ const PageHero = ({
           {title && (
             <Heading
               level="h1"
-              className="text-4xl font-medium text-ui-fg-base"
+              className="text-[2.5rem] small:text-[3.5rem] font-medium text-ui-fg-base leading-tight"
             >
               {title}
             </Heading>

@@ -87,7 +87,7 @@ export default function ProductCarouselGrid({
     <div>
       {(title || hasOverflow) && (
         <div className="flex items-center justify-between mb-6">
-          {title && <h2 className={titleClassName ?? "section-title !mb-0"}>{title}</h2>}
+          {title && <h4 className={titleClassName ?? "!mb-0"}>{title}</h4>}
           {hasOverflow && (
             <div className="flex gap-2 ml-auto">
               <button

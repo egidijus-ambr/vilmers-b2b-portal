@@ -8,10 +8,23 @@ import Button from "@modules/common/components/button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
 
-function SubmitButton({ children, className, "data-testid": dataTestId }: { children: React.ReactNode; className?: string; "data-testid"?: string }) {
+function SubmitButton({
+  children,
+  className,
+  "data-testid": dataTestId,
+}: {
+  children: React.ReactNode
+  className?: string
+  "data-testid"?: string
+}) {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" disabled={pending} className={className} data-testid={dataTestId}>
+    <Button
+      type="submit"
+      disabled={pending}
+      className={className}
+      data-testid={dataTestId}
+    >
       {pending ? "..." : children}
     </Button>
   )
@@ -29,12 +42,10 @@ const Register = ({ setCurrentView }: Props) => {
       className="max-w-sm flex flex-col items-center"
       data-testid="register-page"
     >
-      <h1 className="text-large-semi uppercase mb-6">
-        Become a Medusa Store Member
-      </h1>
+      <h1 className="mb-6">Become a Member</h1>
       <p className="text-center text-base-regular text-ui-fg-base mb-4">
-        Create your Medusa Store Member profile, and get access to an enhanced
-        shopping experience.
+        Create your Member profile, and get access to an enhanced shopping
+        experience.
       </p>
       <form className="w-full flex flex-col" action={formAction}>
         <div className="flex flex-col w-full gap-y-2">
@@ -69,9 +80,13 @@ const Register = ({ setCurrentView }: Props) => {
             data-testid="password-input"
           />
         </div>
-        {message && <p className="text-sm text-red-500" data-testid="register-error">{message}</p>}
+        {message && (
+          <p className="text-sm text-red-500" data-testid="register-error">
+            {message}
+          </p>
+        )}
         <span className="text-center text-ui-fg-base text-small-regular mt-6">
-          By creating an account, you agree to Medusa Store&apos;s{" "}
+          By creating an account, you agree to{" "}
           <LocalizedClientLink
             href="/content/privacy-policy"
             className="underline"

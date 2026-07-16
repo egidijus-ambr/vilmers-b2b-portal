@@ -13,7 +13,7 @@ export default async function TransferPage({
     <div className="flex flex-col gap-y-4 items-start w-2/5 mx-auto mt-10 mb-20">
       <TransferImage />
       <div className="flex flex-col gap-y-6">
-        <Heading level="h1" className="text-xl text-zinc-900">
+        <Heading level="h1" className="text-[2.5rem] small:text-[3.5rem] leading-tight text-zinc-900">
           Transfer request for order {id}
         </Heading>
         <Text className="text-zinc-600">

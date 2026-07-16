@@ -78,7 +78,7 @@ const SaveCartModal = ({ isOpen, onClose }: SaveCartModalProps) => {
   return (
     <Modal isOpen={isOpen} close={onClose} size="small" data-testid="save-cart-modal">
       <Modal.Title>
-        <Heading className="mb-2">{t("save-the-cart")}</Heading>
+        <Heading level="h3" className="mb-2 text-[1.5rem] leading-tight">{t("save-the-cart")}</Heading>
       </Modal.Title>
       <Modal.Body>
         <div className="w-full flex flex-col gap-y-4">

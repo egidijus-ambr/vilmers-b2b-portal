@@ -144,7 +144,10 @@ const Overview = (): JSX.Element => {
 
   return (
     <>
-      <PageHeader title={customer?.full_name || customer?.name || "User"} />
+      <PageHeader
+        title={customer?.full_name || customer?.name || "User"}
+        level="h2"
+      />
       <PageContent>
         <div
           data-testid="overview-page-wrapper"

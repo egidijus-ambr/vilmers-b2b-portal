@@ -6,6 +6,21 @@
  * per-brand font is wired directly in `src/themes/fonts.ts` (loader ->
  * `fontsByTheme` registry keyed by theme name), not through this type.
  */
+export interface HeadingToken {
+  size?: string
+  sizeLg?: string // desktop step at the `small` (1024px) breakpoint; h1/h2 only
+  leading?: string
+  tracking?: string // letter-spacing; eyebrow only
+  weight?: string // font-weight; eyebrow only
+}
+
+export interface ThemeTypography {
+  h1?: HeadingToken
+  h2?: HeadingToken
+  h3?: HeadingToken
+  eyebrow?: HeadingToken // the h4 style; carried by the `h4` element rule AND the `.eyebrow` class
+}
+
 export interface Theme {
   /** Registry key, e.g. "vilmers". Must match the `NEXT_PUBLIC_THEME` value. */
   name: string
@@ -38,6 +53,14 @@ export interface Theme {
   spacing?: Record<string, string>
   /** RESERVED for v1 — maps to current `borderRadius` values. Not yet consumed. */
   radius?: Record<string, string>
+  /**
+   * Heading typography tier (h1-h3 + the h4/"eyebrow" style) — optional;
+   * when a tier or field is absent, `themeToCssVars` falls back to today's
+   * live values, so an absent `typography` reproduces the current global
+   * scale exactly (visual no-op). See `themeToCssVars` in
+   * `src/themes/index.ts`.
+   */
+  typography?: ThemeTypography
   /**
    * Navbar/header layout configuration — lets each brand configure whether
    * the top bar shows, where the language switcher lives, where the logo

@@ -242,6 +242,7 @@ export default function FabricPalettesPage() {
         title={t("fabric-palettes.title")}
         description={t("fabric-palettes.description")}
         breadcrumbItems={breadcrumbItems}
+        level="h2"
       />
       <PageContent>
         <div

@@ -29,6 +29,7 @@ export default function CartsPage() {
         title={t("carts")}
         description={t("carts-description")}
         breadcrumbItems={breadcrumbItems}
+        level="h2"
       />
       <PageContent noPaddingX>
         <CartsTable hideTitle />

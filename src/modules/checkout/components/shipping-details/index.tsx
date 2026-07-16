@@ -117,9 +117,9 @@ export default function ShippingDetails({
 
   return (
     <div className="flex flex-col gap-y-6">
-      <h2 className="text-xl md:text-2xl font-medium text-gray-900">
+      <h3 className="font-medium text-gray-900">
         Shipping details
-      </h2>
+      </h3>
 
       {/* Order type */}
       <div>

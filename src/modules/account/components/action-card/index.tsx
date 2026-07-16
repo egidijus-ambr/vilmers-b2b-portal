@@ -26,9 +26,9 @@ const ActionCard = ({
     >
       <div className="self-stretch flex-1 flex flex-col justify-between items-start">
         <div className="self-stretch flex flex-col justify-start items-start gap-2">
-          <div className="self-stretch justify-start text-dark-blue text-lg sm:text-xl font-medium leading-7 sm:leading-9">
+          <h3 className="self-stretch justify-start text-dark-blue font-medium">
             {title}
-          </div>
+          </h3>
           <p className="self-stretch justify-start text-dark-blue-70 text-sm sm:text-base font-normal line-clamp-3">
             {description}
           </p>

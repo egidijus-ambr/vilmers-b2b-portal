@@ -29,6 +29,7 @@ export default function OrdersPage() {
         title={t("orders")}
         description={t("orders-description")}
         breadcrumbItems={breadcrumbItems}
+        level="h2"
       />
       <PageContent noPaddingX>
         <OrdersTable hideTitle />

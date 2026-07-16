@@ -120,9 +120,9 @@ export default function DeliveryAddressForm({
 
   return (
     <div className="flex flex-col gap-y-6">
-      <h2 className="text-xl md:text-2xl font-medium text-gray-900">
+      <h3 className="font-medium text-gray-900">
         Delivery Address
-      </h2>
+      </h3>
 
       {mode === "select" && (
         <>

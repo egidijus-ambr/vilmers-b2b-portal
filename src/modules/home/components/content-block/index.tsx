@@ -54,18 +54,6 @@ function parseExtraCss(raw: unknown): React.CSSProperties {
   return {}
 }
 
-// The `3_columns_title_left` and `2_columns_title_top_center` sub-styles used
-// to split `description` into two columns at an in-string section-break
-// marker. Now that they render as a single flowing text column, the marker
-// itself must not leak into the rendered markdown — rejoin the sections with
-// a blank line so old CMS content (authored with the marker) still reads as
-// continuous text.
-function stripSectionMarker(raw: string | null): string | null {
-  if (!raw) return raw
-  const sections = splitSections(raw).filter(Boolean)
-  return sections.length > 0 ? sections.join("\n\n") : raw
-}
-
 type TitleAlignment = "left" | "center" | "right" | undefined
 
 // Resolve the horizontal text-alignment utility for a block title. When the
@@ -104,6 +92,14 @@ export default function ContentBlock({
       | "full_width"
       | "content_width"
       | undefined) ?? "full_width"
+  // Image/text width ratio for `side_by_side` & `image_left` (image:text).
+  // Coerce unknown/missing values to the neutral 50/50 so the literal-class
+  // lookup below always resolves to a real Tailwind class.
+  const mediaRatioRaw = (data.config as any)?.mediaRatio
+  const mediaRatio: MediaRatio =
+    mediaRatioRaw === "60_40" || mediaRatioRaw === "40_60"
+      ? mediaRatioRaw
+      : "50_50"
 
   const hasMaxHeight = data.max_height != null || extraCss.maxHeight != null
 
@@ -144,6 +140,7 @@ export default function ContentBlock({
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
           display={display}
+          mediaRatio={mediaRatio}
           ctaLabel={profile?.cta_label ?? null}
           ctaLink={profile?.cta_link ?? null}
           ctaLinkPage={data.cta_link_page}
@@ -300,7 +297,7 @@ function TextSection({
       <div>
         {!hideTitle && name && (
           <h3
-            className={`mb-4 text-2xl font-medium ${titleAlignClass(
+            className={`mb-4 eyebrow ${titleAlignClass(
               titleAlignment,
               "text-left"
             )}`}
@@ -342,6 +339,23 @@ function mediaStyle(opts: {
 
 /* ─── Text + Image ────────────────────────────────────────── */
 
+// Image/text width ratio for the `side_by_side` & `image_left` styles.
+// Semantics are image:text — `60_40` = image 60% / text 40%. Classes are FULL
+// LITERALS (no interpolation) so Tailwind's JIT source scan keeps them, and
+// only the `small:`-prefixed width changes so mobile stacking is untouched.
+type MediaRatio = "50_50" | "60_40" | "40_60"
+
+const MEDIA_IMG_W: Record<MediaRatio, string> = {
+  "50_50": "small:w-1/2",
+  "60_40": "small:w-3/5",
+  "40_60": "small:w-2/5",
+}
+const MEDIA_TEXT_W: Record<MediaRatio, string> = {
+  "50_50": "small:w-1/2",
+  "60_40": "small:w-2/5",
+  "40_60": "small:w-3/5",
+}
+
 function TextAndImage({
   style,
   sectionImage,
@@ -359,6 +373,7 @@ function TextAndImage({
   titleAlignment,
   hideTitle,
   display = "full_width",
+  mediaRatio = "50_50",
   ctaLabel,
   ctaLink,
   ctaLinkPage,
@@ -384,6 +399,7 @@ function TextAndImage({
   titleAlignment: TitleAlignment
   hideTitle: boolean
   display?: "full_width" | "content_width"
+  mediaRatio?: MediaRatio
   ctaLabel?: string | null
   ctaLink?: string | null
   ctaLinkPage?: LinkPage | null
@@ -468,13 +484,15 @@ function TextAndImage({
             description={sectionDescription}
             descriptionFormat={descriptionFormat}
             textColor={textColor}
-            widthClass="w-full small:w-1/2"
+            widthClass={`w-full ${MEDIA_TEXT_W[mediaRatio]}`}
             verticalJustifyClass="justify-start"
             paddingClass="pt-6 small:pt-0 small:pl-12"
             style={textStyle}
           />
 
-          <div className="flex w-full items-stretch justify-center small:w-1/2 small:self-stretch">
+          <div
+            className={`flex w-full items-stretch justify-center ${MEDIA_IMG_W[mediaRatio]} small:self-stretch`}
+          >
             <div
               className="relative w-full overflow-hidden"
               style={mediaStyle({
@@ -511,13 +529,15 @@ function TextAndImage({
           description={sectionDescription}
           descriptionFormat={descriptionFormat}
           textColor={textColor}
-          widthClass="w-full small:w-1/2"
+          widthClass={`w-full ${MEDIA_TEXT_W[mediaRatio]}`}
           verticalJustifyClass="justify-start"
           paddingClass="pb-6 small:pb-0 small:pr-12"
           style={textStyle}
         />
 
-        <div className="flex w-full items-stretch justify-center small:w-1/2 small:self-stretch">
+        <div
+          className={`flex w-full items-stretch justify-center ${MEDIA_IMG_W[mediaRatio]} small:self-stretch`}
+        >
           <div
             className="relative w-full overflow-hidden"
             style={mediaStyle({
@@ -639,14 +659,17 @@ function OnlyText({
   titleAlignment: TitleAlignment
   textStyle?: React.CSSProperties
 }) {
+  // Despite their names, NEITHER of these styles renders a title: the block's
+  // `name` is not passed down to OnlyText at all. Both are simply N equal text
+  // columns, so `titleAlignment` (a title-only setting) does not apply.
   if (style === "3_columns_title_left") {
     return (
-      <ThreeColumnsTitleLeft
+      <MultiColumnText
+        columns={3}
         sectionDescription={sectionDescription}
         descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
-        titleAlignment={titleAlignment}
         textStyle={textStyle}
       />
     )
@@ -654,12 +677,12 @@ function OnlyText({
 
   if (style === "2_columns_title_top_center") {
     return (
-      <TwoColumnsTitleTopCenter
+      <MultiColumnText
+        columns={2}
         sectionDescription={sectionDescription}
         descriptionFormat={descriptionFormat}
         backgroundColor={backgroundColor}
         textColor={textColor}
-        titleAlignment={titleAlignment}
         textStyle={textStyle}
       />
     )
@@ -687,83 +710,56 @@ function OnlyText({
   )
 }
 
-/* ─── 3 Columns Title Left ────────────────────────────────── */
+/* ─── Multi-column text (3 Columns Title Left / 2 Columns Title Top Center) ─── */
 
-function ThreeColumnsTitleLeft({
+/**
+ * The two multi-column text styles render N EQUAL text columns and no title.
+ * The admin editor packs one text section per column into the single stored
+ * `description`, separated by the section-break marker, so column i renders
+ * section i.
+ *
+ * `columns` MUST match the admin editor's `sectionCountForStyle` in
+ * `saas-admin-ui/src/containers/ContentBlocks/utils/sectionMarker.ts`, or the
+ * editor and this renderer disagree on the layout.
+ */
+function MultiColumnText({
+  columns,
   sectionDescription,
   descriptionFormat,
   backgroundColor,
   textColor,
-  titleAlignment,
   textStyle,
 }: {
+  columns: 2 | 3
   sectionDescription: string | null
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
   textColor: string | null
-  titleAlignment: TitleAlignment
   textStyle?: React.CSSProperties
 }) {
-  // The title column that gave this style its name is gone — collapse to a
-  // single, aligned text column (no more left/right description split). Old
-  // content authored with a section-break marker is rejoined into continuous
-  // text so the marker itself never renders.
+  // Legacy content may hold FEWER sections than the style has columns (e.g. a
+  // 2-section string authored when this style had 2 text columns, now rendered
+  // with 3), and a marker-less string yields exactly one. Index defensively so
+  // the surplus columns render empty rather than crashing.
+  const sections = splitSections(sectionDescription)
+  // Written as whole literals so Tailwind's class scanner sees them.
+  const gridClass = columns === 3 ? "small:grid-cols-3" : "small:grid-cols-2"
+
   return (
     <div
       className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      <div
-        className={titleAlignClass(titleAlignment, "text-left")}
-        style={textStyle}
-      >
-        <RichText
-          value={stripSectionMarker(sectionDescription)}
-          format={descriptionFormat}
-          textColor={textColor}
-        />
-      </div>
-    </div>
-  )
-}
-
-/* ─── 2 Columns Title Top Center ──────────────────────────── */
-
-function TwoColumnsTitleTopCenter({
-  sectionDescription,
-  descriptionFormat,
-  backgroundColor,
-  textColor,
-  titleAlignment,
-  textStyle,
-}: {
-  sectionDescription: string | null
-  descriptionFormat?: "plain" | "markdown" | null
-  backgroundColor: string | null
-  textColor: string | null
-  titleAlignment: TitleAlignment
-  textStyle?: React.CSSProperties
-}) {
-  // The centered title that gave this style its name is gone — collapse to a
-  // single, aligned text column (no more two-column description split). The
-  // body previously rendered left-aligned (only the title was centered), so
-  // that remains the default. Old content authored with a section-break
-  // marker is rejoined into continuous text so the marker itself never
-  // renders.
-  return (
-    <div
-      className="py-10 small:py-12 content-container large:px-0 px-6"
-      style={backgroundColor ? { backgroundColor } : undefined}
-    >
-      <div
-        className={titleAlignClass(titleAlignment, "text-left")}
-        style={textStyle}
-      >
-        <RichText
-          value={stripSectionMarker(sectionDescription)}
-          format={descriptionFormat}
-          textColor={textColor}
-        />
+      <div className={`grid grid-cols-1 gap-8 ${gridClass} small:gap-12`}>
+        {Array.from({ length: columns }, (_, i) => (
+          <div key={i} style={textStyle}>
+            <RichText
+              value={sections[i] ?? ""}
+              format={descriptionFormat}
+              textColor={textColor}
+            />
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -1373,7 +1369,7 @@ function ProductGrid({
     >
       {!hideTitle && title && (
         <h3
-          className={`mb-6 text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm ${titleAlignClass(
+          className={`mb-6 eyebrow small:mb-6 ${titleAlignClass(
             titleAlignment,
             "text-left"
           )}`}
@@ -1490,7 +1486,7 @@ function PageGrid({
     >
       {!hideTitle && title && (
         <h3
-          className={`mb-6 text-xs font-medium uppercase tracking-[0.2em] small:mb-6 small:text-sm ${titleAlignClass(
+          className={`mb-6 eyebrow small:mb-6 ${titleAlignClass(
             titleAlignment,
             "text-left"
           )}`}
@@ -1576,12 +1572,12 @@ function PageGrid({
                     )}
                   </div>
                   {pageProfile?.title && (
-                    <h4
+                    <p
                       className="mt-3 text-sm font-medium"
                       style={textColor ? { color: textColor } : undefined}
                     >
                       {pageProfile.title}
-                    </h4>
+                    </p>
                   )}
                 </a>
               </li>

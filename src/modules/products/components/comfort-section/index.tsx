@@ -43,9 +43,9 @@ export default function ComfortSection({ data }: Props) {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-dark-blue mb-3">
+                    <p className="text-sm font-semibold text-dark-blue mb-3">
                       {item.name}
-                    </h4>
+                    </p>
                     {item.description && (
                       <p className="text-sm text-dark-blue mb-3 whitespace-pre-line">
                         {item.description}

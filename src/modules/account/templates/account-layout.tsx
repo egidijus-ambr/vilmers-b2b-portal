@@ -64,7 +64,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({
           <div className="flex items-center justify-center lg:justify-between min-h-screen py-12">
             {/* Left side - Text content */}
             <div className="hidden lg:block flex-1 max-w-2xl">
-              <h1 className="w-full max-w-[670px] font-medium text-[28px] lg:text-[40px] leading-[40px] lg:leading-[56px] text-white mb-8">
+              <h1 className="w-full max-w-[670px] font-medium text-white mb-8">
                 {heroTitle}
               </h1>
               <div>

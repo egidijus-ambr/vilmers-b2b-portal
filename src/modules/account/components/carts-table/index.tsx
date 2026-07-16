@@ -213,9 +213,9 @@ const CartsTable = ({ hideTitle = false }: CartsTableProps) => {
       {/* Header */}
       {!hideTitle && (
         <div className="p-4 md:p-6">
-          <h2 className="text-xl md:text-2xl font-medium text-gray-900">
+          <h3 className="font-medium text-gray-900">
             {t("carts")}
-          </h2>
+          </h3>
           <p className="text-gray-600 mt-2 max-w-md text-sm md:text-base">
             {t("carts-description")}
           </p>
@@ -392,7 +392,7 @@ const CartsTable = ({ hideTitle = false }: CartsTableProps) => {
         data-testid="cart-rename-modal"
       >
         <Modal.Title>
-          <Heading className="mb-2">{t("rename")}</Heading>
+          <Heading level="h3" className="mb-2 text-[1.5rem] leading-tight">{t("rename")}</Heading>
         </Modal.Title>
         <Modal.Body>
           <div className="w-full flex flex-col gap-y-4">
@@ -438,7 +438,7 @@ const CartsTable = ({ hideTitle = false }: CartsTableProps) => {
         data-testid="cart-delete-modal"
       >
         <Modal.Title>
-          <Heading className="mb-2">{t("delete")}</Heading>
+          <Heading level="h3" className="mb-2 text-[1.5rem] leading-tight">{t("delete")}</Heading>
         </Modal.Title>
         <Modal.Body>
           <div className="w-full flex flex-col gap-y-4">
@@ -479,7 +479,7 @@ const CartsTable = ({ hideTitle = false }: CartsTableProps) => {
         data-testid="cart-prompt-save-modal"
       >
         <Modal.Title>
-          <Heading className="mb-2">{t("prompt-save-title")}</Heading>
+          <Heading level="h3" className="mb-2 text-[1.5rem] leading-tight">{t("prompt-save-title")}</Heading>
         </Modal.Title>
         <Modal.Body>
           <div className="w-full flex flex-col gap-y-4">

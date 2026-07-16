@@ -46,7 +46,7 @@ export default function ProductPhotosPage() {
     <div className="w-full " data-testid="product-photos-page-wrapper">
       <div className="w-full mt-6">
         <div className="mb-4 flex flex-col gap-y-2">
-          <h1 className="text-2xl-semi">Product Photos</h1>
+          <h1 className="font-semibold">Product Photos</h1>
         </div>
 
         <div className="flex flex-col gap-y-8 w-full">

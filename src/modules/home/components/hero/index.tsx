@@ -70,9 +70,14 @@ const Hero = async ({
   // (showCta) when no CTA is configured. `ctaLinkType` covers the
   // `category`/`store` targets, which resolve without a `ctaLinkPage`.
   const hasCta = Boolean(ctaLabel && (ctaLinkPage || ctaLink || ctaLinkType))
+  // The image/video layers are absolutely positioned against this wrapper's
+  // padding box, and the wrapper has a fixed inline height (see `style`
+  // below) with box-sizing: border-box, so padding here wouldn't create a
+  // visible gap (the media would just stretch over it). Margin sits outside
+  // the border box, so it reliably adds space below the hero.
   return (
     <div
-      className={`w-full border-b border-ui-border-base relative bg-hero-background ${
+      className={`w-full border-b border-ui-border-base relative bg-hero-background mb-6 ${
         transparent ? "-mt-[var(--nav-height)]" : ""
       }`}
       style={{ height: heroHeight ?? "70vh" }}
@@ -104,14 +109,14 @@ const Hero = async ({
             <>
               <Heading
                 level="h1"
-                className="text-6xl font-medium  text-white font-normal drop-shadow-lg "
+                className="text-[2.5rem] small:text-[3.5rem] font-medium  text-white font-normal drop-shadow-lg leading-tight"
               >
                 {renderWithLineBreaks(title)}
               </Heading>
               {subtitle && (
                 <Heading
                   level="h2"
-                  className="text-6xl font-medium  text-white font-normal drop-shadow-lg leading-[72px]"
+                  className="text-[2rem] small:text-[2.5rem] font-medium  text-white font-normal drop-shadow-lg leading-tight"
                 >
                   {renderWithLineBreaks(subtitle)}
                 </Heading>
@@ -121,13 +126,13 @@ const Hero = async ({
             <>
               <Heading
                 level="h1"
-                className="text-6xl font-medium  text-white font-normal drop-shadow-lg "
+                className="text-[2.5rem] small:text-[3.5rem] font-medium  text-white font-normal drop-shadow-lg leading-tight"
               >
                 Comfort and quality
               </Heading>
               <Heading
                 level="h2"
-                className="text-6xl font-medium  text-white font-normal drop-shadow-lg leading-[72px]"
+                className="text-[2rem] small:text-[2.5rem] font-medium  text-white font-normal drop-shadow-lg leading-tight"
               >
                 with smart design.
               </Heading>

@@ -51,6 +51,7 @@ export default async function SearchResultsPage(props: Props) {
           { label: "Home", href: "/" },
           { label: "Search", href: null },
         ]}
+        level="h2"
       />
 
       {products.length === 0 ? (

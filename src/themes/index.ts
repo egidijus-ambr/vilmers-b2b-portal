@@ -1,4 +1,4 @@
-import type { Theme } from "./types"
+import type { Theme, ThemeTypography, HeadingToken } from "./types"
 import { vilmers } from "./vilmers"
 import { dominari } from "./dominari"
 
@@ -154,5 +154,47 @@ export function themeToCssVars(theme: Theme): string {
     `  --input-radius: ${resolveRadius("input_radius", "0px")};`,
   ].join("\n")
 
-  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n${layoutDeclarations}\n${radiusDeclarations}\n}`
+  // Heading typography tokens (`--heading-*`) — UNLIKE `resolveRadius`
+  // above, this does NOT emit a default fallback value: the canonical
+  // defaults live solely in the `var(--heading-*, <default>)` inline
+  // fallbacks registered in `tailwind.config.js`, so a var is emitted here
+  // ONLY when the brand's `typography` preset actually sets that field.
+  // Absent theme/tier/field => nothing pushed => no `--heading-*` line at
+  // all, and the CSS's own inline fallback applies. This keeps
+  // `themeToCssVars`'s output minimal (only real overrides) and makes the
+  // generated CSS self-sufficient even if this `<style>` block never renders
+  // (stale dev bundle, SSR edge case, etc.) — a bare heading still resolves
+  // to the correct default via the Tailwind token's inline fallback. Emitted
+  // raw (like `layoutDeclarations`/`radiusDeclarations`), NOT run through
+  // `toChannels` — these aren't colors.
+  const typographyEntries: string[] = []
+  const pushHeading = (
+    tier: keyof ThemeTypography,
+    prop: keyof HeadingToken,
+    cssVarName: string
+  ): void => {
+    const value = theme.typography?.[tier]?.[prop]
+    if (value != null) {
+      typographyEntries.push(`  --${cssVarName}: ${value};`)
+    }
+  }
+
+  pushHeading("h1", "size", "heading-h1-size")
+  pushHeading("h1", "sizeLg", "heading-h1-size-lg")
+  pushHeading("h1", "leading", "heading-h1-leading")
+  pushHeading("h2", "size", "heading-h2-size")
+  pushHeading("h2", "sizeLg", "heading-h2-size-lg")
+  pushHeading("h2", "leading", "heading-h2-leading")
+  pushHeading("h3", "size", "heading-h3-size")
+  pushHeading("h3", "leading", "heading-h3-leading")
+  pushHeading("eyebrow", "size", "heading-eyebrow-size")
+  pushHeading("eyebrow", "leading", "heading-eyebrow-leading")
+  pushHeading("eyebrow", "tracking", "heading-eyebrow-tracking")
+  pushHeading("eyebrow", "weight", "heading-eyebrow-weight")
+
+  // Empty when no brand override exists (e.g. vilmers/dominari today) — the
+  // trailing `\n` this leaves before the closing `}` is harmless CSS.
+  const typographyDeclarations = typographyEntries.join("\n")
+
+  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n${layoutDeclarations}\n${radiusDeclarations}\n${typographyDeclarations}\n}`
 }

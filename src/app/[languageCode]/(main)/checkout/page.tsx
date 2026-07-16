@@ -60,6 +60,7 @@ export default function Checkout() {
       <PageHeader
         title={t("checkout")}
         breadcrumbItems={breadcrumbItems}
+        level="h2"
       />
       <PageContent>
         <div className="pb-12">

@@ -47,7 +47,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
         <ProductSection>
           <div data-testid="product-container">
             <div className="flex items-start justify-between mb-4">
-              <h1 className="page-title">{product.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-medium text-dark-blue">{product.title}</h1>
               <ConfiguratorButton
                 productContainerId={product.productContainerId}
                 isAdvancedProduct={product.isAdvancedProduct}
@@ -58,7 +58,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
             </div>
             {product.description && (
               <div
-                className="text-dark-blue prose prose-sm mb-6 md:w-1/2"
+                className="text-dark-blue prose prose-sm mb-6 md:w-1/2 prose-headings:font-sans prose-headings:font-medium prose-headings:tracking-normal prose-h1:text-heading-1 small:prose-h1:text-heading-1-lg prose-h2:text-heading-2 small:prose-h2:text-heading-2-lg prose-h3:text-heading-3 prose-h4:text-heading-eyebrow prose-h4:uppercase"
                 dangerouslySetInnerHTML={{ __html: product.description }}
               />
             )}

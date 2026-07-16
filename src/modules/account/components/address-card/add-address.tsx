@@ -59,7 +59,7 @@ const AddAddress = ({
 
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Add address</Heading>
+          <Heading level="h3" className="mb-2 text-[1.5rem] leading-tight">Add address</Heading>
         </Modal.Title>
         <form action={formAction}>
           <Modal.Body>

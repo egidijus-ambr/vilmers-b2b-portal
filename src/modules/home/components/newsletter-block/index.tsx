@@ -49,11 +49,11 @@ export default function NewsletterBlock({
       {/* Right: cream panel */}
       <div className="w-full md:w-1/2 flex items-center px-6 py-12 small:px-12 small:py-16">
         <div className="w-full max-w-lg">
-          <span className="block text-xs font-medium uppercase tracking-[0.2em] text-dark-blue-70">
+          <span className="block eyebrow text-dark-blue-70">
             {t("newsletter-eyebrow", "NEWSLETTER")}
           </span>
 
-          <h2 className="mt-4 text-3xl small:text-4xl font-medium leading-tight text-dark-blue">
+          <h2 className="mt-4 font-medium leading-tight text-dark-blue">
             {t(
               "newsletter-heading",
               "Stay ahead of the trends – subscribe now for the latest arrivals and be the first"

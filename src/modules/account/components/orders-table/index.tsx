@@ -154,9 +154,9 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
         <div className="flex flex-col md:flex-row md:items-end md:justify-between">
           {!hideTitle && (
             <div className="mb-4 md:mb-0">
-              <h2 className="text-xl md:text-2xl font-medium text-gray-900">
+              <h3 className="font-medium text-gray-900">
                 {t("orders")}
-              </h2>
+              </h3>
               <p className="text-gray-600 mt-2 max-w-md text-sm md:text-base">
                 {t("orders-description")}
               </p>

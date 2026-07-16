@@ -69,9 +69,9 @@ const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
     <ProductSection>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-sm font-medium uppercase tracking-[0.2em]">
+        <h4>
           Gallery
-        </h2>
+        </h4>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
             <button

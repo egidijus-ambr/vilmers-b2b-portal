@@ -94,7 +94,7 @@ export default function OrderDetailsPage() {
     return (
       <PageContent>
         <div data-testid="order-details-error" className="mb-8 flex flex-col gap-y-4">
-          <h1 className="page-title">
+          <h1 className="font-medium text-dark-blue">
             {t("order-details")}
           </h1>
           <p className="text-sm text-red-600">
@@ -123,6 +123,7 @@ export default function OrderDetailsPage() {
       <PageHeader
         title={t("order-details")}
         breadcrumbItems={breadcrumbItems}
+        level="h2"
       />
       <PageContent>
         {showPlacedBanner && (

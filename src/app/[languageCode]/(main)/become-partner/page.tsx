@@ -119,7 +119,7 @@ export default function BecomePartnerPage() {
                       />
                     </svg>
                   </div>
-                  <h1 className="text-2xl text-gray-900 mb-4">
+                  <h1 className="text-gray-900 mb-4">
                     {t("partner-request-sent")}
                   </h1>
                   <p className="text-gray-600 mb-8">
@@ -160,7 +160,7 @@ export default function BecomePartnerPage() {
         <div className="flex items-center justify-center min-h-screen py-12">
           <div className="w-full max-w-[670px]">
             <div className="bg-white shadow-xl p-8 sm:p-10">
-              <h1 className="text-2xl font-medium text-gray-900 mb-2">
+              <h1 className="font-medium text-gray-900 mb-2">
                 {heroTitle}
               </h1>
               <p className="text-gray-600 mb-6 text-sm">

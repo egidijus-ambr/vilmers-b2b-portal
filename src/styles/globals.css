@@ -2,6 +2,29 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@layer base {
+  /* Default heading scale (h1-h4), theme-driven via the `--heading-*` CSS
+     vars (see `src/themes/index.ts` `themeToCssVars` / `src/themes/types.ts`
+     `ThemeTypography`) — the `text-heading-*` tokens registered in
+     `tailwind.config.js` resolve to those vars, whose fallback defaults
+     reproduce today's exact values (a brand with no `typography` tier is a
+     visual no-op). Specificity 0-0-1, so any class (0-1-0+) on a heading —
+     including @medusajs/ui's h1-core/h2-core and product-name h3 classes —
+     automatically wins and is exempt. */
+  h1 {
+    @apply text-heading-1 small:text-heading-1-lg;
+  }
+  h2 {
+    @apply text-heading-2 small:text-heading-2-lg;
+  }
+  h3 {
+    @apply text-heading-3;
+  }
+  h4 {
+    @apply text-heading-eyebrow uppercase;
+  }
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -145,7 +168,13 @@
 
   /* Page titles */
   .page-title {
-    @apply text-2xl sm:text-3xl font-medium text-dark-blue;
+    @apply font-medium text-dark-blue;
+  }
+
+  /* Eyebrow (the h4 style) as a standalone class for non-h4 elements.
+     Deliberately sets no color — consumers keep their own color class. */
+  .eyebrow {
+    @apply text-heading-eyebrow uppercase;
   }
 
   /* Page content wrapper */

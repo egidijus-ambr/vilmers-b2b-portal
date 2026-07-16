@@ -84,6 +84,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
       >
         <div className="flex flex-col">
           <Heading
+            level="h3"
             className="text-left text-base-semi"
             data-testid="address-name"
           >
@@ -133,7 +134,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
 
       <Modal isOpen={state} close={close} data-testid="edit-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Edit address</Heading>
+          <Heading level="h3" className="mb-2 text-[1.5rem] leading-tight">Edit address</Heading>
         </Modal.Title>
         <form action={formAction}>
           <input type="hidden" name="addressId" value={address.id} />

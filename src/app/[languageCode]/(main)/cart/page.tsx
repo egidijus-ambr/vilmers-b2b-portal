@@ -32,6 +32,7 @@ export default function Cart() {
       <PageHeader
         title={t("cart-details")}
         breadcrumbItems={breadcrumbItems}
+        level="h2"
       />
       <PageContent>
         <CartTemplate summaryTitle={t("cart-summary")} />

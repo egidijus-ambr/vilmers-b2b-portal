@@ -100,7 +100,7 @@ export default function CartDetailsPage() {
           data-testid="cart-details-error"
           className="mb-8 flex flex-col gap-y-4"
         >
-          <h1 className="page-title">{t("cart-details")}</h1>
+          <h1 className="font-medium text-dark-blue">{t("cart-details")}</h1>
           <p className="text-sm text-red-600">{error || t("cart-not-found")}</p>
           <button
             onClick={() => router.push(`/${languageCode}/account/carts`)}
@@ -124,7 +124,7 @@ export default function CartDetailsPage() {
 
   return (
     <>
-      <PageHeader title={title} breadcrumbItems={breadcrumbItems} />
+      <PageHeader title={title} breadcrumbItems={breadcrumbItems} level="h2" />
       <PageContent>
         <CartTemplate items={detailCart.items} readOnly summaryTitle={t("cart-summary")}>
           <div className="flex flex-col gap-3">

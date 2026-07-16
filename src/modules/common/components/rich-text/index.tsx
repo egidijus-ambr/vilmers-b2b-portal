@@ -27,7 +27,9 @@ export default function RichText({
           // makes plain markdown (`## Heading`) render consistently across
           // all content blocks without authors needing extra classes.
           "prose-headings:font-sans prose-headings:font-medium prose-headings:tracking-normal " +
-          "prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg " +
+          "prose-h1:text-heading-1 small:prose-h1:text-heading-1-lg prose-h2:text-heading-2 small:prose-h2:text-heading-2-lg " +
+          "prose-h3:text-heading-3 " +
+          "prose-h4:text-heading-eyebrow prose-h4:uppercase " +
           "prose-p:font-sans prose-p:font-normal prose-p:text-base " +
           "prose-headings:mt-0 prose-h1:mb-4 prose-h2:mb-4 prose-h3:mb-3 prose-h4:mb-2 " +
           "prose-p:mt-0 prose-p:mb-4 prose-p:leading-6 " +

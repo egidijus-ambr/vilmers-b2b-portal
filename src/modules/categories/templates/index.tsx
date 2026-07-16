@@ -127,6 +127,7 @@ export default async function CategoryPageTemplate({
         title={name}
         description={description}
         breadcrumbItems={breadcrumbs}
+        titleSize="h2"
       />
       <div className="w-full">
         {contentBlocks.length > 0 && (
