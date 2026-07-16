@@ -11,6 +11,9 @@ import ProductTemplate, { ProductPageData } from "@modules/products/templates"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import type { ProductPageFeature } from "@modules/products/components/product-feature-section"
 import type { ComfortItemData, ComfortGroupData, ComfortSectionData } from "@modules/products/components/comfort-section"
+import { activeThemeName } from "themes"
+
+const brand = activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
 
 export type LinkedProductGroup = {
   type: LinkedProductType
@@ -208,7 +211,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: heroImage.src,
           width: 1200,
           height: 630,
-          alt: `${productTitle} - Vilmers`,
+          alt: `${productTitle} - ${brand}`,
         },
       ]
     : undefined

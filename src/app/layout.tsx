@@ -28,7 +28,6 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${brand}`,
     },
     description,
-    manifest: "/manifest.json",
     keywords: ["ecommerce", "storefront", "b2b", "nextjs", "pwa", "offline"],
     authors: [{ name: brand }],
     openGraph: {

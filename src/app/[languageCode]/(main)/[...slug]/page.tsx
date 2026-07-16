@@ -9,6 +9,9 @@ import { enrichContentBlocksWithProducts } from "@lib/data/products"
 import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import type { PageAncestor } from "@lib/furnisystems-sdk/modules/pages/types"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
+import { activeThemeName } from "themes"
+
+const brand = activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
 
 type Props = {
   params: Promise<{ languageCode: string; slug: string[] }>
@@ -61,7 +64,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     ) ?? page.page_profiles[0]
 
   return {
-    title: profile?.title ?? "Vilmers",
+    title: profile?.title ?? brand,
     description: profile?.meta_description ?? undefined,
   }
 }
