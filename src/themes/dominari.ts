@@ -101,6 +101,23 @@ export const dominari: Theme = {
     button_radius: "base", // → 9999px, reproduces today's pill Button
     input_radius: "base", // → 0px, square
   },
+  // Heading typography overrides — dominari-only, ~15% smaller than the
+  // shared defaults (h1: 2.5rem/3.5rem base/lg; h2: 2rem/2.5rem base/lg, per
+  // the `var(--heading-*, <default>)` fallbacks in `tailwind.config.js`),
+  // rounded to clean rem steps. `leading`/`tracking`/`weight` are omitted
+  // (all `HeadingToken` fields are optional) so those keep inheriting the
+  // shared default via the Tailwind fallback — only `size`/`sizeLg` change.
+  // h3/eyebrow are intentionally absent — they keep the shared defaults.
+  typography: {
+    h1: {
+      size: "2.125rem", // 2.5rem -> 2.125rem (-15%)
+      sizeLg: "3rem", // 3.5rem -> 3rem (-14.3%)
+    },
+    h2: {
+      size: "1.75rem", // 2rem -> 1.75rem (-12.5%)
+      sizeLg: "2.125rem", // 2.5rem -> 2.125rem (-15%)
+    },
+  },
   // Navbar/layout config (see src/themes/types.ts) — DISTINCT from Vilmers,
   // used to verify the mechanism: top bar hidden, switcher moved into the
   // navbar, logo left-aligned and larger (taller nav).

@@ -46,7 +46,7 @@ export default function ProductPhotosPage() {
     <div className="w-full " data-testid="product-photos-page-wrapper">
       <div className="w-full mt-6">
         <div className="mb-4 flex flex-col gap-y-2">
-          <h1 className="font-semibold">Product Photos</h1>
+          <h2>Product Photos</h2>
         </div>
 
         <div className="flex flex-col gap-y-8 w-full">
@@ -80,7 +80,10 @@ export default function ProductPhotosPage() {
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                           />
                           {isNewPhoto(product.newest_photo_at) && (
-                            <span className="absolute top-2 right-2 text-white text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: '#a3b19c' }}>
+                            <span
+                              className="absolute top-2 right-2 text-white text-xs font-semibold px-2 py-0.5 rounded-full"
+                              style={{ backgroundColor: "#a3b19c" }}
+                            >
                               New
                             </span>
                           )}

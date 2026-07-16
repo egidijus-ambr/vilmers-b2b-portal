@@ -51,9 +51,9 @@ const Login = ({ setCurrentView }: Props) => {
               />
             </svg>
           </div>
-          <h1 className="text-gray-900 mb-4">
+          <h3 className="text-gray-900 mb-4">
             {t("check-your-inbox")}
-          </h1>
+          </h3>
           <p className="text-gray-600 mb-8">{t("magic-link-sent")}</p>
           <button
             onClick={() => window.location.reload()}
@@ -68,7 +68,7 @@ const Login = ({ setCurrentView }: Props) => {
 
   return (
     <div className="w-full" data-testid="login-page">
-      <h1 className="text-gray-900 mb-8">{t("loginToYourAccount")}</h1>
+      <h3 className="text-gray-900 mb-8">{t("loginToYourAccount")}</h3>
 
       <form className="space-y-6" action={formAction}>
         <input type="hidden" name="language" value={languageCode} />
