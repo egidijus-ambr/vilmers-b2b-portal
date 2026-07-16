@@ -5,65 +5,69 @@ import { HtmlLangUpdater } from "@lib/i18n/components/html-lang-updater"
 import { PWAInstallPrompt } from "../components/pwa-install-prompt"
 import { AgentationToolbar } from "../components/agentation-toolbar"
 import Script from "next/script"
-import { activeTheme, themeToCssVars } from "themes"
+import { activeTheme, activeThemeName, themeToCssVars } from "themes"
 import { brandFont } from "themes/fonts"
 import { features } from "@lib/features"
+import { getShopSettings } from "@lib/data/shop-settings"
 import "styles/globals.css"
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getBaseURL()),
-  title: {
-    default: "Vilmers B2B Portal",
-    template: "%s | Vilmers B2B Portal",
-  },
-  description:
-    "A B2B e-commerce portal for Vilmers customers with offline functionality and easy access.",
-  manifest: "/manifest.json",
-  keywords: [
-    "ecommerce",
-    "storefront",
-    "b2b",
-    "vilmers",
-    "nextjs",
-    "pwa",
-    "offline",
-  ],
-  authors: [{ name: "Vilmers Team" }],
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "Vilmers B2B Portal",
-    title: "Vilmers B2B Portal",
-    description:
-      "A B2B e-commerce portal for Vilmers customers with offline functionality and easy access.",
-    images: [
-      {
-        url: "https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png",
-        width: 1200,
-        height: 630,
-        alt: "Vilmers B2B Portal",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Vilmers B2B Portal",
-    description:
-      "A B2B e-commerce portal for Vilmers customers with offline functionality and easy access.",
-    images: ["https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Vilmers B2B Portal",
-  },
-  formatDetection: {
-    telephone: false,
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const shopSettings = await getShopSettings()
+  const brand =
+    shopSettings?.default_manufacturer?.company_name?.trim() ||
+    activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
+  const faviconSrc = shopSettings?.favicon?.src
+  const ogImage = shopSettings?.default_meta_image?.src
+  const description =
+    "A B2B e-commerce portal with offline functionality and easy access."
+
+  return {
+    metadataBase: new URL(getBaseURL()),
+    title: {
+      default: brand,
+      template: `%s | ${brand}`,
+    },
+    description,
+    manifest: "/manifest.json",
+    keywords: ["ecommerce", "storefront", "b2b", "nextjs", "pwa", "offline"],
+    authors: [{ name: brand }],
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      siteName: brand,
+      title: brand,
+      description,
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: brand,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: brand,
+      description,
+      images: ogImage ? [ogImage] : undefined,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: brand,
+    },
+    formatDetection: {
+      telephone: false,
+    },
+    icons: faviconSrc ? { icon: faviconSrc } : undefined,
+  }
 }
 
 export const viewport: Viewport = {

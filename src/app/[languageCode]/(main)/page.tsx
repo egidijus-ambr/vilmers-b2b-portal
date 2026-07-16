@@ -12,48 +12,52 @@ import { getShopSettings } from "@lib/data/shop-settings"
 import { getPageByCode, enrichContentBlocksWithPages } from "@lib/data/pages"
 import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { enrichContentBlocksWithProducts } from "@lib/data/products"
+import { activeThemeName } from "themes"
 
-export const metadata: Metadata = {
-  title: "Vilmers - Comfort and Quality with Smart Design",
-  description:
-    "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
-  keywords: [
-    "furniture",
-    "home design",
-    "comfort",
-    "quality",
-    "smart design",
-    "Vilmers",
-  ],
-  openGraph: {
-    title: "Vilmers - Comfort and Quality with Smart Design",
-    description:
-      "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
-    type: "website",
-    locale: "en_US",
-    siteName: "Vilmers",
-    images: [
-      {
-        url: "https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png",
-        width: 1200,
-        height: 630,
-        alt: "Vilmers - Premium Furniture and Home Solutions",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Vilmers - Comfort and Quality with Smart Design",
-    description:
-      "Discover premium furniture and home solutions with Vilmers. Experience comfort and quality with smart design for your home and office.",
-    images: [
-      "https://storage.googleapis.com/furnisystems-main-bucket/furnisystems-cmcxir0x60001u2f9ch58h2ey.png",
-    ],
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
+export async function generateMetadata(props: {
+  params: Promise<{ languageCode: string }>
+}): Promise<Metadata> {
+  const { languageCode } = await props.params
+  const shopSettings = await getShopSettings(languageCode)
+  const brand =
+    shopSettings?.default_manufacturer?.company_name?.trim() ||
+    activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
+  const ogImage = shopSettings?.default_meta_image?.src
+  const description =
+    "Discover premium furniture and home solutions for your business."
+
+  return {
+    title: { absolute: brand },
+    description,
+    keywords: ["furniture", "home design", "comfort", "quality", "smart design"],
+    openGraph: {
+      title: brand,
+      description,
+      type: "website",
+      locale: "en_US",
+      siteName: brand,
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: brand,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: brand,
+      description,
+      images: ogImage ? [ogImage] : undefined,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  }
 }
 
 export default async function Home(props: {

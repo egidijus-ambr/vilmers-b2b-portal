@@ -121,6 +121,7 @@ export interface ShopSetting {
   enabled_languages: EnabledLanguage[]
   homepage_content_blocks?: ContentBlock[]
   favicon?: ContentBlockImage | null
+  default_meta_image?: ContentBlockImage | null
   footer_logo_image?: ContentBlockImage | null
   footer_copyright_text?: string | null
   default_manufacturer?: {

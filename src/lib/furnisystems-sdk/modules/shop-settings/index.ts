@@ -14,6 +14,11 @@ export const APP_SHOP_SETTINGS = gql`
         src
       }
 
+      default_meta_image {
+        id
+        src
+      }
+
       footer_logo_image {
         id
         src

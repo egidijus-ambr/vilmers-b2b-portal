@@ -108,24 +108,9 @@ export default function BecomePartnerPage() {
             <div className="w-full max-w-[670px]">
               <div className="bg-white shadow-xl p-8 sm:p-10">
                 <div className="text-center">
-                  <div className="mb-6">
-                    <svg
-                      className="mx-auto h-16 w-16 text-green-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h1 className="text-gray-900 mb-4">
+                  <h3 className="text-gray-900 mb-4">
                     {t("partner-request-sent")}
-                  </h1>
+                  </h3>
                   <p className="text-gray-600 mb-8">
                     {t("partner-request-sent-description")}
                   </p>
