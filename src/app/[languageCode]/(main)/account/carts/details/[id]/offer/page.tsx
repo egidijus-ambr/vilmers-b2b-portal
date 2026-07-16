@@ -1,6 +1,7 @@
 "use client"
 
 import { useCustomer } from "@lib/context/customer-context"
+import { useShopSettings } from "@lib/context/shop-settings-context"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState, type ReactElement } from "react"
 import { getCartOffer } from "@lib/data/offer-pdf"
@@ -41,28 +42,48 @@ function formatFabricType(type?: string): string {
   return lower.charAt(0).toUpperCase() + lower.slice(1)
 }
 
-// Footer rendered at the bottom of every offer PDF page: "vilmers.com" on the
-// left, the VILMERS wordmark on the right. Reuses the same local wordmark
-// asset the nav uses as its default logo (`/images/logo.svg`, public/) — a
+// Footer rendered at the bottom of every offer PDF page: company name on the
+// left, the manufacturer wordmark on the right. Values come from
+// `shopSettings.default_manufacturer` (falls back to the local
+// `/images/logo.svg` wordmark, public/, when no logo is configured — a
 // same-origin static asset, so html2canvas-pro can capture it with no CORS
-// proxy needed. `mt-auto` relies on the parent `.offer-page` being a flex
+// proxy needed). `mt-auto` relies on the parent `.offer-page` being a flex
 // column so the footer sits pinned to the page bottom.
-function OfferFooter() {
+function OfferFooter({
+  companyName,
+  logoSrc,
+}: {
+  companyName: string
+  logoSrc: string
+}) {
   return (
     <div className="mt-auto flex items-center justify-between border-t border-line pt-4">
-      <span className="text-[0.6125rem] text-dark-blue-70">vilmers.com</span>
+      <span className="text-[0.6125rem] text-dark-blue-70">{companyName}</span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/images/logo.svg" alt="VILMERS" className="h-5 w-auto" />
+      <img src={logoSrc} alt={companyName} className="h-5 w-auto" />
     </div>
   )
 }
 
 function CartOfferContent() {
   const { customer } = useCustomer()
+  const { shopSettings } = useShopSettings()
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
   const { t } = useTranslations("account")
+
+  // Offer PDF footer values (company name + logo) — sourced from
+  // shopSettings.default_manufacturer, same field the nav logo uses.
+  const companyName =
+    shopSettings?.default_manufacturer?.company_name || "Vilmers"
+  const rawLogoSrc = shopSettings?.default_manufacturer?.logo_image?.src
+  // Remote manufacturer logo must go through the same-origin proxy so
+  // html2canvas-pro can capture it (see the fabric/component image comments
+  // below); the local fallback wordmark is already same-origin.
+  const footerLogoSrc = rawLogoSrc
+    ? `/api/offer-image?url=${encodeURIComponent(rawLogoSrc)}`
+    : "/images/logo.svg"
 
   const [data, setData] = useState<CartOfferData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -503,7 +524,7 @@ function CartOfferContent() {
           </>
         )}
 
-        <OfferFooter />
+        <OfferFooter companyName={companyName} logoSrc={footerLogoSrc} />
       </section>,
 
       ...cardPages.slice(1).map((chunk, pageIndex) => (
@@ -513,7 +534,7 @@ function CartOfferContent() {
         >
           <div className="mt-4 grid grid-cols-3 gap-x-8 gap-y-2">{chunk}</div>
 
-          <OfferFooter />
+          <OfferFooter companyName={companyName} logoSrc={footerLogoSrc} />
         </section>
       )),
     ]
@@ -556,9 +577,9 @@ function CartOfferContent() {
         >
           {/* Header row — title left, date right */}
           <div className="flex items-baseline justify-between">
-            <h2 className="font-bold uppercase leading-tight text-dark-blue">
+            <h3 className="font-bold uppercase leading-tight text-dark-blue">
               {t("offer-overview")}
-            </h2>
+            </h3>
             <p className="text-[0.7875rem] text-dark-blue-70">{offerDate}</p>
           </div>
 
@@ -644,7 +665,7 @@ function CartOfferContent() {
             </div>
           )}
 
-          <OfferFooter />
+          <OfferFooter companyName={companyName} logoSrc={footerLogoSrc} />
         </section>
       )
     })
