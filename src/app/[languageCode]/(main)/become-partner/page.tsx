@@ -19,7 +19,13 @@ import {
 import Back from "@modules/common/icons/back"
 import { Page } from "@lib/furnisystems-sdk"
 
-function SubmitButton({ children, className }: { children: React.ReactNode; className?: string }) {
+function SubmitButton({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   const { pending } = useFormStatus()
   return (
     <Button type="submit" disabled={pending} className={className}>
@@ -68,9 +74,7 @@ export default function BecomePartnerPage() {
   const params = useParams()
   const languageCode = params.languageCode as string
 
-  const [becomePartnerPage, setBecomePartnerPage] = useState<Page | null>(
-    null
-  )
+  const [becomePartnerPage, setBecomePartnerPage] = useState<Page | null>(null)
   useEffect(() => {
     getBecomePartnerPage(languageCode).then(setBecomePartnerPage)
   }, [languageCode])
@@ -160,10 +164,8 @@ export default function BecomePartnerPage() {
         <div className="flex items-center justify-center min-h-screen py-12">
           <div className="w-full max-w-[670px]">
             <div className="bg-white shadow-xl p-8 sm:p-10">
-              <h1 className="font-medium text-gray-900 mb-2">
-                {heroTitle}
-              </h1>
-              <p className="text-gray-600 mb-6 text-sm">
+              <h2 className="text-gray-900 mb-2">{heroTitle}</h2>
+              <p className="text-gray-600 mb-6">
                 {t("become-partner-description")}
               </p>
 
