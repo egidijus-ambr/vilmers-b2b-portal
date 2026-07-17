@@ -91,7 +91,23 @@ export default function ContentBlock({
     ((data.config as any)?.display as
       | "full_width"
       | "content_width"
+      | "text_width"
       | undefined) ?? "full_width"
+  // Width class derived from `display`, used by the video blocks (only_video
+  // & text_and_video): content_width => site content container; text_width
+  // => the same 900px column width as text blocks (max-w-[900px] at :697);
+  // full_width => unconstrained (no class).
+  const displayWidthClass =
+    display === "content_width"
+      ? "content-container"
+      : display === "text_width"
+      ? "max-w-[900px]"
+      : ""
+  // Block-level "show controls" setting for uploaded videos (only_video &
+  // text_and_video). Lives in the free-form config JSON, not a typed field.
+  // Default ON so existing uploaded videos with no stored value get controls.
+  const videoControls =
+    ((data.config as any)?.video_controls as boolean | undefined) ?? true
   // Image/text width ratio for `side_by_side` & `image_left` (image:text).
   // Coerce unknown/missing values to the neutral 50/50 so the literal-class
   // lookup below always resolves to a real Tailwind class.
@@ -101,11 +117,41 @@ export default function ContentBlock({
       ? mediaRatioRaw
       : "50_50"
 
-  const hasMaxHeight = data.max_height != null || extraCss.maxHeight != null
+  // Gallery blocks use `maxHeight` as the gallery's own "stage height" (see
+  // `galleryStageHeight` below) rather than as a clip on the outer <section>
+  // — a section-level max-height + overflow:hidden would just crop the
+  // gallery's image slots instead of resizing them. Every other block type
+  // keeps the exact prior behavior.
+  const isGalleryBlock = data.type === "gallery"
+
+  // Coalesce both maxHeight sources (dedicated column + Custom Styles JSON —
+  // same precedence precedent as `containerMaxHeight` below) and coerce to a
+  // plain number of px for the gallery's stage-height math.
+  const rawGalleryMaxHeight =
+    data.max_height ?? (extraCss.maxHeight as number | string | undefined)
+  const galleryStageHeight =
+    rawGalleryMaxHeight == null
+      ? undefined
+      : typeof rawGalleryMaxHeight === "number"
+      ? rawGalleryMaxHeight
+      : parseFloat(rawGalleryMaxHeight) || undefined
+
+  const hasMaxHeight =
+    !isGalleryBlock && (data.max_height != null || extraCss.maxHeight != null)
+
+  // Strip `maxHeight` out of the extraCss spread for gallery blocks only, so
+  // Custom Styles' maxHeight never reaches the <section>'s inline style.
+  const gallerySectionExtraCss = isGalleryBlock
+    ? (() => {
+        const { maxHeight, ...rest } = extraCss
+        return rest
+      })()
+    : extraCss
 
   const sectionStyle: React.CSSProperties = {
     ...(data.default_margins ? { marginBottom: "20px" } : { margin: "auto" }),
-    ...(data.max_height != null && { maxHeight: data.max_height }),
+    ...(data.max_height != null &&
+      !isGalleryBlock && { maxHeight: data.max_height }),
     ...(data.max_width != null && { maxWidth: data.max_width }),
     ...(data.min_height != null && { minHeight: data.min_height }),
     ...(data.min_width != null && { minWidth: data.min_width }),
@@ -113,7 +159,7 @@ export default function ContentBlock({
     ...(data.bottom_margin && { marginBottom: data.bottom_margin }),
     ...(data.left_margin && { marginLeft: data.left_margin }),
     ...(data.right_margin && { marginRight: data.right_margin }),
-    ...extraCss,
+    ...gallerySectionExtraCss,
     ...(hasMaxHeight && { overflow: "hidden" }),
   }
 
@@ -139,7 +185,7 @@ export default function ContentBlock({
           containerMaxHeight={data.max_height ?? extraCss.maxHeight}
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
-          display={display}
+          display={display === "text_width" ? "full_width" : display}
           mediaRatio={mediaRatio}
           ctaLabel={profile?.cta_label ?? null}
           ctaLink={profile?.cta_link ?? null}
@@ -168,8 +214,10 @@ export default function ContentBlock({
           videoLink={data.video_link}
           videoAutoplay={data.video_autoplay}
           videoLoop={data.video_loop}
+          videoControls={videoControls}
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
+          displayWidthClass={displayWidthClass}
         />
       )}
 
@@ -195,12 +243,22 @@ export default function ContentBlock({
           videoLink={data.video_link}
           videoAutoplay={data.video_autoplay}
           videoLoop={data.video_loop}
+          videoControls={videoControls}
           objectFitCover={data.object_fit_cover}
+          displayWidthClass={displayWidthClass}
         />
       )}
 
       {data.type === "gallery" && (
-        <Gallery images={data.gallery_images ?? []} style={data.style} />
+        <Gallery
+          images={data.gallery_images ?? []}
+          style={data.style}
+          display={
+            ((data.config as any)?.display as GalleryDisplay | undefined) ??
+            "content_width"
+          }
+          stageHeight={galleryStageHeight}
+        />
       )}
 
       {data.type === "button" && (
@@ -580,8 +638,10 @@ function TextAndVideo({
   videoLink,
   videoAutoplay,
   videoLoop,
+  videoControls,
   titleAlignment,
   hideTitle,
+  displayWidthClass = "",
 }: {
   alignImage: "left" | "right"
   sectionName: string | null
@@ -598,12 +658,14 @@ function TextAndVideo({
   videoLink: string | null
   videoAutoplay: boolean | null
   videoLoop: boolean | null
+  videoControls?: boolean | null
   titleAlignment: TitleAlignment
   hideTitle: boolean
+  displayWidthClass?: string
 }) {
   return (
     <div
-      className={`mx-auto flex max-w-screen-xl flex-col small:flex-row ${
+      className={`mx-auto flex ${displayWidthClass} flex-col small:flex-row ${
         alignImage === "right" ? "small:flex-row-reverse" : ""
       }`}
       style={backgroundColor ? { backgroundColor } : undefined}
@@ -632,6 +694,7 @@ function TextAndVideo({
             videoLink={videoLink}
             videoAutoplay={videoAutoplay}
             videoLoop={videoLoop}
+            videoControls={videoControls}
             objectFitCover={objectFitCover}
           />
         </div>
@@ -771,7 +834,7 @@ function OnlyImage({ sectionImage }: { sectionImage: string | null }) {
   if (!sectionImage) return null
 
   return (
-    <div className="mx-auto max-w-screen-xl text-center">
+    <div className="mx-auto  text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sectionImage} alt="" className="h-auto max-h-full max-w-full" />
     </div>
@@ -785,21 +848,26 @@ function OnlyVideo({
   videoLink,
   videoAutoplay,
   videoLoop,
+  videoControls,
   objectFitCover,
+  displayWidthClass = "",
 }: {
   videoType: "uploaded" | "youtube" | "vimeo" | null
   videoLink: string | null
   videoAutoplay: boolean | null
   videoLoop: boolean | null
+  videoControls?: boolean | null
   objectFitCover: boolean | null
+  displayWidthClass?: string
 }) {
   return (
-    <div className="mx-auto max-w-screen-xl text-center">
+    <div className={`mx-auto ${displayWidthClass} text-center`}>
       <VideoPlayer
         videoType={videoType}
         videoLink={videoLink}
         videoAutoplay={videoAutoplay}
         videoLoop={videoLoop}
+        videoControls={videoControls}
         objectFitCover={objectFitCover}
       />
     </div>
@@ -1019,6 +1087,11 @@ function CategoryTiles({
 
 /* ─── Gallery ─────────────────────────────────────────────── */
 
+// Block-level `display` union, re-declared locally for the gallery path so it
+// doesn't couple to the block-level `display`/`displayWidthClass` variables
+// above (the gallery's default is `content_width`, not `full_width`).
+type GalleryDisplay = "full_width" | "content_width" | "text_width"
+
 type Orientation = "vertical" | "horizontal" | "square"
 
 function useImageOrientations(images: ContentBlockImage[]) {
@@ -1051,9 +1124,13 @@ function useImageOrientations(images: ContentBlockImage[]) {
 function Gallery({
   images,
   style,
+  display = "content_width",
+  stageHeight,
 }: {
   images: ContentBlockImage[]
   style: string | null
+  display?: GalleryDisplay
+  stageHeight?: number
 }) {
   const [currentPage, setCurrentPage] = useState(0)
   const orientations = useImageOrientations(images)
@@ -1069,6 +1146,19 @@ function Gallery({
   }, [totalPages])
 
   if (images.length === 0) return null
+
+  // Scroll-rhythm renders the FULL images array in one continuous horizontal
+  // track (no pagination) and owns its own arrows/progress bar, so it bypasses
+  // the page-splitting and page-based nav/progress UI below entirely.
+  if (style === "scroll_rhythm") {
+    return (
+      <GalleryScrollRhythm
+        images={images}
+        display={display}
+        stageHeight={stageHeight}
+      />
+    )
+  }
 
   // Build array of pages for the carousel
   const pages: ContentBlockImage[][] = []
@@ -1334,6 +1424,220 @@ function GallerySpreadHarmony({
         </div>
       </div>
     </>
+  )
+}
+
+/* ─── Gallery: Scroll Rhythm ───────────────────────────────── */
+
+// Height rhythm: one full-height slot, then two shorter slots, repeating.
+// Full slot height mirrors GallerySpreadHarmony's fixed desktop height scale
+// (`clamp(400px, 60vw, 800px)`), and the short slot is ~72% of that so the
+// top edges align (via `items-start`) while the shorter images leave
+// whitespace below them.
+const SCROLL_RHYTHM_FULL_HEIGHT = "clamp(400px, 60vw, 760px)"
+const SCROLL_RHYTHM_SHORT_HEIGHT = "clamp(288px, 43vw, 547px)"
+const SCROLL_RHYTHM_FULL_WIDTH = "clamp(320px, 34vw, 560px)"
+const SCROLL_RHYTHM_SHORT_WIDTH = "clamp(260px, 26vw, 420px)"
+
+function GalleryScrollRhythm({
+  images,
+  display = "content_width",
+  stageHeight,
+}: {
+  images: ContentBlockImage[]
+  display?: GalleryDisplay
+  stageHeight?: number
+}) {
+  // Width class for the display-width box that wraps arrows + track +
+  // progress bar. The track clips its horizontally-scrolling images at this
+  // box's right edge (via `overflow-x-auto` + no right padding), so nothing
+  // is visible past the selected width — full_width spans the viewport.
+  const widthClass =
+    display === "content_width"
+      ? "content-container"
+      : display === "text_width"
+      ? "max-w-[900px] w-full"
+      : ""
+
+  // When a Custom Styles `maxHeight` is set on the block, it becomes the
+  // gallery's own "stage height" instead of clipping the outer <section>
+  // (see `galleryStageHeight` in the parent). Slot widths scale off it to
+  // preserve the default clamp constants' aspect ratios (0.74 ≈ 560/760 for
+  // the full slot, 0.77 ≈ 420/547 for the short slot). Falls back to the
+  // responsive clamp defaults when absent/invalid.
+  const hasStageHeight = typeof stageHeight === "number" && stageHeight > 0
+  const fullH = hasStageHeight
+    ? `${stageHeight}px`
+    : SCROLL_RHYTHM_FULL_HEIGHT
+  const shortH = hasStageHeight
+    ? `${Math.round(stageHeight! * 0.72)}px`
+    : SCROLL_RHYTHM_SHORT_HEIGHT
+  const fullW = hasStageHeight
+    ? `${Math.round(stageHeight! * 0.74)}px`
+    : SCROLL_RHYTHM_FULL_WIDTH
+  const shortW = hasStageHeight
+    ? `${Math.round(stageHeight! * 0.72 * 0.77)}px`
+    : SCROLL_RHYTHM_SHORT_WIDTH
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+  // scrollProgress: 0..1 fraction of the max scroll offset already traveled.
+  // indicatorWidth: % of the track currently visible (clientWidth/scrollWidth),
+  // geometry-accurate for variable-width (full/short) slots — defaults to a
+  // full, unscrolled bar so the very first paint (before layout is measured)
+  // never divides by zero.
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [indicatorWidth, setIndicatorWidth] = useState(100)
+
+  // Single handler drives both the arrow disabled-states (child-categories
+  // carousel convention) and the progress-bar fill (spread-harmony's
+  // scrollLeft / (scrollWidth - clientWidth) math) off the same scroll event.
+  const updateScrollState = useCallback(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const { scrollLeft, scrollWidth, clientWidth } = container
+    setCanScrollLeft(scrollLeft > 0)
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1)
+
+    const maxScroll = scrollWidth - clientWidth
+    if (maxScroll <= 0) {
+      // No overflow (track fits within the viewport) — avoid 0/0 = NaN and
+      // just show a full bar pinned to the left.
+      setScrollProgress(0)
+      setIndicatorWidth(100)
+    } else {
+      setScrollProgress(scrollLeft / maxScroll)
+      setIndicatorWidth((clientWidth / scrollWidth) * 100)
+    }
+  }, [])
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    // Force the initial scroll position to 0 before the first measurement.
+    // Without this, CSS scroll-snap (when present) can pull the container
+    // past its own left padding on load; with snapping removed below this is
+    // now just a deterministic belt-and-suspenders reset.
+    container.scrollLeft = 0
+    updateScrollState()
+
+    container.addEventListener("scroll", updateScrollState, { passive: true })
+    window.addEventListener("resize", updateScrollState)
+
+    return () => {
+      container.removeEventListener("scroll", updateScrollState)
+      window.removeEventListener("resize", updateScrollState)
+    }
+  }, [updateScrollState])
+
+  const scroll = (direction: "left" | "right") => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const scrollAmount = container.clientWidth * 0.6
+    container.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    })
+  }
+
+  if (images.length === 0) return null
+
+  const indicatorPosition = scrollProgress * (100 - indicatorWidth)
+
+  return (
+    <div className={`mx-auto ${widthClass} px-6 large:px-0`}>
+      {/* Navigation arrows — top-right, hidden on mobile. Sits inside the
+          display-width box, so it shares its gutter with the track/progress
+          bar below instead of inset-ing to its own content-container. */}
+      <div className="mb-4 hidden items-center justify-end gap-2 small:flex">
+        <button
+          onClick={() => scroll("left")}
+          disabled={!canScrollLeft}
+          className={`p-2 transition-opacity ${
+            canScrollLeft
+              ? "opacity-100 hover:opacity-70"
+              : "opacity-30 cursor-default"
+          }`}
+          aria-label="Previous images"
+        >
+          <ArrowLeft
+            size="20"
+            color={canScrollLeft ? "dark-blue" : "dark-blue-70"}
+          />
+        </button>
+        <button
+          onClick={() => scroll("right")}
+          disabled={!canScrollRight}
+          className={`p-2 transition-opacity ${
+            canScrollRight
+              ? "opacity-100 hover:opacity-70"
+              : "opacity-30 cursor-default"
+          }`}
+          aria-label="Next images"
+        >
+          <ArrowRight
+            size="20"
+            color={canScrollRight ? "dark-blue" : "dark-blue-70"}
+          />
+        </button>
+      </div>
+
+      {/* Continuous horizontal track — ALL images, no pagination. Top-aligned
+          (`items-start`) so the full/short height rhythm creates whitespace
+          below the shorter slots instead of stretching them.
+          No horizontal padding here: the display-width box above already
+          supplies both gutters (`px-6 large:px-0`), and `overflow-x-auto`
+          clips the track at that box's right edge — the trailing image is
+          cut off there instead of bleeding to the viewport edge, which is
+          the scroll affordance for this width.
+          NOTE: intentionally no CSS scroll-snap here (this is a free-scroll
+          gallery, not paginated) — `snap-x`/`snap-start` were removed because
+          scroll-snap pulled the container's initial `scrollLeft` past its own
+          left gutter on load, misaligning image 0 against the arrows/progress
+          bar. */}
+      <div
+        ref={scrollRef}
+        className="no-scrollbar flex items-start gap-6 overflow-x-auto scroll-smooth"
+      >
+        {images.map((img, i) => {
+          const isFull = i % 3 === 0
+
+          return (
+            <div
+              key={img.id}
+              className="shrink-0 overflow-hidden"
+              style={{
+                width: isFull ? fullW : shortW,
+                height: isFull ? fullH : shortH,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.src} alt="" className="h-full w-full object-cover" />
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Bottom progress bar — scroll-driven (spread-harmony's math). Shares
+          the display-width box's gutter, same as the arrows above. */}
+      {images.length > 1 && (
+        <div className="mt-4">
+          <div className="h-0.5 w-full bg-gray-200">
+            <div
+              className="h-full bg-gray-900 transition-all duration-100"
+              style={{
+                width: `${indicatorWidth}%`,
+                marginLeft: `${indicatorPosition}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -20,6 +20,7 @@ export default function VideoPlayer({
   videoLink,
   videoAutoplay,
   videoLoop,
+  videoControls,
   objectFitCover,
 }: VideoPlayerProps) {
   if (!videoType || !videoLink) return null
@@ -35,6 +36,7 @@ export default function VideoPlayer({
         src={videoLink}
         loop={videoLoop ?? false}
         autoPlay={videoAutoplay ?? false}
+        controls={videoControls ?? true}
         muted
         preload="auto"
         playsInline

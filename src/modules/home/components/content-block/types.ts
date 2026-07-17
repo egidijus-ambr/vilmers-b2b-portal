@@ -25,6 +25,7 @@ export type ContentBlockStyle =
   | "image_left"
   | "outline"
   | "filled"
+  | "scroll_rhythm"
 
 export type VideoType = "uploaded" | "youtube" | "vimeo"
 
@@ -155,5 +156,6 @@ export interface VideoPlayerProps {
   videoLink: string | null
   videoAutoplay: boolean | null
   videoLoop: boolean | null
+  videoControls?: boolean | null
   objectFitCover: boolean | null
 }
