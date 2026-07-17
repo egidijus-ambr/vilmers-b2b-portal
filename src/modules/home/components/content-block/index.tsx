@@ -335,6 +335,13 @@ function TextSection({
   titleAlignment,
   hideTitle = false,
   style,
+  ctaLabel,
+  ctaLink,
+  ctaLinkPage,
+  ctaLinkType,
+  ctaLinkCategory,
+  ctaNewTab,
+  languageCode,
 }: {
   name: string | null
   description: string | null
@@ -346,6 +353,13 @@ function TextSection({
   titleAlignment?: TitleAlignment
   hideTitle?: boolean
   style?: React.CSSProperties
+  ctaLabel?: string | null
+  ctaLink?: string | null
+  ctaLinkPage?: LinkPage | null
+  ctaLinkType?: CtaLike["cta_link_type"]
+  ctaLinkCategory?: CtaLike["cta_link_category"]
+  ctaNewTab?: boolean | null
+  languageCode?: string
 }) {
   return (
     <div
@@ -375,6 +389,23 @@ function TextSection({
           textColor={textColor}
         />
       </div>
+      {/* Sibling of the text content (not nested inside it) so `mt-auto`
+          can push it to the bottom of this full-height column, level with
+          the bottom of the adjacent image column. Self-hides (renders
+          null) when there's no CTA, so the no-CTA case (e.g. TextAndVideo)
+          is unaffected — `verticalJustifyClass` still centers/positions the
+          lone text-content div exactly as before. */}
+      <CmsCtaButton
+        label={ctaLabel ?? null}
+        link={ctaLink ?? null}
+        linkPage={ctaLinkPage ?? null}
+        linkType={ctaLinkType}
+        linkCategory={ctaLinkCategory}
+        newTab={ctaNewTab ?? null}
+        languageCode={languageCode ?? "en"}
+        showArrow
+        className="mt-auto self-start"
+      />
     </div>
   )
 }
@@ -546,6 +577,13 @@ function TextAndImage({
             verticalJustifyClass="justify-start"
             paddingClass="pt-6 small:pt-0 small:pl-12"
             style={textStyle}
+            ctaLabel={ctaLabel}
+            ctaLink={ctaLink}
+            ctaLinkPage={ctaLinkPage}
+            ctaLinkType={ctaLinkType}
+            ctaLinkCategory={ctaLinkCategory}
+            ctaNewTab={ctaNewTab}
+            languageCode={languageCode}
           />
 
           <div
@@ -591,6 +629,13 @@ function TextAndImage({
           verticalJustifyClass="justify-start"
           paddingClass="pb-6 small:pb-0 small:pr-12"
           style={textStyle}
+          ctaLabel={ctaLabel}
+          ctaLink={ctaLink}
+          ctaLinkPage={ctaLinkPage}
+          ctaLinkType={ctaLinkType}
+          ctaLinkCategory={ctaLinkCategory}
+          ctaNewTab={ctaNewTab}
+          languageCode={languageCode}
         />
 
         <div
@@ -1466,9 +1511,7 @@ function GalleryScrollRhythm({
   // the full slot, 0.77 ≈ 420/547 for the short slot). Falls back to the
   // responsive clamp defaults when absent/invalid.
   const hasStageHeight = typeof stageHeight === "number" && stageHeight > 0
-  const fullH = hasStageHeight
-    ? `${stageHeight}px`
-    : SCROLL_RHYTHM_FULL_HEIGHT
+  const fullH = hasStageHeight ? `${stageHeight}px` : SCROLL_RHYTHM_FULL_HEIGHT
   const shortH = hasStageHeight
     ? `${Math.round(stageHeight! * 0.72)}px`
     : SCROLL_RHYTHM_SHORT_HEIGHT
@@ -1616,7 +1659,11 @@ function GalleryScrollRhythm({
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.src} alt="" className="h-full w-full object-cover" />
+              <img
+                src={img.src}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             </div>
           )
         })}

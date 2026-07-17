@@ -32,6 +32,13 @@ export interface CmsCtaButtonProps {
    * `@modules/common/components/outline-button` exactly.
    */
   onImage?: boolean
+  /**
+   * When true (and not `onImage`), appends a trailing arrow after the label
+   * in the filled variant, matching the `onImage` pill's layout. Off by
+   * default so existing filled CTAs (e.g. the plain-background page hero)
+   * keep rendering label-only.
+   */
+  showArrow?: boolean
   className?: string
 }
 
@@ -44,7 +51,7 @@ export interface CmsCtaButtonProps {
 // `@modules/home/components/content-block/index.tsx`, reusing Button's own
 // variant tokens below so the rendered styling stays identical.
 const BASE_CLASSES =
-  "inline-block px-8 py-3 text-sm font-medium rounded-button border transition-all"
+  "px-8 py-3 text-sm font-medium rounded-button border transition-all"
 const VARIANT_CLASSES: Record<
   NonNullable<CmsCtaButtonProps["variant"]>,
   string
@@ -79,6 +86,7 @@ export default function CmsCtaButton({
   languageCode,
   variant,
   onImage = false,
+  showArrow = false,
   className,
 }: CmsCtaButtonProps) {
   if (!label) return null
@@ -123,17 +131,21 @@ export default function CmsCtaButton({
   }
 
   const variantClasses = VARIANT_CLASSES[variant ?? "primary"]
+  const displayClasses = showArrow ? "inline-flex items-center" : "inline-block"
 
   return (
     <a
       href={href}
       target={target}
       rel={rel}
-      className={`${BASE_CLASSES} ${variantClasses}${
+      className={`${displayClasses} ${BASE_CLASSES} ${variantClasses}${
         className ? ` ${className}` : ""
       }`}
     >
       {label}
+      {showArrow && (
+        <ArrowRight className="ml-2 -translate-y-[1px]" color="currentColor" />
+      )}
     </a>
   )
 }
