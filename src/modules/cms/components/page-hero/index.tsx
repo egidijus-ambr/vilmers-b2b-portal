@@ -65,7 +65,7 @@ const PageHero = ({
 
     const imageHero = (
       <div
-        className={`relative w-full${
+        className={`relative w-full mb-6${
           isContentWidth ? " overflow-hidden rounded-lg" : ""
         }`}
       >
