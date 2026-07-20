@@ -7,6 +7,7 @@ import { ProductCataloguesModule } from "./modules/product-catalogues"
 import { ShopSettingsModule } from "./modules/shop-settings"
 import { PagesModule } from "./modules/pages"
 import { CategoriesModule } from "./modules/categories"
+import { CollectionsModule } from "./modules/collections"
 import { ProductsModule } from "./modules/products"
 import { FiltersModule } from "./modules/filters"
 import { MaterialAvailabilityModule } from "./modules/material-availability"
@@ -24,6 +25,7 @@ export class FurnisystemsSDK {
   public shopSettings: ShopSettingsModule
   public pages: PagesModule
   public categories: CategoriesModule
+  public collections: CollectionsModule
   public products: ProductsModule
   public filters: FiltersModule
   public materialAvailability: MaterialAvailabilityModule
@@ -41,6 +43,7 @@ export class FurnisystemsSDK {
     this.shopSettings = new ShopSettingsModule(this.client)
     this.pages = new PagesModule(this.client)
     this.categories = new CategoriesModule(this.client)
+    this.collections = new CollectionsModule(this.client)
     this.products = new ProductsModule(this.client)
     this.filters = new FiltersModule(this.client)
     this.materialAvailability = new MaterialAvailabilityModule(
@@ -90,6 +93,7 @@ export * from "./modules/product-catalogues"
 export * from "./modules/shop-settings"
 export * from "./modules/pages"
 export * from "./modules/categories"
+export * from "./modules/collections"
 export * from "./modules/products"
 export * from "./modules/filters"
 export * from "./modules/material-availability"
