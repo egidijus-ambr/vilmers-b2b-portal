@@ -4,6 +4,7 @@ import {
   CategoryProductNamesResponse,
   CategoryProductsResponse,
   SortedByCategoryPositionResponse,
+  SortedByCollectionPositionResponse,
   SearchProductsResponse,
   FurnisystemsProductDetail,
   ProductContainer,
@@ -96,6 +97,59 @@ const GET_CATEGORY_PRODUCTS = gql`
       sortBy: $sortBy
       language: $language
       selectedCategoryIds: $selectedCategoryIds
+    ) {
+      numberOfPages
+      productsCount
+      sortedProductContainers {
+        ...ProductCardFields
+      }
+    }
+  }
+`
+
+// Collections have no sortBy/orderBy/selectedCategoryIds args — ordering is
+// fixed server-side by collection position. `$lang` is declared as the
+// `Language` enum (not `String`) because it is referenced directly inside
+// the query document (inline `equals: $lang`), which requires the
+// declared variable type to match the schema's enum type exactly.
+const GET_COLLECTION_PRODUCTS = gql`
+  ${PRODUCT_CARD_FRAGMENT}
+  query GetCollectionProducts(
+    $permalink: String!
+    $page: Int!
+    $take: Int!
+    $where: ProductContainerWhereInput
+    $lang: Language!
+  ) {
+    sortedByCollectionPositionProductContainers(
+      collectionPermalink: $permalink
+      page: $page
+      take: $take
+      where: {
+        AND: [
+          $where
+          {
+            OR: [
+              {
+                single_product: {
+                  is: {
+                    product_profiles: { some: { language: { equals: $lang } } }
+                  }
+                }
+              }
+              {
+                advanced_product: {
+                  is: {
+                    advanced_product_profiles: {
+                      some: { language: { equals: $lang } }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
     ) {
       numberOfPages
       productsCount
@@ -559,6 +613,45 @@ export class ProductsModule {
     } catch (error) {
       console.error(
         `Error fetching category products for "${permalink}":`,
+        error
+      )
+      return {
+        numberOfPages: 0,
+        productsCount: 0,
+        sortedProductContainers: [],
+      }
+    }
+  }
+
+  async getCollectionProducts(params: {
+    permalink: string
+    page: number
+    perPage?: number
+    where?: any
+    language: string
+  }): Promise<CategoryProductsResponse> {
+    const { permalink, page, perPage = 28, where, language } = params
+
+    try {
+      const response =
+        await this.client.query<SortedByCollectionPositionResponse>(
+          GET_COLLECTION_PRODUCTS,
+          {
+            variables: {
+              permalink,
+              page,
+              take: perPage,
+              where: where ?? {},
+              lang: language.toLowerCase(),
+            },
+            fetchPolicy: "no-cache",
+            errorPolicy: "all",
+          }
+        )
+      return response.sortedByCollectionPositionProductContainers
+    } catch (error) {
+      console.error(
+        `Error fetching collection products for "${permalink}":`,
         error
       )
       return {

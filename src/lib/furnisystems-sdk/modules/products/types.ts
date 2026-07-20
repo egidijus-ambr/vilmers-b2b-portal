@@ -86,6 +86,10 @@ export interface SortedByCategoryPositionResponse {
   sortedByCategoryPositionProductContainers: CategoryProductsResponse
 }
 
+export interface SortedByCollectionPositionResponse {
+  sortedByCollectionPositionProductContainers: CategoryProductsResponse
+}
+
 export interface SearchProductsResponse {
   sortedBySearchTermPositionProductContainers: CategoryProductsResponse
 }
