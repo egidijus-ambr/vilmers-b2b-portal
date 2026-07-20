@@ -1,46 +1,73 @@
 import { Suspense } from "react"
+import { CollectionData } from "@lib/furnisystems-sdk"
+import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
+import PageHeader from "@modules/common/components/page-header"
+import PageContent from "@modules/common/components/page-content"
+import CollectionProductGrid from "@modules/collections/components/collection-product-grid"
+import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
+import NewsletterBlock from "@modules/home/components/newsletter-block"
 
-import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import PaginatedProducts from "@modules/store/templates/paginated-products"
-import { HttpTypes } from "@medusajs/types"
+interface CollectionPageTemplateProps {
+  collection: CollectionData
+  language: string
+  page: number
+}
 
-export default function CollectionTemplate({
-  sortBy,
+/** Get the localized name from a collection's profiles */
+function getCollectionName(collection: CollectionData): string {
+  return collection.collection_profiles?.[0]?.name ?? ""
+}
+
+/** Get the description from a collection's profile */
+function getCollectionDescription(collection: CollectionData): string | null {
+  return collection.collection_profiles?.[0]?.description ?? null
+}
+
+/** Get the permalink from a collection's profile meta_information */
+function getCollectionPermalink(collection: CollectionData): string | null {
+  return collection.collection_profiles?.[0]?.meta_information?.permalink ?? null
+}
+
+/**
+ * Collections are flat (no parent chain), so the breadcrumb is always
+ * Home → collection name (no link on the current page).
+ */
+function buildBreadcrumbs(collection: CollectionData): BreadcrumbItem[] {
+  return [
+    { label: "Home", href: "/" },
+    { label: getCollectionName(collection), href: null },
+  ]
+}
+
+export default async function CollectionPageTemplate({
   collection,
+  language,
   page,
-  countryCode,
-}: {
-  sortBy?: SortOptions
-  collection: HttpTypes.StoreCollection
-  page?: string
-  countryCode: string
-}) {
-  const pageNumber = page ? parseInt(page) : 1
-  const sort = sortBy || "created_at"
+}: CollectionPageTemplateProps) {
+  const name = getCollectionName(collection)
+  const description = getCollectionDescription(collection)
+  const breadcrumbs = buildBreadcrumbs(collection)
+  const collectionPermalink = getCollectionPermalink(collection) || ""
 
   return (
-    <div className="flex flex-col small:flex-row small:items-start py-6 content-container">
-      <RefinementList sortBy={sort} />
+    <div data-testid="collection-container">
+      <PageHeader
+        title={name}
+        description={description}
+        breadcrumbItems={breadcrumbs}
+        titleSize="h2"
+      />
       <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
-          <h1>{collection.title}</h1>
-        </div>
-        <Suspense
-          fallback={
-            <SkeletonProductGrid
-              numberOfProducts={collection.products?.length}
+        <PageContent className="pt-8">
+          <Suspense fallback={<CategoryProductGridSkeleton />}>
+            <CollectionProductGrid
+              collectionPermalink={collectionPermalink}
+              language={language as any}
+              page={page}
             />
-          }
-        >
-          <PaginatedProducts
-            sortBy={sort}
-            page={pageNumber}
-            collectionId={collection.id}
-            countryCode={countryCode}
-          />
-        </Suspense>
+          </Suspense>
+        </PageContent>
+        <NewsletterBlock languageCode={language} />
       </div>
     </div>
   )
