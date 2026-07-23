@@ -197,6 +197,7 @@
   "generating": "Wird erstellt…",
   "sending": "Wird gesendet…",
   "email-offer": "Angebot per E-Mail",
+  "show-prices": "Preise anzeigen",
   "email-sent": "Gesendet",
   "email-error": "E-Mail konnte nicht gesendet werden",
   "recipient-email": "Empfänger-E-Mail (optional)",

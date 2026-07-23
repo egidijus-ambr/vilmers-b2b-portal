@@ -92,6 +92,10 @@ function CartOfferContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
+  // Client-side only — hides all price info from the on-page preview. Since
+  // Save-as-PDF/Email-offer both rasterize this same live DOM, toggling this
+  // off automatically excludes prices from both exports too.
+  const [showPrices, setShowPrices] = useState(true)
   const {
     state: emailModalOpen,
     open: openEmailModal,
@@ -412,25 +416,30 @@ function CartOfferContent() {
               </div>
             )}
 
-            <div className="mt-auto">
-              <div className="flex items-baseline gap-4">
-                <span className="text-lg font-bold uppercase">
-                  {t("total")}
-                </span>
-                <span className="text-lg font-bold">{eur(item.totalNet)}</span>
-              </div>
-              {context.showPvm && (
-                <div className="mt-2 space-y-0.5 text-[0.525rem]/[0.7rem] text-dark-blue-70">
-                  <p>
-                    {t("vat")} ({(vatRate * 100).toFixed(0)}%):{" "}
-                    {eur(item.totalNet * vatRate)}
-                  </p>
-                  <p>
-                    {t("total-incl-tax")}: {eur(item.totalNet * (1 + vatRate))}
-                  </p>
+            {showPrices && (
+              <div className="mt-auto">
+                <div className="flex items-baseline gap-4">
+                  <span className="text-lg font-bold uppercase">
+                    {t("total")}
+                  </span>
+                  <span className="text-lg font-bold">
+                    {eur(item.totalNet)}
+                  </span>
                 </div>
-              )}
-            </div>
+                {context.showPvm && (
+                  <div className="mt-2 space-y-0.5 text-[0.525rem]/[0.7rem] text-dark-blue-70">
+                    <p>
+                      {t("vat")} ({(vatRate * 100).toFixed(0)}%):{" "}
+                      {eur(item.totalNet * vatRate)}
+                    </p>
+                    <p>
+                      {t("total-incl-tax")}:{" "}
+                      {eur(item.totalNet * (1 + vatRate))}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -705,6 +714,16 @@ function CartOfferContent() {
           >
             {t("email-offer")}
           </Button>
+          <label className="inline-flex items-center gap-2 text-sm text-dark-blue cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showPrices}
+              onChange={(e) => setShowPrices(e.target.checked)}
+              className="h-4 w-4 accent-dark-blue cursor-pointer"
+              data-testid="offer-show-prices-toggle"
+            />
+            <span>{t("show-prices")}</span>
+          </label>
         </div>
       )}
 
@@ -729,7 +748,7 @@ function CartOfferContent() {
       ) : (
         <div className="offer-pages">
           {data.items.map((item, idx) => renderItem(item, data.context, idx))}
-          {renderOverview(data)}
+          {showPrices && renderOverview(data)}
         </div>
       )}
     </>
