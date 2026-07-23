@@ -30,6 +30,68 @@ const FIND_COLLECTION_BY_PERMALINK = gql`
       main_image {
         src
       }
+      content_blocks {
+        id
+        type
+        style
+        video_link
+        video_type
+        video_autoplay
+        video_loop
+        arrangement
+        main_image {
+          id
+          src
+        }
+        gallery_images(orderBy: { display_order: asc }) {
+          id
+          src
+          display_order
+        }
+        content_block_profiles {
+          id
+          name
+          description
+          link
+          language
+        }
+        default_margins
+        max_height
+        max_width
+        min_height
+        min_width
+        top_margin
+        bottom_margin
+        left_margin
+        right_margin
+        background_color
+        text_color
+        media_max_height
+        media_max_width
+        media_min_height
+        media_min_width
+        object_fit_cover
+        link_new_tab
+        link_page {
+          id
+          page_profiles {
+            slug
+            language
+          }
+        }
+        extra_css
+        linked_items {
+          id
+          title
+          link
+          arrangement
+          image {
+            id
+            src
+          }
+        }
+        config
+      }
     }
   }
 `

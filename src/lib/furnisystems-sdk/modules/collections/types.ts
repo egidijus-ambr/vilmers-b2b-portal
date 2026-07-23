@@ -1,3 +1,5 @@
+import { ContentBlock } from "../shop-settings/types"
+
 export interface CollectionMetaInformation {
   permalink: string
   meta_title: string | null
@@ -19,6 +21,7 @@ export interface CollectionData {
   id: number
   collection_profiles: CollectionProfileData[]
   main_image: CollectionImage | null
+  content_blocks?: ContentBlock[]
 }
 
 export interface FindFirstCollectionResponse {

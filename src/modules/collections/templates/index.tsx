@@ -1,10 +1,13 @@
 import { Suspense } from "react"
 import { CollectionData } from "@lib/furnisystems-sdk"
+import { ContentBlock as SdkContentBlock } from "@lib/furnisystems-sdk/modules/shop-settings/types"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
 import CollectionProductGrid from "@modules/collections/components/collection-product-grid"
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
+import ContentBlock from "@modules/home/components/content-block"
+import type { ContentBlockData } from "@modules/home/components/content-block/types"
 import NewsletterBlock from "@modules/home/components/newsletter-block"
 
 interface CollectionPageTemplateProps {
@@ -39,6 +42,21 @@ function buildBreadcrumbs(collection: CollectionData): BreadcrumbItem[] {
   ]
 }
 
+/**
+ * The shared SDK `ContentBlock` type (queried by categories/collections) and
+ * the shared renderer's own `ContentBlockData` type have pre-existing,
+ * structural mismatches (e.g. optional vs. required `display_order` /
+ * `gallery_images`, and a `CategoryTileItem.image.id` number/string
+ * mismatch) — the identical issue already exists, unaddressed, on the
+ * Category template. Rather than widen the shared types (which cascades
+ * into unrelated content-block producers/consumers), narrowly cast at this
+ * render boundary; the renderer already treats every one of these fields
+ * defensively (`?? []` / `?? null`) at the point of use.
+ */
+function toContentBlockData(block: SdkContentBlock): ContentBlockData {
+  return block as unknown as ContentBlockData
+}
+
 export default async function CollectionPageTemplate({
   collection,
   language,
@@ -49,6 +67,10 @@ export default async function CollectionPageTemplate({
   const breadcrumbs = buildBreadcrumbs(collection)
   const collectionPermalink = getCollectionPermalink(collection) || ""
 
+  const contentBlocks = (collection.content_blocks ?? [])
+    .slice()
+    .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0))
+
   return (
     <div data-testid="collection-container">
       <PageHeader
@@ -58,6 +80,18 @@ export default async function CollectionPageTemplate({
         titleSize="h2"
       />
       <div className="w-full">
+        {contentBlocks.length > 0 && (
+          <div>
+            {contentBlocks.map((block, index) => (
+              <ContentBlock
+                key={block.id}
+                data={toContentBlockData(block)}
+                index={index}
+                languageCode={language}
+              />
+            ))}
+          </div>
+        )}
         <PageContent className="pt-8">
           <Suspense fallback={<CategoryProductGridSkeleton />}>
             <CollectionProductGrid
