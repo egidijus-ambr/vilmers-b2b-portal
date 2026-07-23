@@ -185,7 +185,7 @@ export default function ContentBlock({
           containerMaxHeight={data.max_height ?? extraCss.maxHeight}
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
-          display={display === "text_width" ? "full_width" : display}
+          display={display}
           mediaRatio={mediaRatio}
           ctaLabel={profile?.cta_label ?? null}
           ctaLink={profile?.cta_link ?? null}
@@ -487,7 +487,7 @@ function TextAndImage({
   containerMaxHeight?: number | string | null
   titleAlignment: TitleAlignment
   hideTitle: boolean
-  display?: "full_width" | "content_width"
+  display?: "full_width" | "content_width" | "text_width"
   mediaRatio?: MediaRatio
   ctaLabel?: string | null
   ctaLink?: string | null
@@ -501,6 +501,7 @@ function TextAndImage({
   // Text on image (overlay) style
   if (style === "text_on_image") {
     const isContentWidth = display === "content_width"
+    const isTextWidth = display === "text_width"
 
     const textOnImageBlock = (
       <div
@@ -556,6 +557,12 @@ function TextAndImage({
 
     if (isContentWidth) {
       return <div className="content-container">{textOnImageBlock}</div>
+    }
+
+    if (isTextWidth) {
+      return (
+        <div className="max-w-[900px] w-full mx-auto">{textOnImageBlock}</div>
+      )
     }
 
     return textOnImageBlock

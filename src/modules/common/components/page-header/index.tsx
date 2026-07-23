@@ -19,6 +19,24 @@ interface PageHeaderProps {
    * existing consumers are unaffected.
    */
   titleSize?: "h1" | "h2"
+  /**
+   * Condenses the dead space below the breadcrumb when there is no title.
+   *
+   * The top padding stays `pt-8` (identical to the default `py-8`'s top
+   * half) so the breadcrumb's vertical position never moves. Only the
+   * space that would otherwise separate the breadcrumb from a title is
+   * reduced: the container's bottom padding drops to `pb-2`, and the
+   * breadcrumb's own `mb-8` (normally the gap before the title) shrinks
+   * to `mb-2`.
+   *
+   * Intended for consumers that render this header with breadcrumb-only
+   * content (e.g. CMS pages with `heroDisplay === "none"`), where the full
+   * `py-8` + breadcrumb `mb-8` wastes vertical space. Defaults to `false`
+   * so every existing consumer (cart, checkout, search, account,
+   * categories, collections, product pages, etc.) keeps its current
+   * `py-8` container padding and `mb-8` breadcrumb margin untouched.
+   */
+  compact?: boolean
 }
 
 const TITLE_SIZE_CLASSES: Record<"h1" | "h2", string> = {
@@ -32,14 +50,15 @@ export default function PageHeader({
   breadcrumbItems,
   level = "h1",
   titleSize = level,
+  compact = false,
 }: PageHeaderProps) {
   const Tag = level
 
   return (
     <div className="bg-page-background w-full px-6 large:px-0">
-      <div className="content-container py-8">
+      <div className={clx("content-container", compact ? "pt-8 pb-2" : "py-8")}>
         {breadcrumbItems && breadcrumbItems.length > 0 && (
-          <Breadcrumb items={breadcrumbItems} />
+          <Breadcrumb items={breadcrumbItems} compact={compact} />
         )}
 
         {title && (

@@ -89,6 +89,13 @@ export default async function CmsPage(props: Props) {
       (p) => p.language?.toLowerCase() === languageCode.toLowerCase()
     ) ?? page.page_profiles[0]
 
+  const heroHeightUnit = page.hero_height_unit ?? "vh"
+  const heroHeight = page.hero_height_value
+    ? heroHeightUnit === "vh"
+      ? `calc(${page.hero_height_value}vh - var(--top-bar-height) - var(--nav-height))`
+      : `${page.hero_height_value}${heroHeightUnit}`
+    : null
+
   let contentBlocks = await enrichContentBlocksWithTileCategories(
     (page.content_blocks ?? [])
       .slice()
@@ -119,6 +126,7 @@ export default async function CmsPage(props: Props) {
         subtitle={profile?.subtitle ?? null}
         heroImageSrc={page.hero_image?.src ?? null}
         heroDisplay={page.hero_display ?? "full_width"}
+        heroHeight={heroHeight}
         breadcrumbItems={breadcrumbItems}
         ctaLabel={profile?.cta_label ?? null}
         ctaLink={profile?.cta_link ?? null}

@@ -26,11 +26,14 @@ const LABEL_CLS =
 // components" grid (thread-color "0" placeholders, market/direction/shooting
 // metadata groups). Keep in sync with EXCLUDED_GROUP_CODES in
 // src/modules/products/components/configurator/configuration-summary.tsx.
+// "logos" is an offer/PDF-only exclusion and is intentionally NOT mirrored
+// in the configurator summary array.
 const EXCLUDED_COMPONENT_GROUP_CODES = [
   "shooting",
   "threads-type",
   "market",
   "direction",
+  "logos",
 ]
 
 // Backend `type` is a raw enum (e.g. "WOVEN_FABRIC"); lower-case it, swap
@@ -251,7 +254,7 @@ function CartOfferContent() {
                 fabric.imageUrl
               )}`}
               alt={fabric.code || ""}
-              className="mt-3 aspect-[3/2] w-4/5 self-start object-contain"
+              className="mt-3 aspect-[3/2] w-4/5 self-start object-contain object-left"
             />
           )}
         </div>
@@ -266,7 +269,16 @@ function CartOfferContent() {
           className="flex flex-col border-t border-line pt-2"
         >
           <p className={LABEL_CLS}>{comp.groupName || "—"}</p>
-          <p className="mt-2 text-[0.7875rem]/[1.225rem]">{comp.name || "—"}</p>
+          {/* min-h reserves exactly 2 lines (2 × 1.225rem line-height) so
+              image position stays aligned across 1-line vs 2-line titles.
+              Rasterized via html2canvas-pro (see generate-offer-pdf.ts), which
+              may not reliably support the `lh` unit, so the height is
+              computed explicitly from the title's own line-height rather than
+              using `min-h-[2lh]`. Not a fixed height / line-clamp — 3+ line
+              titles still grow and render in full. */}
+          <p className="mt-2 min-h-[2.45rem] text-[0.7875rem]/[1.225rem]">
+            {comp.name || "—"}
+          </p>
 
           {hasDims(comp) && (
             <div className="mt-4">
@@ -307,7 +319,7 @@ function CartOfferContent() {
             <img
               src={`/api/offer-image?url=${encodeURIComponent(comp.imageUrl)}`}
               alt={comp.name || ""}
-              className="mt-3 aspect-[3/2] w-4/5 self-start object-contain"
+              className="mt-3 aspect-[3/2] w-4/5 self-start object-contain object-left"
             />
           ) : comp.colorHex ? (
             <div
@@ -645,7 +657,7 @@ function CartOfferContent() {
           {/* Totals — right-aligned, below the table. Only on the last
               overview page, and always the grand totals of ALL items. */}
           {isLastPage && (
-            <div className="ml-auto mt-10 w-full max-w-xs space-y-2">
+            <div className="ml-auto mt-4 w-full max-w-xs space-y-2">
               <div className="flex items-baseline justify-between">
                 <span className={LABEL_CLS}>{t("subtotal")}</span>
                 <span className="text-[0.875rem]">{eur(subtotal)}</span>

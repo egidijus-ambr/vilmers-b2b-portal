@@ -13,6 +13,7 @@ interface PageHeroProps {
   subtitle: string | null
   heroImageSrc: string | null
   heroDisplay?: "full_width" | "content_width" | "none" | null
+  heroHeight?: string | null
   breadcrumbItems?: BreadcrumbItem[]
   ctaLabel?: string | null
   ctaLink?: string | null
@@ -28,6 +29,7 @@ const PageHero = ({
   subtitle,
   heroImageSrc,
   heroDisplay,
+  heroHeight,
   breadcrumbItems,
   ctaLabel,
   ctaLink,
@@ -68,6 +70,7 @@ const PageHero = ({
         className={`relative w-full mb-6${
           isContentWidth ? " overflow-hidden rounded-lg" : ""
         }`}
+        style={heroHeight ? { height: heroHeight } : undefined}
       >
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -76,7 +79,11 @@ const PageHero = ({
           style={{ backgroundImage: `url('${encodeURI(heroImageSrc!)}')` }}
         />
         <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 w-full max-w-[1360px] mx-auto  min-h-[350px] md:min-h-[500px] flex flex-col py-8 px-6 large:px-0">
+        <div
+          className={`relative z-10 w-full max-w-[1360px] mx-auto ${
+            heroHeight ? "h-full" : "min-h-[350px] md:min-h-[500px]"
+          } flex flex-col py-8 px-6 large:px-0`}
+        >
           {breadcrumbItems && breadcrumbItems.length > 0 && (
             <Breadcrumb items={breadcrumbItems} variant="light" />
           )}
@@ -107,14 +114,18 @@ const PageHero = ({
     return imageHero
   }
 
-  // No hero: reuse the shared PageHeader (breadcrumbs + left-aligned title),
-  // matching the account/orders and product page layout.
+  // No hero: reuse the shared PageHeader, but breadcrumb-only — the page
+  // title is intentionally not rendered in this mode. PageHeader already
+  // skips its title element entirely when `title` is falsy/omitted (see
+  // its `{title && (...)}` guard), so simply not passing it here hides the
+  // title without emitting an empty heading and without touching
+  // PageHeader's other consumers (account/orders/product pages).
   if (heroDisplay === "none") {
     return (
       <PageHeader
-        title={title ?? undefined}
         description={subtitle}
         breadcrumbItems={breadcrumbItems}
+        compact
       />
     )
   }

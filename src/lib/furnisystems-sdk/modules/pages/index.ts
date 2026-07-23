@@ -196,6 +196,8 @@ export const FIND_PAGE_BY_SLUG = gql`
         src
       }
       hero_display
+      hero_height_value
+      hero_height_unit
       ...PageHeroCtaFields
       content_blocks(
         where: {
@@ -225,6 +227,8 @@ export const FIND_PAGE_BY_PATH = gql`
         src
       }
       hero_display
+      hero_height_value
+      hero_height_unit
       ...PageHeroCtaFields
       ancestors(language: $language) {
         id

@@ -11,6 +11,17 @@ export interface BreadcrumbItem {
 interface BreadcrumbProps {
   items: BreadcrumbItem[]
   variant?: "default" | "light"
+  /**
+   * Reduces the breadcrumb's bottom margin (`mb-8` -> `mb-2`).
+   *
+   * The default `mb-8` exists to separate the breadcrumb from a page title
+   * rendered directly below it. When a consumer has no title (e.g. a
+   * no-hero CMS `PageHeader` in `compact` mode), that full gap is dead
+   * space, so it's reduced to a small `mb-2` breathing gap instead of
+   * removed entirely. Defaults to `false` so every existing consumer keeps
+   * its current `mb-8` spacing untouched.
+   */
+  compact?: boolean
 }
 
 const ChevronRight = ({ className }: { className?: string }) => (
@@ -31,11 +42,15 @@ const ChevronRight = ({ className }: { className?: string }) => (
   </svg>
 )
 
-const Breadcrumb = ({ items, variant = "default" }: BreadcrumbProps) => {
+const Breadcrumb = ({
+  items,
+  variant = "default",
+  compact = false,
+}: BreadcrumbProps) => {
   const isLight = variant === "light"
 
   return (
-    <nav aria-label="Breadcrumb" className={isLight ? "" : "mb-8"}>
+    <nav aria-label="Breadcrumb" className={isLight ? "" : compact ? "mb-2" : "mb-8"}>
       <ol className="flex items-center flex-wrap gap-3 text-sm">
         {items.map((item, index) => {
           const isLast = index === items.length - 1
