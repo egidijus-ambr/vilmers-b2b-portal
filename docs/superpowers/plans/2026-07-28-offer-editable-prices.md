@@ -249,3 +249,63 @@ Navigate to a cart offer page: `http://localhost:8090/<languageCode>/account/car
 - [ ] **Step 3: Report results**
 
 Report each check pass/fail with screenshots where useful. Any failure → fix in `page.tsx`, re-run the failed checks, and amend/commit as a fix commit.
+
+---
+
+### Task 4: "Reference" label above customer reference on offer item page
+
+**Files:**
+- Modify: `src/app/[languageCode]/(main)/account/carts/details/[id]/offer/page.tsx`
+- Modify: `src/lib/i18n/locales/en/account.json`, `src/lib/i18n/locales/de/account.json`, `src/lib/i18n/locales/fr/account.json`, `src/lib/i18n/locales/da/account.json`, `src/lib/i18n/locales/lt/account.json`
+
+**Interfaces:**
+- Consumes: existing `LABEL_CLS` constant and `t` from `useTranslations("account")` in page.tsx.
+- Produces: new i18n key `reference` in the `account` namespace of all 5 locales.
+
+- [ ] **Step 1: Add the translation key**
+
+In each of the 5 `account.json` locale files, add a flat key `"reference"` next to the existing `"customer-reference"` key (line ~102), preserving JSON validity:
+
+- en: `"reference": "Reference",`
+- de: `"reference": "Referenz",`
+- fr: `"reference": "Référence",`
+- da: `"reference": "Reference",`
+- lt: `"reference": "Nuoroda",`
+
+- [ ] **Step 2: Add the label above the reference value**
+
+In page.tsx, replace the bare reference paragraph (lines ~435–439):
+
+```tsx
+            {item.reference && (
+              <p className="mt-1 text-[0.6125rem]/[0.875rem] text-dark-blue-70">
+                {item.reference}
+              </p>
+            )}
+```
+
+with the labeled block, matching the QUANTITY/VOLUME label pattern while keeping the value's existing styling and position:
+
+```tsx
+            {item.reference && (
+              <div className="mt-2">
+                <p className={LABEL_CLS}>{t("reference")}</p>
+                <p className="mt-1 text-[0.6125rem]/[0.875rem] text-dark-blue-70">
+                  {item.reference}
+                </p>
+              </div>
+            )}
+```
+
+- [ ] **Step 3: Verify**
+
+Run: `pnpm exec tsc --noEmit` (no NEW errors vs baseline) and validate each edited JSON parses: `for f in en de fr da lt; do node -e "JSON.parse(require('fs').readFileSync('src/lib/i18n/locales/$f/account.json','utf8'))" && echo "$f ok"; done`
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add "src/app/[languageCode]/(main)/account/carts/details/[id]/offer/page.tsx" src/lib/i18n/locales/*/account.json
+git commit -m "feat(offer): label customer reference on offer item page
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+```
