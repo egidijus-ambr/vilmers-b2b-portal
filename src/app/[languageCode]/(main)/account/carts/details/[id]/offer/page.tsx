@@ -120,6 +120,26 @@ function CartOfferContent() {
     return item.quantity > 0 ? override * item.quantity : override
   }
 
+  const commitPriceEdit = () => {
+    if (!editingPrice) return
+    const { idx, text } = editingPrice
+    setEditingPrice(null)
+    const trimmed = text.trim().replace(",", ".")
+    if (trimmed === "") {
+      // Cleared field → drop the override, restoring the backend price.
+      setPriceOverrides((prev) => {
+        const next = { ...prev }
+        delete next[idx]
+        return next
+      })
+      return
+    }
+    const parsed = Number(trimmed)
+    // NaN / negative → no-op, keep whatever was committed before.
+    if (!Number.isFinite(parsed) || parsed < 0) return
+    setPriceOverrides((prev) => ({ ...prev, [idx]: parsed }))
+  }
+
   const cartId = params?.id as string
   const languageCode = params?.languageCode as string
   const printMode = searchParams.get("print") === "1"
@@ -655,7 +675,7 @@ function CartOfferContent() {
                         item.imageUrl
                       )}`}
                       alt={item.name}
-                      className="h-44 w-64 object-conver"
+                      className="h-44 w-64 object-cover"
                     />
                   ) : (
                     <div className="flex h-44 w-64 items-center justify-center border border-dashed border-line text-[0.525rem]/[0.7rem] text-dark-blue-70">
@@ -673,9 +693,31 @@ function CartOfferContent() {
                     )}
                   </div>
                 </div>
-                <span className="text-right text-[0.7875rem]">
-                  {eur(unitPrice)}
-                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  data-testid="offer-price-input"
+                  aria-label={`${t("price")} — ${item.name}`}
+                  value={
+                    editingPrice?.idx === globalIdx
+                      ? editingPrice.text
+                      : eur(unitPrice)
+                  }
+                  onFocus={() =>
+                    setEditingPrice({
+                      idx: globalIdx,
+                      text: String(unitPrice),
+                    })
+                  }
+                  onChange={(e) =>
+                    setEditingPrice({ idx: globalIdx, text: e.target.value })
+                  }
+                  onBlur={commitPriceEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur()
+                  }}
+                  className="w-full border-none bg-transparent p-0 text-right text-[0.7875rem] outline-none hover:bg-dark-blue/5 focus:bg-dark-blue/5"
+                />
                 <span className="text-right text-[0.7875rem]">
                   {item.quantity}
                 </span>
