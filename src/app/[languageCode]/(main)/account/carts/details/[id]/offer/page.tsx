@@ -433,9 +433,12 @@ function CartOfferContent() {
               {item.name}
             </h2>
             {item.reference && (
-              <p className="mt-1 text-[0.6125rem]/[0.875rem] text-dark-blue-70">
-                {item.reference}
-              </p>
+              <div className="mt-2">
+                <p className={LABEL_CLS}>{t("reference")}</p>
+                <p className="mt-1 text-[0.6125rem]/[0.875rem] text-dark-blue-70">
+                  {item.reference}
+                </p>
+              </div>
             )}
 
             <div className="mt-8">

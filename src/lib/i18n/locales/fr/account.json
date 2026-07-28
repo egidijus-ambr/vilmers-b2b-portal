@@ -100,6 +100,7 @@
   "no-image": "Pas d'image",
   "volume": "Volume",
   "customer-reference": "Référence client",
+  "reference": "Référence",
   "reference-step-description": "Entrez votre numéro de référence de commande ou de projet. Vous pouvez également l'ajouter plus tard lors de l'ajout au panier.",
   "reference-placeholder": "ex. PO-2024-0847",
   "reference-optional-hint": "Facultatif à cette étape — requis avant l'ajout au panier",

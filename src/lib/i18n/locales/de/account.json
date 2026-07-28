@@ -100,6 +100,7 @@
   "no-image": "Kein Bild",
   "volume": "Volumen",
   "customer-reference": "Kundenreferenz",
+  "reference": "Referenz",
   "reference-step-description": "Geben Sie Ihre Bestell- oder Projektreferenznummer ein. Sie können diese auch später beim Hinzufügen zum Warenkorb angeben.",
   "reference-placeholder": "z.B. PO-2024-0847",
   "reference-optional-hint": "Optional in diesem Schritt — erforderlich vor dem Hinzufügen zum Warenkorb",
