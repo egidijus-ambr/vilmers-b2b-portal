@@ -102,6 +102,24 @@ function CartOfferContent() {
     close: closeEmailModal,
   } = useToggleState(false)
 
+  // Client-side price overrides for the offer preview/PDF, keyed by the
+  // item's global index in data.items (cartItemId can be null). Value is
+  // the overridden UNIT price; totalNet stays the source of truth when no
+  // override exists. Lost on reload by design.
+  const [priceOverrides, setPriceOverrides] = useState<Record<number, number>>(
+    {}
+  )
+  const [editingPrice, setEditingPrice] = useState<{
+    idx: number
+    text: string
+  } | null>(null)
+
+  const effectiveTotalNet = (item: OfferItem, globalIdx: number) => {
+    const override = priceOverrides[globalIdx]
+    if (override == null) return item.totalNet
+    return item.quantity > 0 ? override * item.quantity : override
+  }
+
   const cartId = params?.id as string
   const languageCode = params?.languageCode as string
   const printMode = searchParams.get("print") === "1"
@@ -423,18 +441,18 @@ function CartOfferContent() {
                     {t("total")}
                   </span>
                   <span className="text-lg font-bold">
-                    {eur(item.totalNet)}
+                    {eur(effectiveTotalNet(item, idx))}
                   </span>
                 </div>
                 {context.showPvm && (
                   <div className="mt-2 space-y-0.5 text-[0.525rem]/[0.7rem] text-dark-blue-70">
                     <p>
                       {t("vat")} ({(vatRate * 100).toFixed(0)}%):{" "}
-                      {eur(item.totalNet * vatRate)}
+                      {eur(effectiveTotalNet(item, idx) * vatRate)}
                     </p>
                     <p>
                       {t("total-incl-tax")}:{" "}
-                      {eur(item.totalNet * (1 + vatRate))}
+                      {eur(effectiveTotalNet(item, idx) * (1 + vatRate))}
                     </p>
                   </div>
                 )}
@@ -564,7 +582,10 @@ function CartOfferContent() {
   const renderOverview = (offerData: CartOfferData) => {
     const { items, context } = offerData
     const vatRate = context.vatRate
-    const subtotal = items.reduce((sum, item) => sum + item.totalNet, 0)
+    const subtotal = items.reduce(
+      (sum, item, i) => sum + effectiveTotalNet(item, i),
+      0
+    )
     const vat = context.showPvm ? subtotal * vatRate : 0
     const total = subtotal + vat
     // Intl resolves the bare "en" subtag to en-US (month-first, "July 8,
@@ -614,8 +635,10 @@ function CartOfferContent() {
 
           {/* Table rows */}
           {pageItems.map((item, idx) => {
+            const globalIdx = pageIdx * ITEMS_PER_PAGE + idx
+            const lineTotal = effectiveTotalNet(item, globalIdx)
             const unitPrice =
-              item.quantity > 0 ? item.totalNet / item.quantity : item.totalNet
+              item.quantity > 0 ? lineTotal / item.quantity : lineTotal
 
             return (
               <div
@@ -657,7 +680,7 @@ function CartOfferContent() {
                   {item.quantity}
                 </span>
                 <span className="text-right text-[0.7875rem] font-medium">
-                  {eur(item.totalNet)}
+                  {eur(lineTotal)}
                 </span>
               </div>
             )
