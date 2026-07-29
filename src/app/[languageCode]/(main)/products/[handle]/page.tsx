@@ -4,8 +4,10 @@ import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories } from "@lib/data/categories"
 import { getCustomerFilterData } from "@lib/data/customer"
 import { getShowAllProductsActive } from "@lib/data/show-all-products"
+import { getProductCatalogues } from "@lib/data/product-catalogues"
 import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
 import type { LinkedProductType, ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
+import type { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/types"
 import type { CategoryData } from "@lib/furnisystems-sdk"
 import ProductTemplate, { ProductPageData } from "@modules/products/templates"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
@@ -29,7 +31,8 @@ function mapFurnisystemsProduct(
   languageCode: string,
   rootCategory?: CategoryData,
   showAllProducts: boolean = false,
-  handle: string = ""
+  handle: string = "",
+  catalogues: CatalogueFile[] = []
 ): ProductPageData {
   const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
 
@@ -171,6 +174,7 @@ function mapFurnisystemsProduct(
     productName: profile?.name?.split(' ')[0] ?? null,
     breadcrumbs,
     features,
+    catalogues,
     linkedProductGroups,
     comfortData,
     contentBlocks: container.content_blocks ?? [],
@@ -247,7 +251,27 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const rootCategory = menuCategories.find((c) => c.is_root_category)
-  const productData = mapFurnisystemsProduct(product, languageCode, rootCategory, showAllProducts, handle)
+
+  // Catalogues are keyed by the FULL profile name (not the first-word
+  // `productName` used for the interior gallery) plus the container reference.
+  const isAdvanced = product.type === "ADVANCED_PRODUCT" || !!product.advanced_product
+  const catalogueProfiles = isAdvanced
+    ? product.advanced_product?.advanced_product_profiles ?? []
+    : product.single_product?.product_profiles ?? []
+  const catalogueProductName = catalogueProfiles[0]?.name ?? null
+
+  const catalogues = catalogueProductName
+    ? await getProductCatalogues(catalogueProductName, product.reference)
+    : []
+
+  const productData = mapFurnisystemsProduct(
+    product,
+    languageCode,
+    rootCategory,
+    showAllProducts,
+    handle,
+    catalogues
+  )
 
   return <ProductTemplate product={productData} />
 }

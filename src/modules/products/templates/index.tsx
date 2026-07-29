@@ -4,6 +4,8 @@ import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
 import ProductFeatureSection from "@modules/products/components/product-feature-section"
 import type { ProductPageFeature } from "@modules/products/components/product-feature-section"
+import ProductDownloadsSection from "@modules/products/components/product-downloads-section"
+import type { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/types"
 import ProductImageGallery from "@modules/products/components/product-image-gallery"
 import type { ProductImage } from "@modules/products/components/product-image-gallery"
 import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
@@ -25,6 +27,7 @@ export type ProductPageData = {
   productName: string | null
   breadcrumbs: BreadcrumbItem[]
   features: ProductPageFeature[]
+  catalogues: CatalogueFile[]
   linkedProductGroups: { type: string; products: ProductContainer[] }[]
   comfortData: ComfortSectionData | null
   contentBlocks: ContentBlockData[]
@@ -74,6 +77,12 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
         </ProductSection>
         {product.features.length > 0 && (
           <ProductFeatureSection features={product.features} />
+        )}
+        {product.catalogues.length > 0 && (
+          <ProductDownloadsSection
+            catalogues={product.catalogues}
+            languageCode={product.languageCode}
+          />
         )}
         {product.contentBlocks.length > 0 && (
           <ProductContentBlocks

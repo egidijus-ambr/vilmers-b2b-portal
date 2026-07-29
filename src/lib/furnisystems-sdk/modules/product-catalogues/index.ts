@@ -29,7 +29,12 @@ export class ProductCataloguesModule {
       const response = await fetch(
         `${this.restApiUrl}/s3/product-catalogues/${encodeURIComponent(
           productName
-        )}${refQuery}`
+        )}${refQuery}`,
+        {
+          // Catalogue listings change rarely — avoid an uncached fetch on
+          // every product page request.
+          next: { revalidate: 3600 },
+        }
       )
 
       if (!response.ok) {

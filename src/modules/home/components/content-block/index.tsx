@@ -803,6 +803,23 @@ function OnlyText({
     )
   }
 
+  // Two text columns split 1/3 (left) + 2/3 (right) instead of 2_columns_title_top_center's
+  // 50/50 split. Same 2-section admin authoring (`sectionCountForStyle` = 2), only the grid's
+  // column-width ratio differs — see MultiColumnText's `variant` prop.
+  if (style === "2_columns_1_3") {
+    return (
+      <MultiColumnText
+        columns={2}
+        variant="1_3"
+        sectionDescription={sectionDescription}
+        descriptionFormat={descriptionFormat}
+        backgroundColor={backgroundColor}
+        textColor={textColor}
+        textStyle={textStyle}
+      />
+    )
+  }
+
   return (
     <div
       className="mx-auto max-w-screen-xl py-10 small:py-16 px-6 small:px-12"
@@ -825,13 +842,15 @@ function OnlyText({
   )
 }
 
-/* ─── Multi-column text (3 Columns Title Left / 2 Columns Title Top Center) ─── */
+/* ─── Multi-column text (3 Columns Title Left / 2 Columns Title Top Center / 2 Columns 1:3) ─── */
 
 /**
- * The two multi-column text styles render N EQUAL text columns and no title.
- * The admin editor packs one text section per column into the single stored
+ * The multi-column text styles render N text columns and no title. The admin
+ * editor packs one text section per column into the single stored
  * `description`, separated by the section-break marker, so column i renders
- * section i.
+ * section i. Columns are equal-width EXCEPT `2_columns_1_3` (`variant="1_3"`),
+ * which splits the same 2 sections into a narrow left (1/3) + wide right
+ * (2/3) pair.
  *
  * `columns` MUST match the admin editor's `sectionCountForStyle` in
  * `saas-admin-ui/src/containers/ContentBlocks/utils/sectionMarker.ts`, or the
@@ -839,6 +858,7 @@ function OnlyText({
  */
 function MultiColumnText({
   columns,
+  variant = "equal",
   sectionDescription,
   descriptionFormat,
   backgroundColor,
@@ -846,6 +866,7 @@ function MultiColumnText({
   textStyle,
 }: {
   columns: 2 | 3
+  variant?: "equal" | "1_3"
   sectionDescription: string | null
   descriptionFormat?: "plain" | "markdown" | null
   backgroundColor: string | null
@@ -857,15 +878,21 @@ function MultiColumnText({
   // with 3), and a marker-less string yields exactly one. Index defensively so
   // the surplus columns render empty rather than crashing.
   const sections = splitSections(sectionDescription)
-  // Written as whole literals so Tailwind's class scanner sees them.
-  const gridClass = columns === 3 ? "small:grid-cols-3" : "small:grid-cols-2"
+  // Written as whole literals (never assembled via template strings) so
+  // Tailwind's JIT class scanner picks them up statically.
+  const gridClass =
+    variant === "1_3"
+      ? "small:grid-cols-[calc((100%_-_3rem)/3)_1fr]"
+      : columns === 3
+      ? "small:grid-cols-3"
+      : "small:grid-cols-2"
 
   return (
     <div
       className="py-10 small:py-12 content-container large:px-0 px-6"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
-      <div className={`grid grid-cols-1 gap-8 ${gridClass} small:gap-12`}>
+      <div className={`grid grid-cols-1 gap-6 ${gridClass} small:gap-6`}>
         {Array.from({ length: columns }, (_, i) => (
           <div key={i} style={textStyle}>
             <RichText
@@ -1210,6 +1237,17 @@ function Gallery({
         stageHeight={stageHeight}
       />
     )
+  }
+
+  // Side-by-side renders the FULL images array in ONE static row (no
+  // pagination, no arrows, no progress bar, no scroll) — like scroll_rhythm
+  // it bypasses the page-splitting and page-based nav/progress UI below
+  // entirely. Style value is `gallery_side_by_side` (not `side_by_side`) —
+  // that bare string is already a shipped text_and_image style in the admin
+  // (image next to text, with its own mediaRatio control), so the gallery
+  // variant uses a distinct, gallery-prefixed value to avoid hijacking it.
+  if (style === "gallery_side_by_side") {
+    return <GallerySideBySide images={images} display={display} />
   }
 
   // Build array of pages for the carousel
@@ -1691,6 +1729,52 @@ function GalleryScrollRhythm({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/* ─── Gallery: Side by Side ────────────────────────────────── */
+
+// Image count → grid-cols class, capped at 4 (a 5th+ image wraps into a
+// second row of the same 4-col grid rather than growing the column count
+// further). Written as whole literals (never assembled via template
+// strings) so Tailwind's JIT class scanner picks them up statically.
+const SIDE_BY_SIDE_GRID_COLS: Record<number, string> = {
+  1: "small:grid-cols-1",
+  2: "small:grid-cols-2",
+  3: "small:grid-cols-3",
+  4: "small:grid-cols-4",
+}
+
+function GallerySideBySide({
+  images,
+  display = "content_width",
+}: {
+  images: ContentBlockImage[]
+  display?: GalleryDisplay
+}) {
+  // Same three-way width mapping as GalleryScrollRhythm's widthClass, so
+  // this style honors the block's `display` setting the same way the other
+  // display-aware gallery style does.
+  const widthClass =
+    display === "content_width"
+      ? "content-container"
+      : display === "text_width"
+      ? "max-w-[900px] w-full"
+      : ""
+
+  const columns = Math.min(images.length, 4)
+  const gridClass = SIDE_BY_SIDE_GRID_COLS[columns] ?? "small:grid-cols-4"
+
+  return (
+    <div className={`mx-auto ${widthClass} px-6 large:px-0`}>
+      <div className={`grid grid-cols-1 gap-6 ${gridClass}`}>
+        {images.map((img) => (
+          <div key={img.id} className="aspect-[3/4] w-full overflow-hidden">
+            <GalleryImage image={img} className="h-full w-full object-cover" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
