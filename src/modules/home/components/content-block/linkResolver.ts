@@ -1,4 +1,7 @@
-import type { LinkPageAncestor } from "@lib/furnisystems-sdk/modules/shop-settings/types"
+import type {
+  LinkPageAncestor,
+  NavLinkTargetFields,
+} from "@lib/furnisystems-sdk/modules/shop-settings/types"
 
 /**
  * Shape of an internal `link_page` / `cta_link_page` reference as selected by
@@ -59,7 +62,7 @@ export function buildLinkPageHref(
  * field existed (see the legacy fallback in `resolveCtaHref` below).
  */
 export interface CtaLike {
-  cta_link_type?: "cms_page" | "category" | "store" | null
+  cta_link_type?: "cms_page" | "category" | "store" | "collection" | null
   cta_link_page?: LinkPageLike | null
   cta_link_category?: {
     category_profiles?:
@@ -69,6 +72,38 @@ export interface CtaLike {
         }[]
       | null
   } | null
+  cta_link_collection?: {
+    collection_profiles?:
+      | {
+          language: string
+          meta_information?: { permalink?: string | null } | null
+        }[]
+      | null
+  } | null
+  /**
+   * External URL escape hatch — set only when `cta_link_type` is null (see
+   * the backend's `linkTargetScalarWrite`: exactly one of the internal FKs or
+   * this is populated). Existing ContentBlock/Page callers never populate
+   * this field on the object they pass in, so it's inert for them.
+   */
+  external_url?: string | null
+}
+
+/**
+ * Adapts a nav/footer link-target row (`link_type`/`link_page`/…) to
+ * `resolveCtaHref`'s `CtaLike` shape. Shared by the DB-driven nav
+ * (`navigation-db.ts`) and footer (`footer/index.tsx`), which both consume
+ * `NavLinkTargetFields` rows (NavigationItem/NavigationItemLink/FooterLink)
+ * but have no CtaLike-shaped type of their own.
+ */
+export function toCtaLike(target: NavLinkTargetFields): CtaLike {
+  return {
+    cta_link_type: target.link_type,
+    cta_link_page: target.link_page,
+    cta_link_category: target.link_category,
+    cta_link_collection: target.link_collection,
+    external_url: target.external_url,
+  }
 }
 
 /**
@@ -85,6 +120,13 @@ export function resolveCtaHref(
   cta: CtaLike,
   languageCode: string
 ): string | null {
+  // An explicit external target (link_type === null + external_url) takes
+  // priority over the legacy cms_page fallback below, so external nav/footer
+  // links (which never carry cta_link_page) never mis-resolve.
+  if (cta.cta_link_type == null && cta.external_url) {
+    return cta.external_url
+  }
+
   const type =
     cta.cta_link_type ?? (cta.cta_link_page ? "cms_page" : null)
 
@@ -102,9 +144,40 @@ export function resolveCtaHref(
     return permalink ? `/${languageCode}/categories/${permalink}` : null
   }
 
+  if (type === "collection") {
+    const profiles = cta.cta_link_collection?.collection_profiles ?? []
+    const profile =
+      profiles.find(
+        (p) => p.language.toLowerCase() === languageCode.toLowerCase()
+      ) ?? profiles[0]
+    const permalink = profile?.meta_information?.permalink
+    return permalink ? `/${languageCode}/collections/${permalink}` : null
+  }
+
   if (type === "cms_page" && cta.cta_link_page) {
     return buildLinkPageHref(cta.cta_link_page, languageCode)
   }
 
   return null
+}
+
+/**
+ * Same resolution as `resolveCtaHref`, but strips the language prefix from
+ * internal hrefs so the result is safe to pass to `LocalizedClientLink`
+ * (which unconditionally prepends `/${languageCode}` itself — passing an
+ * already-prefixed href would double it). External URLs pass through
+ * unchanged. Used by the DB-driven nav/footer, which render exclusively via
+ * `LocalizedClientLink` (unlike `CmsCtaButton`, which renders a raw `<a>`
+ * and consumes `resolveCtaHref`'s prefixed output directly).
+ */
+export function resolveCtaHrefRelative(
+  cta: CtaLike,
+  languageCode: string
+): string | null {
+  const href = resolveCtaHref(cta, languageCode)
+  if (!href) return null
+  if (href.startsWith("http://") || href.startsWith("https://")) return href
+  const prefix = `/${languageCode}`
+  if (href === prefix) return "/"
+  return href.startsWith(prefix) ? href.slice(prefix.length) : href
 }

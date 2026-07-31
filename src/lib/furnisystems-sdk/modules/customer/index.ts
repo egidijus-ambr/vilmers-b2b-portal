@@ -178,6 +178,7 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
         order_code
         order_number
         invoice_code
+        invoice_pdf_url
         order_type
         order_external_code
         metadata
@@ -934,6 +935,7 @@ export class CustomerModule {
             order_code: string
             order_number: string
             invoice_code?: string
+            invoice_pdf_url?: string
             order_type?: string
             order_external_code?: string
             metadata?: Record<string, any>
@@ -1055,6 +1057,7 @@ export class CustomerModule {
         order_code: orderData.order_code,
         order_number: orderData.order_number,
         invoice_code: orderData.invoice_code,
+        invoice_pdf_url: orderData.invoice_pdf_url,
         order_type: orderData.order_type,
         order_external_code: orderData.order_external_code,
         metadata: orderData.metadata || {},

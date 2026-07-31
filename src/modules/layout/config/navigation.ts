@@ -15,6 +15,10 @@ export const getNavigationConfig = (
       label: t("store"),
       type: "dropdown" as const,
       href: "/store",
+      // Stable flag the logo-left (Dominari) trim filters on — see
+      // nav/index.tsx. DB-driven items set this from `link_type === "store"`
+      // instead of `id`, since they never have id "store".
+      isStoreLink: true,
       dropdown: {
         width: "w-auto min-w-48 max-w-64",
         layout: "single-column" as const,
@@ -50,19 +54,19 @@ export const getNavigationConfig = (
 // --- Dynamic Navigation Helpers ---
 
 /** Get the localized name from a category's profiles (first profile's name) */
-function getCategoryName(category: CategoryData): string {
+export function getCategoryName(category: CategoryData): string {
   const profile = category.category_profiles?.[0]
   return profile?.name ?? ""
 }
 
 /** Get the permalink from a category's profile meta_information */
-function getCategoryPermalink(category: CategoryData): string | null {
+export function getCategoryPermalink(category: CategoryData): string | null {
   const profile = category.category_profiles?.[0]
   return profile?.meta_information?.permalink ?? null
 }
 
 /** Build a category page href from a permalink */
-function buildCategoryHref(permalink: string | null): string | null {
+export function buildCategoryHref(permalink: string | null): string | null {
   if (!permalink) return null
   return `/categories/${permalink}`
 }

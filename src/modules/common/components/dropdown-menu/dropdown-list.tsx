@@ -12,6 +12,13 @@ export interface DropdownListItem {
     title: string
     items: DropdownListItem[]
   }
+  /**
+   * Opens `href` in a new tab, mirroring the `target`/`rel` handling
+   * `NavMenuItem` applies to `type: "link"` items — only consulted by the
+   * plain-link render branch below (no existing producer sets this on a
+   * `hasSubmenu` item).
+   */
+  newTab?: boolean
 }
 
 interface DropdownListProps {
@@ -114,6 +121,8 @@ export default function DropdownList({
             ) : (
               <LocalizedClientLink
                 href={item.href}
+                target={item.newTab ? "_blank" : undefined}
+                rel={item.newTab ? "noopener noreferrer" : undefined}
                 className="block text-sm text-ui-fg-base hover:text-ui-fg-interactive transition-colors"
               >
                 {item.label}

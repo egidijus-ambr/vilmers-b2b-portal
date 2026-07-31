@@ -177,6 +177,23 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                 : "-"
             }
           />
+          {order.invoice_pdf_url && (
+            <InfoRow
+              label={t("invoice")}
+              value={
+                <a
+                  href={order.invoice_pdf_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-dark-blue underline hover:no-underline"
+                >
+                  {order.invoice_code
+                    ? `${order.invoice_code}.pdf`
+                    : t("invoice")}
+                </a>
+              }
+            />
+          )}
         </div>
       </div>
 

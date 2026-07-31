@@ -1,12 +1,16 @@
-import { listMenuCategories } from "@lib/data/categories"
-import { listCollections } from "@lib/data/collections"
-import { Text, clx } from "@medusajs/ui"
+import { Text } from "@medusajs/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
 import { getServerT } from "@lib/i18n/server-translations"
 import { SupportedLanguage } from "@lib/i18n"
 import { ShopSetting } from "@lib/furnisystems-sdk"
+import type { FooterColumn } from "@lib/furnisystems-sdk/modules/shop-settings/types"
+import {
+  resolveCtaHrefRelative,
+  toCtaLike,
+} from "@modules/home/components/content-block/linkResolver"
+import { resolveProfileValue } from "@modules/fabric-palettes/utils/fabric-profile-helpers"
 import { activeTheme } from "themes"
 
 interface FooterProps {
@@ -15,15 +19,9 @@ interface FooterProps {
 }
 
 /** A footer link renders only when its config value is a non-empty, non-whitespace string. */
-const show = (v?: string) => Boolean(v && v.trim())
+const show = (v?: string | null) => Boolean(v && v.trim())
 
 export default async function Footer({ language, shopSettings }: FooterProps) {
-  const { collections } = await listCollections({
-    fields: "*products",
-  })
-
-  // Debug logging
-
   const t = await getServerT("common", language)
 
   const brandName =
@@ -34,12 +32,30 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
 
   const footer = activeTheme.layout.footer
 
+  // Per-field fallback: the DB value (admin-authored) wins; the theme value
+  // covers brands that haven't been migrated to admin-managed socials yet.
+  // `hasAnySocial` is recomputed from these resolved values (not `footer`
+  // directly) so the empty-DB fallback still renders identically to today.
+  const social = {
+    facebook: shopSettings?.facebook || footer?.facebook,
+    twitter: shopSettings?.twitter || footer?.twitter,
+    instagram: shopSettings?.instagram || footer?.instagram,
+    pinterest: shopSettings?.pinterest || footer?.pinterest,
+    linkedin: shopSettings?.linkedin || footer?.linkedin,
+  }
+
   const hasAnySocial =
-    show(footer?.facebook) ||
-    show(footer?.twitter) ||
-    show(footer?.instagram) ||
-    show(footer?.pinterest) ||
-    show(footer?.linkedin)
+    show(social.facebook) ||
+    show(social.twitter) ||
+    show(social.instagram) ||
+    show(social.pinterest) ||
+    show(social.linkedin)
+
+  const footerColumns: FooterColumn[] = shopSettings?.footer_columns ?? []
+  const hasContactInfo =
+    show(shopSettings?.footer_address) ||
+    show(shopSettings?.footer_phone) ||
+    show(shopSettings?.footer_email)
 
   const variant = footer?.variant ?? "full"
 
@@ -66,9 +82,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
               {hasAnySocial && (
                 <div className="flex items-center gap-6">
                   {/* Facebook */}
-                  {show(footer?.facebook) && (
+                  {show(social.facebook) && (
                     <a
-                      href={footer?.facebook}
+                      href={social.facebook}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -86,9 +102,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
                   )}
 
                   {/* X (Twitter) */}
-                  {show(footer?.twitter) && (
+                  {show(social.twitter) && (
                     <a
-                      href={footer?.twitter}
+                      href={social.twitter}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -106,9 +122,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
                   )}
 
                   {/* LinkedIn */}
-                  {show(footer?.linkedin) && (
+                  {show(social.linkedin) && (
                     <a
-                      href={footer?.linkedin}
+                      href={social.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -126,9 +142,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
                   )}
 
                   {/* Instagram */}
-                  {show(footer?.instagram) && (
+                  {show(social.instagram) && (
                     <a
-                      href={footer?.instagram}
+                      href={social.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -146,9 +162,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
                   )}
 
                   {/* Pinterest */}
-                  {show(footer?.pinterest) && (
+                  {show(social.pinterest) && (
                     <a
-                      href={footer?.pinterest}
+                      href={social.pinterest}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -196,9 +212,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
           {hasAnySocial && (
             <div className="flex items-center gap-6">
               {/* Facebook */}
-              {show(footer?.facebook) && (
+              {show(social.facebook) && (
                 <a
-                  href={footer?.facebook}
+                  href={social.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -216,9 +232,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
               )}
 
               {/* X (Twitter) */}
-              {show(footer?.twitter) && (
+              {show(social.twitter) && (
                 <a
-                  href={footer?.twitter}
+                  href={social.twitter}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -236,9 +252,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
               )}
 
               {/* LinkedIn */}
-              {show(footer?.linkedin) && (
+              {show(social.linkedin) && (
                 <a
-                  href={footer?.linkedin}
+                  href={social.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -256,9 +272,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
               )}
 
               {/* Instagram */}
-              {show(footer?.instagram) && (
+              {show(social.instagram) && (
                 <a
-                  href={footer?.instagram}
+                  href={social.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -276,9 +292,9 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
               )}
 
               {/* Pinterest */}
-              {show(footer?.pinterest) && (
+              {show(social.pinterest) && (
                 <a
-                  href={footer?.pinterest}
+                  href={social.pinterest}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-footer-foreground hover:text-gray-300 transition-colors"
@@ -298,137 +314,70 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
           )}
         </div>
         <div className="border-t border-gray-600 w-full"></div>
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-center justify-between py-8 px-12">
-          {/* <div>
-            <LocalizedClientLink
-              href="/"
-              className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
-            >
-            
-            </LocalizedClientLink>
-          </div>
-          <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
-            {productCategories && productCategories?.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Categories
-                </span>
-                <ul
-                  className="grid grid-cols-1 gap-2"
-                  data-testid="footer-categories"
-                >
-                  {productCategories?.slice(0, 6).map((c) => {
-                    if (c.parent_category) {
-                      return
-                    }
-
-                    const children =
-                      c.category_children?.map((child) => ({
-                        name: child.name,
-                        handle: child.handle,
-                        id: child.id,
-                      })) || null
-
-                    return (
-                      <li
-                        className="flex flex-col gap-2 text-ui-fg-subtle txt-small"
-                        key={c.id}
-                      >
-                        <LocalizedClientLink
-                          className={clx(
-                            "hover:text-ui-fg-base",
-                            children && "txt-small-plus"
-                          )}
-                          href={`/categories/${c.handle}`}
-                          data-testid="category-link"
-                        >
-                          {c.name}
-                        </LocalizedClientLink>
-                        {children && (
-                          <ul className="grid grid-cols-1 ml-3 gap-2">
-                            {children &&
-                              children.map((child) => (
-                                <li key={child.id}>
-                                  <LocalizedClientLink
-                                    className="hover:text-ui-fg-base"
-                                    href={`/categories/${child.handle}`}
-                                    data-testid="category-link"
-                                  >
-                                    {child.name}
-                                  </LocalizedClientLink>
-                                </li>
-                              ))}
-                          </ul>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
-            {collections && collections.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Collections
-                </span>
-                <ul
-                  className={clx(
-                    "grid grid-cols-1 gap-2 text-ui-fg-subtle txt-small",
-                    {
-                      "grid-cols-2": (collections?.length || 0) > 3,
-                    }
+        {(footerColumns.length > 0 || hasContactInfo) && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-8 py-12">
+            {footerColumns.map((column) => (
+              <div key={column.id} className="flex flex-col gap-y-3">
+                <span className="text-xs font-semibold uppercase tracking-wide text-footer-foreground">
+                  {resolveProfileValue(
+                    column.footer_column_profiles,
+                    language,
+                    (p) => p.heading
                   )}
-                >
-                  {collections?.slice(0, 6).map((c) => (
-                    <li key={c.id}>
+                </span>
+                <ul className="grid grid-cols-1 gap-y-2">
+                  {column.footer_links.map((link) => (
+                    <li key={link.id}>
                       <LocalizedClientLink
-                        className="hover:text-ui-fg-base"
-                        href={`/collections/${c.handle}`}
+                        href={resolveCtaHrefRelative(toCtaLike(link), language)}
+                        target={link.link_new_tab ? "_blank" : undefined}
+                        rel={link.link_new_tab ? "noopener noreferrer" : undefined}
+                        className="text-sm text-footer-foreground/80 hover:text-footer-foreground transition-colors"
                       >
-                        {c.title}
+                        {resolveProfileValue(
+                          link.footer_link_profiles,
+                          language,
+                          (p) => p.label
+                        )}
                       </LocalizedClientLink>
                     </li>
                   ))}
                 </ul>
               </div>
+            ))}
+
+            {hasContactInfo && (
+              <div className="flex flex-col gap-y-3">
+                <span className="text-xs font-semibold uppercase tracking-wide text-footer-foreground">
+                  {t("contacts")}
+                </span>
+                <div className="flex flex-col gap-y-2 text-sm text-footer-foreground/80">
+                  {show(shopSettings?.footer_address) && (
+                    <p className="whitespace-pre-line">
+                      {shopSettings?.footer_address}
+                    </p>
+                  )}
+                  {show(shopSettings?.footer_phone) && (
+                    <a
+                      href={`tel:${shopSettings?.footer_phone}`}
+                      className="hover:text-footer-foreground transition-colors"
+                    >
+                      {shopSettings?.footer_phone}
+                    </a>
+                  )}
+                  {show(shopSettings?.footer_email) && (
+                    <a
+                      href={`mailto:${shopSettings?.footer_email}`}
+                      className="hover:text-footer-foreground transition-colors"
+                    >
+                      {shopSettings?.footer_email}
+                    </a>
+                  )}
+                </div>
+              </div>
             )}
-            <div className="flex flex-col gap-y-2">
-              <span className="txt-small-plus txt-ui-fg-base">Medusa</span>
-              <ul className="grid grid-cols-1 gap-y-2 text-ui-fg-subtle txt-small">
-                <li>
-                  <a
-                    href="https://github.com/medusajs"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    GitHub
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://docs.medusajs.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    Documentation
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://github.com/medusajs/nextjs-starter-medusa"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    Source code
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div> */}
-        </div>
+          </div>
+        )}
         <div className="flex w-full mb-4 justify-between text-footer-foreground/80">
           <Text className="txt-compact-small">{copyrightText}</Text>
           {show(footer?.footer_privacy_url) && (

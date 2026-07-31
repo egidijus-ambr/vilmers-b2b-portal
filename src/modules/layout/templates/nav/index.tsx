@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import AccountDropdown from "@modules/layout/components/account-dropdown"
@@ -14,6 +14,7 @@ import ShowAllProductsToggle from "@modules/layout/components/show-all-products-
 import GoToConfiguratorToggle from "@modules/layout/components/go-to-configurator-toggle"
 import SearchModal from "@modules/search/components/search-modal"
 import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
+import { buildNavigationFromSettings } from "@modules/layout/config/navigation-db"
 import type { CategoryData } from "@lib/furnisystems-sdk"
 import {
   supportedLanguages,
@@ -41,6 +42,7 @@ interface NavProps {
 
 export default function Nav({ customer, categories, canShowAllProducts, showAllProductsActive, canShowGoToConfigurator }: NavProps) {
   const pathname = usePathname()
+  const { languageCode } = useParams() as { languageCode: string }
   const { t, isReady } = useTranslations()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isClient, setIsClient] = useState(false)
@@ -103,20 +105,36 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
     setIsMobileMenuOpen(false)
   }
 
-  // Determine menu items based on feature flag
+  // Determine menu items: DB-driven nav (admin-authored navigation_items)
+  // wins whenever it has rows; otherwise fall back to the existing
+  // category/feature-flag chain, unchanged — this is what keeps every
+  // tenant byte-identical to today when the DB has no rows (see
+  // buildNavigationFromSettings's fallback contract).
   const useProductCatalog = features.productCatalog
+  const dbNavigationItems = shopSettings?.navigation_items
   const menuItems =
-    useProductCatalog && categories && categories.length > 0
+    dbNavigationItems && dbNavigationItems.length > 0
+      ? buildNavigationFromSettings(dbNavigationItems, categories ?? [], languageCode)
+      : useProductCatalog && categories && categories.length > 0
       ? buildDynamicMenuItems(categories, t)
       : getNavigationConfig(t).menuItems
 
   // Logo-left layout (Dominari): the nav menu moves into the right cluster
   // and is trimmed to Store only (Inspiration/Contact dropped everywhere —
-  // desktop AND mobile drawer). Filtered by stable `id`, not the translated
-  // label. Logo-center (Vilmers): unchanged, full menuItems, untouched.
+  // desktop AND mobile drawer). Filtered by the stable `isStoreLink` flag
+  // (not `id`, which DB-driven items never have as "store" — see MenuItem).
+  // If no item is flagged (e.g. an admin-authored DB config has no
+  // store-typed item), fall back to showing everything rather than an
+  // empty nav. This is a deliberate choice: a misconfigured DB nav should
+  // degrade to the full menu (still usable, if not trimmed as intended)
+  // rather than silently rendering no nav items at all.
+  // Logo-center (Vilmers): unchanged, full menuItems, untouched.
   const isLogoLeft = logo.position === "left"
+  const storeOnlyItems = menuItems.filter((i) => i.isStoreLink)
   const navMenuItems = isLogoLeft
-    ? menuItems.filter((i) => i.id === "store")
+    ? storeOnlyItems.length > 0
+      ? storeOnlyItems
+      : menuItems
     : menuItems
 
   // Logo — shared between the "center" cluster and the "left" cluster (see

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -15,6 +15,63 @@ interface MobileMenuProps {
   onClose: () => void
   isLoggedIn: boolean
   navItems?: MenuItem[]
+}
+
+interface MobileAccordionRowProps {
+  label: string
+  isExpanded: boolean
+  onToggle: () => void
+  testId: string
+  children?: ReactNode
+}
+
+/**
+ * Toggle button + rotating chevron shared by the mega-panel and legacy
+ * dropdown accordion branches below. Renders only the button and whatever
+ * `children` the caller passes — each call site keeps its own guard (e.g.
+ * `isExpanded && columns.length > 0 && (<div className="bg-ui-bg-subtle">…`)
+ * around its expanded content so the two branches' differing "expanded but
+ * empty" behavior (nothing rendered) stays identical to before this
+ * extraction, rather than this component imposing one shared guard.
+ */
+function MobileAccordionRow({
+  label,
+  isExpanded,
+  onToggle,
+  testId,
+  children,
+}: MobileAccordionRowProps) {
+  return (
+    <div>
+      <button
+        type="button"
+        className="flex items-center justify-between w-full px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors text-left"
+        onClick={onToggle}
+        data-testid={testId}
+        aria-expanded={isExpanded}
+      >
+        <span>{label}</span>
+        <svg
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${
+            isExpanded ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {children}
+    </div>
+  )
 }
 
 const MobileMenu = ({
@@ -130,6 +187,8 @@ const MobileMenu = ({
                       <LocalizedClientLink
                         key={item.id}
                         href={item.href}
+                        target={item.newTab ? "_blank" : undefined}
+                        rel={item.newTab ? "noopener noreferrer" : undefined}
                         className="flex items-center px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
                         onClick={onClose}
                         data-testid={`mobile-menu-nav-${item.id}-link`}
@@ -139,39 +198,84 @@ const MobileMenu = ({
                     )
                   }
 
+                  // Mega-panel items (checked before the generic dropdown
+                  // branch below, whose `subItems` would just be an empty
+                  // array for these — see MenuItem.dropdown.items): an
+                  // accordion of non-clickable column headings with their
+                  // links indented beneath. Featured card is desktop-only.
+                  if (
+                    item.type === "dropdown" &&
+                    item.dropdown?.layout === "mega-panel"
+                  ) {
+                    const isExpanded = !!expandedItems[item.id]
+                    const columns = item.dropdown.columns ?? []
+
+                    return (
+                      <MobileAccordionRow
+                        key={item.id}
+                        label={item.label}
+                        isExpanded={isExpanded}
+                        onToggle={() => toggleItem(item.id)}
+                        testId={`mobile-menu-nav-${item.id}-toggle`}
+                      >
+                        {isExpanded && columns.length > 0 && (
+                          <div className="bg-ui-bg-subtle">
+                            {columns.map((column, columnIndex) => (
+                              <div key={columnIndex} className="py-2">
+                                {column.heading && column.links.length === 0 ? (
+                                  // Heading-only column (e.g. a page-sourced
+                                  // child page with no children of its own):
+                                  // render the heading itself as a normal
+                                  // clickable link row instead of a dead
+                                  // bold, non-clickable row.
+                                  <LocalizedClientLink
+                                    href={column.href}
+                                    className="flex items-center pl-10 pr-6 py-3 text-sm text-dark-blue hover:bg-ui-bg-base transition-colors"
+                                    onClick={onClose}
+                                    data-testid={`mobile-menu-nav-${item.id}-column-${columnIndex}-heading-link`}
+                                  >
+                                    {column.heading}
+                                  </LocalizedClientLink>
+                                ) : (
+                                  <>
+                                    {column.heading && (
+                                      <p className="px-6 py-2 text-sm font-semibold uppercase tracking-wide text-dark-blue">
+                                        {column.heading}
+                                      </p>
+                                    )}
+                                    {column.links.map((link, linkIndex) => (
+                                      <LocalizedClientLink
+                                        key={linkIndex}
+                                        href={link.href}
+                                        className="flex items-center pl-10 pr-6 py-3 text-sm text-dark-blue hover:bg-ui-bg-base transition-colors"
+                                        onClick={onClose}
+                                        data-testid={`mobile-menu-nav-${item.id}-column-${columnIndex}-link-${linkIndex}`}
+                                      >
+                                        {link.label}
+                                      </LocalizedClientLink>
+                                    ))}
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </MobileAccordionRow>
+                    )
+                  }
+
                   if (item.type === "dropdown" && item.dropdown) {
                     const isExpanded = !!expandedItems[item.id]
                     const subItems = item.dropdown.items
 
                     return (
-                      <div key={item.id}>
-                        {/* Toggle row */}
-                        <button
-                          type="button"
-                          className="flex items-center justify-between w-full px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors text-left"
-                          onClick={() => toggleItem(item.id)}
-                          data-testid={`mobile-menu-nav-${item.id}-toggle`}
-                          aria-expanded={isExpanded}
-                        >
-                          <span>{item.label}</span>
-                          <svg
-                            className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${
-                              isExpanded ? "rotate-180" : ""
-                            }`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
-
+                      <MobileAccordionRow
+                        key={item.id}
+                        label={item.label}
+                        isExpanded={isExpanded}
+                        onToggle={() => toggleItem(item.id)}
+                        testId={`mobile-menu-nav-${item.id}-toggle`}
+                      >
                         {/* Expanded sub-items */}
                         {isExpanded && subItems.length > 0 && (
                           <div className="bg-ui-bg-subtle">
@@ -183,6 +287,8 @@ const MobileMenu = ({
                                     ? subItem.href
                                     : null
                                 }
+                                target={subItem.newTab ? "_blank" : undefined}
+                                rel={subItem.newTab ? "noopener noreferrer" : undefined}
                                 className="flex items-center pl-10 pr-6 py-3 text-sm text-dark-blue hover:bg-ui-bg-base transition-colors"
                                 onClick={onClose}
                                 data-testid={`mobile-menu-nav-${item.id}-subitem-${index}`}
@@ -192,7 +298,7 @@ const MobileMenu = ({
                             ))}
                           </div>
                         )}
-                      </div>
+                      </MobileAccordionRow>
                     )
                   }
 

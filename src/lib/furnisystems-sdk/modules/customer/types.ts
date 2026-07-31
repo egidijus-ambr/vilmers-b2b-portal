@@ -147,6 +147,7 @@ export interface Order extends BaseEntity {
   order_code: string
   order_number: string
   invoice_code?: string
+  invoice_pdf_url?: string
   order_type?: string
   order_external_code?: string
   order_items_count?: number
