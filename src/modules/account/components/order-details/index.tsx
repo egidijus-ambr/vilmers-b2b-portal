@@ -182,7 +182,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
               label={t("invoice")}
               value={
                 <a
-                  href={order.invoice_pdf_url}
+                  href={`/api/orders/${order.id}/invoice`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-dark-blue underline hover:no-underline"
