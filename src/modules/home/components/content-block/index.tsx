@@ -313,6 +313,7 @@ export default function ContentBlock({
           backgroundColor={data.background_color}
           textColor={data.text_color}
           showTags={Boolean((data.config as any)?.show_tags)}
+          itemsPerRow={Number((data.config as any)?.items_per_row) || 4}
           selectedTagSlug={selectedTagSlug}
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
@@ -503,6 +504,18 @@ function TextAndImage({
     const isContentWidth = display === "content_width"
     const isTextWidth = display === "text_width"
 
+    // The admin's "Text" group (Custom Styles > Text, stored at
+    // extra_css.text) is the only text-color control the current admin UI
+    // exposes; the top-level text_color column is legacy (no longer
+    // editable there) but still gets rendered here via `textColor`. Without
+    // this, a stale text_color silently wins — RichText sets it as an
+    // inline style on its own element, which beats the inherited color from
+    // the textStyle wrapper below no matter what the admin picks in Text >
+    // color. Prefer the live Text-group color; fall back to the legacy
+    // field so blocks with no Text-group color render exactly as before.
+    const overlayTextColor =
+      typeof textStyle?.color === "string" ? textStyle.color : textColor
+
     const textOnImageBlock = (
       <div
         className="relative mx-auto w-full overflow-hidden"
@@ -536,7 +549,7 @@ function TextAndImage({
             <RichText
               value={sectionDescription}
               format={descriptionFormat}
-              textColor={textColor}
+              textColor={overlayTextColor}
               paragraphClassName="text-base font-normal leading-6"
             />
             <CmsCtaButton
@@ -1858,6 +1871,17 @@ function resolveTagLabel(
 
 type GridTag = NonNullable<GridPage["tags"]>[number]
 
+// items_per_row → grid-cols class. Written as whole literals (never
+// assembled via template strings) so Tailwind's JIT class scanner picks
+// them up statically. Mirrors SIDE_BY_SIDE_GRID_COLS above.
+const PAGE_GRID_COLS: Record<number, string> = {
+  2: "grid-cols-1 small:grid-cols-2 medium:grid-cols-2",
+  3: "grid-cols-2 small:grid-cols-3 medium:grid-cols-3",
+  4: "grid-cols-2 small:grid-cols-3 medium:grid-cols-4",
+  5: "grid-cols-2 small:grid-cols-3 medium:grid-cols-5",
+  6: "grid-cols-2 small:grid-cols-3 medium:grid-cols-6",
+}
+
 function PageGrid({
   pages,
   tags,
@@ -1868,6 +1892,7 @@ function PageGrid({
   backgroundColor,
   textColor,
   showTags,
+  itemsPerRow = 4,
   selectedTagSlug,
   titleAlignment,
   hideTitle,
@@ -1881,6 +1906,7 @@ function PageGrid({
   backgroundColor: string | null
   textColor: string | null
   showTags: boolean
+  itemsPerRow?: number
   selectedTagSlug?: string | null
   titleAlignment: TitleAlignment
   hideTitle: boolean
@@ -1978,7 +2004,11 @@ function PageGrid({
         </div>
       )}
       {visiblePages.length > 0 && (
-        <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+        <ul
+          className={`grid gap-x-6 gap-y-8 ${
+            PAGE_GRID_COLS[itemsPerRow] ?? PAGE_GRID_COLS[4]
+          }`}
+        >
           {visiblePages.map((page) => {
             const pageProfile =
               page.page_profiles.find(
