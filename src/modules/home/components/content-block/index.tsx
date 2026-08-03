@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useActionState } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import {
   ContentBlockProps,
   ContentBlockImage,
@@ -21,8 +22,10 @@ import { SupportedLanguage } from "@lib/i18n"
 import ProductCarouselGrid from "@modules/common/components/product-carousel-grid"
 import RichText from "@modules/common/components/rich-text"
 import CmsCtaButton from "@modules/common/components/cms-cta-button"
+import Button from "@modules/common/components/button"
 import { splitSections } from "./sectionMarker"
 import { buildLinkPageHref, type CtaLike } from "./linkResolver"
+import { subscribeEmailSignup, EmailSignupState } from "@lib/data/email-signup"
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -317,6 +320,19 @@ export default function ContentBlock({
           selectedTagSlug={selectedTagSlug}
           titleAlignment={titleAlignment}
           hideTitle={hideTitle}
+        />
+      )}
+
+      {data.type === "email_signup" && (
+        <EmailSignup
+          blockId={data.id}
+          sectionImage={data.main_image?.src ?? null}
+          description={profile?.description ?? null}
+          descriptionFormat={profile?.description_format ?? null}
+          backgroundColor={data.background_color}
+          textColor={data.text_color}
+          textStyle={textStyle}
+          languageCode={languageCode}
         />
       )}
     </section>
@@ -1850,6 +1866,133 @@ function ProductGrid({
           language={languageCode as SupportedLanguage}
         />
       )}
+    </div>
+  )
+}
+
+/* ─── Email Signup ────────────────────────────────────────── */
+
+// Admin-placed lead-capture block: image on one side, copy + email form on
+// the other. Visually modeled on the hardcoded newsletter section
+// (newsletter-block/index.tsx), but always rendered when present — unlike
+// that block, this one has no `layout.newsletter.show` gate.
+function EmailSignup({
+  blockId,
+  sectionImage,
+  description,
+  descriptionFormat,
+  backgroundColor,
+  textColor,
+  textStyle,
+  languageCode,
+}: {
+  blockId: string
+  sectionImage: string | null
+  description: string | null
+  descriptionFormat?: "plain" | "markdown" | null
+  backgroundColor: string | null
+  textColor: string | null
+  textStyle?: React.CSSProperties
+  languageCode: string
+}) {
+  const { t } = useTranslation()
+
+  const [state, formAction, isPending] = useActionState<
+    EmailSignupState | null,
+    FormData
+  >(subscribeEmailSignup, null)
+
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useEffect(() => {
+    if (state?.success) {
+      formRef.current?.reset()
+    }
+  }, [state])
+
+  // The admin's "Text" group (extra_css.text) is the only text-color/
+  // background control scoped to just this half of the block; `textColor`
+  // (data.text_color) is the legacy top-level field. Same precedence fix as
+  // TextAndImage's text_on_image branch: prefer the live Text-group color so
+  // it isn't masked by RichText setting the legacy value as an inline style
+  // directly on its own element (which would otherwise beat the inherited
+  // color from the textStyle wrapper below).
+  const contentTextColor =
+    typeof textStyle?.color === "string" ? textStyle.color : textColor
+
+  return (
+    <div
+      className="content-container large:px-0 px-6 flex flex-col small:flex-row"
+      style={backgroundColor ? { backgroundColor } : undefined}
+    >
+      {/* Image half — skipped entirely (not collapsed to an empty column)
+          when the block has no image, so the text/form half below goes
+          full-width instead of leaving a blank half. */}
+      {sectionImage && (
+        <div className="relative w-full small:w-1/2 h-64 small:h-auto small:min-h-[480px] overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={sectionImage}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+      )}
+
+      <div
+        className={`flex w-full items-center ${
+          sectionImage ? "small:w-1/2" : ""
+        } px-6 py-10 small:px-12 small:py-16`}
+        style={textStyle}
+      >
+        <div className="w-full max-w-lg">
+          <RichText
+            value={description}
+            format={descriptionFormat}
+            textColor={contentTextColor}
+            className="mt-4"
+            paragraphClassName="font-medium leading-tight text-heading-3"
+          />
+
+          <form ref={formRef} action={formAction} className="mt-8 space-y-4">
+            <input type="hidden" name="content_block_id" value={blockId} />
+            <input type="hidden" name="language" value={languageCode} />
+            <input
+              type="email"
+              name="email"
+              required
+              aria-label={t("email-signup-placeholder", "Type your Email here")}
+              placeholder={t("email-signup-placeholder", "Type your Email here")}
+              className="w-full h-14 px-4 text-base bg-white border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dark-blue focus:border-dark-blue"
+            />
+
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="inline-flex items-center gap-2"
+            >
+              {t("email-signup-submit", "Submit")}
+              <span aria-hidden="true">→</span>
+            </Button>
+          </form>
+
+          {state?.success && (
+            <p className="mt-4 text-base text-dark-blue">
+              {t("email-signup-success", "Thank you! We'll be in touch.")}
+            </p>
+          )}
+
+          {state?.error && (
+            <p className="mt-4 text-base text-red-600">
+              {state.error ||
+                t(
+                  "email-signup-error",
+                  "Something went wrong. Please try again."
+                )}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

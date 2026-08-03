@@ -15,6 +15,7 @@ export type ContentBlockType =
   | "category_tiles"
   | "product_grid"
   | "page_grid"
+  | "email_signup"
 
 export type ContentBlockStyle =
   | "1_column_title_top"

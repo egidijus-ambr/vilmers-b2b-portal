@@ -20,6 +20,7 @@ export interface ContentBlockProfile {
   id: string
   name: string | null
   description: string | null
+  description_format?: "plain" | "markdown" | null
   link: string | null
   language: string
 }
@@ -59,7 +60,7 @@ export interface LinkPageAncestor {
 
 export interface ContentBlock {
   id: string
-  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button" | "photo_links" | "category_tiles" | "product_grid" | "page_grid"
+  type: "text_and_image" | "text_and_video" | "only_text" | "only_image" | "only_video" | "gallery" | "button" | "photo_links" | "category_tiles" | "product_grid" | "page_grid" | "email_signup"
   style: string | null
   video_link: string | null
   video_type: "uploaded" | "youtube" | "vimeo" | null

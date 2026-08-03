@@ -194,6 +194,80 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
   return (
     <footer className="bg-footer-background w-full">
       <div className="content-container flex flex-col w-full px-10">
+        {(footerColumns.length > 0 || hasContactInfo) && (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-8 py-20">
+              {footerColumns.map((column) => (
+                <div key={column.id} className="flex flex-col gap-y-3">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-footer-foreground">
+                    {resolveProfileValue(
+                      column.footer_column_profiles,
+                      language,
+                      (p) => p.heading
+                    )}
+                  </span>
+                  <ul className="grid grid-cols-1 gap-y-2">
+                    {column.footer_links.map((link) => (
+                      <li key={link.id}>
+                        <LocalizedClientLink
+                          href={resolveCtaHrefRelative(
+                            toCtaLike(link),
+                            language
+                          )}
+                          target={link.link_new_tab ? "_blank" : undefined}
+                          rel={
+                            link.link_new_tab
+                              ? "noopener noreferrer"
+                              : undefined
+                          }
+                          className="text-sm text-footer-foreground/80 hover:text-footer-foreground transition-colors"
+                        >
+                          {resolveProfileValue(
+                            link.footer_link_profiles,
+                            language,
+                            (p) => p.label
+                          )}
+                        </LocalizedClientLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+
+              {hasContactInfo && (
+                <div className="flex flex-col gap-y-3">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-footer-foreground">
+                    {t("contacts")}
+                  </span>
+                  <div className="flex flex-col gap-y-2 text-sm text-footer-foreground/80">
+                    {show(shopSettings?.footer_address) && (
+                      <p className="whitespace-pre-line">
+                        {shopSettings?.footer_address}
+                      </p>
+                    )}
+                    {show(shopSettings?.footer_phone) && (
+                      <a
+                        href={`tel:${shopSettings?.footer_phone}`}
+                        className="hover:text-footer-foreground transition-colors"
+                      >
+                        {shopSettings?.footer_phone}
+                      </a>
+                    )}
+                    {show(shopSettings?.footer_email) && (
+                      <a
+                        href={`mailto:${shopSettings?.footer_email}`}
+                        className="hover:text-footer-foreground transition-colors"
+                      >
+                        {shopSettings?.footer_email}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="border-t border-gray-600 w-full"></div>
+          </>
+        )}
         <div className="flex flex-col gap-y-6 xsmall:flex-row items-center justify-between py-24  ">
           {show(footer?.footer_support_email) && (
             <div className="flex items-center gap-2">
@@ -313,71 +387,6 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
             </div>
           )}
         </div>
-        <div className="border-t border-gray-600 w-full"></div>
-        {(footerColumns.length > 0 || hasContactInfo) && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-8 py-12">
-            {footerColumns.map((column) => (
-              <div key={column.id} className="flex flex-col gap-y-3">
-                <span className="text-xs font-semibold uppercase tracking-wide text-footer-foreground">
-                  {resolveProfileValue(
-                    column.footer_column_profiles,
-                    language,
-                    (p) => p.heading
-                  )}
-                </span>
-                <ul className="grid grid-cols-1 gap-y-2">
-                  {column.footer_links.map((link) => (
-                    <li key={link.id}>
-                      <LocalizedClientLink
-                        href={resolveCtaHrefRelative(toCtaLike(link), language)}
-                        target={link.link_new_tab ? "_blank" : undefined}
-                        rel={link.link_new_tab ? "noopener noreferrer" : undefined}
-                        className="text-sm text-footer-foreground/80 hover:text-footer-foreground transition-colors"
-                      >
-                        {resolveProfileValue(
-                          link.footer_link_profiles,
-                          language,
-                          (p) => p.label
-                        )}
-                      </LocalizedClientLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            {hasContactInfo && (
-              <div className="flex flex-col gap-y-3">
-                <span className="text-xs font-semibold uppercase tracking-wide text-footer-foreground">
-                  {t("contacts")}
-                </span>
-                <div className="flex flex-col gap-y-2 text-sm text-footer-foreground/80">
-                  {show(shopSettings?.footer_address) && (
-                    <p className="whitespace-pre-line">
-                      {shopSettings?.footer_address}
-                    </p>
-                  )}
-                  {show(shopSettings?.footer_phone) && (
-                    <a
-                      href={`tel:${shopSettings?.footer_phone}`}
-                      className="hover:text-footer-foreground transition-colors"
-                    >
-                      {shopSettings?.footer_phone}
-                    </a>
-                  )}
-                  {show(shopSettings?.footer_email) && (
-                    <a
-                      href={`mailto:${shopSettings?.footer_email}`}
-                      className="hover:text-footer-foreground transition-colors"
-                    >
-                      {shopSettings?.footer_email}
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
         <div className="flex w-full mb-4 justify-between text-footer-foreground/80">
           <Text className="txt-compact-small">{copyrightText}</Text>
           {show(footer?.footer_privacy_url) && (

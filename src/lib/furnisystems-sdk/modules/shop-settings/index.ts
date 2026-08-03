@@ -136,6 +136,7 @@ export const APP_SHOP_SETTINGS = gql`
           id
           name
           description
+          description_format
           link
           language
         }
