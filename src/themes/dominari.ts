@@ -133,7 +133,6 @@ export const dominari: Theme = {
       heightMobile: 25,
       paddingY: 20, // navHeight = 40 + 2*24 = 88
     },
-    newsletter: { show: false },
     productCard: { showCategory: false },
     footer: {
       variant: "compact",

@@ -7,7 +7,6 @@ import PageContent from "@modules/common/components/page-content"
 import CategoryProductGrid from "@modules/categories/components/category-product-grid"
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
 import ContentBlock from "@modules/home/components/content-block"
-import NewsletterBlock from "@modules/home/components/newsletter-block"
 import ChildCategoriesCarousel from "@modules/categories/components/child-categories-carousel"
 import { getCategoryFilterFacets } from "@lib/data/category-filters"
 
@@ -169,7 +168,6 @@ export default async function CategoryPageTemplate({
             />
           </Suspense>
         </PageContent>
-        <NewsletterBlock languageCode={language} />
       </div>
     </div>
   )

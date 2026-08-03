@@ -3,7 +3,6 @@ import { Metadata } from "next"
 import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
 import ContentBlock from "@modules/home/components/content-block"
-import NewsletterBlock from "@modules/home/components/newsletter-block"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
 import ShopSettingsTest from "@modules/common/components/shop-settings-test"
 import { listCollections } from "@lib/data/collections"
@@ -136,8 +135,6 @@ export default async function Home(props: {
           ))}
         </div>
       )}
-
-      <NewsletterBlock languageCode={languageCode} />
 
       {/* {collections && region ? (
         <div className="py-0">

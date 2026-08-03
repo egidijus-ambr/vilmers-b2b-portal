@@ -116,13 +116,6 @@ export interface ThemeLayout {
     /** px — `navHeight = height + 2 * paddingY`. */
     paddingY: number
   }
-  /**
-   * Per-brand visibility for the `NewsletterBlock` component. This is the
-   * SOLE control for the block (self-gated — see
-   * `home/components/newsletter-block/index.tsx`); there is no page-level
-   * feature flag anymore.
-   */
-  newsletter: { show: boolean }
   /** Per-brand visibility for the category pill on B2BProductCard (category-product-card). */
   productCard: { showCategory: boolean }
   /** Footer links; each link is hidden when its value is absent/empty. */

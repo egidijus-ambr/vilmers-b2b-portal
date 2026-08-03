@@ -8,7 +8,6 @@ import CollectionProductGrid from "@modules/collections/components/collection-pr
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
 import ContentBlock from "@modules/home/components/content-block"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
-import NewsletterBlock from "@modules/home/components/newsletter-block"
 
 interface CollectionPageTemplateProps {
   collection: CollectionData
@@ -101,7 +100,6 @@ export default async function CollectionPageTemplate({
             />
           </Suspense>
         </PageContent>
-        <NewsletterBlock languageCode={language} />
       </div>
     </div>
   )
