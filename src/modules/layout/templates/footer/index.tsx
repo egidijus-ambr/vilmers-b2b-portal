@@ -196,7 +196,7 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
       <div className="content-container flex flex-col w-full px-10">
         {(footerColumns.length > 0 || hasContactInfo) && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-8 py-20∏">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-8 py-20">
               {footerColumns.map((column) => (
                 <div key={column.id} className="flex flex-col gap-y-3">
                   <span className="text-xs font-semibold uppercase tracking-wide text-footer-foreground">
