@@ -165,17 +165,30 @@ export async function enrichContentBlocksWithProducts(
       const config = block.config as {
         mode?: string
         max_products?: number
+        tag_ids?: number[]
       } | null
       const mode = config?.mode || "newest"
       const maxProducts = config?.max_products || 8
+      // Admin-configured tag filter (newest mode only). Defensive: config is
+      // an untyped Json blob, so ignore anything that isn't a number array.
+      const rawTagIds = config?.tag_ids
+      const tagIds = Array.isArray(rawTagIds)
+        ? rawTagIds.filter((id): id is number => typeof id === "number")
+        : []
 
       let products: ProductContainer[] = []
 
       if (mode === "newest") {
+        // AND the block's tag filter with the customer-level where so
+        // customer catalog gating (tags + pricelists) still applies.
+        const blockWhere =
+          tagIds.length > 0
+            ? { AND: [where, { tags: { some: { id: { in: tagIds } } } }] }
+            : where
         products = await sdk.products.getNewestProducts(
           maxProducts,
           language,
-          where
+          blockWhere
         )
       } else if (mode === "manual") {
         const productIds = (block.product_containers ?? []).map(
