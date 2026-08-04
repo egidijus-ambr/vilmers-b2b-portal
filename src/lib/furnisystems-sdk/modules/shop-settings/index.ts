@@ -18,6 +18,7 @@ const LINK_TARGET_FIELDS = `
   link_new_tab
   link_page {
     id
+    parentId # required: backend 'ancestors' resolver reads root.parentId; without it ancestors returns [] and nested page links lose their parent path
     page_profiles {
       slug
       language
@@ -159,9 +160,16 @@ export const APP_SHOP_SETTINGS = gql`
         link_new_tab
         link_page {
           id
+          parentId # required: backend 'ancestors' resolver reads root.parentId; without it ancestors returns [] and nested page links lose their parent path
           page_profiles {
             slug
             language
+          }
+          ancestors(language: $language) {
+            page_profiles {
+              slug
+              language
+            }
           }
         }
         extra_css

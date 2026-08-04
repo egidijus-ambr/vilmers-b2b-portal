@@ -89,6 +89,7 @@ export interface ContentBlock {
   link_new_tab: boolean | null
   link_page: {
     id: string
+    parentId?: string | null
     page_profiles: { slug: string; language: string }[]
     ancestors?: LinkPageAncestor[] | null
   } | null
@@ -151,9 +152,17 @@ export interface NavLinkTargetFields {
   } | null
 }
 
-/** `LinkPageAncestor` + the page's own profiles — matches `buildLinkPageHref`'s `LinkPageLike`. */
+/**
+ * `LinkPageAncestor` + the page's own profiles — matches `buildLinkPageHref`'s `LinkPageLike`.
+ *
+ * `parentId` must be selected alongside `ancestors`: the backend's `ancestors`
+ * resolver reads `root.parentId` to walk up the tree — omit it and `ancestors`
+ * silently returns `[]` even for a genuinely nested page (verified live),
+ * which would drop the parent segment from the built href.
+ */
 type LinkPageLike = {
   id: string
+  parentId?: string | null
   page_profiles: { slug: string; language: string }[]
   ancestors?: LinkPageAncestor[] | null
 }
