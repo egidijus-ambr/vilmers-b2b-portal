@@ -262,13 +262,22 @@ export interface NavigationItem extends NavLinkTargetFields {
   id: number
   arrangement: number
   type: "link" | "mega_menu" | "dropdown"
+  /**
+   * Which source fills a `mega_menu` item's panel. Persisted server-side
+   * rather than derived, because `"manual"` nulls BOTH `panel_root_*` ids.
+   * Always `"categories"` (the column default) for non-mega items.
+   */
+  panel_source: "categories" | "page" | "manual"
   panel_root_category_id: number | null
   panel_root_page_id: string | null
   panel_root_page: PanelRootPage | null
   navigation_item_profiles: NavigationItemProfile[]
   featured_page_id: string | null
   featured_page: FeaturedPage | null
-  /** Only populated for `type === "dropdown"` items; empty for `link`/`mega_menu`. */
+  /**
+   * Populated for `type === "dropdown"` items and for `mega_menu` items whose
+   * `panel_source` is `"manual"`; empty otherwise.
+   */
   links: NavigationItemLink[]
 }
 

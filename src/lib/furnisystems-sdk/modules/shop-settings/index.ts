@@ -193,6 +193,7 @@ export const APP_SHOP_SETTINGS = gql`
         id
         arrangement
         type
+        panel_source
         panel_root_category_id
         panel_root_page_id
         featured_page_id
