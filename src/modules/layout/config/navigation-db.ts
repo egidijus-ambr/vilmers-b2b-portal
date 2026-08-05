@@ -15,6 +15,7 @@ import { resolveProfileValue } from "@modules/fabric-palettes/utils/fabric-profi
 import type {
   MenuItem,
   DropdownItem,
+  MegaMenuLink,
   MegaMenuColumn,
   MegaMenuFeaturedCard,
 } from "../components/nav-menu-item"
@@ -145,9 +146,9 @@ function panelPageHref(parentSegments: string[], slug: string): string {
  *
  * When NO child has grandchildren (the whole root is flat, e.g. a simple
  * list of pages), headed columns would be one uppercase heading per child
- * with no links under any of them — instead, collapse to a single
- * heading-less column whose links are the children themselves, rendered as
- * a normal vertical link list.
+ * with no links under any of them — instead, collapse to heading-less
+ * columns whose links are the children themselves (chunked by
+ * `chunkIntoColumns`), rendered as a normal vertical link list.
  *
  * Returns null when there's nothing renderable (unpublished root, no
  * children, no resolvable root path, or every child fails the
@@ -188,7 +189,10 @@ function buildPageSourcedColumns(
 
     if (links.length === 0) return null
 
-    return [{ heading: null, href: null, links }]
+    // Chunked for the same reason a manual list is — a single column in this
+    // panel hugs the left edge at its intrinsic width. This was previously
+    // one column regardless of length.
+    return chunkIntoColumns(links)
   }
 
   const columns = children
@@ -231,6 +235,66 @@ function buildPageSourcedColumns(
   if (columns.length === 0) return null
 
   return columns
+}
+
+/** Column count cap for a flat link list — matches the density of the category-sourced panels. */
+const MAX_FLAT_COLUMNS = 3
+/** Target links per column before a second (then third) column is opened. */
+const LINKS_PER_COLUMN = 4
+
+/**
+ * Split a flat link list into balanced heading-less columns.
+ *
+ * `MegaMenuPanel` gives each column NO width class — the wrapper is
+ * `flex flex-wrap gap-x-24` inside a `flex justify-between` row under
+ * `max-w-9xl`. A single column therefore shrinks to its intrinsic text width
+ * and hugs the left edge, so a long flat list renders as a tall thin ribbon
+ * with a wide empty gap before the featured card. Chunking fills the panel
+ * using the layout that is already there, with no component change.
+ *
+ * Links read DOWN each column and then across, preserving authored order:
+ * up to 4 links stay in one column, 5-8 split across two, more across three.
+ */
+export function chunkIntoColumns(links: MegaMenuLink[]): MegaMenuColumn[] {
+  if (links.length === 0) return []
+
+  const columnCount = Math.min(
+    MAX_FLAT_COLUMNS,
+    Math.max(1, Math.ceil(links.length / LINKS_PER_COLUMN))
+  )
+  const perColumn = Math.ceil(links.length / columnCount)
+
+  const columns: MegaMenuColumn[] = []
+  for (let start = 0; start < links.length; start += perColumn) {
+    columns.push({
+      heading: null,
+      href: null,
+      links: links.slice(start, start + perColumn),
+    })
+  }
+  return columns
+}
+
+/**
+ * Columns for a manual-source mega panel: the item's own admin-curated
+ * `links` — the same `NavigationItemLink` rows a `dropdown` item uses —
+ * chunked to fill the panel. Rows with no resolvable label or href are
+ * dropped, matching `buildDropdownItems`: an admin can save a link before
+ * wiring its target.
+ */
+function buildManualColumns(
+  links: DbNavigationItemLink[],
+  languageCode: string
+): MegaMenuColumn[] {
+  const megaLinks: MegaMenuLink[] = []
+  for (const link of links) {
+    const label = resolveProfileValue(link.profiles, languageCode, (p) => p.label)
+    const href = resolveTargetHref(link, languageCode)
+    if (label && href) {
+      megaLinks.push({ label, href })
+    }
+  }
+  return chunkIntoColumns(megaLinks)
 }
 
 /** Matches the width the legacy/category-driven single-column dropdowns use (see navigation.ts). */
@@ -331,13 +395,42 @@ export function buildNavigationFromSettings(
     const isStoreLink = isStoreTarget(item)
 
     if (item.type === "mega_menu") {
-      const pageSourcedColumns = item.panel_root_page
-        ? buildPageSourcedColumns(item.panel_root_page, languageCode)
-        : null
+      // Three mutually exclusive sources, mirroring the backend's
+      // `resolveNavPanelWrite`. A manual panel has no derived fallback — its
+      // links ARE the panel.
       const columns =
-        pageSourcedColumns ??
-        buildMegaMenuColumns(item.panel_root_category_id, categories, languageCode)
+        item.panel_source === "manual"
+          ? buildManualColumns(item.links ?? [], languageCode)
+          : (item.panel_root_page
+              ? buildPageSourcedColumns(item.panel_root_page, languageCode)
+              : null) ??
+            buildMegaMenuColumns(
+              item.panel_root_category_id,
+              categories,
+              languageCode
+            )
+
       const featuredCard = buildFeaturedCard(item.featured_page, languageCode)
+
+      // Nothing renderable in a manual panel: unlike the category/page
+      // sources, there is no tree to fall back to, so drop the dropdown
+      // affordance and degrade to a plain label — but ONLY when there is also
+      // no featured card. MegaMenuPanel renders a card-only panel correctly
+      // (see its `columns.length === 0 && !featuredCard` guard), so a panel
+      // that still has a card must survive.
+      if (
+        item.panel_source === "manual" &&
+        columns.length === 0 &&
+        !featuredCard
+      ) {
+        return {
+          id: `db-${item.id}`,
+          label,
+          type: "link",
+          href: null,
+          isStoreLink,
+        } satisfies MenuItem
+      }
 
       return {
         id: `db-${item.id}`,
