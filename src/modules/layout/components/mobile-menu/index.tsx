@@ -247,6 +247,8 @@ const MobileMenu = ({
                                       <LocalizedClientLink
                                         key={linkIndex}
                                         href={link.href}
+                                        target={link.newTab ? "_blank" : undefined}
+                                        rel={link.newTab ? "noopener noreferrer" : undefined}
                                         className="flex items-center pl-10 pr-6 py-3 text-sm text-dark-blue hover:bg-ui-bg-base transition-colors"
                                         onClick={onClose}
                                         data-testid={`mobile-menu-nav-${item.id}-column-${columnIndex}-link-${linkIndex}`}

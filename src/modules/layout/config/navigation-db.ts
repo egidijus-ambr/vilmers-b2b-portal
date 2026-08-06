@@ -291,7 +291,7 @@ function buildManualColumns(
     const label = resolveProfileValue(link.profiles, languageCode, (p) => p.label)
     const href = resolveTargetHref(link, languageCode)
     if (label && href) {
-      megaLinks.push({ label, href })
+      megaLinks.push({ label, href, newTab: link.link_new_tab })
     }
   }
   return chunkIntoColumns(megaLinks)

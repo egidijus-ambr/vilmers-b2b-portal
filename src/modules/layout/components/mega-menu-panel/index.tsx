@@ -79,6 +79,8 @@ export default function MegaMenuPanel({
                       <li key={linkIndex}>
                         <LocalizedClientLink
                           href={link.href}
+                          target={link.newTab ? "_blank" : undefined}
+                          rel={link.newTab ? "noopener noreferrer" : undefined}
                           className="block text-sm text-ui-fg-subtle hover:text-ui-fg-base transition-colors"
                         >
                           {link.label}

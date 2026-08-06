@@ -14,6 +14,8 @@ import MegaMenuPanel from "@modules/layout/components/mega-menu-panel"
 export interface MegaMenuLink {
   label: string
   href: string | null
+  /** Only manual-source columns populate this — category- and page-sourced columns have no such concept. */
+  newTab?: boolean
 }
 
 export interface MegaMenuColumn {
