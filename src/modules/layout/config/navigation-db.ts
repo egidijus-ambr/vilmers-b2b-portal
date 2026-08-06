@@ -396,30 +396,39 @@ export function buildNavigationFromSettings(
 
     if (item.type === "mega_menu") {
       // Three mutually exclusive sources, mirroring the backend's
-      // `resolveNavPanelWrite`. A manual panel has no derived fallback — its
-      // links ARE the panel.
-      const columns =
-        item.panel_source === "manual"
-          ? buildManualColumns(item.links ?? [], languageCode)
-          : (item.panel_root_page
-              ? buildPageSourcedColumns(item.panel_root_page, languageCode)
-              : null) ??
-            buildMegaMenuColumns(
-              item.panel_root_category_id,
-              categories,
-              languageCode
-            )
+      // `resolveNavPanelWrite`. Dispatched on the persisted `panel_source`
+      // rather than inferred from which id happens to be set — that's the
+      // whole point of persisting it. Neither `manual` nor `page` has a
+      // derived fallback: a page-sourced panel whose page is unpublished,
+      // empty or unresolvable must degrade, not silently turn into the
+      // entire show_in_menu tree (which is what
+      // `buildMegaMenuColumns(null, …)` returns).
+      let columns: MegaMenuColumn[]
+      if (item.panel_source === "manual") {
+        columns = buildManualColumns(item.links ?? [], languageCode)
+      } else if (item.panel_source === "page") {
+        columns =
+          (item.panel_root_page
+            ? buildPageSourcedColumns(item.panel_root_page, languageCode)
+            : null) ?? []
+      } else {
+        columns = buildMegaMenuColumns(
+          item.panel_root_category_id,
+          categories,
+          languageCode
+        )
+      }
 
       const featuredCard = buildFeaturedCard(item.featured_page, languageCode)
 
-      // Nothing renderable in a manual panel: unlike the category/page
-      // sources, there is no tree to fall back to, so drop the dropdown
-      // affordance and degrade to a plain label — but ONLY when there is also
-      // no featured card. MegaMenuPanel renders a card-only panel correctly
-      // (see its `columns.length === 0 && !featuredCard` guard), so a panel
-      // that still has a card must survive.
+      // Nothing renderable in a manual or page-sourced panel: unlike the
+      // category source, there is no tree to fall back to, so drop the
+      // dropdown affordance and degrade to a plain label — but ONLY when
+      // there is also no featured card. MegaMenuPanel renders a card-only
+      // panel correctly (see its `columns.length === 0 && !featuredCard`
+      // guard), so a panel that still has a card must survive.
       if (
-        item.panel_source === "manual" &&
+        item.panel_source !== "categories" &&
         columns.length === 0 &&
         !featuredCard
       ) {
