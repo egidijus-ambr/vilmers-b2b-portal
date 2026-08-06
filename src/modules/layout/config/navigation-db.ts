@@ -423,10 +423,13 @@ export function buildNavigationFromSettings(
 
       // Nothing renderable in a manual or page-sourced panel: unlike the
       // category source, there is no tree to fall back to, so drop the
-      // dropdown affordance and degrade to a plain label — but ONLY when
+      // dropdown affordance and degrade to a plain link — but ONLY when
       // there is also no featured card. MegaMenuPanel renders a card-only
       // panel correctly (see its `columns.length === 0 && !featuredCard`
-      // guard), so a panel that still has a card must survive.
+      // guard), so a panel that still has a card must survive. The item
+      // keeps its own link target (if it has one), via the same
+      // `resolveTargetHref` the non-degraded return below uses — it only
+      // loses the panel affordance, not its clickability.
       if (
         item.panel_source !== "categories" &&
         columns.length === 0 &&
@@ -436,7 +439,7 @@ export function buildNavigationFromSettings(
           id: `db-${item.id}`,
           label,
           type: "link",
-          href: null,
+          href: resolveTargetHref(item, languageCode),
           isStoreLink,
         } satisfies MenuItem
       }
