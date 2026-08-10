@@ -124,6 +124,7 @@ export interface Customer {
     email: string
     shop: string
     id: string
+    is_prices_enabled?: boolean
   }
   b2b_company_address?: {
     country: string

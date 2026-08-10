@@ -79,6 +79,7 @@ const GET_ME_QUERY = gql`
         id
         name
         email
+        is_prices_enabled
         customerSubAccount {
           name
         }
@@ -715,6 +716,7 @@ export class CustomerModule {
             id: string
             name: string
             email: string
+            is_prices_enabled?: boolean
             customerSubAccount: {
               name: string
             }
@@ -786,11 +788,15 @@ export class CustomerModule {
               name: customerData.customer_accounts[0].name,
               email: customerData.customer_accounts[0].email,
               shop: customerData.customer_accounts[0]?.customerSubAccount?.name,
+              is_prices_enabled:
+                customerData.customer_accounts[0].is_prices_enabled ?? true,
             }
           : {
               name: "",
               email: "",
               shop: "",
+              // No account on the session (agent / impersonation): fail open.
+              is_prices_enabled: true,
             },
       }
 

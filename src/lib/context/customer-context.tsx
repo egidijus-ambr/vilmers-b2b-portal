@@ -32,3 +32,15 @@ export function useCustomer() {
   }
   return context
 }
+
+/**
+ * Whether the current login is allowed to see prices in the portal.
+ *
+ * Deliberately does NOT throw outside a CustomerProvider — price gating must
+ * fail open. A missing provider, a missing account (agents, impersonation) or
+ * a missing field all mean "show prices". Only an explicit `false` hides them.
+ */
+export function useCanSeePrices(): boolean {
+  const context = useContext(CustomerContext)
+  return context?.customer?.customer_account?.is_prices_enabled ?? true
+}
