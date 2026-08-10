@@ -1,6 +1,6 @@
 "use client"
 
-import { useCustomer } from "@lib/context/customer-context"
+import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
 import { useShopSettings } from "@lib/context/shop-settings-context"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState, type ReactElement } from "react"
@@ -96,6 +96,10 @@ function CartOfferContent() {
   // Save-as-PDF/Email-offer both rasterize this same live DOM, toggling this
   // off automatically excludes prices from both exports too.
   const [showPrices, setShowPrices] = useState(true)
+  // Account-level flag. Prices appear only when the account allows them AND
+  // the per-offer toggle is on; the account flag can never be overridden here.
+  const canSeePrices = useCanSeePrices()
+  const pricesVisible = showPrices && canSeePrices
   const {
     state: emailModalOpen,
     open: openEmailModal,
@@ -457,7 +461,7 @@ function CartOfferContent() {
               </div>
             )}
 
-            {showPrices && (
+            {pricesVisible && (
               <div className="mt-auto">
                 <div className="flex items-baseline gap-4">
                   <span className="text-lg font-bold uppercase">
@@ -782,16 +786,18 @@ function CartOfferContent() {
           >
             {t("email-offer")}
           </Button>
-          <label className="inline-flex items-center gap-2 text-sm text-dark-blue cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showPrices}
-              onChange={(e) => setShowPrices(e.target.checked)}
-              className="h-4 w-4 accent-dark-blue cursor-pointer"
-              data-testid="offer-show-prices-toggle"
-            />
-            <span>{t("show-prices")}</span>
-          </label>
+          {canSeePrices && (
+            <label className="inline-flex items-center gap-2 text-sm text-dark-blue cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showPrices}
+                onChange={(e) => setShowPrices(e.target.checked)}
+                className="h-4 w-4 accent-dark-blue cursor-pointer"
+                data-testid="offer-show-prices-toggle"
+              />
+              <span>{t("show-prices")}</span>
+            </label>
+          )}
         </div>
       )}
 
@@ -816,7 +822,7 @@ function CartOfferContent() {
       ) : (
         <div className="offer-pages">
           {data.items.map((item, idx) => renderItem(item, data.context, idx))}
-          {showPrices && renderOverview(data)}
+          {pricesVisible && renderOverview(data)}
         </div>
       )}
     </>
