@@ -8,7 +8,7 @@ import { useTranslations, useI18n } from "@lib/i18n"
 import ProductItemsTable from "@modules/common/components/product-items-table"
 import { orderDetailItemToProductItemRow } from "@modules/common/components/product-items-table/mappers"
 import InfoRow from "@modules/common/components/info-row"
-import { useCustomer } from "@lib/context/customer-context"
+import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import { BuildingStorefront } from "@medusajs/icons"
 import { features } from "@lib/features"
@@ -26,6 +26,7 @@ const localeMap: Record<string, string> = {
 }
 
 const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
+  const canSeePrices = useCanSeePrices()
   const { t } = useTranslations("account")
   const { language } = useI18n()
   const { customer } = useCustomer()
@@ -406,6 +407,8 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                   </span>
                 </div>
               )}
+              {canSeePrices && (
+              <>
               <div className="flex justify-between w-full max-w-xs">
                 <span className="text-dark-blue-70">
                   {t("subtotal")} ({orderItems.length}{" "}
@@ -470,6 +473,8 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
                   {formatPrice(order.total_price_confirmed ?? grandTotal)}
                 </span>
               </div>
+              </>
+              )}
             </div>
           </div>
         </>

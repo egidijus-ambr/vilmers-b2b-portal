@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@medusajs/ui"
 import { useMemo } from "react"
 
@@ -6,12 +8,14 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
+import { useCanSeePrices } from "@lib/context/customer-context"
 
 type OrderCardProps = {
   order: Order
 }
 
 const OrderCard = ({ order }: OrderCardProps) => {
+  const canSeePrices = useCanSeePrices()
   const numberOfLines = useMemo(() => {
     return (
       order.items?.reduce((acc, item) => {
@@ -33,9 +37,11 @@ const OrderCard = ({ order }: OrderCardProps) => {
         <span className="pr-2" data-testid="order-created-at">
           {new Date(order.created_at).toDateString()}
         </span>
-        <span className="px-2" data-testid="order-amount">
-          ${order.total_price.toFixed(2)}
-        </span>
+        {canSeePrices && (
+          <span className="px-2" data-testid="order-amount">
+            ${order.total_price.toFixed(2)}
+          </span>
+        )}
         <span className="pl-2">{`${numberOfLines} ${
           numberOfLines > 1 ? "items" : "item"
         }`}</span>

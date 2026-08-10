@@ -8,7 +8,7 @@ import StatusBadge from "../status-badge"
 import ReferencesTooltip from "../references-tooltip"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
-import { useCustomer } from "@lib/context/customer-context"
+import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import {
   TableHeader,
@@ -38,6 +38,7 @@ interface OrdersTableProps {
 
 const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => {
   const { customer } = useCustomer()
+  const canSeePrices = useCanSeePrices()
   const { t } = useTranslations("account")
   const { language } = useI18n()
   const router = useRouter()
@@ -265,6 +266,7 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                 </div>
 
                 {/* Total amount */}
+                {canSeePrices && (
                 <div className="flex items-center justify-between px-4 py-2.5">
                   <span className="text-sm text-gray-500">
                     {t("total-price")}
@@ -302,6 +304,7 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                     })}
                   </div>
                 </div>
+                )}
               </div>
             </div>
           ))
@@ -333,9 +336,11 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
             </TableHeaderCell>
             <TableHeaderCell>{t("items")}</TableHeaderCell>
             <TableHeaderCell>{t("status")}</TableHeaderCell>
-            <TableHeaderCell align="right">
-              {t("total-price")}
-            </TableHeaderCell>
+            {canSeePrices && (
+              <TableHeaderCell align="right">
+                {t("total-price")}
+              </TableHeaderCell>
+            )}
           </TableHeader>
           {ordersData && ordersData.orders.length === 0 && !loading && (
             <tbody>
@@ -486,6 +491,7 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                     />
                   </td>
 
+                  {canSeePrices && (
                   <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900 text-right">
                     <div
                       className={`flex items-center justify-end gap-1 ${
@@ -520,6 +526,7 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                       })}
                     </div>
                   </td>
+                  )}
                 </tr>
               ))
             )}
