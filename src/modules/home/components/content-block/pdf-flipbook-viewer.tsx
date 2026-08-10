@@ -81,13 +81,26 @@ export default function PdfFlipbookViewer({
     window.addEventListener("keydown", onKey)
     return () => {
       window.removeEventListener("keydown", onKey)
-      flip.destroy()
-      // Defensive: destroy() already removes bookEl from `host`, this just
-      // guards against any nodes it leaves behind.
+      // flip.destroy() can throw if teardown races an incomplete init (e.g.
+      // a StrictMode replay before loadFromHTML finished) — its internal
+      // UI.destroy() dereferences state that may not exist yet. Swallow so
+      // the throw can't skip replaceChildren() below or escape into React's
+      // commit phase; replaceChildren() is what actually guarantees `host`
+      // is empty for the next mount, not destroy()'s own cleanup.
+      try {
+        flip.destroy()
+      } catch {
+        // library teardown failure; host.replaceChildren() below still runs
+      }
       host.replaceChildren()
       flipRef.current = null
     }
-  }, [pageUrls, pageWidth, pageHeight])
+    // Re-keyed on page *content*, not array identity: a client-side
+    // navigation/refresh hands down a freshly-mapped `pageUrls` array with
+    // identical strings, and rebuilding the book would reset the reader back
+    // to page 1 for no visible reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageUrls.join("|"), pageWidth, pageHeight])
 
   return (
     <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-3 overflow-hidden bg-neutral-100 py-4">
