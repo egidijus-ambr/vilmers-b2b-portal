@@ -16,6 +16,7 @@ export type ContentBlockType =
   | "product_grid"
   | "page_grid"
   | "email_signup"
+  | "pdf_flipbook"
 
 export type ContentBlockStyle =
   | "1_column_title_top"
@@ -151,6 +152,7 @@ export interface ContentBlockProps {
   index: number
   languageCode: string
   selectedTagSlug?: string | null
+  flipbook?: import("@lib/data/flipbooks").FlipbookRenderData | null
 }
 
 export interface VideoPlayerProps {

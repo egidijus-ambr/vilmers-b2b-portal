@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef, useActionState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -26,6 +27,11 @@ import Button from "@modules/common/components/button"
 import { splitSections } from "./sectionMarker"
 import { buildLinkPageHref, type CtaLike } from "./linkResolver"
 import { subscribeEmailSignup, EmailSignupState } from "@lib/data/email-signup"
+
+// PageFlip touches the DOM at init, so the viewer must never render server-side.
+const PdfFlipbookViewer = dynamic(() => import("./pdf-flipbook-viewer"), {
+  ssr: false,
+})
 
 function getProfile(
   profiles: ContentBlockProps["data"]["content_block_profiles"],
@@ -74,6 +80,7 @@ export default function ContentBlock({
   index,
   languageCode,
   selectedTagSlug = null,
+  flipbook = null,
 }: ContentBlockProps) {
   const profile = getProfile(data.content_block_profiles, languageCode)
   // `extra_css` may carry a nested `text` object whose styles should apply
@@ -333,6 +340,19 @@ export default function ContentBlock({
           textColor={data.text_color}
           textStyle={textStyle}
           languageCode={languageCode}
+        />
+      )}
+
+      {data.type === "pdf_flipbook" && flipbook && (
+        <PdfFlipbookViewer
+          pageUrls={flipbook.pageUrls}
+          pageWidth={flipbook.pageWidth}
+          pageHeight={flipbook.pageHeight}
+          pdfUrl={
+            (data.config as any)?.show_download_button
+              ? ((data.config as any)?.pdf_url as string | null) ?? null
+              : null
+          }
         />
       )}
     </section>

@@ -6,6 +6,7 @@ import PageHero from "@modules/cms/components/page-hero"
 import { getPageByPath, enrichContentBlocksWithPages } from "@lib/data/pages"
 import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { enrichContentBlocksWithProducts } from "@lib/data/products"
+import { getFlipbookRenderData, FlipbookRenderData } from "@lib/data/flipbooks"
 import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import type { PageAncestor } from "@lib/furnisystems-sdk/modules/pages/types"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
@@ -110,6 +111,19 @@ export default async function CmsPage(props: Props) {
     selectedTagSlug
   )
 
+  // pdf_flipbook manifests must be resolved server-side: GCS sends no CORS
+  // headers, so the client component can't fetch them. Keyed by block id and
+  // passed down as a prop; a null entry means the block renders nothing.
+  const flipbooks: Record<string, FlipbookRenderData | null> = {}
+  for (const block of contentBlocks) {
+    if ((block.type as string) === "pdf_flipbook") {
+      const manifestUrl = (block.config as any)?.manifest_url as string | undefined
+      flipbooks[String(block.id)] = manifestUrl
+        ? await getFlipbookRenderData(manifestUrl)
+        : null
+    }
+  }
+
   // Build breadcrumbs: Home → ancestors (root-first, published-only) → current page
   const ancestorItems = buildAncestorBreadcrumbs(page.ancestors ?? [], languageCode)
 
@@ -145,6 +159,7 @@ export default async function CmsPage(props: Props) {
               index={index}
               languageCode={languageCode}
               selectedTagSlug={selectedTagSlug}
+              flipbook={flipbooks[String(block.id)] ?? null}
             />
           ))}
         </div>
