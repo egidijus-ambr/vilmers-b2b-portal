@@ -61,7 +61,15 @@ export default async function PageLayout({
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
 
   const headerList = await headers()
-  const pathname = headerList.get("x-pathname") ?? ""
+  const rawPathname = headerList.get("x-pathname") ?? ""
+  // params.slug arrives percent-decoded; x-pathname does not — decode so both
+  // derive the same getPageByPath cache key for non-ASCII slugs.
+  let pathname = rawPathname
+  try {
+    pathname = decodeURIComponent(rawPathname)
+  } catch {
+    // malformed encoding: keep the raw value; worst case chrome renders
+  }
   // "/en/catalog-2026" -> "catalog-2026"; "" for the home route.
   const cmsPath = pathname
     .replace(new RegExp(`^/${validLanguage}(?=/|$)`), "")
