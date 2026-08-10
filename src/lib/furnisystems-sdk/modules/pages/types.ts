@@ -22,6 +22,7 @@ export interface Page {
   id: string
   code: string | null
   published: boolean | null
+  chromeless?: boolean | null
   hero_image: { id: number; src: string } | null
   hero_display?: 'full_width' | 'content_width' | 'none' | null
   hero_height_value: number | null

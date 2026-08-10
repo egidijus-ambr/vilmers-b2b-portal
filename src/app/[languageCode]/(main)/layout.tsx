@@ -1,7 +1,9 @@
 import { Metadata } from "next"
+import { headers } from "next/headers"
 
 import { retrieveCustomer } from "@lib/data/customer"
 import { getShopSettings } from "@lib/data/shop-settings"
+import { getPageByPath } from "@lib/data/pages"
 import { getBaseURL } from "@lib/util/env"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
@@ -58,8 +60,20 @@ export default async function PageLayout({
   const language = resolvedParams.languageCode as SupportedLanguage
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
 
+  const headerList = await headers()
+  const pathname = headerList.get("x-pathname") ?? ""
+  // "/en/catalog-2026" -> "catalog-2026"; "" for the home route.
+  const cmsPath = pathname
+    .replace(new RegExp(`^/${validLanguage}(?=/|$)`), "")
+    .replace(/^\//, "")
+  let chromeless = false
+  if (cmsPath) {
+    const cmsPage = await getPageByPath(cmsPath, validLanguage)
+    chromeless = Boolean(cmsPage?.chromeless)
+  }
+
   // Fetch menu categories for navigation
-  const categories = await listMenuCategories(validLanguage)
+  const categories = chromeless ? [] : await listMenuCategories(validLanguage)
 
   const [canShowAllProducts, showAllProductsActive, goToConfiguratorActive] =
     await Promise.all([
@@ -76,19 +90,23 @@ export default async function PageLayout({
         <ShopSettingsProvider initialShopSettings={shopSettings}>
           <CartProvider>
             <GoToConfiguratorProvider initialActive={goToConfiguratorActive}>
-              <div className="flex flex-col min-h-screen">
-                <Nav
-                  customer={customer}
-                  categories={categories}
-                  canShowAllProducts={canShowAllProducts}
-                  showAllProductsActive={showAllProductsActive}
-                  canShowGoToConfigurator={canShowGoToConfigurator}
-                />
-                <main className="flex-1">{children}</main>
-                <Footer language={validLanguage} shopSettings={shopSettings} />
-              </div>
+              {chromeless ? (
+                <main className="min-h-screen">{children}</main>
+              ) : (
+                <div className="flex flex-col min-h-screen">
+                  <Nav
+                    customer={customer}
+                    categories={categories}
+                    canShowAllProducts={canShowAllProducts}
+                    showAllProductsActive={showAllProductsActive}
+                    canShowGoToConfigurator={canShowGoToConfigurator}
+                  />
+                  <main className="flex-1">{children}</main>
+                  <Footer language={validLanguage} shopSettings={shopSettings} />
+                </div>
+              )}
             </GoToConfiguratorProvider>
-            {features.tawk && <TawkToChat />}
+            {!chromeless && features.tawk && <TawkToChat />}
           </CartProvider>
         </ShopSettingsProvider>
       </ActingCustomerProvider>

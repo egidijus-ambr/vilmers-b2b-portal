@@ -221,6 +221,7 @@ export const FIND_PAGE_BY_PATH = gql`
       id
       code
       published
+      chromeless
       parentId
       hero_image {
         id

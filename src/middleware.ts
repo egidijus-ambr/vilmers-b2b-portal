@@ -73,7 +73,9 @@ export async function middleware(request: NextRequest) {
 
   // If URL already has a valid language code, continue
   if (hasLanguageInUrl) {
-    const response = NextResponse.next()
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set("x-pathname", request.nextUrl.pathname)
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
     response.headers.set("x-pathname", request.nextUrl.pathname)
     response.headers.set("x-language", urlLanguage)
 
