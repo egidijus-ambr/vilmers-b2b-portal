@@ -8,6 +8,7 @@ import SofaConfigurationDetail from "@modules/common/components/sofa-configurati
 import { InlineReferenceEdit } from "@modules/common/components/product-items-table/inline-reference-edit"
 import Spinner from "@modules/common/icons/spinner"
 import { getItemName, localeMap } from "@lib/util/cart-item-display"
+import { useCanSeePrices } from "@lib/context/customer-context"
 
 // NOTE: this copy differs from the shared getItemName helper in
 // `@lib/util/cart-item-display` — it prefers `src_xs` before `src_thumbnail`.
@@ -100,6 +101,7 @@ function CartItemCard({
   readOnly?: boolean
 }) {
   const { t, language } = useTranslations("account")
+  const canSeePrices = useCanSeePrices()
   const { updateItemQuantity, updateItemReference, removeItem } = useCart()
   const [updating, setUpdating] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -215,9 +217,11 @@ function CartItemCard({
               {updating && <Spinner className="mt-1" />}
             </div>
           )}
-          <span className="text-lg font-medium text-dark-blue">
-            {formatPrice(price)}
-          </span>
+          {canSeePrices && (
+            <span className="text-lg font-medium text-dark-blue">
+              {formatPrice(price)}
+            </span>
+          )}
         </div>
 
         {/* Actions row */}
@@ -363,9 +367,11 @@ function CartItemCard({
                   </>
                 )}
               </div>
-              <span className="text-lg font-medium text-dark-blue">
-                {formatPrice(price)}
-              </span>
+              {canSeePrices && (
+                <span className="text-lg font-medium text-dark-blue">
+                  {formatPrice(price)}
+                </span>
+              )}
             </div>
           </div>
 

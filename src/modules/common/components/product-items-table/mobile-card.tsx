@@ -8,6 +8,7 @@ import { InlineReferenceEdit } from "./inline-reference-edit"
 interface MobileCardProps {
   item: ProductItemRow
   index: number
+  showPrices: boolean
   formatPrice: (price: number) => string
   translations: {
     noImage: string
@@ -25,6 +26,7 @@ const excludedCodes = ["shooting", "threads-type", "market", "direction"]
 export const MobileCard: React.FC<MobileCardProps> = ({
   item,
   index,
+  showPrices,
   formatPrice,
   translations: t,
   renderActions,
@@ -75,9 +77,11 @@ export const MobileCard: React.FC<MobileCardProps> = ({
           <p className="text-dark-blue-70 mt-1">
             {t.quantity}: {item.quantity}
           </p>
-          <p className="text-dark-blue font-medium mt-1">
-            {formatPrice(item.total)}
-          </p>
+          {showPrices && (
+            <p className="text-dark-blue font-medium mt-1">
+              {formatPrice(item.total)}
+            </p>
+          )}
           {!item.isAdvanced && visibleComponents.length > 0 && (
             <div className="mt-2 space-y-1">
               {visibleComponents.map((comp: any) => {

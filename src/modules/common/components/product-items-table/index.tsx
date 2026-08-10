@@ -8,6 +8,7 @@ import {
 import { ProductItemsTableProps } from "./types"
 import { TableRow } from "./table-row"
 import { MobileCard } from "./mobile-card"
+import { useCanSeePrices } from "@lib/context/customer-context"
 
 const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
   items,
@@ -17,6 +18,8 @@ const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
   showVolume,
   onReferenceChange,
 }) => {
+  const showPrices = useCanSeePrices()
+
   if (items.length === 0) return null
 
   return (
@@ -35,6 +38,7 @@ const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
               item={item}
               index={index}
               formatPrice={formatPrice}
+              showPrices={showPrices}
               translations={{
                 noImage: t.noImage,
                 customerReference: t.customerReference,
@@ -54,10 +58,12 @@ const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
         <table className="w-full text-sm">
           <TableHeader>
             <TableHeaderCell>{t.orderItems}</TableHeaderCell>
-            <TableHeaderCell>{t.unitPrice}</TableHeaderCell>
+            {showPrices && <TableHeaderCell>{t.unitPrice}</TableHeaderCell>}
             <TableHeaderCell>{t.quantity}</TableHeaderCell>
             {showVolume && <TableHeaderCell>{t.volume}</TableHeaderCell>}
-            <TableHeaderCell align="right">{t.total}</TableHeaderCell>
+            {showPrices && (
+              <TableHeaderCell align="right">{t.total}</TableHeaderCell>
+            )}
             {renderActions && <TableHeaderCell>{""}</TableHeaderCell>}
           </TableHeader>
           <tbody>
@@ -67,6 +73,7 @@ const ProductItemsTable: React.FC<ProductItemsTableProps> = ({
                 item={item}
                 index={index}
                 showVolume={showVolume}
+                showPrices={showPrices}
                 formatPrice={formatPrice}
                 translations={{
                   noImage: t.noImage,

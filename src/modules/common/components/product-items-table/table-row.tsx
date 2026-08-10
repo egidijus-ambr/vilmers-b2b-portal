@@ -9,6 +9,7 @@ interface TableRowProps {
   item: ProductItemRow
   index: number
   showVolume: boolean
+  showPrices: boolean
   formatPrice: (price: number) => string
   translations: {
     noImage: string
@@ -26,13 +27,17 @@ export const TableRow: React.FC<TableRowProps> = ({
   item,
   index,
   showVolume,
+  showPrices,
   formatPrice,
   translations: t,
   renderActions,
   onReferenceChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
-  const colCount = 4 + (showVolume ? 1 : 0) + (renderActions ? 1 : 0)
+  // Base columns are the item and the quantity; unit price and total are
+  // dropped together when prices are hidden.
+  const colCount =
+    2 + (showPrices ? 2 : 0) + (showVolume ? 1 : 0) + (renderActions ? 1 : 0)
 
   const visibleComponents =
     item.orderDetailItem?.cart_item?.additional_components?.filter(
@@ -130,16 +135,22 @@ export const TableRow: React.FC<TableRowProps> = ({
             </div>
           </div>
         </td>
-        <td className="px-4 py-4 text-gray-900">{formatPrice(item.unitPrice)}</td>
+        {showPrices && (
+          <td className="px-4 py-4 text-gray-900">
+            {formatPrice(item.unitPrice)}
+          </td>
+        )}
         <td className="px-4 py-4 text-gray-900">{item.quantity}</td>
         {showVolume && (
           <td className="px-4 py-4 text-gray-900">
             {item.volume != null ? `${item.volume.toFixed(2)} m³` : "-"}
           </td>
         )}
-        <td className="px-4 py-4 text-right text-gray-900 font-medium">
-          {formatPrice(item.total)}
-        </td>
+        {showPrices && (
+          <td className="px-4 py-4 text-right text-gray-900 font-medium">
+            {formatPrice(item.total)}
+          </td>
+        )}
         {renderActions && (
           <td className="px-4 py-4">{renderActions(item)}</td>
         )}

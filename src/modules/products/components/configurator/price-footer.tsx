@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { applyDiscount } from "@configurator/lib/price-utils"
 import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
-import { useCustomer } from "@lib/context/customer-context"
+import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import PriceDisplay from "@modules/common/components/price-display"
@@ -31,6 +31,7 @@ const PriceFooter = ({
   const { state, dispatch } = useConfigurator()
   const { totalPrice, quantity } = state
   const [isAdding, setIsAdding] = useState(false)
+  const canSeePrices = useCanSeePrices()
   const { customer } = useCustomer()
   const { actingCustomer } = useActingCustomer()
   const blockedNoActingCustomer = isAgentOrAdmin(customer) && !actingCustomer
@@ -106,19 +107,21 @@ const PriceFooter = ({
         </div>
 
         {/* Price display */}
-        <div className="text-right">
-          {priced != null ? (
-            <PriceDisplay
-              regular={priced.regular}
-              discounted={priced.hasDiscount ? priced.discounted : null}
-              currencyCode={currency ?? "EUR"}
-              size="lg"
-              align="right"
-            />
-          ) : (
-            <p className="text-sm text-gray-400">Select options to see price</p>
-          )}
-        </div>
+        {canSeePrices && (
+          <div className="text-right">
+            {priced != null ? (
+              <PriceDisplay
+                regular={priced.regular}
+                discounted={priced.hasDiscount ? priced.discounted : null}
+                currencyCode={currency ?? "EUR"}
+                size="lg"
+                align="right"
+              />
+            ) : (
+              <p className="text-sm text-gray-400">Select options to see price</p>
+            )}
+          </div>
+        )}
 
         {/* Add to cart */}
         <Button

@@ -2,7 +2,7 @@
 
 import { useTranslations } from "@lib/i18n"
 import { useCart } from "@lib/context/cart-context"
-import { useCustomer } from "@lib/context/customer-context"
+import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -31,6 +31,7 @@ export default function CartSummary({
   const ctx = useCart()
   const items = itemsProp ?? ctx.items
   const { discountPct } = useCustomerDiscount()
+  const canSeePrices = useCanSeePrices()
   const { customer } = useCustomer()
   const { actingCustomer } = useActingCustomer()
   const blockedNoActingCustomer = isAgentOrAdmin(customer) && !actingCustomer
@@ -125,21 +126,23 @@ export default function CartSummary({
             <div className="border-t border-gray-200 my-3" />
           </>
         )}
-        <div className="flex justify-between items-center">
-          <span className="text-[18px] font-semibold text-dark-blue">
-            TOTAL
-          </span>
-          <span>
-            <PriceDisplay
-              regular={totalPriced.regular}
-              discounted={totalPriced.hasDiscount ? totalPriced.discounted : null}
-              currencyCode="EUR"
-              locale={localeMap[language] || "en-GB"}
-              size="lg"
-              align="right"
-            />
-          </span>
-        </div>
+        {canSeePrices && (
+          <div className="flex justify-between items-center">
+            <span className="text-[18px] font-semibold text-dark-blue">
+              TOTAL
+            </span>
+            <span>
+              <PriceDisplay
+                regular={totalPriced.regular}
+                discounted={totalPriced.hasDiscount ? totalPriced.discounted : null}
+                currencyCode="EUR"
+                locale={localeMap[language] || "en-GB"}
+                size="lg"
+                align="right"
+              />
+            </span>
+          </div>
+        )}
       </div>
       <div className="mt-6">
         {children ?? (

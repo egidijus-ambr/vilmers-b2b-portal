@@ -16,12 +16,14 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Thumbnail from "@modules/products/components/thumbnail"
 import { usePathname } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
+import { useCanSeePrices } from "@lib/context/customer-context"
 
 const CartDropdown = ({
   cart: cartState,
 }: {
   cart?: HttpTypes.StoreCart | null
 }) => {
+  const canSeePrices = useCanSeePrices()
   const [activeTimer, setActiveTimer] = useState<NodeJS.Timer | undefined>(
     undefined
   )
@@ -175,22 +177,24 @@ const CartDropdown = ({
                     ))}
                 </div>
                 <div className="p-4 flex flex-col gap-y-4 text-small-regular">
-                  <div className="flex items-center justify-between">
-                    <span className="text-ui-fg-base font-semibold">
-                      Subtotal{" "}
-                      <span className="font-normal">(excl. taxes)</span>
-                    </span>
-                    <span
-                      className="text-large-semi"
-                      data-testid="cart-subtotal"
-                      data-value={subtotal}
-                    >
-                      {convertToLocale({
-                        amount: subtotal,
-                        currency_code: cartState.currency_code,
-                      })}
-                    </span>
-                  </div>
+                  {canSeePrices && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-ui-fg-base font-semibold">
+                        Subtotal{" "}
+                        <span className="font-normal">(excl. taxes)</span>
+                      </span>
+                      <span
+                        className="text-large-semi"
+                        data-testid="cart-subtotal"
+                        data-value={subtotal}
+                      >
+                        {convertToLocale({
+                          amount: subtotal,
+                          currency_code: cartState.currency_code,
+                        })}
+                      </span>
+                    </div>
+                  )}
                   <LocalizedClientLink href="/cart" passHref>
                     <Button
                       className="w-full"
