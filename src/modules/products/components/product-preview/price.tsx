@@ -1,7 +1,18 @@
 import { Text, clx } from "@medusajs/ui"
 import { VariantPrice } from "types/global"
 
-export default async function PreviewPrice({ price }: { price: VariantPrice }) {
+export default async function PreviewPrice({
+  price,
+  canSeePrices = true,
+}: {
+  price: VariantPrice
+  // Fail open: callers that do not know about price visibility keep showing prices.
+  canSeePrices?: boolean
+}) {
+  if (!canSeePrices) {
+    return null
+  }
+
   if (!price) {
     return null
   }

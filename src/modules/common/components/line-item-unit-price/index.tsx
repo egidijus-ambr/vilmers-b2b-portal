@@ -5,6 +5,7 @@ import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
 import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
 import { applyDiscount } from "@configurator/lib/price-utils"
+import { useCanSeePrices } from "@lib/context/customer-context"
 
 type LineItemUnitPriceProps = {
   item: HttpTypes.StoreCartLineItem | HttpTypes.StoreOrderLineItem
@@ -17,6 +18,7 @@ const LineItemUnitPrice = ({
   style = "default",
   currencyCode,
 }: LineItemUnitPriceProps) => {
+  const canSeePrices = useCanSeePrices()
   const { discountPct } = useCustomerDiscount()
   const { total, original_total } = item
   const safeTotal = total ?? 0
@@ -28,6 +30,8 @@ const LineItemUnitPrice = ({
   const percentage_diff = hasReducedPrice
     ? Math.round(((baselineUnitRegular - effectiveUnit) / baselineUnitRegular) * 100)
     : 0
+
+  if (!canSeePrices) return null
 
   return (
     <div className="flex flex-col text-ui-fg-muted justify-center h-full">

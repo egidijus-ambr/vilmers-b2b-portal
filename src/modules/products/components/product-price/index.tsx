@@ -1,7 +1,10 @@
+"use client"
+
 import { clx } from "@medusajs/ui"
 
 import { getProductPrice } from "@lib/util/get-product-price"
 import { HttpTypes } from "@medusajs/types"
+import { useCanSeePrices } from "@lib/context/customer-context"
 
 export default function ProductPrice({
   product,
@@ -10,12 +13,15 @@ export default function ProductPrice({
   product: HttpTypes.StoreProduct
   variant?: HttpTypes.StoreProductVariant
 }) {
+  const canSeePrices = useCanSeePrices()
   const { cheapestPrice, variantPrice } = getProductPrice({
     product,
     variantId: variant?.id,
   })
 
   const selectedPrice = variant ? variantPrice : cheapestPrice
+
+  if (!canSeePrices) return null
 
   if (!selectedPrice) {
     return <div className="block w-32 h-9 bg-gray-100 animate-pulse" />

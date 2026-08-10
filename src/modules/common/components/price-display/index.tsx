@@ -1,5 +1,8 @@
+"use client"
+
 import React from "react"
 import { convertToLocale } from "@lib/util/money"
+import { useCanSeePrices } from "@lib/context/customer-context"
 
 type Size = "sm" | "md" | "lg"
 type Align = "left" | "right"
@@ -33,6 +36,9 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
   align = "left",
   className = "",
 }) => {
+  const canSeePrices = useCanSeePrices()
+
+  if (!canSeePrices) return null
   if (regular == null) return null
 
   const hasDiscount =
