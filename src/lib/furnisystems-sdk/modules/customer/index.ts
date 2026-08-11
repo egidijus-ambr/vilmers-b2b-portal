@@ -66,6 +66,14 @@ const GET_ME_QUERY = gql`
       fabric_palettes {
         id
       }
+      files {
+        id
+        name
+        original_name
+        mime_type
+        size_bytes
+        display_order
+      }
       customer_group {
         price_listId
         fabric_palettes {
@@ -605,6 +613,14 @@ const SEARCH_CUSTOMERS_QUERY = gql`
       fabric_palettes {
         id
       }
+      files {
+        id
+        name
+        original_name
+        mime_type
+        size_bytes
+        display_order
+      }
       customer_group {
         name
         price_listId
@@ -703,6 +719,14 @@ export class CustomerModule {
           fabric_palettes: {
             id: string
           }[]
+          files?: {
+            id: number
+            name: string
+            original_name?: string | null
+            mime_type?: string | null
+            size_bytes?: number | null
+            display_order?: number | null
+          }[]
           customer_group?: {
             price_listId?: string
             fabric_palettes?: {
@@ -774,6 +798,7 @@ export class CustomerModule {
         b2b_customer_discount: customerData.b2b_customer_discount,
         tags: customerData.tags,
         fabric_palettes: customerData.fabric_palettes,
+        files: customerData.files ?? [],
         customer_group: customerData.customer_group,
         managers: customerData.managers,
         is_configurator_enabled: customerData.is_configurator_enabled,

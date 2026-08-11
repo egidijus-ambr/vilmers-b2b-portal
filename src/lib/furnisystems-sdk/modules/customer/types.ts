@@ -89,6 +89,15 @@ export interface CustomerManager {
   manager: Manager
 }
 
+export interface CustomerFile {
+  id: number
+  name: string
+  original_name?: string | null
+  mime_type?: string | null
+  size_bytes?: number | null
+  display_order?: number | null
+}
+
 export interface Customer {
   id?: string | number
   created_at?: string | Date
@@ -107,6 +116,7 @@ export interface Customer {
   group_price_listId?: string | null
   tags?: { id: number }[]
   fabric_palettes?: FabricPalette[]
+  files?: CustomerFile[]
   customer_group?: {
     name?: string | null
     price_listId?: string
@@ -489,6 +499,7 @@ export type SearchCustomerResult = {
   role: string | null
   tags?: { id: number }[]
   fabric_palettes?: Customer["fabric_palettes"]
+  files?: CustomerFile[]
   customer_group?: Customer["customer_group"]
   additional_components?: Customer["additional_components"]
 }
