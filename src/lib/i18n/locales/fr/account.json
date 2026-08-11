@@ -79,7 +79,7 @@
   },
   "files": {
     "title": "Fichiers",
-    "download": "Télécharger"
+    "download-failed": "Le téléchargement du fichier a échoué. Veuillez réessayer."
   },
   "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",

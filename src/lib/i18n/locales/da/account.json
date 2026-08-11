@@ -79,7 +79,7 @@
   },
   "files": {
     "title": "Filer",
-    "download": "Hent"
+    "download-failed": "Filen kunne ikke hentes. Prøv igen."
   },
   "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",

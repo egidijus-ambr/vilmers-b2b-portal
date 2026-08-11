@@ -206,11 +206,7 @@ const Overview = (): JSX.Element => {
         </div>
 
         {/* Customer Files Card — renders nothing when the company has no files */}
-        <div className="space-y-4">
-          <div className="bg-white">
-            <CustomerFilesCard />
-          </div>
-        </div>
+        <CustomerFilesCard />
 
         {/* Orders Section */}
         <div className="space-y-10">

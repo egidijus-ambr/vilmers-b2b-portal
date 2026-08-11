@@ -79,7 +79,7 @@
   },
   "files": {
     "title": "Files",
-    "download": "Download"
+    "download-failed": "Could not download the file. Please try again."
   },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",

@@ -5,6 +5,7 @@ import { useTranslations } from "@lib/i18n"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { CatalogDownloadIcon } from "@modules/common/icons/catalog-download"
 import type { CustomerFile } from "@lib/furnisystems-sdk/modules/customer/types"
+import { toast } from "@medusajs/ui"
 
 const CustomerFilesCard = (): JSX.Element | null => {
   const { t } = useTranslations("account")
@@ -25,7 +26,10 @@ const CustomerFilesCard = (): JSX.Element | null => {
     setDownloadingId(file.id)
     try {
       const response = await fetch(`/api/customer-files/${file.id}`)
-      if (!response.ok) return
+      if (!response.ok) {
+        toast.error(t("files.download-failed"))
+        return
+      }
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
@@ -36,6 +40,8 @@ const CustomerFilesCard = (): JSX.Element | null => {
       anchor.click()
       document.body.removeChild(anchor)
       URL.revokeObjectURL(url)
+    } catch {
+      toast.error(t("files.download-failed"))
     } finally {
       setDownloadingId(null)
     }
@@ -57,7 +63,9 @@ const CustomerFilesCard = (): JSX.Element | null => {
               downloadingId === file.id ? " opacity-60 cursor-not-allowed" : ""
             }`}
           >
-            <CatalogDownloadIcon className="w-6 h-6 flex-shrink-0 text-gold" />
+            <span aria-hidden="true">
+              <CatalogDownloadIcon className="w-6 h-6 flex-shrink-0 text-gold" />
+            </span>
             <span className="font-bold text-dark-blue text-sm leading-tight">
               {file.name}
             </span>

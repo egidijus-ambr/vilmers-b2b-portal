@@ -79,7 +79,7 @@
   },
   "files": {
     "title": "Dateien",
-    "download": "Herunterladen"
+    "download-failed": "Die Datei konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut."
   },
   "breadcrumb-fabric-palettes": "Stoffpalette",
   "breadcrumb-home": "Startseite",

@@ -79,7 +79,7 @@
   },
   "files": {
     "title": "Failai",
-    "download": "Atsisiųsti"
+    "download-failed": "Nepavyko atsisiųsti failo. Bandykite dar kartą."
   },
   "breadcrumb-fabric-palettes": "Audinių paletė",
   "breadcrumb-home": "Pradžia",
