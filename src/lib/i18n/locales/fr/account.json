@@ -77,6 +77,10 @@
     "stock-plenty-message": "En stock - délai de fabrication actuel pour les nouvelles commandes 2 semaines.",
     "demo-action-disabled": "Cette action est désactivée en mode démo."
   },
+  "files": {
+    "title": "Fichiers",
+    "download": "Télécharger"
+  },
   "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",
   "breadcrumb-my-profile": "Mon profil",

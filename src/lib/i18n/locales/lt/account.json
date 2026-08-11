@@ -77,6 +77,10 @@
     "stock-plenty-message": "Didelis likutis. Gamybą pradedame iš karto.",
     "demo-action-disabled": "Šis veiksmas išjungtas demonstraciniu režimu."
   },
+  "files": {
+    "title": "Failai",
+    "download": "Atsisiųsti"
+  },
   "breadcrumb-fabric-palettes": "Audinių paletė",
   "breadcrumb-home": "Pradžia",
   "breadcrumb-my-profile": "Mano profilis",

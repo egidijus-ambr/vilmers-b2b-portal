@@ -77,6 +77,10 @@
     "stock-plenty-message": "In stock - current production lead time for new order 2 weeks.",
     "demo-action-disabled": "This action is disabled in demo mode."
   },
+  "files": {
+    "title": "Files",
+    "download": "Download"
+  },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",
   "breadcrumb-my-profile": "My Profile",

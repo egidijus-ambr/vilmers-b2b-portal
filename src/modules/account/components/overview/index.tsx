@@ -11,6 +11,7 @@ import PageContent from "@modules/common/components/page-content"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
+import CustomerFilesCard from "../customer-files-card"
 import {
   Order,
   CustomerManager,
@@ -201,6 +202,13 @@ const Overview = (): JSX.Element => {
               buttonText={t("check")}
               height="auto"
             />
+          </div>
+        </div>
+
+        {/* Customer Files Card — renders nothing when the company has no files */}
+        <div className="space-y-4">
+          <div className="bg-white">
+            <CustomerFilesCard />
           </div>
         </div>
 

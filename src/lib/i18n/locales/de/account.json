@@ -77,6 +77,10 @@
     "stock-plenty-message": "Auf Lager – aktuelle Lieferzeit für Neubestellungen: 2 Wochen.",
     "demo-action-disabled": "Diese Aktion ist im Demo-Modus deaktiviert."
   },
+  "files": {
+    "title": "Dateien",
+    "download": "Herunterladen"
+  },
   "breadcrumb-fabric-palettes": "Stoffpalette",
   "breadcrumb-home": "Startseite",
   "breadcrumb-my-profile": "Mein Profil",

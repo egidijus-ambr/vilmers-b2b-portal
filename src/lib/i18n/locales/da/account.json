@@ -77,6 +77,10 @@
     "stock-plenty-message": "Rigeligt på lager. Vi starter produktionen med det samme.",
     "demo-action-disabled": "Denne handling er deaktiveret i demo-tilstand."
   },
+  "files": {
+    "title": "Filer",
+    "download": "Hent"
+  },
   "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",
   "breadcrumb-my-profile": "Min profil",
