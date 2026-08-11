@@ -63,7 +63,7 @@ const CustomerFilesCard = (): JSX.Element | null => {
               downloadingId === file.id ? " opacity-60 cursor-not-allowed" : ""
             }`}
           >
-            <span aria-hidden="true">
+            <span aria-hidden="true" className="flex-shrink-0">
               <CatalogDownloadIcon className="w-6 h-6 flex-shrink-0 text-gold" />
             </span>
             <span className="font-bold text-dark-blue text-sm leading-tight">
