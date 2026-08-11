@@ -3,13 +3,8 @@
 import { useState } from "react"
 import { useTranslations } from "@lib/i18n"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
+import { CatalogDownloadIcon } from "@modules/common/icons/catalog-download"
 import type { CustomerFile } from "@lib/furnisystems-sdk/modules/customer/types"
-
-const formatBytes = (bytes?: number | null): string => {
-  if (!bytes) return ""
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 const CustomerFilesCard = (): JSX.Element | null => {
   const { t } = useTranslations("account")
@@ -48,37 +43,27 @@ const CustomerFilesCard = (): JSX.Element | null => {
 
   return (
     <div className="w-full p-4 sm:p-6 bg-white flex flex-col justify-start items-start gap-4">
-      <h3 className="self-stretch text-dark-blue font-medium">
-        {t("files.title")}
-      </h3>
-      <ul className="self-stretch flex flex-col">
+      <h3 className="mb-6 font-medium text-dark-blue">{t("files.title")}</h3>
+      <div className="self-stretch grid grid-cols-1 md:grid-cols-2 gap-6">
         {files.map(file => (
-          <li
+          // Row markup kept as a single block (icon + filename + download
+          // handling) so future restyles stay a small, reviewable diff.
+          <button
             key={file.id}
-            className="flex items-center justify-between gap-4 py-3 border-b border-dark-blue/10 last:border-b-0"
+            type="button"
+            onClick={() => handleDownload(file)}
+            disabled={downloadingId === file.id}
+            className={`flex flex-row items-center gap-4 text-left${
+              downloadingId === file.id ? " opacity-60 cursor-not-allowed" : ""
+            }`}
           >
-            <div className="min-w-0">
-              <p className="truncate text-dark-blue text-sm sm:text-base">
-                {file.name}
-              </p>
-              {file.size_bytes ? (
-                <p className="text-dark-blue-70 text-xs">
-                  {formatBytes(file.size_bytes)}
-                </p>
-              ) : null}
-            </div>
-            <button
-              onClick={() => handleDownload(file)}
-              disabled={downloadingId === file.id}
-              className={`shrink-0 inline-flex items-center text-sm font-medium text-gold hover:text-gold/80 transition-colors${
-                downloadingId === file.id ? " opacity-60 cursor-not-allowed" : ""
-              }`}
-            >
-              {t("files.download")}
-            </button>
-          </li>
+            <CatalogDownloadIcon className="w-6 h-6 flex-shrink-0 text-gold" />
+            <span className="font-bold text-dark-blue text-sm leading-tight">
+              {file.name}
+            </span>
+          </button>
         ))}
-      </ul>
+      </div>
     </div>
   )
 }
