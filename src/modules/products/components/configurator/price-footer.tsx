@@ -106,22 +106,24 @@ const PriceFooter = ({
           </button>
         </div>
 
-        {/* Price display */}
-        {canSeePrices && (
-          <div className="text-right">
-            {priced != null ? (
-              <PriceDisplay
-                regular={priced.regular}
-                discounted={priced.hasDiscount ? priced.discounted : null}
-                currencyCode={currency ?? "EUR"}
-                size="lg"
-                align="right"
-              />
-            ) : (
-              <p className="text-sm text-gray-400">Select options to see price</p>
-            )}
-          </div>
-        )}
+        {/* Price display — the incomplete-selection hint shows regardless of
+            price visibility (so a no-price account still learns why Add-to-Cart
+            is disabled); the actual price renders only when the account may see it. */}
+        <div className="text-right">
+          {priced == null ? (
+            <p className="text-sm text-gray-400">
+              {canSeePrices ? "Select options to see price" : "Select options to continue"}
+            </p>
+          ) : canSeePrices ? (
+            <PriceDisplay
+              regular={priced.regular}
+              discounted={priced.hasDiscount ? priced.discounted : null}
+              currencyCode={currency ?? "EUR"}
+              size="lg"
+              align="right"
+            />
+          ) : null}
+        </div>
 
         {/* Add to cart */}
         <Button
