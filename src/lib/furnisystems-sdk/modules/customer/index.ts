@@ -62,6 +62,10 @@ const GET_ME_QUERY = gql`
       b2b_customer_discount
       tags {
         id
+        tag_profiles {
+          name
+          language
+        }
       }
       fabric_palettes {
         id
@@ -609,6 +613,10 @@ const SEARCH_CUSTOMERS_QUERY = gql`
       role
       tags {
         id
+        tag_profiles {
+          name
+          language
+        }
       }
       fabric_palettes {
         id
@@ -715,7 +723,10 @@ export class CustomerModule {
           account_code: string
           price_listId: string
           b2b_customer_discount: number | null
-          tags: { id: number }[]
+          tags: {
+            id: number
+            tag_profiles?: { name: string; language: string }[]
+          }[]
           fabric_palettes: {
             id: string
           }[]

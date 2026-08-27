@@ -98,6 +98,16 @@ export interface CustomerFile {
   display_order?: number | null
 }
 
+export interface TagProfileDetail {
+  name: string
+  language: string
+}
+
+export interface CustomerTag {
+  id: number
+  tag_profiles?: TagProfileDetail[]
+}
+
 export interface Customer {
   id?: string | number
   created_at?: string | Date
@@ -114,7 +124,7 @@ export interface Customer {
   price_listId?: string
   b2b_customer_discount?: number | null
   group_price_listId?: string | null
-  tags?: { id: number }[]
+  tags?: CustomerTag[]
   fabric_palettes?: FabricPalette[]
   files?: CustomerFile[]
   customer_group?: {
@@ -497,7 +507,7 @@ export type SearchCustomerResult = {
   price_listId: number | null
   group_price_listId?: string | null
   role: string | null
-  tags?: { id: number }[]
+  tags?: CustomerTag[]
   fabric_palettes?: Customer["fabric_palettes"]
   files?: CustomerFile[]
   customer_group?: Customer["customer_group"]

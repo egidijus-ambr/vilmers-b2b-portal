@@ -5,7 +5,7 @@ import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag, unstable_cache, unstable_noStore } from "next/cache"
 import { redirect } from "next/navigation"
-import { cookies, headers } from "next/headers"
+import { headers } from "next/headers"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -545,29 +545,16 @@ export async function getCustomerFilterData(): Promise<{
   if (!customer) {
     // getActingCustomer() returns null for more than just true guests: a
     // logged-in agent/admin who hasn't picked an acting customer yet, or a
-    // transient retrieveCustomer() failure, also land here. Only a visitor
-    // with no auth session at all is an actual guest — gate the new
-    // anonymous-tag filter on that, not on "no acting customer", so a
-    // logged-in user is never restricted by it (fail open).
-    const cookieStore = await cookies()
-    const hasAuthSession = !!cookieStore.get("_furni_jwt")?.value
-
-    if (hasAuthSession) {
-      // Logged-in agent/admin without an acting customer selected, or a
-      // transient lookup error — behave exactly as before this feature
-      // existed: no tag filter, still scoped to the default price list.
-      priceListIds = [await getDefaultPriceListId()]
-    } else {
-      // True anonymous visitor: filter by admin-configured tags (opt-in —
-      // empty when unset, which reproduces today's unfiltered behaviour
-      // exactly).
-      const [anonymousTagIds, defaultId] = await Promise.all([
-        getAnonymousProductTagIds(),
-        getDefaultPriceListId(),
-      ])
-      customerTagIds = anonymousTagIds
-      priceListIds = [defaultId]
-    }
+    // transient retrieveCustomer() failure, also land here too. No acting
+    // customer — guest or agent/admin without a selected customer — is
+    // limited to the anonymous product tags (opt-in — empty when unset,
+    // which reproduces today's unfiltered behaviour exactly).
+    const [anonymousTagIds, defaultId] = await Promise.all([
+      getAnonymousProductTagIds(),
+      getDefaultPriceListId(),
+    ])
+    customerTagIds = anonymousTagIds
+    priceListIds = [defaultId]
   } else {
     priceListIds = [
       ...(customer.price_listId ? [parseInt(customer.price_listId)] : []),

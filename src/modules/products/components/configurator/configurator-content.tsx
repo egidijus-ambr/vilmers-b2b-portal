@@ -497,6 +497,17 @@ const ConfiguratorContent = ({
                     ).join(", ")
                   : <span className="text-red-400">none</span>}
               </div>
+              <div>
+                <span className="text-gray-400">Customer tags:</span>{" "}
+                {customer?.tags?.length > 0
+                  ? customer.tags.map((tag: any) => {
+                      const profile =
+                        tag.tag_profiles?.find((p: any) => p.language === languageCode) ??
+                        tag.tag_profiles?.[0]
+                      return `${profile?.name ?? "?"} (${tag.id})`
+                    }).join(", ")
+                  : <span className="text-red-400">none</span>}
+              </div>
             </div>
           </details>}
 
