@@ -516,6 +516,27 @@ async function performMagicLinkLogin(
 /**
  * Get the customer's product filter data (tags and price list IDs).
  * Used by product queries to filter results server-side.
+ *
+ * Decision table (top branch wins):
+ *  1. getShowAllProductsActive() (admin-impersonator or Account Manager with
+ *     the "All products" toggle on) → unrestricted: {undefined, []}.
+ *  2. getActingCustomer() returns a customer:
+ *       - end-customer session → this *is* the logged-in customer
+ *         (getActingCustomer() passes them through as-is).
+ *       - agent/admin session with a selected acting customer → this is the
+ *         customer they're impersonating.
+ *     Either way, filter strictly by that record's own tags/price lists.
+ *     No fallback here — this reproduces the pre-existing behaviour for real
+ *     customers exactly (e.g. a customer with no price list assigned keeps
+ *     an intentionally empty priceListIds, not the shop default).
+ *  3. No acting customer, but retrieveCustomer() still finds a logged-in
+ *     session → this can only be an agent/admin who hasn't picked (or has a
+ *     stale) acting-customer cookie, since real end-customers are already
+ *     handled by branch 2. Use the agent/admin's own record (their own
+ *     Price List / Tags configured in admin), falling back per-field to the
+ *     anonymous defaults when their own record doesn't have one set.
+ *  4. Nobody logged in at all (true guest) → anonymous product tags + the
+ *     shop's default price list, same as today.
  */
 export async function getCustomerFilterData(): Promise<{
   customerTagIds: number[] | undefined
@@ -537,31 +558,62 @@ export async function getCustomerFilterData(): Promise<{
     // Not authenticated — no filtering
   }
 
-  let customerTagIds = customer?.tags?.map((t) => t.id) ?? []
-  const groupPriceListId = customer?.group_price_listId ?? null
-
-
-  let priceListIds: number[]
-  if (!customer) {
-    // getActingCustomer() returns null for more than just true guests: a
-    // logged-in agent/admin who hasn't picked an acting customer yet, or a
-    // transient retrieveCustomer() failure, also land here too. No acting
-    // customer — guest or agent/admin without a selected customer — is
-    // limited to the anonymous product tags (opt-in — empty when unset,
-    // which reproduces today's unfiltered behaviour exactly).
-    const [anonymousTagIds, defaultId] = await Promise.all([
-      getAnonymousProductTagIds(),
-      getDefaultPriceListId(),
-    ])
-    customerTagIds = anonymousTagIds
-    priceListIds = [defaultId]
-  } else {
-    priceListIds = [
+  if (customer) {
+    // Branch 2: end-customer passthrough, or agent/admin with a selected
+    // acting customer.
+    const customerTagIds = customer?.tags?.map((t) => t.id) ?? []
+    const groupPriceListId = customer?.group_price_listId ?? null
+    const priceListIds = [
       ...(customer.price_listId ? [parseInt(customer.price_listId)] : []),
       ...(groupPriceListId ? [parseInt(groupPriceListId)] : []),
     ]
+    return { customerTagIds, priceListIds }
   }
 
-  return { customerTagIds, priceListIds }
+  // getActingCustomer() returned null. That covers true guests, but also a
+  // logged-in agent/admin who hasn't picked an acting customer yet (or whose
+  // acting-customer cookie is stale) — real end-customers never reach this
+  // point (branch 2 already returned their own record). Re-check the raw
+  // session to tell the two apart. retrieveCustomer() is cheap for guests —
+  // validateSession() short-circuits on a missing JWT cookie with no network
+  // call — so this only costs an extra request on the agent/admin path.
+  let loggedInUser = null
+  try {
+    loggedInUser = await retrieveCustomer()
+  } catch {
+    // Not authenticated — no filtering
+  }
+
+  if (loggedInUser) {
+    // Branch 3: agent/admin, logged in, no acting customer selected. Use
+    // their own Price List / Tags from admin, falling back independently
+    // per field to the same anonymous defaults a guest would get, since an
+    // agent/admin's own record commonly has neither configured.
+    const ownTagIds = loggedInUser.tags?.map((t) => t.id) ?? []
+    const groupPriceListId = loggedInUser.group_price_listId ?? null
+    const ownPriceListIds = [
+      ...(loggedInUser.price_listId ? [parseInt(loggedInUser.price_listId)] : []),
+      ...(groupPriceListId ? [parseInt(groupPriceListId)] : []),
+    ]
+
+    const customerTagIds =
+      ownTagIds.length > 0 ? ownTagIds : await getAnonymousProductTagIds()
+    const priceListIds =
+      ownPriceListIds.length > 0
+        ? ownPriceListIds
+        : [await getDefaultPriceListId()]
+
+    return { customerTagIds, priceListIds }
+  }
+
+  // Branch 4: true guest — not authenticated at all. Limited to the
+  // anonymous product tags (opt-in — empty when unset, which reproduces
+  // today's unfiltered behaviour exactly) and the shop's default price list.
+  const [anonymousTagIds, defaultId] = await Promise.all([
+    getAnonymousProductTagIds(),
+    getDefaultPriceListId(),
+  ])
+
+  return { customerTagIds: anonymousTagIds, priceListIds: [defaultId] }
 }
 
