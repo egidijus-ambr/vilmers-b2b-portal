@@ -12,7 +12,7 @@ import {
   Tag,
 } from 'react-konva'
 
-import { MAIN_METRIC_COLOR, METRIC_SIZE } from './constants'
+import { MAIN_METRIC_COLOR, METRIC_SIZE, LABEL_GAP } from './constants'
 import Konva from 'konva'
 
 interface VerticalMetricProps {
@@ -44,11 +44,6 @@ interface MetricKonvaNodeProps {
   fontSize?: number
   labelBackground?: string
 }
-
-// Distance (in local group coordinates) between the arrow line (at METRIC_SIZE / 2)
-// and the near edge of the label's text box. Kept identical for both sides so the
-// right-side label is a true mirror of the left-side one, not just a flipped offset.
-export const LABEL_GAP = 25
 
 interface VerticalMetricKonvaNodeProps extends MetricKonvaNodeProps {
   // Which side of the line the label sits on. 'left' (default) keeps the current
@@ -169,11 +164,14 @@ export const VerticalMetricKonvaNode = ({
     verticalAlign: 'middle',
   })
 
-  // Position the label relative to the arrow line (drawn at local x = METRIC_SIZE / 2).
-  // 'left' (default): label's near edge sits LABEL_GAP before the line — today's
-  // unchanged behaviour, label reads away from the sofa.
-  // 'right': mirrored — label's far edge sits LABEL_GAP past the line, so it reads
-  // away from the sofa on the opposite side instead of overlapping it.
+  // Anchor the label's OUTER edge — the one facing away from the sofa, which is what
+  // determines overhang/clipping risk (see LIVE_METRIC_PADDING_X in
+  // SofaDrawingPreview.tsx) — at a fixed LABEL_GAP past the arrow line (drawn at local
+  // x = METRIC_SIZE / 2). The box's INNER edge, closer to the line, moves with the text
+  // width and, for a wide enough label, crosses over the line itself — that's the
+  // pre-existing left-side behaviour (unchanged here), not something 'right' introduces.
+  // 'left' (default): outer (left) edge = METRIC_SIZE / 2 - LABEL_GAP.
+  // 'right': mirrored — outer (right) edge = METRIC_SIZE / 2 + LABEL_GAP.
   text.x(
     labelSide === 'right'
       ? METRIC_SIZE / 2 + LABEL_GAP - text.width()
