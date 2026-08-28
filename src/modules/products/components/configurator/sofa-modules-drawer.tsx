@@ -199,14 +199,17 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
   const { discountPct } = useCustomerDiscount()
   const dims = sofaForm.dimensions
 
-  // Card width matches Konva stage width so preview fits perfectly
+  // Card width matches Konva stage width so preview fits perfectly.
+  // Keep this formula in sync with `stageW` in ModulePreviewInner above — right
+  // margin mirrors the left (metricSpace + armW) so a right-side metric line/label
+  // isn't clipped by this card's overflow-hidden.
   const rawW = dims.width ?? 100
   const originalArmW = dims.armrest_width ?? 22
   const armW = armrestWidthOverride ?? originalArmW
   const adjustedW = rawW + (armW - originalArmW)
   const scale = 0.65
   const metricSpace = 45
-  const cardWidth = Math.max(Math.round((adjustedW + armW * 2 + metricSpace + 30) * scale), 100)
+  const cardWidth = Math.max(Math.round((adjustedW + armW * 2 + metricSpace * 2) * scale), 100)
 
   return (
     <div
