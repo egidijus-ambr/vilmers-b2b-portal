@@ -13,6 +13,22 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import * as SofaElements from './SofaElements'
 import { drawMetricLinesForGroups } from './utils'
+import { METRIC_SIZE } from './SofaElements/constants'
+import { LABEL_GAP } from './SofaElements/MetricLines'
+
+// Each vertical metric label (left AND right, since the right line now mirrors the
+// left one — see MetricLines.tsx) overhangs its side of the sofa's bounding box by
+// METRIC_SIZE / 2 + LABEL_GAP. This bbox, however, comes from computeGroupRectFromAttrs
+// below (nominal attrs.width/height), while the actual line/label placement comes from
+// measureGroupOfGroups's getClientRect() (rendered pixels, which can include shadow/
+// stroke overflow and rounding). The two rarely agree to the pixel, so on top of the
+// exact overhang we add SAFETY_MARGIN slack to avoid clipping the outer edge of either
+// label — this was previously invisible because only the left line carried an overhang;
+// now both sides do, so the fitted-exactly budget below has zero room for that drift.
+const LABEL_OVERHANG_PER_SIDE = METRIC_SIZE / 2 + LABEL_GAP
+const METRIC_LABEL_SAFETY_MARGIN = 40
+export const DEFAULT_LIVE_METRIC_PADDING =
+  LABEL_OVERHANG_PER_SIDE * 2 + METRIC_LABEL_SAFETY_MARGIN
 
 interface ArmrestWidthOverride {
   armrestWidth: number
@@ -32,7 +48,7 @@ interface SofaDrawingPreviewProps {
   onImage?:
     | ((image: { dataURI: string; width: number; length: number }) => void)
     | null
-  /** Padding around content for metric lines/arrows. Defaults: 110 for live nodes, 40 for static */
+  /** Padding around content for metric lines/arrows. Defaults: DEFAULT_LIVE_METRIC_PADDING for live nodes, 40 for static */
   metricPadding?: number
 }
 
@@ -164,7 +180,8 @@ const SofaDrawingPreview = ({
   // Move all groups to center
   const centerX = width / 2
   const centerY = height / 2
-  const additionalBound = metricPadding ?? (isLiveNodes ? 110 : 40)
+  const additionalBound =
+    metricPadding ?? (isLiveNodes ? DEFAULT_LIVE_METRIC_PADDING : 40)
 
   let distanceToCenterX = centerX - groupRect.center.x
   let distanceToCenterY = centerY - groupRect.center.y

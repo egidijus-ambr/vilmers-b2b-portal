@@ -1,7 +1,9 @@
 "use client"
 
 import React, { useCallback, useRef, useState } from "react"
-import SofaDrawingPreview from "@configurator/SofaDrawingElements/SofaDrawingPreview"
+import SofaDrawingPreview, {
+  DEFAULT_LIVE_METRIC_PADDING,
+} from "@configurator/SofaDrawingElements/SofaDrawingPreview"
 import { getArmrestsPosition, ArmrestsPosition } from "@configurator/lib/sofa-shape-utils"
 import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
 import { useConfigurator } from "@configurator/context/configurator-context"
@@ -199,7 +201,7 @@ const SofaSetCard = ({
             <SofaDrawingPreview
               combination={combination}
               parentRef={drawingRef as React.RefObject<HTMLElement>}
-              metricPadding={110}
+              metricPadding={DEFAULT_LIVE_METRIC_PADDING}
               armrestWidthOverrides={armrestWidthOverrides}
             />
           )}

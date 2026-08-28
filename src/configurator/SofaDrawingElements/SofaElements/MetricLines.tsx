@@ -48,7 +48,7 @@ interface MetricKonvaNodeProps {
 // Distance (in local group coordinates) between the arrow line (at METRIC_SIZE / 2)
 // and the near edge of the label's text box. Kept identical for both sides so the
 // right-side label is a true mirror of the left-side one, not just a flipped offset.
-const LABEL_GAP = 25
+export const LABEL_GAP = 25
 
 interface VerticalMetricKonvaNodeProps extends MetricKonvaNodeProps {
   // Which side of the line the label sits on. 'left' (default) keeps the current
