@@ -45,6 +45,18 @@ interface MetricKonvaNodeProps {
   labelBackground?: string
 }
 
+// Distance (in local group coordinates) between the arrow line (at METRIC_SIZE / 2)
+// and the near edge of the label's text box. Kept identical for both sides so the
+// right-side label is a true mirror of the left-side one, not just a flipped offset.
+const LABEL_GAP = 25
+
+interface VerticalMetricKonvaNodeProps extends MetricKonvaNodeProps {
+  // Which side of the line the label sits on. 'left' (default) keeps the current
+  // behaviour (label drawn away from the sofa, to the left of the line). 'right'
+  // mirrors it so the label is drawn to the right of the line instead.
+  labelSide?: 'left' | 'right'
+}
+
 export const VerticalMetric = ({
   x,
   y,
@@ -108,7 +120,8 @@ export const VerticalMetricKonvaNode = ({
   height,
   fontSize = 12,
   labelBackground = '#F5F3EE',
-}: MetricKonvaNodeProps) => {
+  labelSide = 'left',
+}: VerticalMetricKonvaNodeProps) => {
   //-----
   const num = (n: number) => (Number.isFinite(n) ? n : 0)
   x = num(x)
@@ -145,7 +158,7 @@ export const VerticalMetricKonvaNode = ({
   // })
 
   let text = new Konva.Text({
-    x: METRIC_SIZE / 2 - 25,
+    x: 0,
     y: height / 2,
     text: height + ' cm',
     padding: 5,
@@ -155,6 +168,17 @@ export const VerticalMetricKonvaNode = ({
     align: 'center',
     verticalAlign: 'middle',
   })
+
+  // Position the label relative to the arrow line (drawn at local x = METRIC_SIZE / 2).
+  // 'left' (default): label's near edge sits LABEL_GAP before the line — today's
+  // unchanged behaviour, label reads away from the sofa.
+  // 'right': mirrored — label's far edge sits LABEL_GAP past the line, so it reads
+  // away from the sofa on the opposite side instead of overlapping it.
+  text.x(
+    labelSide === 'right'
+      ? METRIC_SIZE / 2 + LABEL_GAP - text.width()
+      : METRIC_SIZE / 2 - LABEL_GAP
+  )
 
   // Create background rectangle for text
   let textBounds = text.getClientRect()

@@ -94,7 +94,11 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
   const extraH = dims.extendable_part_length ?? 0
   const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
 
-  const stageW = Math.round((rawW + armW * 2 + metricSpace + 30) * scale)
+  // Right margin mirrors the left (metricSpace + armW) so a right-side vertical
+  // metric line/label (drawn when a composite module's right height differs from
+  // its left, see drawMetricLinesForGroups) has the same clearance as the left one
+  // instead of being clipped against the stage edge.
+  const stageW = Math.round((rawW + armW * 2 + metricSpace * 2) * scale)
   const stageH = Math.round((rawH + extraH + metricSpace + 10) * scale)
 
   const [layer, setLayer] = useState<any>(null)
