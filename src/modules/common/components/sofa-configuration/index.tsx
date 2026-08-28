@@ -602,7 +602,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                             </span>
                             <span className="flex-1 border-b border-dashed border-gray-300" />
                             <span className="text-dark-blue font-medium whitespace-nowrap">
-                              {sofaSet.dimensions.width} cm
+                              {Math.round(sofaSet.dimensions.width)} cm
                             </span>
                           </div>
                         )}
@@ -613,7 +613,7 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                             </span>
                             <span className="flex-1 border-b border-dashed border-gray-300" />
                             <span className="text-dark-blue font-medium whitespace-nowrap">
-                              {sofaSet.dimensions.length} cm
+                              {Math.round(sofaSet.dimensions.length)} cm
                             </span>
                           </div>
                         )}
