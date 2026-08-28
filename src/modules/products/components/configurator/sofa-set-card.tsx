@@ -98,6 +98,11 @@ function extractSetData(combination: any[], armrestOverrides: Array<{ armrestWid
   }
 
   return {
+    // totalWidth/maxLength are naive per-module sums with no rotation
+    // awareness (e.g. an arm module rotated 90° onto a corner's other side
+    // adds to width instead of length). They are used only as a fallback
+    // for when the rendered-drawing measurement (sofaMeasurements) isn't
+    // available yet — see SofaSetCard below.
     dimensions: {
       width: totalWidth,
       length: maxLength,
@@ -135,10 +140,22 @@ const SofaSetCard = ({
 
   const { dimensions, parts } = extractSetData(combination, armrestWidthOverrides)
 
+  // Rotation-aware width/depth measured from the rendered drawing — the
+  // source of truth. Falls back to the naive per-module sum (extractSetData)
+  // only until the drawing has produced a measurement for this set index.
+  // Guard on `> 0` (not just null/undefined) — a group whose children
+  // haven't rendered yet can produce a non-null but zeroed measurement
+  // ({x:0,y:0,width:0,height:0} is finite), and `dimensionRows` below
+  // filters out zero-value rows entirely, so `??` alone would make the
+  // Width/Length rows silently disappear instead of falling back.
+  const measured = configuratorState.sofaMeasurements?.[setIndex]
+  const displayWidth = measured && measured.width > 0 ? measured.width : dimensions.width
+  const displayLength = measured && measured.depth > 0 ? measured.depth : dimensions.length
+
   // Build dimension rows with conditional armrest and extension lines
   const baseRows: { label: string; value: number }[] = [
-    { label: t("width"), value: dimensions.width },
-    { label: t("length"), value: dimensions.length },
+    { label: t("width"), value: displayWidth },
+    { label: t("length"), value: displayLength },
     { label: t("height"), value: dimensions.height },
   ]
 

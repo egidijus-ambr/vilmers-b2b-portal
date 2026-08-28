@@ -4,6 +4,7 @@ import React, { useCallback, useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import type { SofaFormExtended } from "@configurator/lib/types"
 import { getDefaultArmrestWidth } from "@configurator/lib/group-logic"
+import { measureGroupOfGroups } from "@configurator/SofaDrawingElements/utils"
 import SofaModulesSelector from "./sofa-modules-selector"
 import SofaStageContainer from "./sofa-stage-container"
 
@@ -61,6 +62,16 @@ const SofaShapeSection = ({ languageCode, showAllProducts = false }: SofaShapeSe
   const handleCombinationsChange = useCallback(
     (groups: any[][]) => {
       dispatch({ type: "SET_SOFA_COMBINATIONS", payload: groups })
+      // Rotation-aware width/depth per set, measured from the rendered
+      // drawing geometry — the single source of truth for both the
+      // summary table and the cart payload (see measureGroupOfGroups).
+      dispatch({
+        type: "SET_SOFA_MEASUREMENTS",
+        payload: groups.map((g) => {
+          const m = measureGroupOfGroups(g)
+          return m ? { width: m.width, depth: m.depth } : null
+        }),
+      })
     },
     [dispatch]
   )

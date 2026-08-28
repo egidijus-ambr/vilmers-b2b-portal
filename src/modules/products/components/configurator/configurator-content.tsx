@@ -299,15 +299,29 @@ const ConfiguratorContent = ({
         state.selectedAdditionalComponents ?? []
       )
       const sofaCombinationsWithArmrestWidth = state.sofaCombinations.map(
-        (combination) =>
-          combination.map((item) => {
+        (combination, setIdx) => {
+          // Rotation-aware width/depth measured from the rendered drawing
+          // (see measureGroupOfGroups) — persisted into every module's
+          // attrs of this set so the backend can read attrs.measured
+          // instead of re-deriving dimensions from raw module widths.
+          const setMeasurement = state.sofaMeasurements?.[setIdx]
+          const measured =
+            setMeasurement && setMeasurement.width > 0 && setMeasurement.depth > 0
+              ? { width: setMeasurement.width, depth: setMeasurement.depth }
+              : undefined
+
+          return combination.map((item) => {
             const clone = item.clone()
             const armrestWidthOverride = armrestWidthOverrideArr.find(
               (m: any) => m.moduleId === clone.attrs.id
             )
             clone.attrs.new_armrest_width = armrestWidthOverride?.armrestWidth
+            if (measured) {
+              clone.attrs.measured = measured
+            }
             return clone
           })
+        }
       )
 
       await addItem({

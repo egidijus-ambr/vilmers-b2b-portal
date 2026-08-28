@@ -266,6 +266,21 @@ export interface StepDefinition {
   groups: ComponentGroup[]
 }
 
+// --- Sofa set measurement (rotation-aware, from rendered drawing geometry) ---
+
+/**
+ * Width/depth of a connected sofa combination ("set") as measured from the
+ * rendered Konva drawing (see `measureGroupOfGroups` in
+ * SofaDrawingElements/utils.tsx). This is the source of truth for display
+ * and cart persistence — unlike naively summing each module's raw
+ * `dimensions.width`/`length`, it accounts for modules rotated onto a
+ * different axis (e.g. an arm rotated 90° onto a corner's other side).
+ */
+export type SetMeasurement = {
+  width: number
+  depth: number
+}
+
 // --- Cart types ---
 
 export interface ConfiguredCartItemPayload {

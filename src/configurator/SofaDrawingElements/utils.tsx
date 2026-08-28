@@ -492,21 +492,50 @@ export const getShapeExtensionHeight = item => {
   return extensionHeight
 }
 
-// Draws metric lines (width/height arrows) around groups of sofa shapes on a Konva layer
-export const drawMetricLinesForGroups = (
-  groupOfGroups,
-  layer,
-  scale,
-  params: { offsetX?: number; offsetY?: number } | null = null,
-  fontSize = 12,
-  labelBackground?: string
-) => {
-  const {
-    VerticalMetricKonvaNode,
-    HorizontalMetricKonvaNode,
-  } = require('./SofaElements/MetricLines')
+// =============================================
+// Geometry measurement (pure, no drawing/layer side effects)
+// =============================================
 
-  const { offsetX = 0, offsetY = 0 } = params ?? { offsetX: 0, offsetY: 0 }
+export type Rect = { x: number; y: number; width: number; height: number }
+
+export type GroupMeasurement = {
+  width: number
+  height: number
+  // Height measured against the right-hand edge of the group-of-groups.
+  // null when the top/bottom-right corner sits flush with the left side
+  // (i.e. there is no separate right edge to measure — a straight sofa).
+  rightHeight: number | null
+  // Overall depth of the set — the larger of the left/right measured
+  // heights. This is what should be shown as "Length"/"Depth" in the UI,
+  // since a rotated corner/arm module can make the right side deeper than
+  // the left.
+  depth: number
+  topLeftRect: Rect
+  topRightRect: Rect
+  bottomLeftRect: Rect
+  bottomRightRect: Rect
+}
+
+/**
+ * Measures the bounding geometry of a "group of groups" (a connected sofa
+ * combination) using the already-rendered Konva groups' client rects. This
+ * is rotation-aware because it reads real rendered rects rather than
+ * summing each module's raw `dimensions.width` — a module rotated 90°
+ * (e.g. an arm rotated onto a corner's other side) contributes to height,
+ * not width, once rendered.
+ *
+ * Pure geometry only — does not touch the layer or draw anything, so it is
+ * safe to call outside of a render pass (e.g. from a reducer/effect) purely
+ * to obtain the width/depth of a set for display or persistence.
+ *
+ * Returns null where the underlying client rect is not finite yet (e.g.
+ * the group hasn't been laid out on the stage yet).
+ */
+export const measureGroupOfGroups = (groupOfGroups: any[]): GroupMeasurement | null => {
+  if (!groupOfGroups || groupOfGroups.length === 0) {
+    return null
+  }
+
   const relativeTo = groupOfGroups[0].getParent()
   let topLeftRect = getClientRect(groupOfGroups[0], {
     roundValues: true,
@@ -514,7 +543,7 @@ export const drawMetricLinesForGroups = (
   })
 
   if (!Number.isFinite(topLeftRect.x) || !Number.isFinite(topLeftRect.y)) {
-    return { width: 0, height: 0 }
+    return null
   }
 
   let topRightRect = topLeftRect
@@ -558,9 +587,79 @@ export const drawMetricLinesForGroups = (
     }
   }
 
-  // Draw left vertical line
   const height = bottomLeftRec.y - topLeftRect.y + bottomLeftRec.height
 
+  let rightHeight: number | null = null
+  if (bottomRightRec.y !== bottomLeftRec.y) {
+    let rh = bottomRightRec.y - topRightRect.y + bottomRightRec.height
+
+    // this is the case when the bottomRightRec is higher than the bottomLeftRec
+    if (topRightRect.y > topLeftRect.y) {
+      rh += topRightRect.y - topLeftRect.y
+    }
+
+    rightHeight = rh
+  }
+
+  const width = Math.floor(topRightRect.x - topLeftRect.x + topRightRect.width)
+
+  const depth = Math.max(height, rightHeight ?? 0)
+
+  return {
+    width,
+    height,
+    rightHeight,
+    depth,
+    topLeftRect,
+    topRightRect,
+    bottomLeftRect: bottomLeftRec,
+    bottomRightRect: bottomRightRec,
+  }
+}
+
+// Draws metric lines (width/height arrows) around groups of sofa shapes on a Konva layer
+export const drawMetricLinesForGroups = (
+  groupOfGroups,
+  layer,
+  scale,
+  params: { offsetX?: number; offsetY?: number } | null = null,
+  fontSize = 12,
+  labelBackground?: string
+): GroupMeasurement => {
+  const {
+    VerticalMetricKonvaNode,
+    HorizontalMetricKonvaNode,
+  } = require('./SofaElements/MetricLines')
+
+  const { offsetX = 0, offsetY = 0 } = params ?? { offsetX: 0, offsetY: 0 }
+
+  const measurement = measureGroupOfGroups(groupOfGroups)
+
+  if (!measurement) {
+    const emptyRect: Rect = { x: 0, y: 0, width: 0, height: 0 }
+    return {
+      width: 0,
+      height: 0,
+      rightHeight: null,
+      depth: 0,
+      topLeftRect: emptyRect,
+      topRightRect: emptyRect,
+      bottomLeftRect: emptyRect,
+      bottomRightRect: emptyRect,
+    }
+  }
+
+  const {
+    width,
+    height,
+    rightHeight,
+    topLeftRect,
+    topRightRect,
+    bottomLeftRect: bottomLeftRec,
+    bottomRightRect: bottomRightRec,
+  } = measurement
+
+  // Draw left vertical line
   const verticalMetric = VerticalMetricKonvaNode({
     x: topLeftRect.x + offsetX,
     y: topLeftRect.y + offsetY,
@@ -572,15 +671,12 @@ export const drawMetricLinesForGroups = (
   layer.add(verticalMetric)
 
   // Draw right vertical line if needed
-  if (bottomRightRec.y !== bottomLeftRec.y) {
-    let rightHeight = bottomRightRec.y - topRightRect.y + bottomRightRec.height
-
+  if (rightHeight !== null) {
     let y = topRightRect.y + offsetY
 
     // this is the case when the bottomRightRec is higher than the bottomLeftRec
     if (topRightRect.y > topLeftRect.y) {
       y = topLeftRect.y + offsetY
-      rightHeight += topRightRect.y - topLeftRect.y
     }
 
     const rightVerticalMetric = VerticalMetricKonvaNode({
@@ -595,8 +691,6 @@ export const drawMetricLinesForGroups = (
   }
 
   // Draw top horizontal line
-  const width = Math.floor(topRightRect.x - topLeftRect.x + topRightRect.width)
-
   const horizontalMetric = HorizontalMetricKonvaNode({
     x: topLeftRect.x + offsetX,
     y: topLeftRect.y + offsetY,
@@ -607,10 +701,7 @@ export const drawMetricLinesForGroups = (
   })
   layer.add(horizontalMetric)
 
-  return {
-    width,
-    height,
-  }
+  return measurement
 }
 
 // Draws a vertical zigzag pattern on the canvas context
