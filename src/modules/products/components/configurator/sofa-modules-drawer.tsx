@@ -80,7 +80,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { drawMetricLinesForGroups } =
     require("@configurator/SofaDrawingElements/utils") as {
-      drawMetricLinesForGroups: (groupOfGroups: any[], layer: any, scale: number, params?: any, fontSize?: number, labelBackground?: string) => void
+      drawMetricLinesForGroups: (groupOfGroups: any[], layer: any, scale: number, params?: any, fontSize?: number, labelBackground?: string) => import("@configurator/SofaDrawingElements/utils").GroupMeasurement
     }
 
   const SofaElement = SofaElements[sofaForm.type]

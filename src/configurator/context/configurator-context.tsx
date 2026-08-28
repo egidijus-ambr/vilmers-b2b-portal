@@ -8,6 +8,7 @@ import type {
   SelectedFabricCombinationState,
   ComponentGroup,
   SelectedComponent,
+  SetMeasurement,
 } from "../lib/types"
 
 // =============================================
@@ -23,6 +24,10 @@ export interface ConfiguratorState {
   // Sofa shapes
   sofaForms: SofaFormExtended[]
   sofaCombinations: any[][] // Konva node arrays
+  // Rotation-aware width/depth for each entry in sofaCombinations, measured
+  // from the rendered drawing (see measureGroupOfGroups). Index i
+  // corresponds to sofaCombinations[i]; null while not yet measured.
+  sofaMeasurements: (SetMeasurement | null)[]
   sofaScale: number
 
   // Fabrics
@@ -50,6 +55,7 @@ const initialState: ConfiguratorState = {
 
   sofaForms: [],
   sofaCombinations: [],
+  sofaMeasurements: [],
   sofaScale: 1,
 
   selectedFabric: {
@@ -83,6 +89,7 @@ type ConfiguratorAction =
   | { type: "SET_ERROR"; payload: string | null }
   | { type: "SET_SOFA_FORMS"; payload: SofaFormExtended[] }
   | { type: "SET_SOFA_COMBINATIONS"; payload: any[][] }
+  | { type: "SET_SOFA_MEASUREMENTS"; payload: (SetMeasurement | null)[] }
   | { type: "SET_SOFA_SCALE"; payload: number }
   | { type: "SET_FABRIC"; payload: SelectedFabricState }
   | { type: "SET_FABRIC_COMBINATION"; payload: SelectedFabricCombinationState }
@@ -112,6 +119,8 @@ function configuratorReducer(
       return { ...state, sofaForms: action.payload }
     case "SET_SOFA_COMBINATIONS":
       return { ...state, sofaCombinations: action.payload }
+    case "SET_SOFA_MEASUREMENTS":
+      return { ...state, sofaMeasurements: action.payload }
     case "SET_SOFA_SCALE":
       return { ...state, sofaScale: action.payload }
     case "SET_FABRIC":

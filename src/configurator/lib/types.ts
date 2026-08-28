@@ -266,6 +266,48 @@ export interface StepDefinition {
   groups: ComponentGroup[]
 }
 
+// --- Sofa set measurement (rotation-aware, from rendered drawing geometry) ---
+
+/**
+ * Width/depth of a connected sofa combination ("set") as measured from the
+ * rendered Konva drawing (see `measureGroupOfGroups` in
+ * SofaDrawingElements/utils.tsx). This is the source of truth for display
+ * and cart persistence — unlike naively summing each module's raw
+ * `dimensions.width`/`length`, it accounts for modules rotated onto a
+ * different axis (e.g. an arm rotated 90° onto a corner's other side).
+ */
+export type SetMeasurement = {
+  width: number
+  depth: number
+}
+
+/**
+ * A measurement is only trustworthy when BOTH dimensions are known,
+ * finite, and positive — a group whose children haven't finished
+ * rendering can produce a finite but partially/fully-zeroed measurement
+ * (e.g. `{width: 300, depth: 0}`), and displaying/persisting one axis from
+ * that without the other would be misleading. `Number.isFinite` also
+ * rejects `Infinity`/`NaN` (`Infinity > 0` is `true`, and `Infinity`
+ * silently becomes `null` across a `JSON.stringify` round-trip, which
+ * would otherwise let a bad value slip past a writer that only checked
+ * `> 0` and get rejected later by a reader that also checks finiteness —
+ * this is the single check every writer and reader shares, so that can't
+ * happen). Guard jointly, not per-field, so every consumer (summary table,
+ * add-to-cart, order/cart detail) agrees on when to fall back to the naive
+ * per-module sum instead.
+ */
+export function isValidMeasurement(
+  m: SetMeasurement | null | undefined
+): m is SetMeasurement {
+  return (
+    !!m &&
+    Number.isFinite(m.width) &&
+    Number.isFinite(m.depth) &&
+    m.width > 0 &&
+    m.depth > 0
+  )
+}
+
 // --- Cart types ---
 
 export interface ConfiguredCartItemPayload {
