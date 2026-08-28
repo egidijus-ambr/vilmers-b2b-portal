@@ -9,6 +9,7 @@ import {
   AdvancedProductDimensions,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, getBackendLanguageCode } from "@lib/i18n"
+import { isValidMeasurement, SetMeasurement } from "@configurator/lib/types"
 
 // Dynamically import Konva-based preview (requires browser DOM, no SSR)
 const SofaDrawingPreview = dynamic(
@@ -82,6 +83,15 @@ interface KonvaShape {
       }
     }
     new_armrest_width?: number
+    // Rotation-aware width/depth persisted by the configurator's
+    // handleAddToCart (see isValidMeasurement) — the source of truth when
+    // present. Absent on legacy cart/order items created before this was
+    // added, and possibly malformed since this whole object is round-
+    // tripped through JSON.stringify/JSON.parse — treat as untrusted.
+    measured?: {
+      width?: number
+      depth?: number
+    } | null
   }
 }
 
@@ -109,6 +119,31 @@ function parseSofaCombinations(json: string): KonvaShape[][] {
   } catch {
     return []
   }
+}
+
+// Reads the rotation-aware width/depth persisted by the configurator's
+// handleAddToCart (attrs.measured — see isValidMeasurement) from the first
+// node in a set that carries a trustworthy one. This is the source of
+// truth when present, since it comes from the rendered drawing geometry
+// (measureGroupOfGroups) rather than a naive per-module dimension sum.
+// Returns null for legacy items created before attrs.measured existed, or
+// if the value doesn't survive the JSON round-trip as a plain, finite,
+// positive-on-both-axes object (this data is untrusted — round-tripped
+// through JSON.stringify/JSON.parse from a stored cart/order item).
+function readMeasuredFromSet(nodes: KonvaShape[]): SetMeasurement | null {
+  for (const node of nodes) {
+    const measured = node?.attrs?.measured
+    if (
+      measured &&
+      typeof measured === "object" &&
+      Number.isFinite(measured.width) &&
+      Number.isFinite(measured.depth) &&
+      isValidMeasurement(measured as SetMeasurement)
+    ) {
+      return { width: measured.width as number, depth: measured.depth as number }
+    }
+  }
+  return null
 }
 
 // --- Parse sofa sets from metadata ---
@@ -146,18 +181,33 @@ function parseSofaSets(item: OrderDetailItem): ParsedSofaSet[] {
       price: part.price || 0,
     }))
 
+    // combinations is parallel to configurations (both derive from the
+    // same cart item, indexed the same way elsewhere in this file — see
+    // `combinations[idx]` next to `sofaSets.map` in the render section).
+    const measuredForSet = readMeasuredFromSet(combinations[setIndex] || [])
+
     let dimensions: ParsedSofaDimensions | null = null
     const konvaPartDims = parts
       .map((p) => konvaDimensions[p.moduleCode])
       .filter(Boolean)
 
-    if (konvaPartDims.length > 0) {
+    if (konvaPartDims.length > 0 || measuredForSet) {
+      const naiveWidth = konvaPartDims.reduce(
+        (sum: number, d: any) => sum + (d.width || 0),
+        0
+      )
+      const naiveLength =
+        konvaPartDims.length > 0
+          ? Math.max(...konvaPartDims.map((d: any) => d.length || 0))
+          : 0
+
       dimensions = {
-        width: konvaPartDims.reduce(
-          (sum: number, d: any) => sum + (d.width || 0),
-          0
-        ),
-        length: Math.max(...konvaPartDims.map((d: any) => d.length || 0)),
+        // Prefer the persisted rotation-aware measurement; fall back to
+        // the naive per-module sum for legacy items without it. Height
+        // and armrest width aren't affected by rotation the same way, so
+        // they keep using the naive per-module value either way.
+        width: measuredForSet ? measuredForSet.width : naiveWidth,
+        length: measuredForSet ? measuredForSet.depth : naiveLength,
         height: konvaPartDims[0]?.height || 0,
         armrestWidth: konvaPartDims[0]?.armrest_width || 0,
       }

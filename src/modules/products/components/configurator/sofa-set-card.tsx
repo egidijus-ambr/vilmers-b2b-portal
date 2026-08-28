@@ -5,6 +5,7 @@ import SofaDrawingPreview from "@configurator/SofaDrawingElements/SofaDrawingPre
 import { getArmrestsPosition, ArmrestsPosition } from "@configurator/lib/sofa-shape-utils"
 import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
 import { useConfigurator } from "@configurator/context/configurator-context"
+import { isValidMeasurement } from "@configurator/lib/types"
 import { useTranslations } from "@lib/i18n"
 
 // =============================================
@@ -143,14 +144,18 @@ const SofaSetCard = ({
   // Rotation-aware width/depth measured from the rendered drawing — the
   // source of truth. Falls back to the naive per-module sum (extractSetData)
   // only until the drawing has produced a measurement for this set index.
-  // Guard on `> 0` (not just null/undefined) — a group whose children
-  // haven't rendered yet can produce a non-null but zeroed measurement
-  // ({x:0,y:0,width:0,height:0} is finite), and `dimensionRows` below
-  // filters out zero-value rows entirely, so `??` alone would make the
-  // Width/Length rows silently disappear instead of falling back.
-  const measured = configuratorState.sofaMeasurements?.[setIndex]
-  const displayWidth = measured && measured.width > 0 ? measured.width : dimensions.width
-  const displayLength = measured && measured.depth > 0 ? measured.depth : dimensions.length
+  // isValidMeasurement guards BOTH width and depth jointly (not just
+  // null/undefined, and not per-field) — a group whose children haven't
+  // rendered yet can produce a non-null but partially/fully-zeroed
+  // measurement (e.g. {width: 300, depth: 0}), and `dimensionRows` below
+  // filters out zero-value rows entirely, so an independent per-field
+  // guard would show Width from the measurement while add-to-cart (which
+  // uses the same joint guard) omits attrs.measured for that same set —
+  // keep both consumers in agreement.
+  const rawMeasured = configuratorState.sofaMeasurements?.[setIndex]
+  const measured = isValidMeasurement(rawMeasured) ? rawMeasured : null
+  const displayWidth = measured ? measured.width : dimensions.width
+  const displayLength = measured ? measured.depth : dimensions.length
 
   // Build dimension rows with conditional armrest and extension lines
   const baseRows: { label: string; value: number }[] = [

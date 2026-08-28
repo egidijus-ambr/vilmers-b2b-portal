@@ -9,6 +9,7 @@ import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
 import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
+import { isValidMeasurement } from "@configurator/lib/types"
 import {
   getStepsForProduct,
   getMissingRequiredGroupCodes,
@@ -304,11 +305,13 @@ const ConfiguratorContent = ({
           // (see measureGroupOfGroups) — persisted into every module's
           // attrs of this set so the backend can read attrs.measured
           // instead of re-deriving dimensions from raw module widths.
+          // isValidMeasurement guards width AND depth jointly (shared with
+          // SofaSetCard) so the two consumers never disagree about
+          // whether a given set's measurement is trustworthy.
           const setMeasurement = state.sofaMeasurements?.[setIdx]
-          const measured =
-            setMeasurement && setMeasurement.width > 0 && setMeasurement.depth > 0
-              ? { width: setMeasurement.width, depth: setMeasurement.depth }
-              : undefined
+          const measured = isValidMeasurement(setMeasurement)
+            ? { width: setMeasurement.width, depth: setMeasurement.depth }
+            : undefined
 
           return combination.map((item) => {
             const clone = item.clone()
