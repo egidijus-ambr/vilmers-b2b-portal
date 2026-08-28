@@ -12,7 +12,7 @@ import {
   Tag,
 } from 'react-konva'
 
-import { MAIN_METRIC_COLOR, METRIC_SIZE } from './constants'
+import { MAIN_METRIC_COLOR, METRIC_SIZE, LABEL_GAP } from './constants'
 import Konva from 'konva'
 
 interface VerticalMetricProps {
@@ -43,6 +43,13 @@ interface MetricKonvaNodeProps {
   height: number
   fontSize?: number
   labelBackground?: string
+}
+
+interface VerticalMetricKonvaNodeProps extends MetricKonvaNodeProps {
+  // Which side of the line the label sits on. 'left' (default) keeps the current
+  // behaviour (label drawn away from the sofa, to the left of the line). 'right'
+  // mirrors it so the label is drawn to the right of the line instead.
+  labelSide?: 'left' | 'right'
 }
 
 export const VerticalMetric = ({
@@ -108,7 +115,8 @@ export const VerticalMetricKonvaNode = ({
   height,
   fontSize = 12,
   labelBackground = '#F5F3EE',
-}: MetricKonvaNodeProps) => {
+  labelSide = 'left',
+}: VerticalMetricKonvaNodeProps) => {
   //-----
   const num = (n: number) => (Number.isFinite(n) ? n : 0)
   x = num(x)
@@ -145,7 +153,7 @@ export const VerticalMetricKonvaNode = ({
   // })
 
   let text = new Konva.Text({
-    x: METRIC_SIZE / 2 - 25,
+    x: 0,
     y: height / 2,
     text: height + ' cm',
     padding: 5,
@@ -155,6 +163,20 @@ export const VerticalMetricKonvaNode = ({
     align: 'center',
     verticalAlign: 'middle',
   })
+
+  // Anchor the label's OUTER edge — the one facing away from the sofa, which is what
+  // determines overhang/clipping risk (see LIVE_METRIC_PADDING_X in
+  // SofaDrawingPreview.tsx) — at a fixed LABEL_GAP past the arrow line (drawn at local
+  // x = METRIC_SIZE / 2). The box's INNER edge, closer to the line, moves with the text
+  // width and, for a wide enough label, crosses over the line itself — that's the
+  // pre-existing left-side behaviour (unchanged here), not something 'right' introduces.
+  // 'left' (default): outer (left) edge = METRIC_SIZE / 2 - LABEL_GAP.
+  // 'right': mirrored — outer (right) edge = METRIC_SIZE / 2 + LABEL_GAP.
+  text.x(
+    labelSide === 'right'
+      ? METRIC_SIZE / 2 + LABEL_GAP - text.width()
+      : METRIC_SIZE / 2 - LABEL_GAP
+  )
 
   // Create background rectangle for text
   let textBounds = text.getClientRect()

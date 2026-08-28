@@ -677,13 +677,19 @@ export const drawMetricLinesForGroups = (
       y = topLeftRect.y + offsetY
     }
 
+    // VerticalMetricKonvaNode renders its Konva.Group at `x - METRIC_SIZE`, and draws the
+    // arrow line at local `METRIC_SIZE / 2` inside that group — so the line always lands
+    // at `x - METRIC_SIZE / 2` on screen, not at `x`. To place the right line METRIC_SIZE / 2
+    // (30px) outside the sofa's right edge (mirroring the left line, which lands at
+    // `topLeftRect.x - METRIC_SIZE / 2`), pass the right edge plus a full METRIC_SIZE.
     const rightVerticalMetric = VerticalMetricKonvaNode({
-      x: topRightRect.x + topRightRect.width + 30 + offsetX,
+      x: topRightRect.x + topRightRect.width + METRIC_SIZE + offsetX,
       y,
       width: null,
       height: rightHeight,
       fontSize,
       labelBackground,
+      labelSide: 'right',
     })
     layer.add(rightVerticalMetric)
   }

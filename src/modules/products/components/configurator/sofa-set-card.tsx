@@ -199,7 +199,6 @@ const SofaSetCard = ({
             <SofaDrawingPreview
               combination={combination}
               parentRef={drawingRef as React.RefObject<HTMLElement>}
-              metricPadding={110}
               armrestWidthOverrides={armrestWidthOverrides}
             />
           )}

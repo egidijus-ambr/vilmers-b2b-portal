@@ -1,6 +1,11 @@
 // --- The lines ---
 export const METRIC_SIZE = 60
 export const MAIN_METRIC_COLOR = '#D3D3D3'
+// Distance (local coords) from a vertical metric line (drawn at METRIC_SIZE / 2) to the
+// far edge of its label's text box — see VerticalMetricKonvaNode in MetricLines.tsx.
+// Lives here (not in MetricLines.tsx) so non-Konva consumers, e.g. sofa-modules-drawer.tsx,
+// can compute label clearance without importing react-konva/konva at module scope.
+export const LABEL_GAP = 25
 
 // -- Shape sizes
 export const ARMS_REST_WIDTH = 22

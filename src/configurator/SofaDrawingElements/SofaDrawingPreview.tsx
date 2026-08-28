@@ -13,6 +13,29 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import * as SofaElements from './SofaElements'
 import { drawMetricLinesForGroups } from './utils'
+import { METRIC_SIZE, LABEL_GAP } from './SofaElements/constants'
+
+// X axis: both the left AND right vertical metric lines need overhang room (since the
+// right line now mirrors the left one — see MetricLines.tsx), each METRIC_SIZE / 2 +
+// LABEL_GAP wide. That bbox comes from computeGroupRectFromAttrs below (nominal
+// attrs.width/height), while the actual line/label placement comes from
+// measureGroupOfGroups's getClientRect() (rendered pixels, which can include
+// shadow/stroke overflow and rounding) — the two rarely agree to the pixel, so on top
+// of the exact overhang we add SAFETY_MARGIN slack to avoid clipping either label's
+// outer edge. This was previously invisible because only the left line carried an
+// overhang; now both sides do, so a budget without slack has zero room for that drift.
+const LABEL_OVERHANG_PER_SIDE = METRIC_SIZE / 2 + LABEL_GAP
+const METRIC_LABEL_SAFETY_MARGIN = 40
+export const LIVE_METRIC_PADDING_X =
+  LABEL_OVERHANG_PER_SIDE * 2 + METRIC_LABEL_SAFETY_MARGIN
+
+// Y axis: only the single top horizontal metric line needs room — it extends
+// METRIC_SIZE upward from the sofa's top edge; there is no bottom line. This is
+// deliberately its own (smaller) budget: reusing the X-axis budget (which exists to
+// cover a *pair* of side labels) here would over-reserve vertical space and shrink the
+// sofa in fixed-height containers (e.g. the offer diagram, cart item preview) well
+// below what LIVE_METRIC_PADDING_X-for-both-axes used to allow.
+export const LIVE_METRIC_PADDING_Y = METRIC_SIZE + 20
 
 interface ArmrestWidthOverride {
   armrestWidth: number
@@ -32,8 +55,10 @@ interface SofaDrawingPreviewProps {
   onImage?:
     | ((image: { dataURI: string; width: number; length: number }) => void)
     | null
-  /** Padding around content for metric lines/arrows. Defaults: 110 for live nodes, 40 for static */
+  /** Horizontal padding reserved for metric lines/labels. Defaults: LIVE_METRIC_PADDING_X for live nodes, 40 for static */
   metricPadding?: number
+  /** Vertical padding reserved for metric lines/labels. Defaults: LIVE_METRIC_PADDING_Y for live nodes, 40 for static */
+  metricPaddingY?: number
 }
 
 // Compute bounding box from shape attrs (works for both live Konva nodes and static data).
@@ -109,6 +134,7 @@ const SofaDrawingPreview = ({
   armrestWidthOverrides = [],
   onImage = null,
   metricPadding,
+  metricPaddingY,
 }: SofaDrawingPreviewProps) => {
   const stageRef = useRef<any>(null)
   const [layer, setLayer] = useState<any>(null)
@@ -164,19 +190,22 @@ const SofaDrawingPreview = ({
   // Move all groups to center
   const centerX = width / 2
   const centerY = height / 2
-  const additionalBound = metricPadding ?? (isLiveNodes ? 110 : 40)
+  const additionalBoundX =
+    metricPadding ?? (isLiveNodes ? LIVE_METRIC_PADDING_X : 40)
+  const additionalBoundY =
+    metricPaddingY ?? (isLiveNodes ? LIVE_METRIC_PADDING_Y : 40)
 
   let distanceToCenterX = centerX - groupRect.center.x
   let distanceToCenterY = centerY - groupRect.center.y
 
   // We calculate how much do we need to scale down to fit in the window
   let allScales = [] as any
-  if (groupRect.width + additionalBound > width) {
-    let newScale = width / (groupRect.width + additionalBound)
+  if (groupRect.width + additionalBoundX > width) {
+    let newScale = width / (groupRect.width + additionalBoundX)
     allScales.push(newScale)
   }
-  if (groupRect.height + additionalBound > height) {
-    let newScale = height / (groupRect.height + additionalBound)
+  if (groupRect.height + additionalBoundY > height) {
+    let newScale = height / (groupRect.height + additionalBoundY)
     allScales.push(newScale)
   }
 

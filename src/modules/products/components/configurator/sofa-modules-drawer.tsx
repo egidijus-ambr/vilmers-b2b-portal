@@ -8,6 +8,10 @@ import { getPriceFromPriceCategories, applyDiscount } from "@configurator/lib/pr
 import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
 import PriceDisplay from "@modules/common/components/price-display"
 import { activeTheme } from "themes"
+import {
+  METRIC_SIZE,
+  LABEL_GAP,
+} from "@configurator/SofaDrawingElements/SofaElements/constants"
 
 // Konva can't consume a Tailwind class — it needs a literal color string.
 // Resolve the `configurator_card` surface token to its underlying hex from
@@ -94,7 +98,18 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
   const extraH = dims.extendable_part_length ?? 0
   const armW = armrestWidthOverride ?? dims.armrest_width ?? 22
 
-  const stageW = Math.round((rawW + armW * 2 + metricSpace + 30) * scale)
+  // Right clearance mirrors the left (metricSpace + armW) so a right-side vertical
+  // metric line/label (drawn when a composite module's right height differs from its
+  // left, see drawMetricLinesForGroups) has the same clearance as the left one instead
+  // of being clipped against the stage edge. But `armW + metricSpace` alone isn't
+  // enough on its own: the label needs METRIC_SIZE / 2 + LABEL_GAP regardless of armW
+  // (and armrestWidthOverride ?? dims.armrest_width ?? 22 does NOT fall back for an
+  // explicit armrest_width of 0 — `??` only replaces null/undefined), so floor it.
+  const rightClearance = Math.max(
+    armW + metricSpace,
+    METRIC_SIZE / 2 + LABEL_GAP + 5
+  )
+  const stageW = Math.round((rawW + (metricSpace + armW) + rightClearance) * scale)
   const stageH = Math.round((rawH + extraH + metricSpace + 10) * scale)
 
   const [layer, setLayer] = useState<any>(null)
@@ -195,14 +210,24 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
   const { discountPct } = useCustomerDiscount()
   const dims = sofaForm.dimensions
 
-  // Card width matches Konva stage width so preview fits perfectly
+  // Card width matches Konva stage width so preview fits perfectly.
+  // Keep this formula in sync with `stageW`/`rightClearance` in ModulePreviewInner
+  // above — they must stay equal, or this card's overflow-hidden clips (or
+  // needlessly widens beyond) the stage it wraps.
   const rawW = dims.width ?? 100
   const originalArmW = dims.armrest_width ?? 22
   const armW = armrestWidthOverride ?? originalArmW
   const adjustedW = rawW + (armW - originalArmW)
   const scale = 0.65
   const metricSpace = 45
-  const cardWidth = Math.max(Math.round((adjustedW + armW * 2 + metricSpace + 30) * scale), 100)
+  const rightClearance = Math.max(
+    armW + metricSpace,
+    METRIC_SIZE / 2 + LABEL_GAP + 5
+  )
+  const cardWidth = Math.max(
+    Math.round((adjustedW + (metricSpace + armW) + rightClearance) * scale),
+    100
+  )
 
   return (
     <div
