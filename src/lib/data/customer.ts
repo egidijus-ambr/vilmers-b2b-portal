@@ -27,6 +27,7 @@ import { getActingCustomer } from "./acting-customer"
 import { getShowAllProductsActive } from "./show-all-products"
 import { getPageByCode } from "./pages"
 import { Page } from "@lib/furnisystems-sdk"
+import { normalizeLanguage } from "@lib/i18n/config"
 
 export const retrieveCustomer =
   async (): Promise<ExtendedStoreCustomer | null> => {
@@ -127,6 +128,18 @@ export async function login(_currentState: unknown, formData: FormData) {
   console.log("Logging in...")
   const email = formData.get("email") as string
   const password = formData.get("password") as string
+  // Mirrors performMagicLinkLogin()'s languageCode handling below, but falls back to the
+  // portal's default language (supportedLanguages are en/fr/de - "lt" was never one of
+  // them) so a missing/unsupported value can't send the customer to a mangled URL that
+  // the i18n middleware then has to untangle.
+  // The password-login form posts a hidden field named "language" (see
+  // src/modules/account/components/login/index.tsx), while magic-link/impersonate forms
+  // use "languageCode" - read both so neither login path falls back silently.
+  const languageCode = normalizeLanguage(
+    (formData.get("languageCode") ?? formData.get("language")) as
+      | string
+      | null
+  )
 
   console.log("Logging in with email:", email)
 
@@ -159,7 +172,7 @@ export async function login(_currentState: unknown, formData: FormData) {
   }
 
   // Redirect to account dashboard after successful login
-  redirect("/lt/account")
+  redirect(`/${languageCode}/account`)
 }
 
 export async function signout(languageCode: string) {

@@ -18,6 +18,8 @@ import {
   SearchCustomerResult,
 } from "./types"
 import { useMutation } from "@apollo/client"
+import { AuthenticationError } from "../../client/errors"
+import { AUTH_COOKIE_MAX_AGE_SECONDS } from "../../../auth-constants"
 
 // Helper function to safely access cookies in server context only
 async function setCookieIfAvailable(
@@ -649,6 +651,155 @@ const SEARCH_CUSTOMERS_QUERY = gql`
   }
 `
 
+// Shape of the `getMe` field in GET_ME_QUERY's response.
+type GetMeCustomerData = {
+  id: string
+  name: string
+  email: string
+  b2b_company_name: string
+  account_code: string
+  price_listId: string
+  b2b_customer_discount: number | null
+  tags: {
+    id: number
+    tag_profiles?: { name: string; language: string }[]
+  }[]
+  fabric_palettes: {
+    id: string
+  }[]
+  files?: {
+    id: number
+    name: string
+    original_name?: string | null
+    mime_type?: string | null
+    size_bytes?: number | null
+    display_order?: number | null
+  }[]
+  customer_group?: {
+    price_listId?: string
+    fabric_palettes?: {
+      id: string
+    }[]
+  }
+  is_configurator_enabled: boolean
+  is_claims_enabled: boolean
+  role?: string
+  customer_accounts?: {
+    id: string
+    name: string
+    email: string
+    is_prices_enabled?: boolean
+    customerSubAccount: {
+      name: string
+    }
+  }[]
+  b2b_company_address: {
+    country: string
+  }
+  // Managers can be an array of objects with id and manager details
+  managers: {
+    id: string
+    manager: {
+      name: string
+      surname: string
+      email: string
+      default_phone_number?: string
+      role?: string
+      image?: {
+        src_md: string
+        src: string
+      }
+    }
+  }[]
+  additional_components?: {
+    additionalComponent: {
+      code?: string
+      additional_component_group?: {
+        code?: string
+      }
+    }
+  }[]
+}
+
+function mapGetMeResponseToCustomer(customerData: GetMeCustomerData): Customer {
+  return {
+    id: customerData.id,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    email: customerData.email,
+    full_name: customerData.name || "",
+    has_account: true,
+    b2b_company_name: customerData.b2b_company_name,
+    account_code: customerData.account_code,
+    price_listId: customerData.price_listId,
+    group_price_listId: customerData.customer_group?.price_listId ?? null,
+    b2b_customer_discount: customerData.b2b_customer_discount,
+    tags: customerData.tags,
+    fabric_palettes: customerData.fabric_palettes,
+    files: customerData.files ?? [],
+    customer_group: customerData.customer_group,
+    managers: customerData.managers,
+    is_configurator_enabled: customerData.is_configurator_enabled,
+    is_claims_enabled: customerData.is_claims_enabled,
+    role: customerData.role,
+    b2b_company_address: customerData.b2b_company_address,
+    name: customerData.name || "",
+    additional_components: customerData.additional_components,
+    customer_account: customerData?.customer_accounts?.[0]
+      ? {
+          id: customerData.customer_accounts[0].id,
+          name: customerData.customer_accounts[0].name,
+          email: customerData.customer_accounts[0].email,
+          shop: customerData.customer_accounts[0]?.customerSubAccount?.name,
+          is_prices_enabled:
+            customerData.customer_accounts[0].is_prices_enabled ?? true,
+        }
+      : {
+          name: "",
+          email: "",
+          shop: "",
+          // No account on the session (agent / impersonation): fail open.
+          is_prices_enabled: true,
+        },
+  }
+}
+
+// Genuine-auth-failure classification, shared by getMe()'s two error surfaces (the thrown
+// ApolloError path and the resolved-with-`errors` path). Keeping this in one place is what
+// `validateSession()` relies on to decide whether a session is really invalid (tear it down)
+// versus a transient hiccup (leave the cookie alone). Note: "customer not found" is included
+// here even though it isn't a token-verification failure - the backend's getMe throws that
+// error only *after* the token has already been verified, meaning the token is well-formed
+// but points at a customer that no longer exists (orphaned/dead token). That's not transient,
+// so without this pattern the cookie would be preserved for the full 14-day lifetime while
+// every render keeps failing.
+const AUTH_FAILURE_MESSAGE_PATTERNS = [
+  /not authenticated/i,
+  /authentication required/i,
+  /jwt expired/i,
+  /invalid token/i,
+  /jwt malformed/i,
+  /invalid signature/i,
+  /unauthorized/i,
+  /customer not found/i,
+]
+
+function isAuthGraphQLError(error: {
+  message?: string
+  extensions?: { code?: string }
+}): boolean {
+  if (!error) {
+    return false
+  }
+
+  if (error.extensions?.code === "UNAUTHENTICATED") {
+    return true
+  }
+
+  const message = error.message ?? ""
+  return AUTH_FAILURE_MESSAGE_PATTERNS.some((pattern) => pattern.test(message))
+}
+
 export class CustomerModule {
   constructor(private client: GraphQLClient) {}
 
@@ -685,7 +836,7 @@ export class CustomerModule {
 
       // Store token in cookies internally within the SDK
       await setCookieIfAvailable("_furni_jwt", token, {
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
         httpOnly: true,
         sameSite: "strict",
         secure: process.env.NODE_ENV === "production",
@@ -713,134 +864,82 @@ export class CustomerModule {
   }
 
   async getMe(): Promise<Customer | null> {
+    // getMe() is queried with errorPolicy: "all" so that a partial GraphQL response (valid
+    // `data.getMe` alongside unrelated resolver errors, e.g. a broken sub-field) is not
+    // discarded. The shared `this.client.query()` wrapper throws on *any* `result.errors`
+    // entry before returning `data` (see ApolloGraphQLClient.query), which would defeat that
+    // intent, so this one call goes straight to the underlying Apollo client instead. The
+    // Apollo client instance still carries the same link chain (auth headers, HTTP link,
+    // etc.) - only the wrapper's throw-on-any-error behaviour is bypassed, and only here.
+    let result: {
+      data?: { getMe: GetMeCustomerData | null }
+      errors?: ReadonlyArray<{ message: string; extensions?: { code?: string } }>
+    }
+
     try {
-      const response = await this.client.query<{
-        getMe: {
-          id: string
-          name: string
-          email: string
-          b2b_company_name: string
-          account_code: string
-          price_listId: string
-          b2b_customer_discount: number | null
-          tags: {
-            id: number
-            tag_profiles?: { name: string; language: string }[]
-          }[]
-          fabric_palettes: {
-            id: string
-          }[]
-          files?: {
-            id: number
-            name: string
-            original_name?: string | null
-            mime_type?: string | null
-            size_bytes?: number | null
-            display_order?: number | null
-          }[]
-          customer_group?: {
-            price_listId?: string
-            fabric_palettes?: {
-              id: string
-            }[]
-          }
-          is_configurator_enabled: boolean
-          is_claims_enabled: boolean
-          role?: string
-          customer_accounts?: {
-            id: string
-            name: string
-            email: string
-            is_prices_enabled?: boolean
-            customerSubAccount: {
-              name: string
-            }
-          }[]
-          b2b_company_address: {
-            country: string
-          }
-          // Managers can be an array of objects with id and manager details
-          managers: {
-            id: string
-            manager: {
-              name: string
-              surname: string
-              email: string
-              default_phone_number?: string
-              role?: string
-              image?: {
-                src_md: string
-                src: string
-              }
-            }
-          }[]
-          additional_components?: {
-            additionalComponent: {
-              code?: string
-              additional_component_group?: {
-                code?: string
-              }
-            }
-          }[]
-        }
-      }>(GET_ME_QUERY, {
+      result = await this.client.getClient().query<{
+        getMe: GetMeCustomerData | null
+      }>({
+        query: GET_ME_QUERY,
         fetchPolicy: "no-cache", // Always fetch fresh data, never use cache
         errorPolicy: "all", // Return partial data even if there are errors
       })
+    } catch (error: any) {
+      // Apollo can still reject outright (instead of resolving with `errors`) when there is
+      // no data at all, e.g. an ApolloError wrapping graphQLErrors, or a genuine
+      // network/timeout failure. Classify it the same way as the non-throwing path below.
+      // A GraphQL auth error can also arrive wrapped inside `networkError.result.errors`
+      // (e.g. when the server responds with a non-200 status alongside a GraphQL error
+      // payload), and some auth failures surface as a bare 401 with no GraphQL errors at
+      // all - both are genuine auth failures, not transient ones.
+      const graphQLErrors = error?.graphQLErrors ?? []
+      const networkErrorErrors = error?.networkError?.result?.errors ?? []
+      const authError =
+        graphQLErrors.find(isAuthGraphQLError) ??
+        networkErrorErrors.find(isAuthGraphQLError)
 
-      const customerData = response.getMe
-
-      if (!customerData) {
-        return null
+      if (authError) {
+        throw new AuthenticationError(authError.message)
       }
 
-      // Map the response to the Customer interface
-      const customer: Customer = {
-        id: customerData.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        email: customerData.email,
-        full_name: customerData.name || "",
-        has_account: true,
-        b2b_company_name: customerData.b2b_company_name,
-        account_code: customerData.account_code,
-        price_listId: customerData.price_listId,
-        group_price_listId: customerData.customer_group?.price_listId ?? null,
-        b2b_customer_discount: customerData.b2b_customer_discount,
-        tags: customerData.tags,
-        fabric_palettes: customerData.fabric_palettes,
-        files: customerData.files ?? [],
-        customer_group: customerData.customer_group,
-        managers: customerData.managers,
-        is_configurator_enabled: customerData.is_configurator_enabled,
-        is_claims_enabled: customerData.is_claims_enabled,
-        role: customerData.role,
-        b2b_company_address: customerData.b2b_company_address,
-        name: customerData.name || "",
-        additional_components: customerData.additional_components,
-        customer_account: customerData?.customer_accounts?.[0]
-          ? {
-              id: customerData.customer_accounts[0].id,
-              name: customerData.customer_accounts[0].name,
-              email: customerData.customer_accounts[0].email,
-              shop: customerData.customer_accounts[0]?.customerSubAccount?.name,
-              is_prices_enabled:
-                customerData.customer_accounts[0].is_prices_enabled ?? true,
-            }
-          : {
-              name: "",
-              email: "",
-              shop: "",
-              // No account on the session (agent / impersonation): fail open.
-              is_prices_enabled: true,
-            },
+      if (error?.networkError?.statusCode === 401) {
+        throw new AuthenticationError(error?.message ?? "Unauthorized")
       }
 
-      return customer
-    } catch (error) {
-      console.error("Error fetching customer:", error)
-      return null
+      // Transient failure (session preserved). No console.warn here - validateSession()
+      // logs this with its own decision context; rethrow with the original message intact
+      // so that log still shows the underlying cause.
+      throw error instanceof Error ? error : new Error(String(error))
     }
+
+    const customerData = result.data?.getMe
+
+    if (customerData) {
+      // Honor errorPolicy "all": return valid (possibly partial) data even if the response
+      // also carried unrelated errors.
+      return mapGetMeResponseToCustomer(customerData)
+    }
+
+    if (result.errors && result.errors.length > 0) {
+      const authError = result.errors.find(isAuthGraphQLError)
+
+      if (authError) {
+        // Genuine auth failure - the caller (validateSession) should tear down the session.
+        throw new AuthenticationError(authError.message)
+      }
+
+      // Non-auth resolver error with no data: transient. Throw (rather than swallow to
+      // `null`) so the caller can tell this apart from "no customer data, no error" and
+      // avoid destroying an otherwise valid session over a one-off resolver hiccup.
+      console.warn(
+        "[getMe] Non-auth GraphQL error with no data (transient, session preserved):",
+        result.errors[0].message
+      )
+      throw new Error(result.errors[0].message)
+    }
+
+    // No data and no errors - nothing to return.
+    return null
   }
 
   async getCustomerOrders(
@@ -1184,7 +1283,7 @@ export class CustomerModule {
 
       // Store token in cookies internally within the SDK
       await setCookieIfAvailable("_furni_jwt", authToken, {
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
         httpOnly: true,
         sameSite: "strict",
         secure: process.env.NODE_ENV === "production",

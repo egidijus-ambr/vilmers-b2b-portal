@@ -1,5 +1,6 @@
 import "server-only"
 import { cookies as nextCookies } from "next/headers"
+import { AUTH_COOKIE_MAX_AGE_SECONDS } from "@lib/auth-constants"
 
 export const getAuthHeaders = async (): Promise<
   { authorization: string } | {}
@@ -64,7 +65,7 @@ export const getCacheOptions = async (
 export const setAuthToken = async (token: string) => {
   const cookies = await nextCookies()
   cookies.set("_furni_jwt", token, {
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
     httpOnly: true,
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
