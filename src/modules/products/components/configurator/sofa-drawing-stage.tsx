@@ -258,6 +258,59 @@ function findMatchingConnectors(
 }
 
 /**
+ * Walks `connected.left`/`connected.right` links starting at `start`,
+ * matching each next node via `connected.left === current._id` within
+ * `pool`. Pure — no side effects, does not mutate `start`/`pool`.
+ * Bounded to `pool.length` steps and guarded against revisiting a node
+ * already in the chain, so a malformed/cyclic connection graph (e.g. two
+ * nodes both claiming `connected.left === X._id`) can't spin forever.
+ */
+function walkConnectedChainFrom(start: any, pool: any[]): any[] {
+  const ordered: any[] = [start]
+  let current = start
+  let guard = 0
+  while (current && guard < pool.length) {
+    guard++
+    const next = pool.find((g: any) => g.attrs.connected?.left === current._id)
+    if (!next || ordered.includes(next)) break
+    ordered.push(next)
+    current = next
+  }
+  return ordered
+}
+
+/**
+ * Walks the full-layer `connected` graph (independent of physical
+ * intersection) and returns every left-to-right connected run of 2+
+ * modules, ordered left-to-right, using the topology recorded at snap
+ * time in handleDragEnd rather than Konva child/z order or current
+ * physical overlap. Used by the armrest-reflow effect in
+ * SofaDrawingStage: after an armrest width override changes, a
+ * neighbour's absolute position may momentarily be wrong (gap/overlap),
+ * so it can't be relied on to still physically intersect its neighbour —
+ * which is the assumption generateConnectedGroupsWithScale's clustering
+ * step below makes.
+ */
+function getOrderedConnectedChains(layer: any): any[][] {
+  const allShapes = getSofaShapesInLayer(layer)
+  const chains: any[][] = []
+  const visited = new Set<string>()
+
+  const starts = allShapes.filter(
+    (g: any) => g.attrs.connected?.right && !g.attrs.connected?.left
+  )
+
+  starts.forEach((start: any) => {
+    if (visited.has(start._id)) return
+    const chain = walkConnectedChainFrom(start, allShapes)
+    chain.forEach((g: any) => visited.add(g._id))
+    if (chain.length > 1) chains.push(chain)
+  })
+
+  return chains
+}
+
+/**
  * Groups all sofa shapes on the layer by physical intersection,
  * then merges overlapping groups recursively.
  * Returns connected groups ordered left-to-right.
@@ -298,16 +351,7 @@ function generateConnectedGroupsWithScale(
     })
     if (!first) return [group]
 
-    const orderedGroup: any[] = [first]
-    let current = first
-    while (current) {
-      const next = group.find(
-        (g: any) => g.attrs.connected?.left === current._id
-      )
-      if (!next) break
-      orderedGroup.push(next)
-      current = next
-    }
+    const orderedGroup = walkConnectedChainFrom(first, group)
 
     if (orderedGroup.length !== group.length) {
       // Some modules overlap the connected chain but aren't part of it.
@@ -927,6 +971,84 @@ const SofaDrawingStage = ({
       updateMetricLines()
     }
   }, [showArrows, scale, dragTargetShape, connectedGroupsInStage])
+
+  // ---- Ref tracking the previously-applied armrest width overrides, so the
+  // reflow effect below only runs when overrides actually change (mirrors
+  // the shop's prevSelectedComponentsRef) and skips the very first mount —
+  // on mount, module positions already come from saved sofaForm x/y and
+  // don't need reflowing.
+  const prevArmrestWidthArrayRef = React.useRef<string | undefined>(undefined)
+
+  // ---- Effect: reposition connected neighbours when an armrest width
+  // override changes a module's shapeWidth. See e.g. A1SQL.tsx:65-67:
+  // `shapeWidth = width + armOver - armrestWidth`, right connector at
+  // `x: shapeWidth`. The module's own Group/Rect and `connectors` attr are
+  // recomputed on re-render (React commits host mutations before passive
+  // effects run, so by the time this effect body executes the Konva attrs
+  // already reflect the new shapeWidth), but a connected neighbour's
+  // absolute x/y was set once in handleDragEnd's snap (`e.target.position(...)`)
+  // and echoed back by modifiedSofaShapes on every subsequent render — never
+  // revisited — so a width change opens a gap (narrower armrest) or creates
+  // an overlap (wider armrest), and the total width label never changes.
+  //
+  // Mirrors the shop's SofaDrawingStage.tsx:1126-1218, but walks chains in
+  // true left-to-right connection order via getOrderedConnectedChains
+  // (defined above) instead of the shop's Konva child/z order — z order can
+  // correct a module against a stale neighbour in an A-B-C chain if C is
+  // processed before B has been shifted.
+  useEffect(() => {
+    if (!layer) return
+
+    const serialized = JSON.stringify(armrestWidthArray)
+    const isFirstRun = prevArmrestWidthArrayRef.current === undefined
+    const changed = prevArmrestWidthArrayRef.current !== serialized
+    prevArmrestWidthArrayRef.current = serialized
+
+    if (isFirstRun || !changed) return
+
+    const chains = getOrderedConnectedChains(layer)
+
+    chains.forEach((chain) => {
+      for (let i = 0; i < chain.length - 1; i++) {
+        const leftModule = chain[i]
+        const neighbour = chain[i + 1]
+
+        const rc = leftModule.attrs.connectors?.find((c: any) => c.type === "right")
+        const lc = neighbour.attrs.connectors?.find((c: any) => c.type === "left")
+        if (!rc || !lc) continue
+
+        // Layer/parent space (the Layer below is scaled via
+        // scaleX={scale}/scaleY={scale}) — NOT absolute/screen space, so
+        // getTransform(), not getAbsoluteTransform().
+        const a = leftModule.getTransform().point(rc)
+        const b = neighbour.getTransform().point(lc)
+
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+
+        // Skip near-zero deltas to avoid churn (floating point noise).
+        if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) continue
+
+        neighbour.position({
+          x: neighbour.x() - dx,
+          y: neighbour.y() - dy,
+        })
+      }
+    })
+
+    // Always regenerate groups + metric lines, even when no neighbour
+    // moved (e.g. the override lands on the rightmost module of a chain:
+    // its own rect changes but there's no right neighbour to reposition) —
+    // the width label still needs to reflect the new geometry. Mirrors
+    // handleRotation's regen-after-mutate pattern below; the regroup effect
+    // keyed on [sofaShapes, layer, armrestWidthArray] below shares the
+    // armrestWidthArray dependency and will also fire in the same commit,
+    // redundantly recomputing already-correct geometry — the same known
+    // double-redraw handleRotation has, not a third one.
+    const connectedGroups = generateConnectedGroupsWithScale(layer, scale, null)
+    setConnectedGroupsInStage(connectedGroups)
+    updateMetricLines(connectedGroups)
+  }, [armrestWidthArray, layer, scale])
 
   // ---- Effect for connected groups on shape or armrest changes ----
   // generateConnectedGroupsWithScale is called when shapes or armrest widths change.
