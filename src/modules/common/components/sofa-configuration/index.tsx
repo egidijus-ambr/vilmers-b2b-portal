@@ -133,11 +133,12 @@ function parseSofaCombinations(json: string): KonvaShape[][] {
 function readMeasuredFromSet(nodes: KonvaShape[]): SetMeasurement | null {
   for (const node of nodes) {
     const measured = node?.attrs?.measured
+    // isValidMeasurement itself now checks Number.isFinite on both fields
+    // (in addition to > 0), so no separate finiteness check is needed
+    // here — just guard that we have an object before casting.
     if (
       measured &&
       typeof measured === "object" &&
-      Number.isFinite(measured.width) &&
-      Number.isFinite(measured.depth) &&
       isValidMeasurement(measured as SetMeasurement)
     ) {
       return { width: measured.width as number, depth: measured.depth as number }

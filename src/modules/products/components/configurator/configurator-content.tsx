@@ -8,7 +8,7 @@ import { useConfiguratorData } from "@configurator/hooks/use-configurator-data"
 import { useConfiguratorPrice } from "@configurator/hooks/use-configurator-price"
 import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
-import { getArmrestOverides } from "@configurator/SofaDrawingElements/utils"
+import { getArmrestOverides, measureGroupOfGroups } from "@configurator/SofaDrawingElements/utils"
 import { isValidMeasurement } from "@configurator/lib/types"
 import {
   getStepsForProduct,
@@ -305,10 +305,25 @@ const ConfiguratorContent = ({
           // (see measureGroupOfGroups) — persisted into every module's
           // attrs of this set so the backend can read attrs.measured
           // instead of re-deriving dimensions from raw module widths.
-          // isValidMeasurement guards width AND depth jointly (shared with
-          // SofaSetCard) so the two consumers never disagree about
-          // whether a given set's measurement is trustworthy.
-          const setMeasurement = state.sofaMeasurements?.[setIdx]
+          // isValidMeasurement guards width AND depth jointly so every
+          // consumer (this, SofaSetCard, cart/order detail) agrees on
+          // whether a measurement is trustworthy.
+          //
+          // Measure the LIVE nodes here rather than trusting
+          // state.sofaMeasurements: a bare rotate (rotate then add to
+          // cart without any further drag/delete) mutates the Konva
+          // nodes but does not by itself re-dispatch
+          // SET_SOFA_MEASUREMENTS, so context state can be one step
+          // stale relative to what's actually on the canvas — and thus
+          // relative to what's about to be cloned and serialized below.
+          // The nodes are still parented to the layer at this point, so
+          // getClientRect/measureGroupOfGroups still resolves finite
+          // rects. Fall back to context state only if the live
+          // measurement isn't available (e.g. combination is empty).
+          const liveMeasurement = measureGroupOfGroups(combination)
+          const setMeasurement = isValidMeasurement(liveMeasurement)
+            ? liveMeasurement
+            : state.sofaMeasurements?.[setIdx]
           const measured = isValidMeasurement(setMeasurement)
             ? { width: setMeasurement.width, depth: setMeasurement.depth }
             : undefined

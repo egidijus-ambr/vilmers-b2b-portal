@@ -547,7 +547,6 @@ export const measureGroupOfGroups = (groupOfGroups: any[]): GroupMeasurement | n
   }
 
   let topRightRect = topLeftRect
-  let topLeftGroup = groupOfGroups[0]
 
   for (const group of groupOfGroups) {
     const groupRect = getClientRect(group, {
@@ -560,7 +559,6 @@ export const measureGroupOfGroups = (groupOfGroups: any[]): GroupMeasurement | n
       (groupRect.x === topLeftRect.x && groupRect.y < topLeftRect.y)
     ) {
       topLeftRect = groupRect
-      topLeftGroup = group
     }
     // find Top right corner
     if (

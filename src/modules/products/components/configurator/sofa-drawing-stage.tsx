@@ -989,7 +989,7 @@ const SofaDrawingStage = ({
 
   // ---- Rotation handler ----
   const handleRotation = (_e: any) => {
-    if (!activeSofaShape) return
+    if (!activeSofaShape || !layer) return
 
     const currentPosition = { ...activeSofaShape.getClientRect() }
     const currentCenter = {
@@ -1011,7 +1011,16 @@ const SofaDrawingStage = ({
     activeSofaShape.y(activeSofaShape.y() + currentCenter.y - newCenter.y)
 
     showActionButtons()
-    updateMetricLines()
+
+    // Rotation can change which side of a connected group is wider (e.g.
+    // an arm rotated onto a corner's other side) — like onDelete and
+    // drag-end, regenerate connected groups and push them into state so
+    // sofaCombinations (and therefore sofaMeasurements, price, etc.) stay
+    // in sync with the post-rotation geometry instead of going stale
+    // until some other interaction happens to trigger a recompute.
+    const connectedGroups = generateConnectedGroupsWithScale(layer, scale, null)
+    setConnectedGroupsInStage(connectedGroups)
+    updateMetricLines(connectedGroups)
   }
 
   // ============================================================

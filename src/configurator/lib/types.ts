@@ -282,18 +282,30 @@ export type SetMeasurement = {
 }
 
 /**
- * A measurement is only trustworthy when BOTH dimensions are known — a
- * group whose children haven't finished rendering can produce a finite but
- * partially/fully-zeroed measurement (e.g. `{width: 300, depth: 0}`), and
- * displaying/persisting one axis from that without the other would be
- * misleading. Guard jointly, not per-field, so every consumer (summary
- * table, add-to-cart, order/cart detail) agrees on when to fall back to the
- * naive per-module sum instead.
+ * A measurement is only trustworthy when BOTH dimensions are known,
+ * finite, and positive — a group whose children haven't finished
+ * rendering can produce a finite but partially/fully-zeroed measurement
+ * (e.g. `{width: 300, depth: 0}`), and displaying/persisting one axis from
+ * that without the other would be misleading. `Number.isFinite` also
+ * rejects `Infinity`/`NaN` (`Infinity > 0` is `true`, and `Infinity`
+ * silently becomes `null` across a `JSON.stringify` round-trip, which
+ * would otherwise let a bad value slip past a writer that only checked
+ * `> 0` and get rejected later by a reader that also checks finiteness —
+ * this is the single check every writer and reader shares, so that can't
+ * happen). Guard jointly, not per-field, so every consumer (summary table,
+ * add-to-cart, order/cart detail) agrees on when to fall back to the naive
+ * per-module sum instead.
  */
 export function isValidMeasurement(
   m: SetMeasurement | null | undefined
 ): m is SetMeasurement {
-  return !!m && m.width > 0 && m.depth > 0
+  return (
+    !!m &&
+    Number.isFinite(m.width) &&
+    Number.isFinite(m.depth) &&
+    m.width > 0 &&
+    m.depth > 0
+  )
 }
 
 // --- Cart types ---
