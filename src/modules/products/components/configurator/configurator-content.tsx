@@ -23,10 +23,12 @@ import {
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
+import { hasUnjoinedConnectableModules } from "@configurator/lib/sofa-connectivity"
 import { useDebugMode } from "@lib/hooks/use-debug-mode"
 import { useTranslations } from "@lib/i18n"
 import ReferenceStep from "./reference-step"
 import { MissingReferenceModal } from "./missing-reference-modal"
+import { DisconnectedModulesModal } from "./disconnected-modules-modal"
 import FabricSection from "./fabric-section"
 import ComponentSection from "./component-section"
 import ConfiguratorStepper from "./configurator-stepper"
@@ -68,6 +70,7 @@ const ConfiguratorContent = ({
   const paletteIds = useCustomerPaletteIds()
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const [showReferenceModal, setShowReferenceModal] = useState(false)
+  const [showDisconnectWarning, setShowDisconnectWarning] = useState(false)
   const { t } = useTranslations("account")
 
   // Use the customer's effective pricelist (direct wins over group). The
@@ -383,6 +386,22 @@ const ConfiguratorContent = ({
     }
   }, [productData, state, totalVolume, addItem])
 
+  const proceedToReferenceGate = async () => {
+    if (!state.referenceText.trim()) {
+      setShowReferenceModal(true)
+      return
+    }
+    await handleAddToCart(state.referenceText.trim())
+  }
+
+  const requestAddToCart = async () => {
+    if (hasUnjoinedConnectableModules(state.sofaCombinations.flat())) {
+      setShowDisconnectWarning(true)
+      return
+    }
+    await proceedToReferenceGate()
+  }
+
   const canNavigateToStep = useCallback(
     (index: number) => {
       // If sofa-modules step exists and is incomplete, lock all subsequent steps
@@ -645,13 +664,7 @@ const ConfiguratorContent = ({
           currency={productData.manufacturer?.currency ?? "EUR"}
           volume={totalVolume}
           missingRequiredGroupNames={missingRequiredGroupNames}
-          onAddToCart={async () => {
-            if (!state.referenceText.trim()) {
-              setShowReferenceModal(true)
-              return
-            }
-            await handleAddToCart(state.referenceText.trim())
-          }}
+          onAddToCart={requestAddToCart}
         />
       </div>
 
@@ -663,6 +676,15 @@ const ConfiguratorContent = ({
           await handleAddToCart(reference)
         }}
         onCancel={() => setShowReferenceModal(false)}
+      />
+
+      <DisconnectedModulesModal
+        isOpen={showDisconnectWarning}
+        onGoBack={() => setShowDisconnectWarning(false)}
+        onContinue={async () => {
+          setShowDisconnectWarning(false)
+          await proceedToReferenceGate()
+        }}
       />
     </div>
   )

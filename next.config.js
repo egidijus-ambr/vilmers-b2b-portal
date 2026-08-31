@@ -116,6 +116,12 @@ checkEnvVariables()
  */
 const nextConfig = {
   reactStrictMode: true,
+  // Pin the workspace root: a stray lockfile in the home directory otherwise
+  // makes Next infer ~/ as root and watch it entirely (EMFILE, broken routing)
+  turbopack: {
+    root: __dirname,
+  },
+  outputFileTracingRoot: __dirname,
   experimental: {
     // Offer PDFs are emailed as base64 through a server action; raise the
     // default 1MB body limit so multi-page rasterized PDFs get through.
