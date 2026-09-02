@@ -1,18 +1,21 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
-import { listMenuCategories } from "@lib/data/categories"
+import { listMenuCategories, enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { getCustomerFilterData } from "@lib/data/customer"
 import { getShowAllProductsActive } from "@lib/data/show-all-products"
 import { getProductCatalogues } from "@lib/data/product-catalogues"
+import { enrichContentBlocksWithProducts } from "@lib/data/products"
+import { enrichContentBlocksWithPages } from "@lib/data/pages"
 import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
 import type { LinkedProductType, ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import type { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/types"
-import type { CategoryData } from "@lib/furnisystems-sdk"
+import type { CategoryData, ContentBlock } from "@lib/furnisystems-sdk"
 import ProductTemplate, { ProductPageData } from "@modules/products/templates"
 import { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import type { ProductPageFeature } from "@modules/products/components/product-feature-section"
 import type { ComfortItemData, ComfortGroupData, ComfortSectionData } from "@modules/products/components/comfort-section"
+import type { ContentBlockData } from "@modules/home/components/content-block/types"
 import { activeThemeName } from "themes"
 
 const brand = activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
@@ -32,7 +35,13 @@ function mapFurnisystemsProduct(
   rootCategory?: CategoryData,
   showAllProducts: boolean = false,
   handle: string = "",
-  catalogues: CatalogueFile[] = []
+  catalogues: CatalogueFile[] = [],
+  // Hydrated content blocks (config + products/categories/grid_pages already
+  // resolved by enrichContentBlocksWith* in ProductPage below), already
+  // self-excluded. Falls back to the raw, un-hydrated blocks so callers that
+  // don't hydrate (if any) don't crash — but product_grid/page_grid/
+  // category_tiles blocks won't render their items in that case.
+  contentBlocks?: ContentBlockData[]
 ): ProductPageData {
   const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
 
@@ -177,7 +186,7 @@ function mapFurnisystemsProduct(
     catalogues,
     linkedProductGroups,
     comfortData,
-    contentBlocks: container.content_blocks ?? [],
+    contentBlocks: contentBlocks ?? ((container.content_blocks ?? []) as unknown as ContentBlockData[]),
     languageCode,
     isAdvancedProduct: isAdvanced,
     productContainerId: container.id,
@@ -252,6 +261,37 @@ export default async function ProductPage({ params }: Props) {
 
   const rootCategory = menuCategories.find((c) => c.is_root_category)
 
+  // Hydrate raw content blocks the same way CMS pages do ([...slug]/page.tsx)
+  // — config-driven per block type, and customer-scoped for product_grid
+  // (tags/price lists via getCustomerFilterData() inside
+  // enrichContentBlocksWithProducts), so this must run per-request and never
+  // be wrapped in unstable_cache.
+  let contentBlocks: ContentBlock[] = product.content_blocks ?? []
+  contentBlocks = await enrichContentBlocksWithTileCategories(
+    contentBlocks,
+    languageCode
+  )
+  contentBlocks = await enrichContentBlocksWithProducts(
+    contentBlocks,
+    languageCode
+  )
+  contentBlocks = await enrichContentBlocksWithPages(contentBlocks, languageCode)
+
+  // Self-exclusion: `product_containers` on a product_grid block doubles as
+  // "which product pages show this block", so a manually curated grid
+  // attached to this product's own page always includes this product among
+  // its hydrated `products`. Filter it out here — PDP-only. CMS pages have
+  // no "current product" concept and must not be affected, so this stays out
+  // of enrichContentBlocksWithProducts itself.
+  contentBlocks = contentBlocks.map((block) =>
+    block.type === "product_grid" && block.products
+      ? {
+          ...block,
+          products: block.products.filter((p) => p.id !== product.id),
+        }
+      : block
+  )
+
   // Catalogues are keyed by the FULL profile name (not the first-word
   // `productName` used for the interior gallery) plus the container reference.
   const isAdvanced = product.type === "ADVANCED_PRODUCT" || !!product.advanced_product
@@ -270,7 +310,8 @@ export default async function ProductPage({ params }: Props) {
     rootCategory,
     showAllProducts,
     handle,
-    catalogues
+    catalogues,
+    contentBlocks as unknown as ContentBlockData[]
   )
 
   return <ProductTemplate product={productData} />

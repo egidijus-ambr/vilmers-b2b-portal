@@ -171,7 +171,15 @@ export interface FurnisystemsProductDetail {
   id: number
   type: string
   reference?: string | null
-  content_blocks?: import("@modules/home/components/content-block/types").ContentBlockData[] | null
+  /**
+   * Raw (un-hydrated) content blocks, mirroring `Page.content_blocks` in the
+   * pages module. `product_grid`/`page_grid`/`category_tiles` blocks need a
+   * post-query hydration pass (enrichContentBlocksWithProducts /
+   * enrichContentBlocksWithTileCategories / enrichContentBlocksWithPages in
+   * src/lib/data/) before they carry `products`/`grid_pages`/`categories` —
+   * see products/[handle]/page.tsx.
+   */
+  content_blocks?: import("../shop-settings/types").ContentBlock[] | null
   single_product: {
     id: number
     product_profiles: {

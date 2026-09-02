@@ -9,7 +9,7 @@ import {
   FurnisystemsProductDetail,
   ProductContainer,
 } from "./types"
-import type { ContentBlockData } from "@modules/home/components/content-block/types"
+import type { ContentBlock } from "../shop-settings/types"
 
 const PRODUCT_CARD_FRAGMENT = gql`
   fragment ProductCardFields on ProductContainer {
@@ -185,6 +185,21 @@ const SEARCH_PRODUCTS = gql`
   }
 `
 
+// Mirrors the pages module's CONTENT_BLOCK_FIELDS for the fields that feed
+// grid-type block hydration (enrichContentBlocksWithProducts /
+// enrichContentBlocksWithTileCategories / enrichContentBlocksWithPages, all
+// in src/lib/data/). Those hydration functions read only `config` (mode,
+// max_products, tag_ids, category_ids, page_ids, parent_id, ...) and, for
+// product_grid's manual mode, `product_containers { id }` — page_grid and
+// category_tiles need no extra selection beyond `config`, since their
+// `grid_pages`/`grid_tags`/`categories` are populated by a post-query
+// hydration step, not selected directly here (same as the pages fragment).
+// Deliberately NOT mirroring cta_link_page/cta_link_category/`ancestors`:
+// those require the enclosing operation to declare `$language: Language!`
+// (see pages/index.ts's CONTENT_BLOCK_FIELDS comment), but
+// GetProductByPermalink below declares `$language: Language` (nullable,
+// sometimes omitted) — adding an `ancestors(language: $language)` selection
+// here would fail GraphQL variable-usage validation server-side.
 const PRODUCT_CONTENT_BLOCK_FRAGMENT = gql`
   fragment ProductContentBlockFields on ContentBlock {
     id
@@ -246,6 +261,10 @@ const PRODUCT_CONTENT_BLOCK_FRAGMENT = gql`
         id
         src
       }
+    }
+    config
+    product_containers {
+      id
     }
   }
 `
@@ -885,7 +904,7 @@ export class ProductsModule {
         id: number
         type: string
         reference?: string | null
-        content_blocks?: ContentBlockData[] | null
+        content_blocks?: ContentBlock[] | null
         single_product: {
           id: number
           product_profiles: RawProfile[]

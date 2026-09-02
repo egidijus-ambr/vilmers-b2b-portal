@@ -6,6 +6,7 @@ import { formatPrice } from "@lib/util/money"
 import { capitalizeFirstLetter } from "@lib/util/string"
 import StatusBadge from "../status-badge"
 import ReferencesTooltip from "../references-tooltip"
+import { DocumentText } from "@medusajs/icons"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
 import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
@@ -27,6 +28,25 @@ interface OrdersPageState {
   pageSize: number
   hasNextPage: boolean
   hasPreviousPage: boolean
+}
+
+/** Small icon link shown next to the status pill for orders that already have an invoice PDF attached. */
+const InvoiceDownloadLink = ({ orderId }: { orderId: string }) => {
+  const { t } = useTranslations("account")
+
+  return (
+    <a
+      href={`/api/orders/${orderId}/invoice`}
+      target="_blank"
+      rel="noreferrer"
+      title={t("download-invoice")}
+      aria-label={t("download-invoice")}
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex flex-shrink-0 text-gray-400 hover:text-dark-blue transition-colors"
+    >
+      <DocumentText className="h-4 w-4" />
+    </a>
+  )
 }
 
 interface OrdersTableProps {
@@ -214,9 +234,14 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                     {new Date(order.created_at).toLocaleDateString()}
                   </div>
                 </div>
-                <StatusBadge
-                  status={order.order_status || "AWAITING_CONFIRMATION"}
-                />
+                <div className="flex items-center gap-1.5">
+                  <StatusBadge
+                    status={order.order_status || "AWAITING_CONFIRMATION"}
+                  />
+                  {order.invoice_pdf_url && (
+                    <InvoiceDownloadLink orderId={order.id} />
+                  )}
+                </div>
               </div>
 
               {/* Card body — label / value rows */}
@@ -486,9 +511,14 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                   </td>
 
                   <td className="px-2 md:px-4 py-3 md:py-4 whitespace-nowrap">
-                    <StatusBadge
-                      status={order.order_status || "AWAITING_CONFIRMATION"}
-                    />
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge
+                        status={order.order_status || "AWAITING_CONFIRMATION"}
+                      />
+                      {order.invoice_pdf_url && (
+                        <InvoiceDownloadLink orderId={order.id} />
+                      )}
+                    </div>
                   </td>
 
                   {canSeePrices && (
