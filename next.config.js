@@ -140,6 +140,23 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async redirects() {
+    return [
+      // Hardcoded destination for now; revisit once the real /care
+      // destination is finalized. permanent: false => 302, so we can
+      // change it later without browsers caching the old redirect.
+      {
+        source: "/qr-page",
+        destination: "https://my.vilmers.com/care",
+        permanent: false,
+      },
+      {
+        source: "/:languageCode(en|fr|de)/qr-page",
+        destination: "https://my.vilmers.com/care",
+        permanent: false,
+      },
+    ]
+  },
   images: {
     minimumCacheTTL: 2678400,
     formats: ['image/webp'],
