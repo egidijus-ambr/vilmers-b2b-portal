@@ -1,8 +1,20 @@
 import { gql } from "@apollo/client"
 import { GraphQLClient } from "../../client"
-import { Page, FindPageByCodeResponse, FindFirstPageResponse, FindPageByPathResponse } from "./types"
+import { Page, FindPageByCodeResponse, FindFirstPageResponse, FindPageByPathResponse, PageResult, PrivatePageResult } from "./types"
 import type { GridPage } from "@modules/home/components/content-block/types"
 import { isSupportedLanguage } from "../../../i18n/config"
+
+// Sentinel returned (never thrown further) when findPageByPath rejects the
+// request because the page is private and no valid customer JWT was sent.
+const PRIVATE_PAGE_RESULT: PrivatePageResult = { private: true, restricted: true }
+
+function isPrivatePageError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  if (error.message?.includes("PRIVATE_PAGE")) return true
+  const extensions = (error as { details?: { extensions?: { code?: string } } })
+    .details?.extensions
+  return extensions?.code === "PRIVATE_PAGE"
+}
 
 // Shared field selection for content blocks. FIND_PAGE_BY_CODE,
 // FIND_PAGE_BY_SLUG, and FIND_PAGE_BY_PATH all render the same content block
@@ -222,6 +234,7 @@ export const FIND_PAGE_BY_PATH = gql`
       code
       published
       chromeless
+      private
       parentId
       hero_image {
         id
@@ -364,8 +377,9 @@ export class PagesModule {
 
   async getPageByPath(
     path: string,
-    language: string
-  ): Promise<Page | null> {
+    language: string,
+    authHeaders?: Record<string, string>
+  ): Promise<PageResult | null> {
     if (!isSupportedLanguage(language)) return null
     try {
       const response = await this.client.query<FindPageByPathResponse>(
@@ -377,11 +391,15 @@ export class PagesModule {
           },
           fetchPolicy: "no-cache",
           errorPolicy: "all",
+          ...(authHeaders ? { context: { headers: authHeaders } } : {}),
         }
       )
 
       return response.findPageByPath ?? null
     } catch (error) {
+      if (isPrivatePageError(error)) {
+        return PRIVATE_PAGE_RESULT
+      }
       console.error(`Error fetching page with path "${path}":`, error)
       return null
     }

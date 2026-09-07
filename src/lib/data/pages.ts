@@ -1,7 +1,9 @@
+import { cache } from "react"
 import { unstable_cache } from "next/cache"
 import { sdk } from "@lib/config"
-import { ContentBlock, Page } from "@lib/furnisystems-sdk"
+import { ContentBlock, Page, PageResult } from "@lib/furnisystems-sdk"
 import type { GridPage } from "@modules/home/components/content-block/types"
+import { getAuthHeaders } from "./cookies"
 
 const PAGE_CACHE_TAG = "cms-pages"
 
@@ -48,7 +50,7 @@ export const getPageBySlug = async (
 export const getPageByPath = async (
   path: string,
   language: string
-): Promise<Page | null> => {
+): Promise<PageResult | null> => {
   const cached = unstable_cache(
     async () => {
       try {
@@ -64,6 +66,33 @@ export const getPageByPath = async (
   )
   return cached()
 }
+
+// Deliberately NOT unstable_cache-wrapped: this is the authenticated retry
+// for private pages (see [...slug]/page.tsx). Its result can carry full
+// private page content, and unstable_cache's Data Cache entry for a given
+// path/language is shared across all visitors regardless of auth state -
+// caching an authed response here would leak private content to the next
+// anonymous visitor of the same path. getPageByPath above stays the cached,
+// always-anonymous lookup used by every other caller.
+//
+// Wrapped in React's cache() for per-request memoization only (request-scoped,
+// reset every render pass, never shared across users or requests - unlike
+// unstable_cache's Data Cache). Both the shared layout (chromeless detection)
+// and the page component call this for the same path/language when a page is
+// private; cache() dedupes that to a single GraphQL fetch per request.
+export const getPageByPathAuthed = cache(
+  async (path: string, language: string): Promise<PageResult | null> => {
+    try {
+      const authHeaders: Record<string, string> = {
+        ...(await getAuthHeaders()),
+      }
+      return await sdk.pages.getPageByPath(path, language, authHeaders)
+    } catch (error) {
+      console.error(`Error fetching private page with path "${path}":`, error)
+      return null
+    }
+  }
+)
 
 // When a page_grid block has show_tags enabled we load the ENTIRE in-scope set
 // (no max_pages cap) so the pill row and server-side tag filter operate over all

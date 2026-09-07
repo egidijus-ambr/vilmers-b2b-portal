@@ -5,7 +5,7 @@ import Button from "@modules/common/components/button"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { useTranslation } from "react-i18next"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 
 function SubmitButton({ children, className, "data-testid": dataTestId }: { children: React.ReactNode; className?: string; "data-testid"?: string }) {
   const { pending } = useFormStatus()
@@ -24,6 +24,8 @@ const Login = ({ setCurrentView }: Props) => {
   const { t } = useTranslation()
   const params = useParams()
   const languageCode = params.languageCode as string
+  const searchParams = useSearchParams()
+  const returnTo = searchParams.get("returnTo")
 
   const [state, formAction] = useActionState(requestMagicLink, null)
 
@@ -72,6 +74,7 @@ const Login = ({ setCurrentView }: Props) => {
 
       <form className="space-y-6" action={formAction}>
         <input type="hidden" name="language" value={languageCode} />
+        {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 
         <div>
           <label

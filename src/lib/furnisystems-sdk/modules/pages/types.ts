@@ -23,6 +23,8 @@ export interface Page {
   code: string | null
   published: boolean | null
   chromeless?: boolean | null
+  /** Gates the page behind customer auth; see `PrivatePageResult` for the unauthenticated case. */
+  private?: boolean | null
   hero_image: { id: number; src: string } | null
   hero_display?: 'full_width' | 'content_width' | 'none' | null
   hero_height_value: number | null
@@ -64,4 +66,23 @@ export interface FindFirstPageResponse {
 
 export interface FindPageByPathResponse {
   findPageByPath: Page | null
+}
+
+/**
+ * Returned by `PagesModule.getPageByPath` in place of throwing when the
+ * backend's `findPageByPath` query errors with `PRIVATE_PAGE` (private page,
+ * no valid customer JWT on the request). Distinct from `null` (page not
+ * found) so callers can redirect to login instead of 404ing.
+ */
+export interface PrivatePageResult {
+  private: true
+  restricted: true
+}
+
+export type PageResult = Page | PrivatePageResult
+
+export function isPrivatePageResult(
+  result: PageResult | null | undefined
+): result is PrivatePageResult {
+  return result != null && "restricted" in result && result.restricted === true
 }

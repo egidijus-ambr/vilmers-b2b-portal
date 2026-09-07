@@ -1,9 +1,11 @@
 import { Metadata } from "next"
-import { headers } from "next/headers"
+import { headers, cookies } from "next/headers"
 
 import { retrieveCustomer } from "@lib/data/customer"
 import { getShopSettings } from "@lib/data/shop-settings"
-import { getPageByPath } from "@lib/data/pages"
+import { getPageByPath, getPageByPathAuthed } from "@lib/data/pages"
+import { isPrivatePageResult } from "@lib/furnisystems-sdk"
+import { isTokenExpired } from "@lib/util/jwt-utils"
 import { getBaseURL } from "@lib/util/env"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
@@ -77,7 +79,28 @@ export default async function PageLayout({
   let chromeless = false
   if (cmsPath) {
     const cmsPage = await getPageByPath(cmsPath, validLanguage)
-    chromeless = Boolean(cmsPage?.chromeless)
+    if (isPrivatePageResult(cmsPage) || cmsPage?.private) {
+      // Anonymous lookup only sees the sentinel for a private page. This
+      // layout already reads headers() above (line 64), so the whole route
+      // subtree is per-request dynamic already - a cookie read here adds no
+      // caching regression (unlike a read that would poison the shared
+      // unstable_cache Data Cache, which this never touches: getPageByPathAuthed
+      // is deliberately uncached). If there's no valid session, keep the
+      // current chromeless=false fallback - the page component still enforces
+      // the actual auth gate and will redirect to login, so the chrome flash
+      // here is irrelevant.
+      const jwt = (await cookies()).get("_furni_jwt")?.value
+      const authedPage =
+        jwt && !isTokenExpired(jwt)
+          ? await getPageByPathAuthed(cmsPath, validLanguage)
+          : null
+      chromeless =
+        authedPage && !isPrivatePageResult(authedPage)
+          ? Boolean(authedPage.chromeless)
+          : false
+    } else {
+      chromeless = Boolean(cmsPage?.chromeless)
+    }
   }
 
   // Fetch menu categories for navigation

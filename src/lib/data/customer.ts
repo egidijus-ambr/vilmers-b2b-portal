@@ -16,6 +16,8 @@ import {
   removeCacheId,
   setAuthToken,
   setCacheId,
+  setReturnToCookie,
+  consumeReturnToCookie,
 } from "./cookies"
 import { ErrorHandlers } from "@lib/util/error-handler"
 import { validateSession } from "@lib/util/session-validation"
@@ -327,6 +329,11 @@ export async function requestMagicLink(
     // Get the current language from the form data or use a default
     const language = (formData.get("language") as string) || "en"
 
+    // Stash the page to return to after a successful login (e.g. a private
+    // CMS page). No-op if missing/unsafe. Set before the send attempt so a
+    // failed send + retry doesn't lose it.
+    await setReturnToCookie(formData.get("returnTo") as string | null)
+
     // Extract IP address from request headers
     const headersList = await headers()
     const ipAddress =
@@ -421,7 +428,7 @@ export async function verifyMagicLinkAction(
         console.log(
           "[Magic Link] Scenario 1: Same customer with valid token - keeping existing session"
         )
-        redirect(`/${languageCode}/account`)
+        redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
         return
       } else {
         // Scenario 2: Valid session + Valid token + Different customer ID → Switch to new user
@@ -441,7 +448,7 @@ export async function verifyMagicLinkAction(
         console.log(
           "[Magic Link] Scenario 3: Same customer with expired token - keeping existing session"
         )
-        redirect(`/${languageCode}/account`)
+        redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
         return
       } else {
         // Scenario 4: Valid session + Expired token + Different customer ID → Logout current user
@@ -479,11 +486,13 @@ async function performMagicLinkLogin(
   token: string,
   languageCode: string
 ): Promise<void> {
+  let verified = false
   try {
     console.log("[performMagicLinkLogin] Starting magic link verification...")
 
     // Verify the magic link token with the backend
     await sdk.customer.verifyMagicLink(token)
+    verified = true
 
     console.log("[performMagicLinkLogin] Magic link verification successful")
 
@@ -521,6 +530,15 @@ async function performMagicLinkLogin(
       error
     )
     // Even if login fails, we still redirect to account page
+  }
+
+  // Only a genuinely verified login honors returnTo - the catch above is a
+  // best-effort fallback redirect for a failed verification, not a success.
+  if (verified) {
+    const returnTo = await consumeReturnToCookie()
+    if (returnTo) {
+      redirect(returnTo)
+    }
   }
 
   redirect(`/${languageCode}/account`)

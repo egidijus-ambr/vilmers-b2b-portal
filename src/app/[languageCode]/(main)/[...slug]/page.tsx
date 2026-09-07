@@ -1,15 +1,18 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { cookies } from "next/headers"
+import { notFound, redirect } from "next/navigation"
 
 import ContentBlock from "@modules/home/components/content-block"
 import PageHero from "@modules/cms/components/page-hero"
-import { getPageByPath, enrichContentBlocksWithPages } from "@lib/data/pages"
+import { getPageByPath, getPageByPathAuthed, enrichContentBlocksWithPages } from "@lib/data/pages"
 import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { enrichContentBlocksWithProducts } from "@lib/data/products"
 import { getFlipbookRenderData, FlipbookRenderData } from "@lib/data/flipbooks"
 import type { BreadcrumbItem } from "@modules/common/components/breadcrumb"
-import type { PageAncestor } from "@lib/furnisystems-sdk/modules/pages/types"
+import type { Page, PageAncestor } from "@lib/furnisystems-sdk/modules/pages/types"
+import { isPrivatePageResult } from "@lib/furnisystems-sdk/modules/pages/types"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
+import { isTokenExpired } from "@lib/util/jwt-utils"
 import { activeThemeName } from "themes"
 
 const brand = activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
@@ -59,6 +62,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     return { title: "Page not found" }
   }
 
+  if (isPrivatePageResult(page)) {
+    // Anonymous lookup only - don't confirm existence of a private page to
+    // crawlers/bots, and don't state a false "not found" to an authenticated
+    // visitor either. The rendered page (auth-checked separately) still gets
+    // its real title client-side via the document.
+    return { title: brand }
+  }
+
   const profile =
     page.page_profiles.find(
       (p) => p.language?.toLowerCase() === params.languageCode.toLowerCase()
@@ -79,10 +90,35 @@ export default async function CmsPage(props: Props) {
   const selectedTagSlug =
     typeof searchParams?.tag === "string" ? searchParams.tag : null
 
-  const page = await getPageByPath(path, languageCode)
+  const anonymousResult = await getPageByPath(path, languageCode)
 
-  if (!page) {
+  if (!anonymousResult) {
     notFound()
+  }
+
+  let page: Page
+  // A real Page with private === true can only reach here if some earlier
+  // request populated the shared cache with an authed response (see
+  // getPageByPath's cache-key comment) - treat it exactly like the
+  // PRIVATE_PAGE sentinel rather than rendering it off a possibly-shared
+  // cache entry.
+  if (isPrivatePageResult(anonymousResult) || anonymousResult.private) {
+    const currentPath = `/${languageCode}/${path}`
+    const returnTo = `/${languageCode}/account?returnTo=${encodeURIComponent(currentPath)}`
+    const jwt = (await cookies()).get("_furni_jwt")?.value
+
+    if (!jwt || isTokenExpired(jwt)) {
+      redirect(returnTo)
+    }
+
+    const authedResult = await getPageByPathAuthed(path, languageCode)
+    if (!authedResult || isPrivatePageResult(authedResult)) {
+      // Stale or forged token - same redirect as the no-token case.
+      redirect(returnTo)
+    }
+    page = authedResult
+  } else {
+    page = anonymousResult
   }
 
   const profile =
@@ -149,6 +185,7 @@ export default async function CmsPage(props: Props) {
         ctaLinkCategory={page.cta_link_category ?? null}
         ctaNewTab={page.cta_new_tab ?? null}
         languageCode={languageCode}
+        chromeless={Boolean(page.chromeless)}
       />
       {contentBlocks.length > 0 ? (
         <div>

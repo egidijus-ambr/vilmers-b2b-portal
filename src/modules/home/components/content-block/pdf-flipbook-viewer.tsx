@@ -105,9 +105,53 @@ export default function PdfFlipbookViewer({
   return (
     <div className="flex h-[100dvh] w-full flex-col items-center justify-center gap-3 overflow-hidden bg-neutral-100 py-4">
       <div className="flex min-h-0 w-full flex-1 items-center justify-center px-4">
-        <div ref={hostRef} className="max-h-full" />
+        <div
+          ref={hostRef}
+          // page-flip's "stretch" mode only ever derives height FROM width
+          // (via a CSS padding-bottom aspect box on an internal wrapper) — it
+          // never measures or caps against the row's actual available
+          // height. Without the aspect-ratio cap below, `w-full` alone lets
+          // the two-page spread render taller than the viewer on common
+          // desktop sizes (verified overflowing the row by ~20-60% at
+          // 1440x900 / 1920x1080 / 1440x700) since nothing else constrains
+          // it vertically. Capping to the landscape (2-page) aspect ratio
+          // lets the browser shrink width to fit whichever of max-width
+          // (100%, from w-full) or max-height (max-h-full) is tighter,
+          // before page-flip ever measures the host.
+          //
+          // The cap is gated to `sm:` (640px, close to minWidth*2 + the
+          // row's px-4 inset = 632px) because applying it unconditionally
+          // also regressed narrow/portrait viewports: page-flip's UI sets an
+          // inline `min-height: 400px` floor on the book element, which wins
+          // over the host's (now short, aspect-capped) max-height, so the
+          // book gets pinned taller than the capped box wants and its
+          // *width* — computed from that pinned height via the same fixed
+          // ratio — shrinks well below the actual available width (verified:
+          // ~21% narrower at a 390px-wide viewport). Below `sm`, orientation
+          // is portrait anyway (usePortrait) and width, not height, is
+          // already the binding/correct constraint, so the cap is skipped.
+          className="w-full max-h-full sm:[aspect-ratio:var(--flip-aspect)]"
+          style={
+            {
+              "--flip-aspect": `${pageWidth * 2} / ${pageHeight}`,
+            } as React.CSSProperties
+          }
+        />
       </div>
-      <div className="flex items-center gap-4">
+      {/* `relative z-10` is load-bearing, not cosmetic: page-flip sizes its
+          `.stf__wrapper` with a padding-bottom aspect box derived purely from
+          the host's WIDTH, so it ignores the host's `max-h-full` and can run
+          hundreds of px taller than its own `.stf__parent` (measured: 1492px
+          wrapper in a 1149px host at 2142x1235, overflowing to y=1508 — right
+          across this bar at y=1177-1219). `.stf__parent` is `position:
+          relative`, so that overflow paints in a later stacking layer than
+          this static row and swallows every click on the arrows — the buttons
+          look fine and simply never fire. Promoting this bar into its own
+          positioned layer keeps it above the spill in every geometry,
+          including short viewports where page-flip's inline
+          `min-height: 400px` floor on `.stf__parent` makes the overflow
+          unavoidable by sizing alone. */}
+      <div className="relative z-10 flex items-center gap-4">
         <button
           type="button"
           aria-label="Previous page"

@@ -22,6 +22,13 @@ interface PageHeroProps {
   ctaLinkCategory?: CtaLike["cta_link_category"]
   ctaNewTab?: boolean | null
   languageCode?: string
+  /**
+   * Mirrors `Page.chromeless` (see `(main)/layout.tsx`, which already
+   * suppresses nav/footer with the same flag). When true, hides the
+   * breadcrumb bar and the page-title heading — the subtitle/CTA still
+   * render.
+   */
+  chromeless?: boolean
 }
 
 const PageHero = ({
@@ -38,6 +45,7 @@ const PageHero = ({
   ctaLinkCategory,
   ctaNewTab,
   languageCode,
+  chromeless,
 }: PageHeroProps) => {
   // The CTA renders differently depending on whether it sits over the
   // background image (transparent OutlineButton-style pill) or on a plain
@@ -84,11 +92,11 @@ const PageHero = ({
             heroHeight ? "h-full" : "min-h-[350px] md:min-h-[500px]"
           } flex flex-col py-8 px-6 large:px-0`}
         >
-          {breadcrumbItems && breadcrumbItems.length > 0 && (
+          {!chromeless && breadcrumbItems && breadcrumbItems.length > 0 && (
             <Breadcrumb items={breadcrumbItems} variant="light" />
           )}
           <div className="flex flex-col items-center text-center flex-1 justify-center">
-            {title && (
+            {!chromeless && title && (
               <Heading
                 level="h1"
                 className="text-[2.5rem] small:text-[3.5rem] font-medium text-white drop-shadow-lg leading-tight"
@@ -121,23 +129,39 @@ const PageHero = ({
   // title without emitting an empty heading and without touching
   // PageHeader's other consumers (account/orders/product pages).
   if (heroDisplay === "none") {
+    // With the breadcrumb hidden and the title already never passed to
+    // PageHeader above, subtitle is the only thing this branch can still
+    // show when chromeless. If it's absent too, skip PageHeader entirely —
+    // otherwise its wrapper renders nothing but its own py-8 padding.
+    if (chromeless && !subtitle) {
+      return null
+    }
+
     return (
       <PageHeader
         description={subtitle}
-        breadcrumbItems={breadcrumbItems}
+        breadcrumbItems={chromeless ? undefined : breadcrumbItems}
         compact
       />
     )
   }
 
+  // Same reasoning as the heroDisplay === "none" branch above: once
+  // chromeless hides the breadcrumb and title, subtitle/CTA are all that's
+  // left. If there's no subtitle either, skip the wrapper instead of
+  // rendering empty py-8/py-10 padding.
+  if (chromeless && !subtitle) {
+    return null
+  }
+
   return (
     <div className="w-full bg-page-background py-8 sm:py-10 px-10 sm:px-12 lg:px-14">
       <div className="max-w-[1360px] mx-auto">
-        {breadcrumbItems && breadcrumbItems.length > 0 && (
+        {!chromeless && breadcrumbItems && breadcrumbItems.length > 0 && (
           <Breadcrumb items={breadcrumbItems} />
         )}
         <div className="flex flex-col items-center text-center">
-          {title && (
+          {!chromeless && title && (
             <Heading
               level="h1"
               className="text-[2.5rem] small:text-[3.5rem] font-medium text-ui-fg-base leading-tight"
