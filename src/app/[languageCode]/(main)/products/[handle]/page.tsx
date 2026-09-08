@@ -180,7 +180,7 @@ function mapFurnisystemsProduct(
     title: profile?.name ?? "Product",
     description: profile?.description ?? null,
     images: galleryImages,
-    productName: profile?.name?.split(' ')[0] ?? null,
+    productName: profile?.name ?? null,
     breadcrumbs,
     features,
     catalogues,
@@ -292,8 +292,8 @@ export default async function ProductPage({ params }: Props) {
       : block
   )
 
-  // Catalogues are keyed by the FULL profile name (not the first-word
-  // `productName` used for the interior gallery) plus the container reference.
+  // Catalogues are keyed by the FULL profile name (the same value as
+  // `productName`) plus the container reference.
   const isAdvanced = product.type === "ADVANCED_PRODUCT" || !!product.advanced_product
   const catalogueProfiles = isAdvanced
     ? product.advanced_product?.advanced_product_profiles ?? []
