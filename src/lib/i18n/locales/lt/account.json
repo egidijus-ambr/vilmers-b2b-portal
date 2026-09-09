@@ -82,6 +82,15 @@
     "title": "Failai",
     "download-failed": "Nepavyko atsisiųsti failo. Bandykite dar kartą."
   },
+  "pricelist-export": {
+    "title": "Kainoraščio eksportas",
+    "description": "Atsisiųskite Excel failą su jūsų kainomis kiekvienam sofos gaminiui.",
+    "button": "Atsisiųsti",
+    "downloading": "Ruošiama…",
+    "no-customer": "Nepasirinktas klientas. Pasirinkite klientą ir bandykite dar kartą.",
+    "no-pricelist": "Jūsų paskyrai nepriskirtas joks kainoraštis. Susisiekite su savo paskyros vadybininku.",
+    "download-failed": "Nepavyko sugeneruoti kainoraščio. Bandykite dar kartą vėliau."
+  },
   "breadcrumb-fabric-palettes": "Audinių paletė",
   "breadcrumb-home": "Pradžia",
   "breadcrumb-my-profile": "Mano profilis",

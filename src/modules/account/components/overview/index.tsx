@@ -3,6 +3,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { useTranslations } from "@lib/i18n"
 import { getClaimsLink } from "@lib/data/customer"
+import { features } from "@lib/features"
 import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
 import { isInternalDomain } from "@lib/utils/internal-domains"
@@ -12,6 +13,7 @@ import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
 import CustomerFilesCard from "../customer-files-card"
+import PricelistExportCard from "../pricelist-export-card"
 import {
   Order,
   CustomerManager,
@@ -207,6 +209,15 @@ const Overview = (): JSX.Element => {
 
         {/* Customer Files Card — renders nothing when the company has no files */}
         <CustomerFilesCard />
+
+        {/* Pricelist Export Card — hidden behind the pricelistExport feature
+            flag (default off) until the feature ships. When enabled, it's
+            always rendered; a missing pricelist is surfaced as an error
+            toast on download, not by hiding the card (getPrimaryPriceListId
+            falls back to the group pricelist, so gating on price_listId
+            alone would hide it from customers who are only priced via
+            their group). */}
+        {features.pricelistExport && <PricelistExportCard />}
 
         {/* Orders Section */}
         <div className="space-y-10">

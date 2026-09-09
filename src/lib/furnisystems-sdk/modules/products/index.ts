@@ -8,6 +8,7 @@ import {
   SearchProductsResponse,
   FurnisystemsProductDetail,
   ProductContainer,
+  PricelistExportProduct,
 } from "./types"
 import type { ContentBlock } from "../shop-settings/types"
 
@@ -472,6 +473,70 @@ const GET_CATEGORY_PRODUCT_NAMES = gql`
     ) {
       names
       totalCount
+    }
+  }
+`
+
+// Bulk query backing the per-customer pricelist XLSX export (see
+// ProductsModule.getSofaPricelistExportProducts). Selects only the fields
+// the export needs: the advanced product's name for the export language,
+// the category photo (only `src_facebook` — the other Image sizes are WEBP,
+// which ExcelJS cannot embed; src_facebook is uniformly JPEG), plus every
+// enabled sofa module's dimensions, packaging volume, and price row for the
+// effective pricelist.
+//
+// `sofa_forms` mirrors GET_CONFIGURATOR_DATA's `enabled: { equals: true }`
+// filter (src/configurator/queries/configurator-queries.ts) so the export
+// never lists a module the customer couldn't actually add in the
+// configurator, and additionally requires a priced row in this pricelist so
+// modules with no price for this customer don't show up as all-blank rows.
+// `form_price_fabric_category` is filtered to the same pricelist so the
+// response doesn't carry every other pricelist's rows too.
+const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
+  query GetSofaPricelistExportProducts(
+    $where: ProductContainerWhereInput
+    $language: Language!
+    $priceListId: Int!
+  ) {
+    findManyProductContainer(where: $where) {
+      id
+      advanced_product {
+        id
+        advanced_product_profiles(where: { language: { equals: $language } }) {
+          name
+        }
+        category_photo {
+          src_facebook
+        }
+        sofa_forms(
+          where: {
+            enabled: { equals: true }
+            form_price_fabric_category: {
+              some: { price_listId: { equals: $priceListId } }
+            }
+          }
+        ) {
+          id
+          name
+          code
+          dimensions {
+            width
+            height
+            length
+          }
+          package_dimensions {
+            volume
+          }
+          form_price_fabric_category(
+            where: { price_listId: { equals: $priceListId } }
+          ) {
+            price
+            fabrice_price_category {
+              group_number
+            }
+          }
+        }
+      }
     }
   }
 `
@@ -1221,6 +1286,94 @@ export class ProductsModule {
       )
       return null
     }
+  }
+
+  /**
+   * Fetch every sofa product (and its priced modules) for a single
+   * pricelist, for the per-customer pricelist XLSX export.
+   *
+   * Unlike every other method in this module, failures are NOT swallowed to
+   * an empty array — an export that silently renders "you have no products"
+   * on a transient GraphQL error is worse than a failed download. Callers
+   * must catch and surface the error themselves. `errorPolicy` is left at
+   * its default ("none") for the same reason: a partial result must not
+   * quietly become a wrong/incomplete pricelist.
+   *
+   * `priceListId` must be the customer's single EFFECTIVE pricelist
+   * (`getPrimaryPriceListId` from `@/configurator/lib/pricelist`), not the
+   * own+group union — passing the union would admit products priced only in
+   * the non-effective list and their price cells would all resolve blank.
+   */
+  async getSofaPricelistExportProducts(params: {
+    priceListId: number
+    language: string
+    customerTagIds?: number[]
+  }): Promise<PricelistExportProduct[]> {
+    const { priceListId, language, customerTagIds } = params
+
+    const productWhere = this.buildWhereFilter(language, customerTagIds, [
+      priceListId,
+    ])
+
+    // The canonical "is this a sofa" discriminant is advanced_product_type
+    // (SOFA | BED | CHAIR_ARMCHAIR | TABLE | OTHER_WITH_FABRICS | OTHER |
+    // LIGHTS — see src/configurator/lib/vilmers.ts:405 and callers), NOT the
+    // presence of sofa_forms rows: that relation exists on AdvancedProduct
+    // generally, so a BED or CHAIR_ARMCHAIR could in principle carry
+    // sofa_forms rows and would be wrongly admitted without this filter.
+    const isSofaClause = {
+      advanced_product: {
+        is: { advanced_product_type: { equals: "SOFA" } },
+      },
+    }
+
+    // Narrows admission to products that actually have a sofa module priced
+    // in this pricelist. `buildWhereFilter`'s priceListIds filter alone also
+    // admits products priced only via base_prices/advanced_product_price_fabric_category/
+    // additional components, none of which feed the module price columns —
+    // this clause (together with isSofaClause above) is what makes the
+    // export "sofas only" and prevents all-blank sheets.
+    const sofaModulePricedClause = {
+      advanced_product: {
+        is: {
+          sofa_forms: {
+            some: {
+              form_price_fabric_category: {
+                some: { price_listId: { equals: priceListId } },
+              },
+            },
+          },
+        },
+      },
+    }
+
+    // `visible: { equals: true }` is added explicitly because
+    // findManyProductContainer does NOT force it server-side (only the
+    // category-listing resolvers do) — mirrors getProductsByIds/
+    // getNewestProducts above, which add the same clause for the same
+    // reason: without it, products hidden from category pages would still
+    // appear in the export.
+    const where = {
+      AND: [
+        productWhere,
+        isSofaClause,
+        sofaModulePricedClause,
+        { visible: { equals: true } },
+      ],
+    }
+
+    const response = await this.client.query<{
+      findManyProductContainer: PricelistExportProduct[]
+    }>(GET_SOFA_PRICELIST_EXPORT_PRODUCTS, {
+      variables: {
+        where,
+        language: language.toLowerCase(),
+        priceListId,
+      },
+      fetchPolicy: "no-cache",
+    })
+
+    return response?.findManyProductContainer ?? []
   }
 }
 

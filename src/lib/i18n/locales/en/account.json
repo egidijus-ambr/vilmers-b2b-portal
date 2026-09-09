@@ -82,6 +82,15 @@
     "title": "Files",
     "download-failed": "Could not download the file. Please try again."
   },
+  "pricelist-export": {
+    "title": "Pricelist export",
+    "description": "Download an Excel file listing your prices for every sofa product.",
+    "button": "Download",
+    "downloading": "Preparing…",
+    "no-customer": "No customer selected. Please select a customer and try again.",
+    "no-pricelist": "No pricelist is assigned to your account. Please contact your account manager.",
+    "download-failed": "Could not generate the pricelist. Please try again later."
+  },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",
   "breadcrumb-my-profile": "My Profile",

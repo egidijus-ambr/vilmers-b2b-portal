@@ -28,19 +28,10 @@ export const getFabricPalettes = async (): Promise<FabricPaletteDetail[]> => {
       acting && me && String(acting.id) !== String(me.id)
 
     if (isImpersonating) {
-      const direct =
-        acting.fabric_palettes?.map((p: { id: string | number }) =>
-          Number(p.id)
-        ) ?? []
-      const group =
-        acting.customer_group?.fabric_palettes?.map(
-          (p: { id: string | number }) => Number(p.id)
-        ) ?? []
-      const ids = Array.from(new Set<number>([...direct, ...group])).filter(
-        (n) => Number.isFinite(n)
+      const palettes = await sdk.customer.getFabricPalettesForCustomer(
+        Number(acting.id)
       )
-      const palettes = await sdk.customer.getFabricPalettesByIds(ids)
-      console.log("[palette-pdf-debug] getFabricPalettes acting-customer result", { actingId: acting.id, ids, total: palettes.length })
+      console.log("[palette-pdf-debug] getFabricPalettes acting-customer result", { actingId: acting.id, total: palettes.length })
       return palettes
     }
 

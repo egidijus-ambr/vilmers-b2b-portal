@@ -283,6 +283,51 @@ export interface LinkedProductData {
   target_product: ProductContainer
 }
 
+// Pricelist export types (see ProductsModule.getSofaPricelistExportProducts).
+// Shapes are intentionally narrow — only the fields the export needs — since
+// this is a dedicated bulk query, not a reuse of the product-card fragment.
+export interface PricelistExportPriceRow {
+  price: number
+  fabrice_price_category: {
+    group_number: number
+  }
+}
+
+export interface PricelistExportDimensions {
+  width: number | null
+  height: number | null
+  length: number | null
+}
+
+export interface PricelistExportPackageDimension {
+  volume: number | null
+}
+
+export interface PricelistExportSofaForm {
+  id: number
+  name: string | null
+  code: string | null
+  dimensions: PricelistExportDimensions | null
+  package_dimensions: PricelistExportPackageDimension[]
+  form_price_fabric_category: PricelistExportPriceRow[]
+}
+
+export interface PricelistExportCategoryPhoto {
+  src_facebook: string | null
+}
+
+export interface PricelistExportAdvancedProduct {
+  id: number
+  advanced_product_profiles: { name: string }[]
+  category_photo: PricelistExportCategoryPhoto | null
+  sofa_forms: PricelistExportSofaForm[]
+}
+
+export interface PricelistExportProduct {
+  id: number
+  advanced_product: PricelistExportAdvancedProduct | null
+}
+
 export type CategorySortOption = 'name_asc' | 'name_desc' | 'newest' | 'oldest'
 
 type GraphQLSortBy = 'SVP_DESC' | 'NAME_ASC' | 'NAME_DESC' | 'CREATED_AT_DESC' | 'CREATED_AT_ASC'

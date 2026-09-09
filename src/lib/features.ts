@@ -24,6 +24,7 @@ export const features = {
     false
   ),
   showPvm: getBool("NEXT_PUBLIC_SHOW_PVM", false),
+  pricelistExport: getBool("NEXT_PUBLIC_FEATURE_PRICELIST_EXPORT", false),
 } as const
 
 export type Features = typeof features

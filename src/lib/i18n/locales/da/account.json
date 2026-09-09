@@ -82,6 +82,15 @@
     "title": "Filer",
     "download-failed": "Filen kunne ikke hentes. Prøv igen."
   },
+  "pricelist-export": {
+    "title": "Prisliste-eksport",
+    "description": "Download en Excel-fil med dine priser for hvert sofaprodukt.",
+    "button": "Download",
+    "downloading": "Forbereder…",
+    "no-customer": "Ingen kunde valgt. Vælg en kunde, og prøv igen.",
+    "no-pricelist": "Der er ikke tildelt nogen prisliste til din konto. Kontakt venligst din account manager.",
+    "download-failed": "Prislisten kunne ikke genereres. Prøv igen senere."
+  },
   "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",
   "breadcrumb-my-profile": "Min profil",

@@ -418,185 +418,102 @@ const GET_CLAIMS_LINK_QUERY = gql`
   }
 `
 
-const GET_FABRIC_PALETTES_QUERY = gql`
-  query GetFabricPalettesDetail {
-    getMe {
-      fabric_palettes {
+// Shared selection tree for a FabricPalette, reused by GET_FABRIC_PALETTES_QUERY
+// (own-identity lookup via getMe) and GET_FABRIC_PALETTES_FOR_CUSTOMER_QUERY
+// (acting-customer lookup via searchCustomers).
+const FABRIC_PALETTE_FRAGMENT = gql`
+  fragment FabricPaletteFields on FabricPalette {
+    id
+    name
+    code
+    fabric_groups {
+      id
+      name
+      fabric_group {
         id
-        name
         code
-        fabric_groups {
+        fabrics {
+          id
+          code
+          color_name
+          order
+          image {
+            id
+            src
+            src_thumbnail
+            src_md
+          }
+        }
+        fabric_group_profiles {
           id
           name
-          fabric_group {
+          language
+          description
+        }
+        fabric_features {
+          fabric_feature {
             id
             code
-            fabrics {
+            photo {
               id
-              code
-              color_name
-              order
-              image {
-                id
-                src
-                src_thumbnail
-                src_md
-              }
+              src
             }
-            fabric_group_profiles {
-              id
+            fabric_feature_profiles {
               name
               language
-              description
             }
-            fabric_features {
-              fabric_feature {
-                id
-                code
-                photo {
-                  id
-                  src
-                }
-                fabric_feature_profiles {
-                  name
-                  language
-                }
-                fabric_feature_group {
-                  id
-                  code
-                  fabric_feature_group_profiles {
-                    name
-                    language
-                  }
-                }
-              }
-            }
-            fabric_price_category {
+            fabric_feature_group {
               id
-              group_number
+              code
+              fabric_feature_group_profiles {
+                name
+                language
+              }
             }
           }
         }
-      }
-      customer_group {
-        fabric_palettes {
+        fabric_price_category {
           id
-          name
-          code
-          fabric_groups {
-            id
-            name
-            fabric_group {
-              id
-              code
-              fabrics {
-                id
-                code
-                color_name
-                order
-                image {
-                  id
-                  src
-                  src_thumbnail
-                  src_md
-                }
-              }
-              fabric_group_profiles {
-                id
-                name
-                language
-                description
-              }
-              fabric_features {
-                fabric_feature {
-                  id
-                  code
-                  photo {
-                    id
-                    src
-                  }
-                  fabric_feature_profiles {
-                    name
-                    language
-                  }
-                  fabric_feature_group {
-                    id
-                    code
-                    fabric_feature_group_profiles {
-                      name
-                      language
-                    }
-                  }
-                }
-              }
-              fabric_price_category {
-                id
-                group_number
-              }
-            }
-          }
+          group_number
         }
       }
     }
   }
 `
 
-const GET_FABRIC_PALETTES_BY_IDS_QUERY = gql`
-  query GetFabricPalettesByIds($where: FabricPaletteWhereInput) {
-    findManyFabricPalette(where: $where) {
+const GET_FABRIC_PALETTES_QUERY = gql`
+  ${FABRIC_PALETTE_FRAGMENT}
+  query GetFabricPalettesDetail {
+    getMe {
+      fabric_palettes {
+        ...FabricPaletteFields
+      }
+      customer_group {
+        fabric_palettes {
+          ...FabricPaletteFields
+        }
+      }
+    }
+  }
+`
+
+// Acting-customer lookup: fetches the palette tree nested under
+// searchCustomers, which graphql-shield leaves unshielded (only top-level
+// Query/Mutation fields are gated). This lets an agent read the palettes of
+// the customer they're impersonating without hitting the manager-only
+// findManyFabricPalette query. searchCustomers itself already restricts an
+// agent's results to their managed_customers.
+const GET_FABRIC_PALETTES_FOR_CUSTOMER_QUERY = gql`
+  ${FABRIC_PALETTE_FRAGMENT}
+  query GetFabricPalettesForCustomer($ids: [Int!]) {
+    searchCustomers(ids: $ids) {
       id
-      name
-      code
-      fabric_groups {
-        id
-        name
-        fabric_group {
-          id
-          code
-          fabrics {
-            id
-            code
-            color_name
-            order
-            image {
-              id
-              src
-              src_thumbnail
-              src_md
-            }
-          }
-          fabric_group_profiles {
-            id
-            name
-            language
-            description
-          }
-          fabric_features {
-            fabric_feature {
-              id
-              code
-              photo {
-                id
-                src
-              }
-              fabric_feature_profiles {
-                name
-                language
-              }
-              fabric_feature_group {
-                id
-                code
-                fabric_feature_group_profiles {
-                  name
-                  language
-                }
-              }
-            }
-          }
-          fabric_price_category {
-            id
-            group_number
-          }
+      fabric_palettes {
+        ...FabricPaletteFields
+      }
+      customer_group {
+        fabric_palettes {
+          ...FabricPaletteFields
         }
       }
     }
@@ -1360,26 +1277,42 @@ export class CustomerModule {
     }
   }
 
-  async getFabricPalettesByIds(
-    paletteIds: number[]
+  // Acting-customer variant of getFabricPalettes(): resolves the palette
+  // tree (direct + group) for a single customer id via searchCustomers
+  // instead of getMe, so agents impersonating a customer see that
+  // customer's palettes rather than being denied by the manager-only
+  // findManyFabricPalette query. Errors intentionally propagate to the
+  // caller instead of being swallowed here.
+  async getFabricPalettesForCustomer(
+    customerId: number
   ): Promise<FabricPaletteDetail[]> {
-    if (!paletteIds.length) return []
-    try {
-      const response = await this.client.query<{
-        findManyFabricPalette: FabricPaletteDetail[]
-      }>(GET_FABRIC_PALETTES_BY_IDS_QUERY, {
-        variables: {
-          where: { id: { in: paletteIds } },
-        },
-        fetchPolicy: "no-cache",
-        errorPolicy: "all",
-      })
+    const response = await this.client.query<{
+      searchCustomers: Array<{
+        fabric_palettes?: FabricPaletteDetail[]
+        customer_group?: {
+          fabric_palettes?: FabricPaletteDetail[]
+        }
+      }>
+    }>(GET_FABRIC_PALETTES_FOR_CUSTOMER_QUERY, {
+      variables: { ids: [customerId] },
+      fetchPolicy: "no-cache",
+      errorPolicy: "all",
+    })
 
-      return response?.findManyFabricPalette ?? []
-    } catch (error) {
-      console.error("[getFabricPalettesByIds] Error:", error)
-      return []
+    const result = response?.searchCustomers?.[0]
+    const directPalettes = result?.fabric_palettes ?? []
+    const groupPalettes = result?.customer_group?.fabric_palettes ?? []
+
+    // Merge and deduplicate by ID
+    const allPalettes = [...directPalettes]
+    const existingIds = new Set(directPalettes.map((p) => p.id))
+    for (const palette of groupPalettes) {
+      if (!existingIds.has(palette.id)) {
+        allPalettes.push(palette)
+      }
     }
+
+    return allPalettes
   }
 
   async searchCustomers(
