@@ -50,6 +50,30 @@ export function safeSheetName(rawName: string, usedKeys: Set<string>): string {
   return candidate
 }
 
+/**
+ * Escapes a sheet name for use as the target of a HYPERLINK() formula, e.g.
+ * `HYPERLINK("#'<escaped>'!A1", ...)`. The escaped name sits inside TWO
+ * nested quoting layers at once — a single-quoted Excel sheet reference
+ * (`'...'!A1`) that is itself embedded in a double-quoted formula string
+ * literal (`"#'...'!A1"`) — so BOTH characters need doubling here, not just
+ * the apostrophe: an unescaped `"` would terminate the outer string literal
+ * early and corrupt the formula, even though it never appears in a bare
+ * sheet reference typed directly into Excel's UI.
+ */
+function escapeSheetNameForHyperlinkTarget(sheetName: string): string {
+  return sheetName.replace(/'/g, "''").replace(/"/g, '""')
+}
+
+/**
+ * Escapes text for use inside a double-quoted Excel formula string literal
+ * (e.g. HYPERLINK's display-text argument) — a literal `"` must be doubled
+ * or Excel misparses the formula. Unlike the sheet-name target above, this
+ * text isn't also wrapped in single quotes, so only this one escape applies.
+ */
+function escapeFormulaStringLiteral(text: string): string {
+  return text.replace(/"/g, '""')
+}
+
 export interface PricelistWorkbookMeta {
   companyName: string
   pricelistName: string
@@ -90,7 +114,7 @@ const PICTURE_COL = 1
 const DESCRIPTION_COL = 2
 const ART_CODE_COL = 3
 const M3_COL = 4
-const COLUMN_WIDTHS = [12, 34, 12, 10] // matches FIXED_COLUMN_COUNT
+const COLUMN_WIDTHS = [12, 34, 14.4, 10] // matches FIXED_COLUMN_COUNT; ART.CODE (3rd) widened 12 -> 14.4 (x1.2) to fit codes like "1-ALVAR-B1201"
 const GROUP_COLUMN_WIDTH = 11
 
 // Reserved block at the top of every PRODUCT sheet (not the Info sheet) for
@@ -139,6 +163,39 @@ const GROUP_HEADER_FILL: ExcelJS.Fill = {
 const GROUP_HEADER_FONT: Partial<ExcelJS.Font> = {
   bold: true,
   color: { argb: "FFFFFFFF" },
+}
+
+// Applied to the Info sheet's index product-name cells only, so they read as
+// clickable links even though the click target is a HYPERLINK() formula, not
+// a native ExcelJS hyperlink (see the index-building loop below for why).
+const INDEX_LINK_FONT: Partial<ExcelJS.Font> = {
+  color: { argb: "FF0563C1" },
+  underline: true,
+}
+
+// Per-sheet price-multiplier input. Row 9 sits inside the photo band
+// (PHOTO_ROW_COUNT = 10) but below the actual image: rows 1-10 are
+// PHOTO_ROW_HEIGHT (18pt = 24px) each, and the 180px-tall oneCellAnchor
+// photo therefore ends inside row 8 (8 * 24px = 192px cumulative, image
+// bottom at 180px) — row 9 (starting at 192px) is clear. See
+// writeMultiplierCell below.
+const MULTIPLIER_ROW = 9
+const MULTIPLIER_LABEL_COL = 2 // B
+const MULTIPLIER_VALUE_COL = 3 // C
+const MULTIPLIER_LABEL_FONT: Partial<ExcelJS.Font> = { bold: true }
+// Deliberately NOT the FF7F6000 table border/fill used by THIN_BORDER and
+// the header rows above — this must read as an editable input, not as part
+// of the module table.
+const MULTIPLIER_INPUT_FILL: ExcelJS.Fill = {
+  type: "pattern",
+  pattern: "solid",
+  fgColor: { argb: "FFFFF2CC" },
+}
+const MULTIPLIER_INPUT_BORDER: Partial<ExcelJS.Borders> = {
+  top: { style: "thin", color: { argb: "FF999999" } },
+  left: { style: "thin", color: { argb: "FF999999" } },
+  bottom: { style: "thin", color: { argb: "FF999999" } },
+  right: { style: "thin", color: { argb: "FF999999" } },
 }
 
 /**
@@ -210,6 +267,37 @@ function writeHeaderRows(
       lastCol
     )
   }
+}
+
+/**
+ * Writes the per-sheet multiplier input at B9/C9 (see MULTIPLIER_ROW's doc
+ * comment above for why row 9 is clear of the photo). C9 defaults to a
+ * FORMULA pointing at the Info sheet's master multiplier cell
+ * (`masterMultiplierRow`, captured from that cell's own `addRow()` return
+ * value — never hardcoded) rather than a literal 1, so editing the master
+ * cascades to every sheet that hasn't been overridden. Typing a plain number
+ * directly into C9 still overrides just this sheet, because every price
+ * formula on the sheet reads C9's current value regardless of what produced
+ * it (see the formula built in writeDataRow below).
+ */
+function writeMultiplierCell(
+  sheet: ExcelJS.Worksheet,
+  masterMultiplierRow: number
+): void {
+  const row = sheet.getRow(MULTIPLIER_ROW)
+
+  const labelCell = row.getCell(MULTIPLIER_LABEL_COL)
+  labelCell.value = "Price multiplier"
+  labelCell.font = MULTIPLIER_LABEL_FONT
+
+  const valueCell = row.getCell(MULTIPLIER_VALUE_COL)
+  valueCell.value = {
+    formula: `Info!$B$${masterMultiplierRow}`,
+    result: 1,
+  }
+  valueCell.fill = MULTIPLIER_INPUT_FILL
+  valueCell.border = MULTIPLIER_INPUT_BORDER
+  valueCell.alignment = CENTER_MIDDLE_ALIGNMENT
 }
 
 /**
@@ -285,7 +373,25 @@ function writeDataRow(
 
   sortedGroupNumbers.forEach((groupNumber, i) => {
     const cell = row.getCell(FIXED_COLUMN_COUNT + 1 + i)
-    cell.value = priceByGroup.get(groupNumber) ?? null
+    const price = priceByGroup.get(groupNumber)
+    // `price !== undefined` (not `?? null`/falsy) so a module with NO price
+    // for this group stays a genuinely EMPTY cell (no formula — `=*IF(...)`
+    // would be invalid, and a formula evaluating to 0 is not the same as
+    // "not priced"), while a module with a REAL price of 0 still gets one.
+    if (price !== undefined) {
+      cell.value = {
+        // Multiplies the base price by the per-sheet multiplier at $C$9.
+        // Guard is `N($C$9)>0`, NOT `$C$9=""`: C9 normally holds a FORMULA
+        // referencing the Info-sheet master (see writeMultiplierCell), so a
+        // cleared master evaluates C9 to 0, not "" — an `=""` test would miss
+        // that and every price would silently become 0.00. `N()` coerces
+        // blank/text/junk/0 alike, so this single guard also covers a
+        // cleared C9 or garbage typed into it, falling back to a 1x
+        // multiplier in all of those cases. Do not "simplify" this to `=""`.
+        formula: `${price}*IF(N($C$9)>0,$C$9,1)`,
+        result: price,
+      }
+    }
     cell.numFmt = PRICE_NUMBER_FORMAT
     cell.alignment = CENTER_MIDDLE_ALIGNMENT
   })
@@ -340,9 +446,29 @@ export async function buildPricelistWorkbook(
   workbook.creator = meta.companyName
   workbook.created = meta.generatedAt
 
-  // Added first so it renders as the leftmost/default tab. Its content is
-  // filled in after the product loop below, once the index rows are known.
+  // Added first so it renders as the leftmost/default tab. The trailing
+  // blank row + product index are filled in after the product loop below,
+  // once the index rows are known — but the metadata block above them
+  // (including the master multiplier) is written right away, since every
+  // product sheet's C9 formula needs to reference the multiplier row number.
   const infoSheet = workbook.addWorksheet("Info")
+
+  infoSheet.columns = [{ width: 20 }, { width: 50 }]
+  infoSheet.addRow(["Company", meta.companyName])
+  infoSheet.addRow(["Pricelist", meta.pricelistName])
+  infoSheet.addRow([
+    "Generated",
+    meta.generatedAt.toISOString().slice(0, 10),
+  ])
+  infoSheet.addRow(["Currency", `All prices are in ${meta.currency}.`])
+  // Master multiplier: every product sheet's C9 defaults to a formula
+  // pointing back at this cell (see writeMultiplierCell). The row number is
+  // captured from `addRow`'s own return value — NEVER hardcoded — so
+  // inserting another metadata row above/below this one can't silently break
+  // every sheet's formula.
+  const multiplierRow = infoSheet.addRow(["Price multiplier", 1])
+  const masterMultiplierRow = multiplierRow.number
+  multiplierRow.getCell(1).font = MULTIPLIER_LABEL_FONT
 
   // Lowercased dedupe keys (see safeSheetName's doc comment) — "info"
   // reserves the Info tab's own name so no product can collide with it,
@@ -413,6 +539,7 @@ export async function buildPricelistWorkbook(
     }
 
     writeHeaderRows(sheet, sortedGroupNumbers)
+    writeMultiplierCell(sheet, masterMultiplierRow)
 
     let rowNumber = DATA_START_ROW
     for (const form of advancedProduct.sofa_forms) {
@@ -421,25 +548,43 @@ export async function buildPricelistWorkbook(
     }
   }
 
-  infoSheet.columns = [{ width: 20 }, { width: 50 }]
-  infoSheet.addRow(["Company", meta.companyName])
-  infoSheet.addRow(["Pricelist", meta.pricelistName])
-  infoSheet.addRow([
-    "Generated",
-    meta.generatedAt.toISOString().slice(0, 10),
-  ])
-  infoSheet.addRow([
-    "Currency",
-    `All prices are in ${meta.currency}.`,
-  ])
   infoSheet.addRow([])
 
   // Index: sheet names get sanitised/truncated (see safeSheetName), so this
   // lets a customer find the sheet for a product whose name was mangled.
+  // The "Sheet name" column stays plain text (not a link) — it exists so
+  // someone can find a tab manually when a long name was truncated.
   const indexHeaderRow = infoSheet.addRow(["Product name", "Sheet name"])
   indexHeaderRow.font = { bold: true }
+  indexHeaderRow.getCell(1).border = THIN_BORDER
+  indexHeaderRow.getCell(2).border = THIN_BORDER
+
   for (const { productName, sheetName } of indexRows) {
-    infoSheet.addRow([productName, sheetName])
+    // Deliberately a HYPERLINK() FORMULA, not ExcelJS's native
+    // `cell.value = { text, hyperlink }`. The native form emits both a
+    // `<hyperlink>` element AND an OOXML relationship with
+    // `TargetMode="External"` even for an internal `#'Sheet'!A1` target —
+    // Excel then warns the customer that "this workbook contains links to
+    // one or more external sources" on open, which reads as untrustworthy
+    // on a customer-facing pricelist. The formula form produces neither a
+    // hyperlinks element nor a relationship (verified against the raw XML).
+    //
+    // Link to `sheetName` (the sanitised/deduped value from safeSheetName),
+    // never the raw `productName` — after truncation or a " (2)" collision
+    // suffix those can differ, and linking to the raw name would point at a
+    // sheet that doesn't exist.
+    const escapedSheetName = escapeSheetNameForHyperlinkTarget(sheetName)
+    const escapedDisplayName = escapeFormulaStringLiteral(productName)
+    const row = infoSheet.addRow([
+      {
+        formula: `HYPERLINK("#'${escapedSheetName}'!A1","${escapedDisplayName}")`,
+        result: productName,
+      },
+      sheetName,
+    ])
+    row.getCell(1).font = INDEX_LINK_FONT
+    row.getCell(1).border = THIN_BORDER
+    row.getCell(2).border = THIN_BORDER
   }
 
   return workbook.xlsx.writeBuffer()
