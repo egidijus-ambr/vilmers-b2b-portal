@@ -151,11 +151,16 @@ function mapFurnisystemsProduct(
 
     const groups: ComfortGroupData[] = comfortWrappers.map(wrapper => {
       const wrapperProfile = wrapper.additional_component_profiles?.[0]
-      const groupTitle = wrapperProfile?.name ?? ''
 
       const includedLinks = (wrapper.linked_components_source ?? [])
         .filter(link => link.link_type === 'INCLUDES')
         .sort((a, b) => a.display_order - b.display_order)
+
+      // Wrapper components only group the items below them - their own code
+      // (e.g. "BICHON:1L.1Z") is internal, so hide it. A non-wrapper component
+      // keeps its name visible.
+      const isWrapper = !!wrapper.is_wrapper && includedLinks.length > 0
+      const groupTitle = isWrapper ? '' : (wrapperProfile?.name ?? '')
 
       const items: ComfortItemData[] = includedLinks.map(link => {
         const target = link.target_component
