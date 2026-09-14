@@ -381,6 +381,19 @@ export interface PricelistExportComponentAssociation {
   additional_component: PricelistExportComponent
 }
 
+// One enabled AdditionalComponentGroup<->AdvancedProduct link (the
+// group-level counterpart of PricelistExportComponentAssociation's own
+// `enabled` gating) — see ProductsModule.getSofaPricelistExportProducts's
+// query doc comment. pricelist-workbook.ts's buildComponentRows uses the
+// set of `additional_component_group.id`s here to drop rows belonging to a
+// group that's linked-but-disabled for this specific product, even when
+// the individual component associations in that group are still enabled.
+export interface PricelistExportComponentGroupLink {
+  additional_component_group: {
+    id: number
+  }
+}
+
 export interface PricelistExportAdvancedProduct {
   id: number
   // Discriminates the sofa-module vs. additional-component sheet-building
@@ -397,6 +410,10 @@ export interface PricelistExportAdvancedProduct {
   // not assumed to stay that way.
   advanced_product_price_fabric_category: PricelistExportPriceRow[]
   additional_component_to_advanced_product: PricelistExportComponentAssociation[]
+  // Optional defensively (see this file's other optional fields) even
+  // though the query always requests it — a query response should never be
+  // trusted to exactly match its TypeScript shape.
+  additional_component_group_to_advanced_product?: PricelistExportComponentGroupLink[]
 }
 
 export interface PricelistExportProduct {

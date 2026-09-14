@@ -86,6 +86,19 @@ export interface PricelistWorkbookMeta {
   currency: string
 }
 
+// Sentinel `group_number` reserving exactly one price column, labeled
+// "PRICE" (see GROUP_LABELS below), for the edge case where a workbook's
+// combined `sortedGroupNumbers` pool (computed once, from every admitted
+// product's fabric-category prices — see buildPricelistWorkbook) is EMPTY:
+// every admitted product is flat-priced only (e.g. an OTHER/OTHER_WITH_FABRICS
+// batch with no per-fabric-category pricing anywhere). Without this, zero
+// price columns would exist and flat prices would silently never render —
+// writeComponentDataRow's flat-price branch only ever writes at
+// `sortedGroupNumbers[0]`. Real DB `group_number`s are always positive (see
+// GROUP_LABELS's doc comment on the values actually seen), so -1 can never
+// collide with one.
+const PRICE_ONLY_GROUP_NUMBER = -1
+
 /**
  * Fabric-price-category `group_number` -> the label its price column shows
  * in row GROUP_HEADER_ROW. Verified against the DB — labels are NOT
@@ -93,6 +106,9 @@ export interface PricelistWorkbookMeta {
  * listed here (e.g. groups 6, 7, 10, 14 seen on some assigned pricelists)
  * falls back to `CAT${n}` via getGroupLabel below. To add/rename a label,
  * edit ONLY this constant — no other label logic exists in this file.
+ *
+ * `PRICE_ONLY_GROUP_NUMBER`'s entry is the one exception to "real DB
+ * group_number": see that constant's own doc comment just above.
  */
 export const GROUP_LABELS: Record<number, string> = {
   1: "CAT1",
@@ -102,6 +118,7 @@ export const GROUP_LABELS: Record<number, string> = {
   5: "CAT5",
   11: "Leather A",
   12: "Leather B",
+  [PRICE_ONLY_GROUP_NUMBER]: "PRICE",
 }
 
 function getGroupLabel(groupNumber: number): string {
@@ -124,36 +141,56 @@ const VOLUME_NUMBER_FORMAT = "0.00"
 // ProductsModule.getSofaPricelistExportProducts's admission-where doc
 // comment for the full enum). Every other member is never admitted by that
 // method's `where`, so a product reaching this file is always one of these
-// two.
+// three.
 const ADVANCED_PRODUCT_TYPE_SOFA = "SOFA"
 const ADVANCED_PRODUCT_TYPE_OTHER_WITH_FABRICS = "OTHER_WITH_FABRICS"
+const ADVANCED_PRODUCT_TYPE_OTHER = "OTHER"
 
-// Code of the AdditionalComponentGroup holding an OTHER_WITH_FABRICS
-// product's size/model variants (e.g. "55-BICHON-L110X0/L090X0/L075X0") —
-// the analogue of a sofa module here. Mirrors
-// src/configurator/lib/vilmers.ts's `MODEL_CODE` constant, used by
-// getConfigString's OTHER_WITH_FABRICS branch to pick this same group by
-// exact code match — re-declared here (not imported) because that module's
-// import graph pulls in the Konva-based configurator context, which has no
-// place in a server-side XLSX builder. NOT the same as `MODEL_CODE_OTHER`
-// ("model-other"), which is that file's OTHER (not OTHER_WITH_FABRICS)
-// branch and is out of this export's scope.
+// Codes of the AdditionalComponentGroup holding a component-priced
+// product's size/model variants — the analogue of a sofa module here.
+// OTHER_WITH_FABRICS products (e.g. chairs — code
+// "55-BICHON-L110X0/L090X0/L075X0") use "model"; OTHER products (e.g. coffee
+// tables) use the separate "model-other" group instead. Mirrors
+// src/configurator/lib/vilmers.ts's `MODEL_CODE`/`MODEL_CODE_OTHER`
+// constants, used by getConfigString's own OTHER_WITH_FABRICS/OTHER
+// branches to pick these same groups by exact code match — re-declared here
+// (not imported) because that module's import graph pulls in the
+// Konva-based configurator context, which has no place in a server-side
+// XLSX builder.
 const MODEL_GROUP_CODE = "model"
+const MODEL_GROUP_CODE_OTHER = "model-other"
 
-// Row height (points) for an OTHER_WITH_FABRICS component row. Unlike a sofa
-// module row, these never carry a blueprint thumbnail, so there's no reason
-// to reserve DATA_ROW_HEIGHT's (55pt, was 110pt) image space — see that
-// constant's doc comment for context. 30pt was this table's own row height
-// before blueprint embedding existed at all ("Raised 30 -> 110, later halved
-// to 55" below).
+/**
+ * The "model" analogue's AdditionalComponentGroup.code for a given
+ * advanced_product_type — see MODEL_GROUP_CODE/MODEL_GROUP_CODE_OTHER's
+ * doc comment. Every call site that used to compare a group's code
+ * directly against the `MODEL_GROUP_CODE` constant now goes through this
+ * function instead, so OTHER's "model-other" group gets the same
+ * no-section-label, priced-first treatment OTHER_WITH_FABRICS's "model"
+ * group already had.
+ */
+function modelGroupCodeFor(
+  advancedProductType: PricelistExportAdvancedProduct["advanced_product_type"]
+): string {
+  return advancedProductType === ADVANCED_PRODUCT_TYPE_OTHER
+    ? MODEL_GROUP_CODE_OTHER
+    : MODEL_GROUP_CODE
+}
+
+// Row height (points) for an OTHER_WITH_FABRICS/OTHER component row. Unlike
+// a sofa module row, these never carry a blueprint thumbnail, so there's no
+// reason to reserve DATA_ROW_HEIGHT's (55pt, was 110pt) image space — see
+// that constant's doc comment for context. 30pt was this table's own row
+// height before blueprint embedding existed at all ("Raised 30 -> 110,
+// later halved to 55" below).
 const COMPONENT_DATA_ROW_HEIGHT = 30
 
-// Row height (points) for an OTHER_WITH_FABRICS group section-label row —
-// shorter than COMPONENT_DATA_ROW_HEIGHT since it holds one line of bold
-// text, not wrapped description/price cells. Set explicitly rather than
-// left at Excel's own default (~15pt), matching this file's convention of
-// every other row (photo, sofa module, component) setting its own height
-// rather than relying on an implicit one.
+// Row height (points) for an OTHER_WITH_FABRICS/OTHER group section-label
+// row — shorter than COMPONENT_DATA_ROW_HEIGHT since it holds one line of
+// bold text, not wrapped description/price cells. Set explicitly rather
+// than left at Excel's own default (~15pt), matching this file's
+// convention of every other row (photo, sofa module, component) setting
+// its own height rather than relying on an implicit one.
 const SECTION_LABEL_ROW_HEIGHT = 18
 
 // Fixed leading columns on every PRODUCT sheet: PICTURE, DESCRIPTION,
@@ -576,9 +613,13 @@ function resolveRenderConfig(settings?: PricelistWorkbookSettings): RenderConfig
 
 /**
  * Writes the two-tier header (TOP_HEADER_ROW + GROUP_HEADER_ROW) for one
- * product sheet. `sortedGroupNumbers` may be empty — one assigned pricelist
- * genuinely has zero sofa price rows — in which case there are no price
- * columns and no "PRICE (EUR)" merge at all, just the four fixed columns.
+ * product sheet. `sortedGroupNumbers` is guaranteed non-empty in practice —
+ * buildPricelistWorkbook's own empty-pool guard (PRICE_ONLY_GROUP_NUMBER)
+ * reserves at least one column even when nothing in the whole batch carries
+ * a real fabric-category price — but nothing at the type level enforces
+ * that here, so a literal empty array is still handled defensively: no
+ * price columns and no "PRICE (EUR)" merge at all, just the four fixed
+ * columns.
  *
  * Merge ranges are only ever 2+ cells: a single price column (count === 1)
  * gets its "PRICE (EUR)" text written directly into that one cell instead of
@@ -948,18 +989,20 @@ function computeBlueprintScale(
   )
 }
 
-// ===== OTHER_WITH_FABRICS support =====
+// ===== OTHER_WITH_FABRICS / OTHER support =====
 //
 // Unlike a sofa (module geometry with a per-module price), an
-// OTHER_WITH_FABRICS product's priced items are additional components —
-// see PricelistExportComponentAssociation. `buildComponentRows` below turns
-// those into the SAME row shape a sofa module produces (description /
-// artCode / volume / a per-CAT-column price), so writeHeaderRows, the
-// global CAT-column pooling, and the price-multiplier formula all keep
-// working unmodified; only the two small row-writing functions below differ
-// from writeDataRow (no blueprint thumbnail — see COMPONENT_DATA_ROW_HEIGHT).
+// OTHER_WITH_FABRICS or OTHER product's priced items are additional
+// components — see PricelistExportComponentAssociation. `buildComponentRows`
+// below turns those into the SAME row shape a sofa module produces
+// (description / artCode / volume / a per-CAT-column price), so
+// writeHeaderRows, the global CAT-column pooling, and the price-multiplier
+// formula all keep working unmodified; only the two small row-writing
+// functions below differ from writeDataRow (no blueprint thumbnail — see
+// COMPONENT_DATA_ROW_HEIGHT). The two types differ only in which group code
+// is treated as the "model" group — see modelGroupCodeFor.
 
-/** One row of an OTHER_WITH_FABRICS sheet: either a group section label, or a priced component/base-price row. */
+/** One row of an OTHER_WITH_FABRICS/OTHER sheet: either a group section label, or a priced component/base-price row. */
 type ComponentSheetRow = ComponentSectionLabelRow | ComponentDataRow
 
 interface ComponentSectionLabelRow {
@@ -1087,7 +1130,7 @@ function getGroupName(group: PricelistExportComponentGroup): string {
 }
 
 /**
- * Orders the non-`model` groups on an OTHER_WITH_FABRICS sheet: by
+ * Orders the non-model groups on an OTHER_WITH_FABRICS/OTHER sheet: by
  * AdditionalComponentGroup.order (nulls last — both `order` and `code` are
  * nullable in the schema), then by code, then by id as a final deterministic
  * tie-break so sheet output doesn't vary run-to-run.
@@ -1107,7 +1150,7 @@ function compareComponentGroups(
   return a.id - b.id
 }
 
-/** Builds one priced-component's data row (shared by the `model` group and every other group's rows below). */
+/** Builds one priced-component's data row (shared by the model group — see modelGroupCodeFor — and every other group's rows below). */
 function buildComponentDataRow(
   assoc: PricelistExportComponentAssociation,
   priceByGroup: Map<number, number> | null,
@@ -1137,11 +1180,45 @@ function buildComponentDataRow(
 }
 
 /**
- * Builds the OTHER_WITH_FABRICS row list for one product: an optional base
- * row, then the `model` group's rows (the size/model variants — the main
- * priced items, analogous to sofa modules, so NOT preceded by a section
- * label), then every other priced group's rows, each preceded by a section
- * label row carrying the group's name.
+ * Resolves the set of AdditionalComponentGroup ids enabled for one product
+ * from `additional_component_group_to_advanced_product` (see
+ * ProductsModule.getSofaPricelistExportProducts's query doc comment).
+ * Shared by both `buildComponentRows` (per-row filtering) and the
+ * workbook-wide CAT-column pool (buildPricelistWorkbook), so the two never
+ * disagree about which groups "count" for a product.
+ *
+ * Returns `null` ONLY when the field itself is `undefined` — the query
+ * response didn't include it at all, a shape this file has never actually
+ * seen but types defensively against — and that `null` means "unknown,
+ * don't filter." Any array the field DOES return, INCLUDING an empty one,
+ * becomes a real (possibly empty) `Set`, which callers then enforce as a
+ * real filter. This mirrors use-configurator-data.ts's own
+ * `groupAssociations.length > 0` gate on this exact same relation: an
+ * empty array there dispatches NO component groups to the customer at all,
+ * so an empty Set here must likewise filter out every component rather
+ * than falling back to unfiltered — a product whose enabled-group links
+ * genuinely come back empty is a product the live configurator would also
+ * show nothing for.
+ */
+function resolveEnabledGroupIds(
+  advancedProduct: PricelistExportAdvancedProduct
+): Set<number> | null {
+  const groupLinks =
+    advancedProduct.additional_component_group_to_advanced_product
+  if (groupLinks === undefined) return null
+  return new Set(
+    groupLinks.map((link) => link.additional_component_group.id)
+  )
+}
+
+/**
+ * Builds the OTHER_WITH_FABRICS/OTHER row list for one product: an optional
+ * base row, then the model group's rows (the size/model variants — the
+ * main priced items, analogous to sofa modules, so NOT preceded by a
+ * section label; which group code counts as "model" depends on the
+ * product's type — see `modelGroupCode`/modelGroupCodeFor), then every
+ * other priced group's rows, each preceded by a section label row carrying
+ * the group's name.
  *
  * Filters out any component with no price in this pricelist — a product has
  * ~50+ components across ~10 groups (threads-type, shooting, logos,
@@ -1151,17 +1228,34 @@ function buildComponentDataRow(
  * trap this guards against). A group with zero priced components after
  * filtering is dropped entirely — including its would-be section label,
  * since a label over nothing reads as a rendering bug.
+ *
+ * Also filters out any component whose GROUP is not itself enabled for
+ * this product (`enabledGroupIds`, resolved by `resolveEnabledGroupIds`
+ * from `additional_component_group_to_advanced_product` — see
+ * ProductsModule.getSofaPricelistExportProducts's query doc comment) even
+ * when the individual component association is `enabled: true`. This
+ * mirrors use-configurator-data.ts's own `groupAssociations.length > 0`
+ * gate on this exact same relation, which dispatches NO component groups
+ * to the customer at all once that array comes back empty — see
+ * `resolveEnabledGroupIds`'s doc comment for the `null` vs. empty-Set
+ * distinction that makes this match. Also closes a real data gap: some
+ * OTHER products carry stale, still-priced component associations in a
+ * group whose product-level link is disabled (verified against local
+ * data).
  */
 function buildComponentRows(
   advancedProduct: PricelistExportAdvancedProduct,
-  dimensionDecimals: number
+  dimensionDecimals: number,
+  modelGroupCode: string,
+  enabledGroupIds: Set<number> | null
 ): ComponentSheetRow[] {
   const rows: ComponentSheetRow[] = []
 
   // Base row: a single fabric-category price at the ADVANCED PRODUCT level
   // (chairs/armchairs priced as one whole rather than per-module) — only
   // emitted when that array is non-empty (empirically empty for every local
-  // OTHER_WITH_FABRICS product today, but not assumed to stay that way).
+  // OTHER_WITH_FABRICS/OTHER product today, but not assumed to stay that
+  // way).
   if (advancedProduct.advanced_product_price_fabric_category.length > 0) {
     rows.push({
       kind: "data",
@@ -1189,6 +1283,12 @@ function buildComponentRows(
     const component = assoc.additional_component
     const group = component?.additional_component_group
     if (!component || !group) continue
+    // See this function's doc comment: a group can be linked-but-disabled
+    // for this product even while its component associations are enabled.
+    // `enabledGroupIds === null` (the field itself was `undefined`) skips
+    // this filter entirely; a non-null Set — even an EMPTY one — is
+    // enforced as-is (see resolveEnabledGroupIds).
+    if (enabledGroupIds && !enabledGroupIds.has(group.id)) continue
 
     let priceByGroup: Map<number, number> | null = null
     let flatPrice: number | null = null
@@ -1231,7 +1331,7 @@ function buildComponentRows(
   }
 
   const modelGroup = Array.from(groupsById.values()).find(
-    (group) => group.code === MODEL_GROUP_CODE
+    (group) => group.code === modelGroupCode
   )
 
   // `model` group first, WITHOUT a section label (see this function's doc
@@ -1284,7 +1384,7 @@ function buildComponentRows(
 }
 
 /**
- * Writes a group section-label row on an OTHER_WITH_FABRICS sheet — styled
+ * Writes a group section-label row on an OTHER_WITH_FABRICS/OTHER sheet — styled
  * as the SAME dark bar as GROUP_HEADER_ROW (row 12's "MODULES" / CAT1 ...
  * Leather B row, see writeHeaderRows), using the same resolved `cfg.groupHeaderFill`
  * / `cfg.groupHeaderFont` so a brand override always matches both bars (see
@@ -1344,7 +1444,7 @@ function writeSectionLabelRow(
 }
 
 /**
- * Writes one component/base-price row on an OTHER_WITH_FABRICS sheet — same
+ * Writes one component/base-price row on an OTHER_WITH_FABRICS/OTHER sheet — same
  * cell layout as writeDataRow (description/art-code/volume/price columns,
  * borders) minus the blueprint-image block, which doesn't apply here (see
  * COMPONENT_DATA_ROW_HEIGHT's doc comment). Column A (PICTURE) is left
@@ -1406,10 +1506,11 @@ function writeComponentDataRow(
 /**
  * Builds the pricelist export workbook: one "Info" sheet (company, pricelist
  * name, generation date, currency note, and a product-name -> sheet-name
- * index) plus one sheet per SOFA or OTHER_WITH_FABRICS product, listing its
- * priced modules (sofa) or additional components (OTHER_WITH_FABRICS — see
- * the "OTHER_WITH_FABRICS support" section above) under a 10-row photo block
- * (see PHOTO_ROW_COUNT) and a two-tier catalog header (see writeHeaderRows).
+ * index) plus one sheet per SOFA, OTHER_WITH_FABRICS, or OTHER product,
+ * listing its priced modules (sofa) or additional components
+ * (OTHER_WITH_FABRICS/OTHER — see the "OTHER_WITH_FABRICS / OTHER support"
+ * section above) under a 10-row photo block (see PHOTO_ROW_COUNT) and a
+ * two-tier catalog header (see writeHeaderRows).
  *
  * `photoBuffers` maps a product's category-photo URL to its already-fetched,
  * already-validated JPEG bytes (see fetchPricelistPhotos) — a missing entry,
@@ -1445,16 +1546,25 @@ export async function buildPricelistWorkbook(
   const cfg = resolveRenderConfig(settings)
 
   // NOTE: this pool is intentionally shared by EVERY sheet, sofa and
-  // OTHER_WITH_FABRICS alike (see this function's doc comment on
-  // sortedGroupNumbers) — a group_number seen only on an OTHER_WITH_FABRICS
-  // component now adds a (blank, for every sofa) CAT column to every sofa
-  // sheet too. In practice this is expected to be a no-op: FabricPriceCategory
+  // OTHER_WITH_FABRICS/OTHER alike (see this function's doc comment on
+  // sortedGroupNumbers) — a group_number seen only on an OTHER_WITH_FABRICS/
+  // OTHER component now adds a (blank, for every sofa) CAT column to every
+  // sofa sheet too. In practice this is expected to be a no-op: FabricPriceCategory
   // is one shared taxonomy across the whole catalog (the same CAT1-5/Leather
   // A/B groups from GROUP_LABELS), not a per-product-type one, so component
   // group_numbers are expected to already be a subset of the sofa ones. This
   // is NOT verified against production data by this change, though — if that
   // assumption is ever wrong, a real (not merely theoretical) sofa-sheet
   // diff would appear the next time this export runs.
+  //
+  // The per-association `price_fabric_category` walk below skips exactly
+  // what buildComponentRows will never render for that association, so this
+  // pool never reserves a column no sheet actually uses: (1) components
+  // whose group isn't enabled for this product (`resolveEnabledGroupIds` —
+  // same helper, same semantics, as the per-sheet filtering below), and (2)
+  // groups with `use_fabric_prices_for_components === false`, whose
+  // `price_fabric_category` rows buildComponentRows ignores entirely in
+  // favour of a flat price (see that function's own group-pricing branch).
   const groupNumbers = new Set<number>()
   for (const product of products) {
     const advancedProduct = product.advanced_product
@@ -1467,14 +1577,33 @@ export async function buildPricelistWorkbook(
       []) {
       groupNumbers.add(row.fabrice_price_category.group_number)
     }
+    const enabledGroupIdsForPool = advancedProduct
+      ? resolveEnabledGroupIds(advancedProduct)
+      : null
     for (const assoc of advancedProduct?.additional_component_to_advanced_product ??
       []) {
+      const group = assoc.additional_component?.additional_component_group
+      if (!group) continue
+      if (enabledGroupIdsForPool && !enabledGroupIdsForPool.has(group.id)) {
+        continue
+      }
+      if (group.use_fabric_prices_for_components === false) continue
       for (const row of assoc.price_fabric_category) {
         groupNumbers.add(row.fabrice_price_category.group_number)
       }
     }
   }
-  const sortedGroupNumbers = Array.from(groupNumbers).sort((a, b) => a - b)
+  // Empty-pool guard (see PRICE_ONLY_GROUP_NUMBER's doc comment): if NO
+  // admitted product anywhere in this pricelist carries a real
+  // fabric-category price — e.g. a batch made up entirely of flat-priced
+  // OTHER/OTHER_WITH_FABRICS products — falling through with an empty array
+  // would leave every sheet with zero price columns, silently dropping
+  // every flat price too (writeComponentDataRow only ever writes a flat
+  // price into `sortedGroupNumbers[0]`).
+  const sortedGroupNumbers =
+    groupNumbers.size > 0
+      ? Array.from(groupNumbers).sort((a, b) => a - b)
+      : [PRICE_ONLY_GROUP_NUMBER]
 
   const workbook = new ExcelJS.Workbook()
   workbook.creator = meta.companyName
@@ -1527,43 +1656,62 @@ export async function buildPricelistWorkbook(
     if (!advancedProduct) continue
 
     // Two disjoint sheet-building paths — see this file's "OTHER_WITH_FABRICS
-    // support" section above for the component one. `getSofaPricelistExportProducts`'s
-    // `where` never admits any OTHER advanced_product_type, so a product
-    // reaching here that's neither of these two is unexpected, not just
-    // "not yet supported" — skipped defensively rather than rendering a
-    // broken/empty sheet for it.
+    // support" section above for the component one, which now also covers
+    // OTHER (simple products — coffee tables, tops, etc. — priced the same
+    // way, just via the "model-other" group instead of "model"; see
+    // modelGroupCodeFor). `getSofaPricelistExportProducts`'s `where` never
+    // admits any other advanced_product_type, so a product reaching here
+    // that's none of these three is unexpected, not just "not yet
+    // supported" — skipped defensively rather than rendering a broken/empty
+    // sheet for it.
     const isSofa = advancedProduct.advanced_product_type === ADVANCED_PRODUCT_TYPE_SOFA
     const isOtherWithFabrics =
       advancedProduct.advanced_product_type ===
       ADVANCED_PRODUCT_TYPE_OTHER_WITH_FABRICS
+    const isOther =
+      advancedProduct.advanced_product_type === ADVANCED_PRODUCT_TYPE_OTHER
+    const isComponentBased = isOtherWithFabrics || isOther
 
-    const componentRows = isOtherWithFabrics
-      ? buildComponentRows(advancedProduct, cfg.dimensionDecimals)
+    // Set of AdditionalComponentGroup ids enabled for THIS product — see
+    // resolveEnabledGroupIds's doc comment. Only meaningful for the
+    // component-based path; unused for sofas.
+    const enabledGroupIds = resolveEnabledGroupIds(advancedProduct)
+
+    const componentRows = isComponentBased
+      ? buildComponentRows(
+          advancedProduct,
+          cfg.dimensionDecimals,
+          modelGroupCodeFor(advancedProduct.advanced_product_type),
+          enabledGroupIds
+        )
       : []
 
     if (isSofa && advancedProduct.sofa_forms.length === 0) continue
-    if (isOtherWithFabrics && componentRows.length === 0) {
+    if (isComponentBased && componentRows.length === 0) {
       // Unlike the sofa skip above (a tautology given
       // getSofaPricelistExportProducts's `where` — sofa_forms is already
       // filtered server-side to priced rows only), the `where`'s
-      // OTHER_WITH_FABRICS branch and buildComponentRows's client-side
-      // filter are two INDEPENDENT checks that are expected to agree. If
-      // they don't, this product is silently dropped from the customer's
-      // pricelist with no other trace — most likely because every
-      // association's `additional_component`/`additional_component_group`
-      // came back null (a data-integrity gap, not a pricing one; see
-      // buildComponentRows's inner `continue`). Logged, not thrown — the
-      // rest of the export must still succeed for every other product.
+      // OTHER_WITH_FABRICS/OTHER branches and buildComponentRows's
+      // client-side filters (priced-only AND enabled-group-only) are
+      // INDEPENDENT checks that are expected to agree. If they don't, this
+      // product is silently dropped from the customer's pricelist with no
+      // other trace — most likely because every association's
+      // `additional_component`/`additional_component_group` came back null
+      // (a data-integrity gap), or because every priced association's
+      // group is enabled-linked-off for this product (the stale-group
+      // case buildComponentRows's `enabledGroupIds` filter now catches).
+      // Logged, not thrown — the rest of the export must still succeed for
+      // every other product.
       console.warn(
-        `[pricelist-export] OTHER_WITH_FABRICS product ${advancedProduct.id} ` +
-          "was admitted by the pricelist where-clause but produced zero " +
-          "priced component rows — skipped from the export. This likely " +
-          "means an admitted association's additional_component or its " +
-          "additional_component_group came back null."
+        `[pricelist-export] ${advancedProduct.advanced_product_type} product ` +
+          `${advancedProduct.id} was admitted by the pricelist where-clause ` +
+          "but produced zero priced component rows — skipped from the " +
+          "export. enabledGroupIds size: " +
+          `${enabledGroupIds?.size ?? "unfiltered"}.`
       )
       continue
     }
-    if (!isSofa && !isOtherWithFabrics) continue
+    if (!isSofa && !isComponentBased) continue
 
     const productName =
       advancedProduct.advanced_product_profiles[0]?.name ??
@@ -1653,8 +1801,9 @@ export async function buildPricelistWorkbook(
         rowNumber++
       }
     } else {
-      // OTHER_WITH_FABRICS: `componentRows` was already built above (before
-      // the empty-sheet skip check) — see buildComponentRows's doc comment.
+      // OTHER_WITH_FABRICS/OTHER: `componentRows` was already built above
+      // (before the empty-sheet skip check) — see buildComponentRows's doc
+      // comment.
       let rowNumber = DATA_START_ROW
       for (const row of componentRows) {
         if (row.kind === "section") {
