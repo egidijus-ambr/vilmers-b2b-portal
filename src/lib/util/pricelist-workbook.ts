@@ -965,6 +965,21 @@ type ComponentSheetRow = ComponentSectionLabelRow | ComponentDataRow
 interface ComponentSectionLabelRow {
   kind: "section"
   label: string
+  /**
+   * Whether any row belonging to this section was built with a non-null
+   * `priceByGroup` (i.e. carries real per-fabric-category pricing), threaded
+   * straight out of `buildComponentRows`'s own built `ComponentDataRow[]`
+   * for the section rather than re-derived from the group's
+   * `use_fabric_prices_for_components` flag. That distinction matters for
+   * the "lowest group number" fallback in `buildComponentRows` (flag false,
+   * no flat price recorded, but `price_fabric_category` rows present): that
+   * case collapses to a single flat-looking price and must render as NOT
+   * having category prices, even though the flag alone can't tell you that.
+   * Drives whether `writeSectionLabelRow` repeats the CAT/Leather labels
+   * across the price columns (mirroring GROUP_HEADER_ROW) or leaves them
+   * blank for an all-flat-priced section (e.g. mattresses).
+   */
+  hasCategoryPrices: boolean
 }
 
 interface ComponentDataRow {
@@ -1243,48 +1258,89 @@ function buildComponentRows(
     const entries = pricedByGroupId.get(group.id) ?? []
     if (entries.length === 0) continue // defensive — groupsById only ever holds priced groups
 
-    rows.push({ kind: "section", label: getGroupName(group) })
-    for (const entry of entries) {
-      rows.push(
-        buildComponentDataRow(
-          entry.assoc,
-          entry.priceByGroup,
-          entry.flatPrice,
-          dimensionDecimals
-        )
+    const dataRows = entries.map((entry) =>
+      buildComponentDataRow(
+        entry.assoc,
+        entry.priceByGroup,
+        entry.flatPrice,
+        dimensionDecimals
       )
-    }
+    )
+    // Threaded from the built rows themselves (not re-derived from the
+    // group's `use_fabric_prices_for_components` flag) — see
+    // ComponentSectionLabelRow.hasCategoryPrices's doc comment for why the
+    // flag alone is insufficient (the lowest-group fallback case).
+    const hasCategoryPrices = dataRows.some((row) => row.priceByGroup !== null)
+
+    rows.push({
+      kind: "section",
+      label: getGroupName(group),
+      hasCategoryPrices,
+    })
+    rows.push(...dataRows)
   }
 
   return rows
 }
 
 /**
- * Writes a group section-label row on an OTHER_WITH_FABRICS sheet: bold text
- * in the DESCRIPTION column, borders across every column (per this file's
- * stated convention — see writeHeaderRows's doc comment — that an untouched
- * cell reads as a rendering bug, not an intentionally reserved column), and
- * deliberately no `mergeCells` (see writeHeaderRows's doc comment on the
- * degenerate 1x1-merge trap; a label spanning a variable last column has the
- * same failure mode when there are zero price columns).
+ * Writes a group section-label row on an OTHER_WITH_FABRICS sheet — styled
+ * as the SAME dark bar as GROUP_HEADER_ROW (row 12's "MODULES" / CAT1 ...
+ * Leather B row, see writeHeaderRows), using the same resolved `cfg.groupHeaderFill`
+ * / `cfg.groupHeaderFont` so a brand override always matches both bars (see
+ * RenderConfig's doc comment). The label is written into column 1 (not
+ * DESCRIPTION_COL) and merged across columns 1-3, mirroring exactly how row
+ * 12 writes "MODULES" into `groupRow.getCell(1)` and then merges
+ * `(GROUP_HEADER_ROW, 1, GROUP_HEADER_ROW, 3)` — a value left in column 2
+ * would be silently discarded once column 1 becomes the merge's master
+ * cell. That merge is unconditionally 3 columns (never degenerate, unlike
+ * the variable-width "PRICE (EUR)" merge in writeHeaderRows), and never
+ * collides with a price column: price labels/cells start at
+ * `cfg.fixedColumnCount + 1`, which is >= 4 either way (3 when
+ * `showVolumeColumn` is off, 4 when on).
+ *
+ * `sortedGroupNumbers`/CAT-label cells are only populated when
+ * `hasCategoryPrices` is true (a section with real per-fabric-category
+ * pricing) — an all-flat-priced section (e.g. mattresses) gets the same
+ * dark bar and section name but leaves those cells valueless, per this
+ * file's border-only convention for an intentionally blank cell (see
+ * writeHeaderRows's doc comment on D12).
+ *
+ * Every cell in the row (including blank ones, like the flat-section price
+ * columns, or M3_COL when `showVolumeColumn`) is styled — fill/font/border/
+ * alignment — BEFORE the merge call, same ordering rule as writeHeaderRows.
  */
 function writeSectionLabelRow(
   sheet: ExcelJS.Worksheet,
   rowNumber: number,
   label: string,
-  lastCol: number,
+  sortedGroupNumbers: number[],
+  hasCategoryPrices: boolean,
   cfg: RenderConfig
 ): void {
   const row = sheet.getRow(rowNumber)
   row.height = SECTION_LABEL_ROW_HEIGHT
 
-  const cell = row.getCell(DESCRIPTION_COL)
-  cell.value = label
-  cell.font = { bold: true }
+  const lastCol = cfg.fixedColumnCount + sortedGroupNumbers.length
+
+  row.getCell(1).value = label
+  if (hasCategoryPrices) {
+    sortedGroupNumbers.forEach((groupNumber, i) => {
+      row.getCell(cfg.fixedColumnCount + 1 + i).value = getGroupLabel(
+        groupNumber
+      )
+    })
+  }
 
   for (let col = 1; col <= lastCol; col++) {
-    row.getCell(col).border = cfg.thinBorder
+    const cell = row.getCell(col)
+    cell.border = cfg.thinBorder
+    cell.fill = cfg.groupHeaderFill
+    cell.font = cfg.groupHeaderFont
+    cell.alignment = CENTER_MIDDLE_ALIGNMENT
   }
+
+  sheet.mergeCells(rowNumber, 1, rowNumber, 3)
 }
 
 /**
@@ -1606,7 +1662,8 @@ export async function buildPricelistWorkbook(
             sheet,
             rowNumber,
             row.label,
-            cfg.fixedColumnCount + sortedGroupNumbers.length,
+            sortedGroupNumbers,
+            row.hasCategoryPrices,
             cfg
           )
         } else {
