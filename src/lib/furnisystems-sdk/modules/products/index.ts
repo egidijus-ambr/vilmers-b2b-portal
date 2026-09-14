@@ -482,8 +482,12 @@ const GET_CATEGORY_PRODUCT_NAMES = gql`
 // the export needs: the advanced product's name for the export language,
 // the category photo (only `src_facebook` — the other Image sizes are WEBP,
 // which ExcelJS cannot embed; src_facebook is uniformly JPEG), plus every
-// enabled sofa module's dimensions, packaging volume, and price row for the
-// effective pricelist.
+// enabled sofa module's dimensions, packaging volume, price row, and cached
+// blueprint thumbnail for the effective pricelist. `blueprint` selects the
+// full object (not the flat `blueprint_thumbnail_url` scalar) specifically
+// to get `thumb_width`/`thumb_height` alongside the URL for free — see
+// pricelist-workbook.ts's per-sheet proportional-scaling doc comment for why
+// those pixel dimensions matter as much as the URL itself.
 //
 // `sofa_forms` mirrors GET_CONFIGURATOR_DATA's `enabled: { equals: true }`
 // filter (src/configurator/queries/configurator-queries.ts) so the export
@@ -492,6 +496,23 @@ const GET_CATEGORY_PRODUCT_NAMES = gql`
 // modules with no price for this customer don't show up as all-blank rows.
 // `form_price_fabric_category` is filtered to the same pricelist so the
 // response doesn't carry every other pricelist's rows too.
+//
+// `advanced_product_type` plus everything from
+// `advanced_product_price_fabric_category` down to `additional_component`'s
+// nested selection ALSO covers OTHER_WITH_FABRICS products (chairs/armchairs
+// etc. priced as a base + additional components rather than sofa modules —
+// see pricelist-workbook.ts's buildComponentRows and this module's
+// getSofaPricelistExportProducts admission-where doc comment). `enabled`
+// mirrors GET_CONFIGURATOR_DATA's own component filter for the same reason
+// as `sofa_forms`'s; unlike `sofa_forms`, price filtering for components
+// happens client-side in pricelist-workbook.ts (a product has ~50+
+// components across ~10 groups and most carry no price at all — they're
+// configuration metadata, not priced items — so a server-side "has ANY
+// price" filter here would still leave the unpriced majority in the
+// response). `additional_component_profiles`/`additional_component_group_profiles`
+// are filtered by `$language` the same way `advanced_product_profiles` is
+// above — neither AdditionalComponent nor AdditionalComponentGroup has a
+// bare `name` scalar.
 const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
   query GetSofaPricelistExportProducts(
     $where: ProductContainerWhereInput
@@ -502,6 +523,7 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
       id
       advanced_product {
         id
+        advanced_product_type
         advanced_product_profiles(where: { language: { equals: $language } }) {
           name
         }
@@ -533,6 +555,65 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
             price
             fabrice_price_category {
               group_number
+            }
+          }
+          blueprint {
+            status
+            thumbnail_url
+            thumb_width
+            thumb_height
+          }
+        }
+        advanced_product_price_fabric_category(
+          where: { price_listId: { equals: $priceListId } }
+        ) {
+          price
+          fabrice_price_category {
+            group_number
+          }
+        }
+        additional_component_to_advanced_product(
+          where: { enabled: { equals: true } }
+        ) {
+          extra_price
+          extra_prices(where: { price_listId: { equals: $priceListId } }) {
+            price
+          }
+          price_fabric_category(
+            where: { price_listId: { equals: $priceListId } }
+          ) {
+            price
+            fabrice_price_category {
+              group_number
+            }
+          }
+          additional_component {
+            id
+            code
+            component_sku
+            additional_component_profiles(
+              where: { language: { equals: $language } }
+            ) {
+              name
+            }
+            dimensions {
+              width
+              height
+              length
+            }
+            package_dimensions {
+              volume
+            }
+            additional_component_group {
+              id
+              code
+              order
+              use_fabric_prices_for_components
+              additional_component_group_profiles(
+                where: { language: { equals: $language } }
+              ) {
+                name
+              }
             }
           }
         }
@@ -1289,8 +1370,11 @@ export class ProductsModule {
   }
 
   /**
-   * Fetch every sofa product (and its priced modules) for a single
-   * pricelist, for the per-customer pricelist XLSX export.
+   * Fetch every sofa AND OTHER_WITH_FABRICS product (and its priced modules
+   * / additional components) for a single pricelist, for the per-customer
+   * pricelist XLSX export. Despite the name (kept for call-site stability —
+   * see route.ts), this now admits two disjoint product-type branches; see
+   * the `sofaBranch`/`otherWithFabricsBranch` doc comments below.
    *
    * Unlike every other method in this module, failures are NOT swallowed to
    * an empty array — an export that silently renders "you have no products"
@@ -1332,7 +1416,8 @@ export class ProductsModule {
     // admits products priced only via base_prices/advanced_product_price_fabric_category/
     // additional components, none of which feed the module price columns —
     // this clause (together with isSofaClause above) is what makes the
-    // export "sofas only" and prevents all-blank sheets.
+    // sofa branch admit only products that will actually render sofa module
+    // rows, not an all-blank sheet.
     const sofaModulePricedClause = {
       advanced_product: {
         is: {
@@ -1346,18 +1431,58 @@ export class ProductsModule {
         },
       },
     }
+    const sofaBranch = { AND: [isSofaClause, sofaModulePricedClause] }
+
+    // Second admission branch, added alongside the sofa one above rather
+    // than replacing it: OTHER_WITH_FABRICS products (chairs/armchairs etc.
+    // priced as a base + additional components, not sofa modules — see
+    // pricelist-workbook.ts's buildComponentRows for how their sheet rows
+    // are built). Mirrors sofaModulePricedClause's purpose: a product is
+    // only admitted if it has at least one ENABLED additional component
+    // actually priced in THIS pricelist (via either the per-fabric-category
+    // join or the flat per-pricelist extra_prices join) — otherwise its
+    // sheet would render with no priced rows at all. Deliberately does NOT
+    // check the legacy `extra_price` scalar here (unlike the row-level flat-
+    // price fallback in pricelist-workbook.ts): that field isn't
+    // pricelist-scoped, so using it here could admit a product that's only
+    // actually priced for a DIFFERENT pricelist.
+    const otherWithFabricsBranch = {
+      advanced_product: {
+        is: {
+          advanced_product_type: { equals: "OTHER_WITH_FABRICS" },
+          additional_component_to_advanced_product: {
+            some: {
+              enabled: { equals: true },
+              OR: [
+                {
+                  price_fabric_category: {
+                    some: { price_listId: { equals: priceListId } },
+                  },
+                },
+                {
+                  extra_prices: {
+                    some: { price_listId: { equals: priceListId } },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    }
 
     // `visible: { equals: true }` is added explicitly because
     // findManyProductContainer does NOT force it server-side (only the
     // category-listing resolvers do) — mirrors getProductsByIds/
     // getNewestProducts above, which add the same clause for the same
     // reason: without it, products hidden from category pages would still
-    // appear in the export.
+    // appear in the export. `productWhere` (language/tag filtering) and the
+    // visibility clause apply to BOTH branches; only the sofa-vs-component
+    // admission logic differs between them.
     const where = {
       AND: [
         productWhere,
-        isSofaClause,
-        sofaModulePricedClause,
+        { OR: [sofaBranch, otherWithFabricsBranch] },
         { visible: { equals: true } },
       ],
     }

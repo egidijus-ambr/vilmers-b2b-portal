@@ -6,7 +6,9 @@ import { getPriceListName } from "@lib/data/pricelist"
 import { getPrimaryPriceListId } from "@configurator/lib/pricelist"
 import { normalizeLanguage } from "@lib/i18n/config"
 import { buildPricelistWorkbook } from "@lib/util/pricelist-workbook"
+import { resolvePricelistWorkbookSettings } from "@lib/util/pricelist-theme"
 import { fetchPricelistPhotos } from "@lib/util/pricelist-photos"
+import { fetchPricelistBlueprints } from "@lib/util/pricelist-blueprints"
 import { features } from "@lib/features"
 
 // Fixed for every export — Vilmers is our own tenant, not the customer's.
@@ -17,8 +19,10 @@ const CURRENCY = "EUR"
  * Generates (does not proxy) a per-customer pricelist XLSX: one sheet per
  * sofa product listing its priced modules, plus an Info sheet with the
  * pricelist name and a product -> sheet-name index. See
- * src/lib/util/pricelist-workbook.ts for the sheet-building logic and
- * ProductsModule.getSofaPricelistExportProducts for the data fetch.
+ * src/lib/util/pricelist-workbook.ts for the sheet-building logic,
+ * ProductsModule.getSofaPricelistExportProducts for the data fetch, and
+ * src/lib/util/pricelist-blueprints.ts for the per-module PICTURE column
+ * image fetch (category photos: pricelist-photos.ts).
  *
  * Every failure mode below returns a machine-readable `error` code (not a
  * localized message) — the client component maps codes to translated
@@ -109,13 +113,27 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    // Photo fetches are best-effort (see fetchPricelistPhotos) and never
-    // throw — an image failure must never cost the customer their price
-    // data, unlike the product fetch above, which is allowed to fail the
-    // whole request.
-    const photoBuffers = await fetchPricelistPhotos(products)
+    // Photo and blueprint fetches are both best-effort (see
+    // fetchPricelistPhotos / fetchPricelistBlueprints) and never throw — an
+    // image failure must never cost the customer their price data, unlike
+    // the product fetch above, which is allowed to fail the whole request.
+    // Run concurrently: the two pools are fully independent (different URLs,
+    // different validators, different maps) so there's no reason to
+    // serialize them.
+    const [photoBuffers, blueprintBuffers] = await Promise.all([
+      fetchPricelistPhotos(products),
+      fetchPricelistBlueprints(products),
+    ])
 
     const generatedAt = new Date()
+    // Per-brand rendering settings (rounding, multiplier row, M³ column,
+    // group-header/border colors) resolved from the active build-time
+    // theme — see src/lib/util/pricelist-theme.ts. Vilmers' preset
+    // reproduces the pre-theming defaults for rounding/visibility, but its
+    // resolved COLORS differ from the workbook's old hardcoded constants
+    // (see that module's doc comment) — this is an intentional visual
+    // change for the live export, not a bug.
+    const pricelistSettings = resolvePricelistWorkbookSettings()
     const buffer = await buildPricelistWorkbook(
       products,
       {
@@ -124,7 +142,9 @@ export async function GET(request: NextRequest) {
         generatedAt,
         currency: CURRENCY,
       },
-      photoBuffers
+      photoBuffers,
+      blueprintBuffers,
+      pricelistSettings
     )
 
     const filename = `pricelist-${effectivePriceListId}-${generatedAt

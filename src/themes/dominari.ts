@@ -144,4 +144,17 @@ export const dominari: Theme = {
     },
   },
   demoMode: true,
+  // Pricelist (XLSX) export config (see src/themes/types.ts) — same values
+  // as Vilmers today (starting point; not yet brand-differentiated on the
+  // rounding/visibility fields). The group-header/border COLORS still
+  // differ from Vilmers even with identical `pricelist` values here,
+  // because those are resolved from `surfaces` (top_menu_background/
+  // top_menu_foreground/accent above), not from this block — see
+  // src/lib/util/pricelist-theme.ts. `copy` is left out: no brand renders
+  // cover copy yet.
+  pricelist: {
+    rounding: { prices: 0, dimensions: 1 },
+    showMultiplierRow: true,
+    showVolumeColumn: true,
+  },
 }

@@ -1,7 +1,14 @@
 import type { PricelistExportProduct } from "@lib/furnisystems-sdk/modules/products/types"
+import { fetchImagePool } from "./image-fetch"
 
 const FETCH_CONCURRENCY = 8
 const FETCH_TIMEOUT_MS = 10_000
+// No overall wall-clock deadline existed before this file was refactored
+// onto the shared pool (src/lib/util/image-fetch.ts) — category photos are a
+// handful of distinct URLs at most (one per product, heavily deduped), so in
+// practice this was never a real bound. Kept generous so it stays a no-op
+// backstop rather than a behaviour change for the shipped JPEG path.
+const FETCH_DEADLINE_MS = 60_000
 
 // JPEG magic bytes (SOI marker). src_facebook is documented as uniformly
 // JPEG, but this is a photo library fed by decades of uploads — checking
@@ -18,41 +25,6 @@ function isJpeg(buffer: Buffer): boolean {
 }
 
 /**
- * Fetches one product photo. Returns `null` on ANY failure (network error,
- * timeout, non-2xx status, or bytes that aren't actually a JPEG) — never
- * throws. A decorative photo is not worth failing the export over; see
- * fetchPricelistPhotos below.
- */
-async function fetchOnePhoto(url: string): Promise<Buffer | null> {
-  try {
-    // URLs come out of the database with raw spaces (e.g. product codes
-    // with " - " in the filename). encodeURI (NOT encodeURIComponent, which
-    // would also escape "://") leaves the scheme/host intact while escaping
-    // the parts that break an HTTP request line.
-    const response = await fetch(encodeURI(url), {
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    })
-    if (!response.ok) {
-      console.warn(
-        `[pricelist-export] Photo fetch failed (status ${response.status}): ${url}`
-      )
-      return null
-    }
-    const buffer = Buffer.from(await response.arrayBuffer())
-    if (!isJpeg(buffer)) {
-      console.warn(
-        `[pricelist-export] Photo is not a JPEG, skipping: ${url}`
-      )
-      return null
-    }
-    return buffer
-  } catch (error) {
-    console.warn(`[pricelist-export] Photo fetch failed: ${url}`, error)
-    return null
-  }
-}
-
-/**
  * Fetches every distinct category-photo URL referenced by `products`, with
  * bounded concurrency, and returns a url -> buffer map (buffer is `null`
  * when the fetch/validation failed for that URL). Callers (buildPricelistWorkbook)
@@ -63,6 +35,12 @@ async function fetchOnePhoto(url: string): Promise<Buffer | null> {
  * photo, and this is what keeps both the network work and the number of
  * embedded images down to the distinct-URL count rather than the
  * product count.
+ *
+ * This is a thin wrapper around the shared fetch pool (see
+ * src/lib/util/image-fetch.ts, extracted from this file so
+ * pricelist-blueprints.ts can reuse the same machinery) — the public
+ * signature is unchanged from before that extraction, so route.ts's call
+ * site didn't need to change.
  */
 export async function fetchPricelistPhotos(
   products: PricelistExportProduct[]
@@ -73,21 +51,11 @@ export async function fetchPricelistPhotos(
     if (url) urls.add(url)
   }
 
-  const results = new Map<string, Buffer | null>()
-  const queue = Array.from(urls)
-  let next = 0
-
-  async function worker() {
-    while (next < queue.length) {
-      const url = queue[next]
-      next += 1
-      results.set(url, await fetchOnePhoto(url))
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(FETCH_CONCURRENCY, queue.length) }, worker)
-  )
-
-  return results
+  return fetchImagePool(urls, {
+    concurrency: FETCH_CONCURRENCY,
+    fetchTimeoutMs: FETCH_TIMEOUT_MS,
+    deadlineMs: FETCH_DEADLINE_MS,
+    validate: isJpeg,
+    logLabel: "Photo",
+  })
 }

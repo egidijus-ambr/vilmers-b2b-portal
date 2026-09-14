@@ -303,6 +303,20 @@ export interface PricelistExportPackageDimension {
   volume: number | null
 }
 
+// See furnisystems-backend's SofaFormBlueprint.ts: `blueprint` is null only
+// if the SofaForm row itself couldn't be read (not a normal case here,
+// since we just queried it) — every other state (no render requested yet,
+// pending, failed) comes back as a non-null object with `thumbnail_url`
+// itself null. `status`'s exact enum members are an implementation detail
+// this module doesn't rely on — see pricelist-blueprints.ts's `isUsable`,
+// which gates purely on `thumbnail_url` + positive dimensions.
+export interface PricelistExportSofaFormBlueprint {
+  status: string
+  thumbnail_url: string | null
+  thumb_width: number | null
+  thumb_height: number | null
+}
+
 export interface PricelistExportSofaForm {
   id: number
   name: string | null
@@ -310,17 +324,79 @@ export interface PricelistExportSofaForm {
   dimensions: PricelistExportDimensions | null
   package_dimensions: PricelistExportPackageDimension[]
   form_price_fabric_category: PricelistExportPriceRow[]
+  blueprint: PricelistExportSofaFormBlueprint | null
 }
 
 export interface PricelistExportCategoryPhoto {
   src_facebook: string | null
 }
 
+// OTHER_WITH_FABRICS support (see ProductsModule.getSofaPricelistExportProducts
+// and pricelist-workbook.ts's buildComponentRows). Unlike sofas, this product
+// type has no module geometry — its priced items are additional-component
+// rows (AdditionalComponentToAdvancedProduct), grouped by
+// AdditionalComponentGroup. Names come from the `*_profiles` relations
+// (filtered server-side to the export language) — neither AdditionalComponent
+// nor AdditionalComponentGroup has a bare `name` scalar.
+export interface PricelistExportComponentProfile {
+  name: string
+}
+
+export interface PricelistExportComponentGroupProfile {
+  name: string
+}
+
+export interface PricelistExportComponentGroup {
+  id: number
+  code: string | null
+  order: number | null
+  use_fabric_prices_for_components?: boolean
+  additional_component_group_profiles: PricelistExportComponentGroupProfile[]
+}
+
+export interface PricelistExportComponent {
+  id: number
+  code: string | null
+  component_sku: string | null
+  additional_component_profiles: PricelistExportComponentProfile[]
+  dimensions: PricelistExportDimensions | null
+  package_dimensions: PricelistExportPackageDimension[]
+  additional_component_group: PricelistExportComponentGroup
+}
+
+export interface PricelistExportComponentExtraPrice {
+  price: number
+}
+
+export interface PricelistExportComponentAssociation {
+  // Legacy scalar price (NOT pricelist-scoped) — see
+  // pricelist-workbook.ts's flat-price resolution for why this is only a
+  // last-resort fallback behind `extra_prices`.
+  extra_price: number
+  // Pre-filtered by the query to this export's pricelist, so at most one
+  // entry (AdditionalComponentExtraPrice is unique per
+  // (additionalComponentToAdvancedProductId, price_listId)).
+  extra_prices: PricelistExportComponentExtraPrice[]
+  price_fabric_category: PricelistExportPriceRow[]
+  additional_component: PricelistExportComponent
+}
+
 export interface PricelistExportAdvancedProduct {
   id: number
+  // Discriminates the sofa-module vs. additional-component sheet-building
+  // path in pricelist-workbook.ts — see
+  // ProductsModule.getSofaPricelistExportProducts's admission-where doc
+  // comment for the full list of AdvancedProductType members.
+  advanced_product_type: string
   advanced_product_profiles: { name: string }[]
   category_photo: PricelistExportCategoryPhoto | null
   sofa_forms: PricelistExportSofaForm[]
+  // For chairs/armchairs etc. priced as a single fabric-category price
+  // rather than per-module — see pricelist-workbook.ts's "base row".
+  // Empirically empty for every local OTHER_WITH_FABRICS product today, but
+  // not assumed to stay that way.
+  advanced_product_price_fabric_category: PricelistExportPriceRow[]
+  additional_component_to_advanced_product: PricelistExportComponentAssociation[]
 }
 
 export interface PricelistExportProduct {

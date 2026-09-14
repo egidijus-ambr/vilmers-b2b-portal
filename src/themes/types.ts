@@ -81,6 +81,67 @@ export interface Theme {
    * performing their real action. See `account/fabric-palettes`.
    */
   demoMode: boolean
+  /**
+   * Per-brand pricelist (XLSX) export configuration — resolved by
+   * `src/lib/util/pricelist-theme.ts` (the ONLY module on the pricelist
+   * path that imports `activeTheme`/this type) into a plain settings
+   * object consumed by `buildPricelistWorkbook`
+   * (`src/lib/util/pricelist-workbook.ts`). Optional at every level: an
+   * absent `pricelist` section, or any absent field within it, falls back
+   * to that workbook's own pre-existing hardcoded constant — see
+   * `resolveRenderConfig` in `pricelist-workbook.ts` for the exact default
+   * per field, so an absent section (or a brand that hasn't set one) is a
+   * visual no-op.
+   *
+   * Colors are DELIBERATELY not configured here — the group-header
+   * fill/text and table border colors are instead resolved from the
+   * `surfaces` tokens above (`top_menu_background`/`top_menu_foreground`/
+   * `accent`) by `pricelist-theme.ts`, the same surface -> primitive-color
+   * lookup precedent used elsewhere (e.g. the Konva configurator's
+   * `configurator_card` token in `sofa-modules-drawer.tsx`) — this keeps
+   * brand colors defined in exactly one place (`surfaces`) rather than
+   * duplicated into a second, pricelist-specific color block.
+   */
+  pricelist?: {
+    rounding?: {
+      /**
+       * Decimal places for PRICE columns' displayed numFmt. Default 0
+       * (today's whole-number display, e.g. "184" not "184.00"). Never
+       * applied to the M³ column, which always keeps 2 decimal places
+       * regardless of this setting.
+       */
+      prices?: number
+      /**
+       * Decimal places for the `W:/D:/H:` dimension line in the
+       * DESCRIPTION column. Default 1 (today's 0.1cm precision).
+       */
+      dimensions?: number
+    }
+    /**
+     * Whether each product sheet renders its own price-multiplier input
+     * row (B9/C9). Default `true`. The Info sheet's own master multiplier
+     * row is unaffected by this flag — see `resolveRenderConfig`'s doc
+     * comment in `pricelist-workbook.ts`.
+     */
+    showMultiplierRow?: boolean
+    /**
+     * Whether the M³ (volume) column renders at all. Default `true`.
+     * Setting this `false` shifts every price column one index earlier.
+     */
+    showVolumeColumn?: boolean
+    /**
+     * Cover/note copy — structure reserved for a future brand preset.
+     * Currently accepted end-to-end (typed here, threaded through
+     * `pricelist-theme.ts` and `PricelistWorkbookSettings`) but NOT YET
+     * rendered by `buildPricelistWorkbook` — see that file's
+     * `PricelistWorkbookSettings` doc comment for why.
+     */
+    copy?: {
+      coverTitle?: string
+      coverBody?: string
+      productSheetNote?: string
+    }
+  }
 }
 
 export interface ThemeLayout {

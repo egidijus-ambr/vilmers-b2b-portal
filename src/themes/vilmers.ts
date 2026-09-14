@@ -133,4 +133,13 @@ export const vilmers: Theme = {
     },
   },
   demoMode: false,
+  // Pricelist (XLSX) export config (see src/themes/types.ts). These values
+  // reproduce TODAY's hardcoded workbook defaults exactly (see
+  // resolveRenderConfig in src/lib/util/pricelist-workbook.ts) — a visual
+  // no-op for Vilmers. `copy` is left out: no brand renders cover copy yet.
+  pricelist: {
+    rounding: { prices: 0, dimensions: 1 },
+    showMultiplierRow: true,
+    showVolumeColumn: true,
+  },
 }
