@@ -9,6 +9,7 @@ import { buildPricelistWorkbook } from "@lib/util/pricelist-workbook"
 import { resolvePricelistWorkbookSettings } from "@lib/util/pricelist-theme"
 import { fetchPricelistPhotos } from "@lib/util/pricelist-photos"
 import { fetchPricelistBlueprints } from "@lib/util/pricelist-blueprints"
+import { fetchPricelistComponentPhotos } from "@lib/util/pricelist-component-photos"
 import { features } from "@lib/features"
 
 // Fixed for every export — Vilmers is our own tenant, not the customer's.
@@ -22,7 +23,9 @@ const CURRENCY = "EUR"
  * src/lib/util/pricelist-workbook.ts for the sheet-building logic,
  * ProductsModule.getSofaPricelistExportProducts for the data fetch, and
  * src/lib/util/pricelist-blueprints.ts for the per-module PICTURE column
- * image fetch (category photos: pricelist-photos.ts).
+ * image fetch (category photos: pricelist-photos.ts; each OTHER/
+ * OTHER_WITH_FABRICS component's own PICTURE column photo:
+ * pricelist-component-photos.ts).
  *
  * Every failure mode below returns a machine-readable `error` code (not a
  * localized message) — the client component maps codes to translated
@@ -113,17 +116,19 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    // Photo and blueprint fetches are both best-effort (see
-    // fetchPricelistPhotos / fetchPricelistBlueprints) and never throw — an
-    // image failure must never cost the customer their price data, unlike
-    // the product fetch above, which is allowed to fail the whole request.
-    // Run concurrently: the two pools are fully independent (different URLs,
-    // different validators, different maps) so there's no reason to
-    // serialize them.
-    const [photoBuffers, blueprintBuffers] = await Promise.all([
-      fetchPricelistPhotos(products),
-      fetchPricelistBlueprints(products),
-    ])
+    // Photo, blueprint, and component-photo fetches are all best-effort (see
+    // fetchPricelistPhotos / fetchPricelistBlueprints /
+    // fetchPricelistComponentPhotos) and never throw — an image failure must
+    // never cost the customer their price data, unlike the product fetch
+    // above, which is allowed to fail the whole request. Run concurrently:
+    // all three pools are fully independent (different URLs, different
+    // validators, different maps) so there's no reason to serialize them.
+    const [photoBuffers, blueprintBuffers, componentPhotoBuffers] =
+      await Promise.all([
+        fetchPricelistPhotos(products),
+        fetchPricelistBlueprints(products),
+        fetchPricelistComponentPhotos(products),
+      ])
 
     const generatedAt = new Date()
     // Per-brand rendering settings (rounding, multiplier row, M³ column,
@@ -141,9 +146,11 @@ export async function GET(request: NextRequest) {
         pricelistName,
         generatedAt,
         currency: CURRENCY,
+        language,
       },
       photoBuffers,
       blueprintBuffers,
+      componentPhotoBuffers,
       pricelistSettings
     )
 

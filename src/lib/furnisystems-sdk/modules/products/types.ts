@@ -354,10 +354,25 @@ export interface PricelistExportComponentGroup {
   additional_component_group_profiles: PricelistExportComponentGroupProfile[]
 }
 
+// Component's own photo (see pricelist-component-photos.ts's fetch pool and
+// pricelist-workbook.ts's writeComponentDataRow embed). Same shape as
+// PricelistExportCategoryPhoto (src_facebook is the uniformly-JPEG crop this
+// export already knows how to embed) but kept as its own named type since
+// AdditionalComponent.image is a logically distinct relation from
+// AdvancedProduct.category_photo, even though both resolve to the same
+// backend Image type today. Optional/nullable throughout: most components
+// carry no image at all, and this field didn't exist in the query response
+// before component-photo embedding was added — a hand-built fixture that
+// omits it entirely must still typecheck.
+export interface PricelistExportComponentImage {
+  src_facebook?: string | null
+}
+
 export interface PricelistExportComponent {
   id: number
   code: string | null
   component_sku: string | null
+  image?: PricelistExportComponentImage | null
   additional_component_profiles: PricelistExportComponentProfile[]
   dimensions: PricelistExportDimensions | null
   package_dimensions: PricelistExportPackageDimension[]
@@ -416,9 +431,47 @@ export interface PricelistExportAdvancedProduct {
   additional_component_group_to_advanced_product?: PricelistExportComponentGroupLink[]
 }
 
+// Category-grouping support (see pricelist-workbook.ts's "Category grouping"
+// section, groupProductsByCategory). `category_profiles` here is
+// deliberately UNFILTERED by language — see
+// ProductsModule.getSofaPricelistExportProducts's query doc comment for why
+// filtering it server-side would blank a branch category's heading in any
+// language it has no CategoryProfile row for (verified: the top-level Soft
+// Furniture/Hard Furniture/Other branches carry only an `en` profile today).
+export interface PricelistExportCategoryProfile {
+  language: string
+  name: string
+}
+
+// One level of ancestor only — grouping never walks past a category's
+// immediate parent (see resolveProductCategoryGroup's doc comment), so this
+// intentionally has no `parent_category` of its own.
+export interface PricelistExportCategoryParentRef {
+  id: number
+  menu_order: number
+  is_root_category: boolean | null
+  category_profiles: PricelistExportCategoryProfile[]
+}
+
+export interface PricelistExportCategoryRef {
+  id: number
+  menu_order: number
+  parent_categoryId: number | null
+  is_root_category: boolean | null
+  category_profiles: PricelistExportCategoryProfile[]
+  parent_category: PricelistExportCategoryParentRef | null
+}
+
 export interface PricelistExportProduct {
   id: number
   advanced_product: PricelistExportAdvancedProduct | null
+  // Optional defensively (see this file's other optional fields) even
+  // though the query always requests them. `primary_category` mirrors
+  // ProductContainer's own optional field above; `categories` is the m2m
+  // fallback used when `primary_category` is unset or root-level — see
+  // pricelist-workbook.ts's resolveCandidateCategory.
+  primary_category?: PricelistExportCategoryRef | null
+  categories?: PricelistExportCategoryRef[]
 }
 
 export type CategorySortOption = 'name_asc' | 'name_desc' | 'newest' | 'oldest'

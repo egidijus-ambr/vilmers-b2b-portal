@@ -7,7 +7,10 @@ import type {
   PricelistExportComponentGroup,
   PricelistExportComponent,
   PricelistExportPriceRow,
+  PricelistExportCategoryRef,
+  PricelistExportCategoryParentRef,
 } from "@lib/furnisystems-sdk/modules/products/types"
+import type { PricelistImage } from "./image-resize"
 
 const INVALID_SHEET_NAME_CHARS = /[\[\]:*?/\\]/g
 const MAX_SHEET_NAME_LENGTH = 31
@@ -84,6 +87,12 @@ export interface PricelistWorkbookMeta {
   pricelistName: string
   generatedAt: Date
   currency: string
+  // Export language, e.g. "en"/"de"/"fr" — drives category-heading name
+  // resolution (see resolveCategoryName) and the Uncategorized bucket's
+  // label (see resolveUncategorizedLabel). Optional and defaults to "en" so
+  // every pre-existing caller (this file's own verification harnesses, any
+  // meta object built before this field existed) still typechecks.
+  language?: string
 }
 
 // Sentinel `group_number` reserving exactly one price column, labeled
@@ -177,12 +186,17 @@ function modelGroupCodeFor(
     : MODEL_GROUP_CODE
 }
 
-// Row height (points) for an OTHER_WITH_FABRICS/OTHER component row. Unlike
-// a sofa module row, these never carry a blueprint thumbnail, so there's no
-// reason to reserve DATA_ROW_HEIGHT's (55pt, was 110pt) image space — see
-// that constant's doc comment for context. 30pt was this table's own row
-// height before blueprint embedding existed at all ("Raised 30 -> 110,
-// later halved to 55" below).
+// Row height (points) for an OTHER_WITH_FABRICS/OTHER component row that has
+// NO embedded photo. These rows never carry a blueprint thumbnail (that's a
+// sofa-module-only concept), but a component CAN carry its own photo (see
+// COMPONENT_PHOTO_BOX / writeComponentDataRow's embed block) — when one
+// is actually embedded the row is bumped up to DATA_ROW_HEIGHT instead (same
+// height a sofa module row uses for its blueprint), decided per-row from
+// whether a buffer was actually fetched, never from URL presence alone (a
+// component with an image404 placeholder, a failed fetch, or a
+// budget-rejected photo must still get the shorter, image-less height). 30pt
+// was this table's own row height before ANY image existed in this column at
+// all ("Raised 30 -> 110, later halved to 55" below, of DATA_ROW_HEIGHT).
 const COMPONENT_DATA_ROW_HEIGHT = 30
 
 // Row height (points) for an OTHER_WITH_FABRICS/OTHER group section-label
@@ -246,6 +260,15 @@ function columnWidthToPx(width: number): number {
 function rowHeightToPx(heightPt: number): number {
   return Math.round((heightPt * 4) / 3)
 }
+
+// OOXML EMU-per-pixel conversion factor (English Metric Units — the unit
+// `<xdr:colOff>`/`<xdr:rowOff>` are defined in; 9,525 EMU = 1px at 96dpi).
+// Hoisted to module scope (was two identical local consts, one in
+// writeDataRow's blueprint embed, one in writeComponentDataRow's photo
+// embed) so addCenteredPictureCellImage below is the ONE place both embed
+// call sites get this from — see that function's doc comment for the native-
+// EMU anchor technique this feeds.
+const EMU_PER_PX = 9525
 
 // Column A pixel width, computed once. Hoisted up here (rather than living
 // next to the blueprint-sizing constants that were its original motivation
@@ -344,7 +367,11 @@ const DATA_ROW_HEIGHT = 55
 // addImage call in buildPricelistWorkbook) — the full 2x margin ends up as
 // slack on the right/bottom edges only, not split evenly on all four sides.
 const PHOTO_MARGIN_PX = 4
-const PHOTO_SIZE_PX = PICTURE_COLUMN_PX - PHOTO_MARGIN_PX * 2
+// Exported so pricelist-photos.ts can derive its pre-embed resize target
+// (2x this, for a retina-sharp source at the same on-screen size — see that
+// file's own doc comment) from the SAME constant this file anchors the
+// image at, rather than a second, independently-maintained magic number.
+export const PHOTO_SIZE_PX = PICTURE_COLUMN_PX - PHOTO_MARGIN_PX * 2
 
 // Per-module blueprint thumbnail sizing (column A on a DATA row, as opposed
 // to the category-photo block above which occupies column A on the PHOTO
@@ -387,6 +414,111 @@ const BLUEPRINT_MARGIN_PX = 4
 const DATA_ROW_PX = rowHeightToPx(DATA_ROW_HEIGHT)
 const BLUEPRINT_USABLE_WIDTH_PX = PICTURE_COLUMN_PX - BLUEPRINT_MARGIN_PX * 2
 const BLUEPRINT_USABLE_HEIGHT_PX = DATA_ROW_PX - BLUEPRINT_MARGIN_PX * 2
+
+// Component-photo box (writeComponentDataRow's embed, distinct from both the
+// category-photo block above and the blueprint sizing just above). UNLIKE
+// the category photo (a fixed SQUARE box), this is the full picture CELL
+// minus margin on both axes — width from the column, height from the row —
+// because a component's `src_facebook` is a product shot on a large
+// white/light background with the item itself often occupying only a
+// fraction of the frame (verified against a real user report: an ~1080x1080
+// photo with a ~20px item). Trimming that background before resizing (see
+// pricelist-component-photos.ts's `TRIM_THRESHOLD`) can turn a wide, short,
+// or tall product into a genuinely non-square image — filling the whole
+// available cell, rather than a fixed square that leaves the item small
+// inside its own box AGAIN, is the fix for that.
+//
+// Both dimensions still leave the same PHOTO_MARGIN_PX gap on every edge —
+// oneCellAnchor images float above the grid and are never clipped to their
+// cell (see BLUEPRINT_MARGIN_PX's doc comment) — so this is
+// `PICTURE_COLUMN_PX - 2*margin` wide and `DATA_ROW_PX - 2*margin` tall.
+// (An earlier version of this feature used a single square sized off
+// whichever axis was smaller — i.e. always 65x65 — before component photos
+// were trimmed; that fixed-square design is what this rectangular box
+// replaces.)
+//
+// Exported for the same reason as PHOTO_SIZE_PX above — pricelist-component-
+// photos.ts derives its resize target (2x this box, per axis) from here
+// instead of a second pair of magic numbers.
+export const COMPONENT_PHOTO_BOX = {
+  width: PICTURE_COLUMN_PX - PHOTO_MARGIN_PX * 2,
+  height: DATA_ROW_PX - PHOTO_MARGIN_PX * 2,
+}
+
+/** A pixel box — square for the category photo, width!=height for the component photo (see COMPONENT_PHOTO_BOX). */
+interface PhotoBox {
+  width: number
+  height: number
+}
+
+/**
+ * Fits `width`x`height` inside `box`, preserving aspect ratio (same "fit
+ * inside" semantics as sharp's own `fit: "inside"`, applied a second time
+ * here at DISPLAY time — see PricelistImage's doc comment for why: the
+ * fetch pools resize to 2x a box constant, per axis, for a retina-sharp
+ * source, so an image whose aspect ratio already matches `box` naturally
+ * fits it exactly via this function with no special-casing, while a
+ * different aspect ratio still fits inside on its longer-relative-to-`box`
+ * side instead of being stretched to fill it).
+ *
+ * Deliberately NOT capped at scale<=1 the way computeBlueprintScale caps its
+ * scale: a blueprint's whole point is representing a REAL physical
+ * dimension proportionally, so upscaling past its native pixel size would
+ * misrepresent that. A category/component photo has no such physical
+ * meaning — it's a decorative thumbnail meant to fill its box — so this
+ * intentionally scales UP just as readily as down.
+ *
+ * Guards `width`/`height` <= 0 (also catches NaN, since every `> 0`
+ * comparison against NaN is false) by falling back to the SQUARE that fits
+ * inside `box` (i.e. sized off `box`'s shorter axis) rather than computing a
+ * scale — `box.width / 0` is `Infinity`, and `Math.round(0 * Infinity)` is
+ * `NaN`, which would otherwise reach ExcelJS's `ext` and corrupt the
+ * generated .xlsx. Not expected to trigger on real data (sharp's own resize
+ * output is never 0x0), but this is a cheap, load-bearing backstop against a
+ * malformed `PricelistImage` ever reaching this far. Same square this
+ * function computes for a genuinely square source image, so this is
+ * indistinguishable from "a square photo happened to fit exactly" rather
+ * than a visibly different failure mode.
+ */
+function fitInsideBox(
+  width: number,
+  height: number,
+  box: PhotoBox
+): { width: number; height: number } {
+  if (!(width > 0 && height > 0)) {
+    const squareSize = Math.min(box.width, box.height)
+    return { width: squareSize, height: squareSize }
+  }
+  const scale = Math.min(box.width / width, box.height / height)
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  }
+}
+
+/**
+ * Resolves the `{width, height}` an embedded photo's `ext` should use inside
+ * `box`: `entry.width`/`height` when known (see PricelistImage —
+ * resizeForEmbed populated these from sharp's own resize output, using the
+ * SAME `box` scaled 2x as the resize target — see
+ * pricelist-photos.ts/pricelist-component-photos.ts's `RESIZE_MAX_*`), else
+ * the square that fits inside `box` — the exact pre-resize fallback
+ * behaviour (a 1080x1080 `src_facebook` fit inside a non-square
+ * `COMPONENT_PHOTO_BOX` comes out to a centered square sized off the box's
+ * shorter axis, same as before component photos had a `width`/`height` to
+ * read at all), for the "sharp unavailable/resize failed, embedding the
+ * original buffer" case.
+ */
+function resolvePhotoExt(
+  entry: PricelistImage,
+  box: PhotoBox
+): { width: number; height: number } {
+  if (entry.width == null || entry.height == null) {
+    const squareSize = Math.min(box.width, box.height)
+    return { width: squareSize, height: squareSize }
+  }
+  return fitInsideBox(entry.width, entry.height, box)
+}
 
 const BORDER_COLOR = "FF7F6000"
 const THIN_BORDER: Partial<ExcelJS.Borders> = {
@@ -741,6 +873,68 @@ interface BlueprintEmbedContext {
 }
 
 /**
+ * Centres an already-sized `ext` image inside column A (PICTURE_COL) of
+ * `rowNumber`, using a NATIVE-EMU `tl` anchor rather than exceljs's own
+ * documented fractional col/row anchor.
+ *
+ * IMPORTANT, verified against exceljs@4.4.0 source (lib/doc/anchor.js): the
+ * fractional `tl.col`/`tl.row` feature (see exceljs's README, "Add image to
+ * a cell") does NOT do what the docs imply once a column has a CUSTOM
+ * width, like this sheet's PICTURE column. `Anchor#col`'s setter computes
+ * `nativeColOff = fraction * colWidth`, where `colWidth` for a custom width
+ * is `Math.floor(width * 10000)` — e.g. 250,000 for our width-25 column —
+ * and that raw number is then written VERBATIM as the XML `<xdr:colOff>`,
+ * which OOXML defines as EMU (see EMU_PER_PX above). 250,000 EMU is only
+ * ~26px, nowhere near this column's real rendered width (~180px) — so a
+ * "0.5 = centre" fraction would place the image at roughly the 13px mark,
+ * badly left-biased, not centred. (Confirmed by unzipping a generated
+ * workbook and reading the raw XML.)
+ *
+ * Sidestepping the bug entirely: `Anchor`'s constructor also accepts a
+ * NATIVE address (`{nativeCol, nativeColOff, nativeRow, nativeRowOff}`),
+ * which it stores and later serialises AS-IS with no unit conversion — see
+ * exceljs's own `IAnchor`/`CellPositionXform`. Supplying real EMU offsets
+ * there (computed from OUR OWN, correct px math, via EMU_PER_PX) is exact
+ * and independent of exceljs's width*10000 approximation. `ImagePosition`'s
+ * public .d.ts only advertises `{col, row}` for `tl` (not the native
+ * fields), so this needs `as any` — a genuine upstream typing gap, same as
+ * the Buffer cast on every `addImage` call in this file, not a type-safety
+ * workaround.
+ *
+ * Scope of the bug: only affects fractional offsets on a CUSTOM-width
+ * column/row. `Anchor`'s DEFAULT-width fallback (`colWidth = 640000` when
+ * `isCustomWidth` is false) happens to roughly match Excel's real default
+ * column width in EMU, which is almost certainly why this went unnoticed
+ * upstream. It also does not affect the category-photo anchor in
+ * buildPricelistWorkbook (`tl: {col: 0, row: 0}`) — an INTEGER anchor has no
+ * fractional part to mis-convert.
+ *
+ * Shared by writeDataRow's blueprint embed and writeComponentDataRow's photo
+ * embed — the two were, before this extraction, two copies of the exact
+ * same centering math (only `ext` differed), which is what this function
+ * closes off from drifting apart.
+ */
+function addCenteredPictureCellImage(
+  sheet: ExcelJS.Worksheet,
+  imageId: number,
+  rowNumber: number,
+  ext: { width: number; height: number }
+): void {
+  const colOffsetPx = Math.max(0, (PICTURE_COLUMN_PX - ext.width) / 2)
+  const rowOffsetPx = Math.max(0, (DATA_ROW_PX - ext.height) / 2)
+
+  sheet.addImage(imageId, {
+    tl: {
+      nativeCol: PICTURE_COL - 1,
+      nativeColOff: Math.round(colOffsetPx * EMU_PER_PX),
+      nativeRow: rowNumber - 1,
+      nativeRowOff: Math.round(rowOffsetPx * EMU_PER_PX),
+    } as any,
+    ext,
+  })
+}
+
+/**
  * Writes one module's data row. `dimensions.length` on the SDK type IS the
  * depth (there is no separate `depth` field) — do not go looking for one.
  */
@@ -885,50 +1079,12 @@ function writeDataRow(
       Math.round(thumbHeight * blueprintCtx.scale)
     )
 
-    // Centres the image in the cell.
-    //
-    // IMPORTANT, verified against exceljs@4.4.0 source (lib/doc/anchor.js):
-    // its documented "fractional tl.col/row" feature (see README's "Add
-    // image to a cell" section) does NOT do what the docs imply once a
-    // column has a CUSTOM width, like ours. `Anchor#col`'s setter computes
-    // `nativeColOff = fraction * colWidth`, where `colWidth` for a custom
-    // width is `Math.floor(width * 10000)` — e.g. 250,000 for our
-    // width-25 column — and that raw number is then written VERBATIM as
-    // the XML `<xdr:colOff>`, which OOXML defines as EMU (9,525 EMU/px).
-    // 250,000 EMU is only ~26px, nowhere near this column's real rendered
-    // width (~180px) — so a "0.5 = centre" fraction would place the image
-    // at roughly the 13px mark, badly left-biased, not centred. (Confirmed
-    // by unzipping a generated workbook and reading the raw XML.)
-    //
-    // Sidestepping the bug entirely: `Anchor`'s constructor also accepts a
-    // NATIVE address (`{nativeCol, nativeColOff, nativeRow, nativeRowOff}`),
-    // which it stores and later serialises AS-IS with no unit conversion —
-    // see exceljs's own `IAnchor`/`CellPositionXform`. Supplying real EMU
-    // offsets there (computed from OUR OWN, correct px math) is exact and
-    // independent of exceljs's width*10000 approximation. `ImagePosition`'s
-    // public .d.ts only advertises `{col, row}` for `tl` (not the native
-    // fields), so this needs `as any` — a genuine upstream typing gap, same
-    // as the Buffer cast on addImage above, not a type-safety workaround.
-    //
-    // Scope of the bug: only affects fractional offsets on a CUSTOM-width
-    // column/row. `Anchor`'s DEFAULT-width fallback (`colWidth = 640000`
-    // when `isCustomWidth` is false) happens to roughly match Excel's real
-    // default column width in EMU, which is almost certainly why this went
-    // unnoticed upstream. It also does not affect the category-photo anchor
-    // above (`tl: {col: 0, row: 0}`) — an INTEGER anchor has no fractional
-    // part to mis-convert.
-    const EMU_PER_PX = 9525
-    const colOffsetPx = Math.max(0, (PICTURE_COLUMN_PX - imageWidth) / 2)
-    const rowOffsetPx = Math.max(0, (DATA_ROW_PX - imageHeight) / 2)
-
-    sheet.addImage(imageId, {
-      tl: {
-        nativeCol: PICTURE_COL - 1,
-        nativeColOff: Math.round(colOffsetPx * EMU_PER_PX),
-        nativeRow: rowNumber - 1,
-        nativeRowOff: Math.round(rowOffsetPx * EMU_PER_PX),
-      } as any,
-      ext: { width: imageWidth, height: imageHeight },
+    // Centres the image in the cell — see addCenteredPictureCellImage's own
+    // doc comment for the exceljs fractional-anchor bug this native-EMU
+    // technique sidesteps (shared with writeComponentDataRow's photo embed).
+    addCenteredPictureCellImage(sheet, imageId, rowNumber, {
+      width: imageWidth,
+      height: imageHeight,
     })
   }
 
@@ -998,9 +1154,13 @@ function computeBlueprintScale(
 // (description / artCode / volume / a per-CAT-column price), so
 // writeHeaderRows, the global CAT-column pooling, and the price-multiplier
 // formula all keep working unmodified; only the two small row-writing
-// functions below differ from writeDataRow (no blueprint thumbnail — see
-// COMPONENT_DATA_ROW_HEIGHT). The two types differ only in which group code
-// is treated as the "model" group — see modelGroupCodeFor.
+// functions below differ from writeDataRow — a component never carries a
+// blueprint thumbnail (that's a sofa-module-only concept), but DOES get its
+// own component-photo embed (see ComponentPhotoEmbedContext/
+// COMPONENT_PHOTO_BOX), which is why COMPONENT_DATA_ROW_HEIGHT is only
+// the image-LESS row height, not a blanket "these rows never carry a
+// picture" rule. The two types differ only in which group code is treated
+// as the "model" group — see modelGroupCodeFor.
 
 /** One row of an OTHER_WITH_FABRICS/OTHER sheet: either a group section label, or a priced component/base-price row. */
 type ComponentSheetRow = ComponentSectionLabelRow | ComponentDataRow
@@ -1044,6 +1204,14 @@ interface ComponentDataRow {
   // other category cells blank.
   priceByGroup: Map<number, number> | null
   flatPrice: number | null
+  // The component's own src_facebook URL (see PricelistExportComponentImage),
+  // or `null` when the component has no image at all. Threaded straight from
+  // buildComponentDataRow rather than re-read from the association at embed
+  // time, mirroring how every other field on this row is resolved once here.
+  // A non-null URL is NOT a guarantee of an embedded picture — see
+  // writeComponentDataRow's embed block for the fetch/validation/budget
+  // checks that can still leave this row image-less.
+  photoUrl: string | null
 }
 
 /**
@@ -1176,6 +1344,7 @@ function buildComponentDataRow(
     volume,
     priceByGroup,
     flatPrice,
+    photoUrl: component.image?.src_facebook ?? null,
   }
 }
 
@@ -1266,6 +1435,9 @@ function buildComponentRows(
         advancedProduct.advanced_product_price_fabric_category
       ),
       flatPrice: null,
+      // The advanced-product level, not a single component — there's no
+      // AdditionalComponent.image to read here at all.
+      photoUrl: null,
     })
   }
 
@@ -1384,6 +1556,60 @@ function buildComponentRows(
 }
 
 /**
+ * Every distinct component-photo URL that will actually be embedded on an
+ * OTHER/OTHER_WITH_FABRICS sheet — i.e. only priced, enabled-group
+ * components (mirrors buildComponentRows's own filtering EXACTLY, since it
+ * IS buildComponentRows: this calls it directly rather than re-deriving the
+ * predicate). Used by pricelist-component-photos.ts's fetch pool so its
+ * count/byte budget is only ever spent on a URL that could actually render —
+ * duplicating buildComponentRows's priced-resolution branches (the
+ * use_fabric_prices_for_components flag, the lowest-group-number fallback,
+ * the extra_price>0 trap — see resolveComponentFlatPrice's doc comment) in a
+ * second module risks the two silently drifting apart, which would surface
+ * as blank PICTURE cells with no error, not a loud failure.
+ *
+ * `buildComponentRows` is pure and doesn't mutate `products`, so calling it
+ * again here — once per product, same as buildPricelistWorkbook's own
+ * per-product pass — is safe; its cost is trivial next to the hundreds of
+ * HTTP fetches this feeds.
+ *
+ * `dimensionDecimals` only affects the formatted description TEXT
+ * (getComponentDescription), never which components are priced — this
+ * caller never reads `description`, so a fixed dummy value is passed rather
+ * than threading a render setting into what's otherwise a pure data-fetch
+ * helper.
+ */
+export function collectComponentPhotoUrls(
+  products: PricelistExportProduct[]
+): Set<string> {
+  const urls = new Set<string>()
+  const DUMMY_DIMENSION_DECIMALS = 1
+
+  for (const product of products) {
+    const advancedProduct = product.advanced_product
+    if (!advancedProduct) continue
+
+    const advancedProductType = advancedProduct.advanced_product_type
+    const isComponentBased =
+      advancedProductType === ADVANCED_PRODUCT_TYPE_OTHER_WITH_FABRICS ||
+      advancedProductType === ADVANCED_PRODUCT_TYPE_OTHER
+    if (!isComponentBased) continue
+
+    const rows = buildComponentRows(
+      advancedProduct,
+      DUMMY_DIMENSION_DECIMALS,
+      modelGroupCodeFor(advancedProductType),
+      resolveEnabledGroupIds(advancedProduct)
+    )
+    for (const row of rows) {
+      if (row.kind === "data" && row.photoUrl) urls.add(row.photoUrl)
+    }
+  }
+
+  return urls
+}
+
+/**
  * Writes a group section-label row on an OTHER_WITH_FABRICS/OTHER sheet — styled
  * as the SAME dark bar as GROUP_HEADER_ROW (row 12's "MODULES" / CAT1 ...
  * Leather B row, see writeHeaderRows), using the same resolved `cfg.groupHeaderFill`
@@ -1444,22 +1670,62 @@ function writeSectionLabelRow(
 }
 
 /**
- * Writes one component/base-price row on an OTHER_WITH_FABRICS/OTHER sheet — same
- * cell layout as writeDataRow (description/art-code/volume/price columns,
- * borders) minus the blueprint-image block, which doesn't apply here (see
- * COMPONENT_DATA_ROW_HEIGHT's doc comment). Column A (PICTURE) is left
- * genuinely blank — untouched here except for the border loop below, same
- * as an image-less sofa module row.
+ * Per-workbook context for embedding a component's own photo into column A
+ * of its data row (see COMPONENT_PHOTO_BOX's doc comment for the sizing
+ * rationale). Shaped like BlueprintEmbedContext — workbook/buffers/idByUrl
+ * shared across every row that uses it — but with no `scale` field: unlike a
+ * module blueprint, a component photo is never resized proportionally to a
+ * real physical dimension; it's a fixed decorative box, same treatment as
+ * the category-photo block in buildPricelistWorkbook. Kept as ITS OWN idByUrl
+ * map (never shared with imageIdByUrl or blueprintIdByUrl) for the same
+ * reason those two are already kept separate — see blueprintIdByUrl's doc
+ * comment.
+ */
+interface ComponentPhotoEmbedContext {
+  workbook: ExcelJS.Workbook
+  /**
+   * url -> already-fetched, already-validated, already-resized JPEG (or
+   * null/absent) — see PricelistImage's doc comment for what `width`/
+   * `height` being `null` means (resize unavailable/failed, `buffer` is the
+   * ORIGINAL un-resized fetch).
+   */
+  buffers: Map<string, PricelistImage | null>
+  idByUrl: Map<string, number>
+}
+
+/**
+ * Writes one component/base-price row on an OTHER_WITH_FABRICS/OTHER sheet —
+ * same cell layout as writeDataRow (description/art-code/volume/price
+ * columns, borders), plus its OWN component-photo embed in column A (see
+ * ComponentPhotoEmbedContext/COMPONENT_PHOTO_BOX) — unlike a sofa
+ * module, a component never carries a blueprint thumbnail (that concept
+ * doesn't apply here), so the two embed paths never overlap on one row.
+ *
+ * Row height is decided HERE, per row, from whether a buffer was actually
+ * fetched for `data.photoUrl` — never from URL presence alone. A photo can
+ * be "missing" for several independent reasons (no image at all, skipped as
+ * the shared image404 placeholder, a fetch/validation failure, or a
+ * rejected byte-budget overflow — see pricelist-component-photos.ts), and
+ * every one of them must fall back to the shorter, image-less
+ * COMPONENT_DATA_ROW_HEIGHT, matching an ordinary image-less component row
+ * exactly.
  */
 function writeComponentDataRow(
   sheet: ExcelJS.Worksheet,
   rowNumber: number,
   data: ComponentDataRow,
   sortedGroupNumbers: number[],
+  photoCtx: ComponentPhotoEmbedContext,
   cfg: RenderConfig
 ): void {
+  const photoEntry = data.photoUrl ? photoCtx.buffers.get(data.photoUrl) : null
+
   const row = sheet.getRow(rowNumber)
-  row.height = COMPONENT_DATA_ROW_HEIGHT
+  // Reflects whether a photo will actually be embedded below — never from
+  // URL presence alone (see this function's doc comment for the several
+  // independent reasons `photoEntry` can still be falsy even when
+  // `data.photoUrl` is set).
+  row.height = photoEntry ? DATA_ROW_HEIGHT : COMPONENT_DATA_ROW_HEIGHT
 
   row.getCell(DESCRIPTION_COL).value = data.description
   row.getCell(DESCRIPTION_COL).alignment = {
@@ -1497,10 +1763,404 @@ function writeComponentDataRow(
     cell.alignment = CENTER_MIDDLE_ALIGNMENT
   })
 
+  // Column A (PICTURE): embeds this component's own photo when one was
+  // actually fetched; stays genuinely blank otherwise — same "never an
+  // error" discipline as writeDataRow's blueprint block and the
+  // category-photo embed in buildPricelistWorkbook. Anchored via
+  // addCenteredPictureCellImage (same native-EMU technique as writeDataRow's
+  // blueprint image — see that function's doc comment for the exceljs bug
+  // this sidesteps) — NOT the blueprint's per-sheet scale ratio, which only
+  // makes sense for a proportionally-sized line drawing, not this fixed
+  // decorative photo box.
+  if (data.photoUrl && photoEntry) {
+    let imageId = photoCtx.idByUrl.get(data.photoUrl)
+    if (imageId === undefined) {
+      imageId = photoCtx.workbook.addImage({
+        // Same upstream exceljs .d.ts Buffer-vs-ArrayBuffer typing quirk as
+        // the category-photo/blueprint embeds — see either of those calls'
+        // comment for why `as any` is correct here, not a type-safety
+        // workaround.
+        buffer: photoEntry.buffer as any,
+        extension: "jpeg",
+      })
+      photoCtx.idByUrl.set(data.photoUrl, imageId)
+    }
+
+    // ext is resolved from the ACTUAL (trimmed + resized) pixel dimensions
+    // when known (see resolvePhotoExt/PricelistImage) — a component's own
+    // photo can genuinely be non-square after trimming its background (see
+    // COMPONENT_PHOTO_BOX's doc comment), so this fits inside the FULL
+    // rectangular cell (not a fixed square) and can come out up to 85px wide
+    // or 65px tall depending on the trimmed item's own aspect ratio.
+    // Centering (inside addCenteredPictureCellImage) uses this resolved box,
+    // so a narrower/shorter fit still centers correctly inside the cell
+    // instead of hugging one corner.
+    const ext = resolvePhotoExt(photoEntry, COMPONENT_PHOTO_BOX)
+    addCenteredPictureCellImage(sheet, imageId, rowNumber, ext)
+  }
+
   const lastCol = cfg.fixedColumnCount + sortedGroupNumbers.length
   for (let col = 1; col <= lastCol; col++) {
     row.getCell(col).border = cfg.thinBorder
   }
+}
+
+// ===== Category grouping (pricelist export) =====
+//
+// Groups admitted products by category for the per-product sheet order and
+// the Info sheet's product index — see groupProductsByCategory's own doc
+// comment for the single-tree invariant that keeps the two in sync, and
+// buildPricelistWorkbook for where this section is invoked. Ordering
+// mirrors FIND_MENU_CATEGORIES's own admin/menu order (top-level "branch"
+// categories by menu_order asc, then their "leaf" children by menu_order
+// asc — see src/lib/furnisystems-sdk/modules/categories/index.ts) rather
+// than re-deriving a different order from scratch.
+
+/**
+ * The display name used for BOTH the sheet name (via safeSheetName, in
+ * buildPricelistWorkbook) and the category-group sort key
+ * (groupProductsByCategory below) — extracted into one function so the two
+ * can never diverge. Falls back to `Product ${id}` when the export language
+ * has no AdvancedProductProfile at all (e.g. a de/fr request for a product
+ * whose only profile is en).
+ */
+function resolveProductName(
+  advancedProduct: PricelistExportAdvancedProduct,
+  productId: number
+): string {
+  return (
+    advancedProduct.advanced_product_profiles[0]?.name ??
+    `Product ${productId}`
+  )
+}
+
+// Sentinel id used for BOTH "no branch" (the Uncategorized bucket, as a key
+// into groupProductsByCategory's `branches` map) and "no leaf" (a product
+// grouped directly under its branch, as a key into that branch's `leaves`
+// map) — the two maps are independent, so one shared sentinel value never
+// collides across them. Never collides with a real Category.id either (all
+// positive, autoincrement).
+const NO_CATEGORY_KEY = -1
+
+// Fixed per-language label for products with neither a usable
+// primary_category nor any non-root linked categories entry (a REAL, live
+// case — verified against local data: 5 of 6 visible primary_categoryId=24
+// ("All Products" root) products have categories = [24] only, and 13
+// visible sofa products have neither field set at all). Not resolved via
+// CategoryProfile — there is no category to read a profile from — so this
+// is hardcoded the same way the workbook's other fixed strings ("Company",
+// "Pricelist", "Product name"...) are.
+const UNCATEGORIZED_LABEL: Record<string, string> = {
+  en: "Uncategorized",
+  de: "Ohne Kategorie",
+  fr: "Sans catégorie",
+}
+
+function resolveUncategorizedLabel(language: string): string {
+  return UNCATEGORIZED_LABEL[language.toLowerCase()] ?? UNCATEGORIZED_LABEL.en
+}
+
+/**
+ * Resolves a Category's display name for `language`, falling back to
+ * English, then to whatever profile IS present, then to a synthetic
+ * `Category ${id}` label. `profiles` must be UNFILTERED (every language) —
+ * see ProductsModule.getSofaPricelistExportProducts's query doc comment:
+ * the top-level "branch" categories (Soft Furniture/Hard Furniture/Other)
+ * carry only an `en` CategoryProfile today, so filtering server-side would
+ * blank every de/fr branch heading instead of falling back to en. This is
+ * the ONE place that fallback rule lives — every other spot in this file
+ * that resolves a category or product name calls into this function rather
+ * than re-implementing it.
+ */
+export function resolveCategoryName(
+  profiles: { language: string; name: string }[] | null | undefined,
+  language: string,
+  categoryId: number
+): string {
+  const list = profiles ?? []
+  const normalized = language.toLowerCase()
+  const exact = list.find((p) => p.language.toLowerCase() === normalized)
+  if (exact) return exact.name
+  const en = list.find((p) => p.language.toLowerCase() === "en")
+  if (en) return en.name
+  if (list.length > 0) return list[0].name
+  return `Category ${categoryId}`
+}
+
+export interface CategoryGroupHeading {
+  id: number
+  name: string
+  order: number
+}
+
+function toCategoryHeading(
+  category: PricelistExportCategoryRef | PricelistExportCategoryParentRef,
+  language: string
+): CategoryGroupHeading {
+  return {
+    id: category.id,
+    order: category.menu_order,
+    name: resolveCategoryName(
+      category.category_profiles,
+      language,
+      category.id
+    ),
+  }
+}
+
+/**
+ * Orders two linked Category candidates by MENU POSITION — (branch
+ * menu_order, leaf menu_order), then id as the final tiebreak — so a
+ * product linked under more than one leaf lands under whichever heading a
+ * human would predict from the admin menu, not whichever happened to get
+ * the lower database id. `branchOrderOf`/`leafOrderOf` read a candidate's
+ * OWN menu_order as the "branch" position when it has no parent (it IS a
+ * branch-level category) and its parent's menu_order otherwise.
+ */
+function compareCategoriesByMenuPosition(
+  a: PricelistExportCategoryRef,
+  b: PricelistExportCategoryRef
+): number {
+  const branchOrderOf = (c: PricelistExportCategoryRef): number =>
+    c.parent_category ? c.parent_category.menu_order : c.menu_order
+  const leafOrderOf = (c: PricelistExportCategoryRef): number =>
+    c.parent_category ? c.menu_order : Number.NEGATIVE_INFINITY
+
+  return (
+    branchOrderOf(a) - branchOrderOf(b) ||
+    leafOrderOf(a) - leafOrderOf(b) ||
+    a.id - b.id
+  )
+}
+
+/**
+ * Picks the group key's source Category among a product's `categories` (the
+ * m2m relation, which typically carries the full ancestor chain — root +
+ * branch + leaf — since the category-link flow propagates a product's
+ * categories up to their ancestors). Prefers an entry that HAS a parent
+ * (leaf-level, in today's two-level category tree) over one that doesn't
+ * (branch-level) — named "most specific", not "deepest": this does NOT
+ * walk the tree to compute a real depth, it only checks for one parent
+ * link, and the query's shape (see PricelistExportCategoryParentRef) never
+ * carries a grandparent to walk to anyway. Real data can carry MORE THAN
+ * ONE parented entry (e.g. a product linked under both "Comfort Chairs" and
+ * "Chairs" — verified against local data, id 1618/"STORMY CHAIR"); ties
+ * are broken by menu position (see compareCategoriesByMenuPosition).
+ *
+ * "Has a parent" is tested via the HYDRATED `parent_category` object, not
+ * the `parent_categoryId` scalar — the same test
+ * compareCategoriesByMenuPosition's `branchOrderOf` uses. A candidate whose
+ * `parent_categoryId` is set but whose `parent_category` didn't arrive in
+ * the query response (see resolveProductCategoryGroup's console.warn for
+ * that gap) is therefore treated as branch-level HERE too, so the pool this
+ * function builds and the comparator that sorts it never disagree about
+ * which candidates are "parented".
+ */
+function pickMostSpecificNonRootCategory(
+  categories: PricelistExportCategoryRef[]
+): PricelistExportCategoryRef | null {
+  const nonRoot = categories.filter((c) => !c.is_root_category)
+  if (nonRoot.length === 0) return null
+  const withParent = nonRoot.filter((c) => c.parent_category != null)
+  const pool = withParent.length > 0 ? withParent : nonRoot
+  return [...pool].sort(compareCategoriesByMenuPosition)[0]
+}
+
+/**
+ * The single Category a product groups under: `primary_category` unless
+ * it's root-level (e.g. the "All Products" root — real, visible products
+ * are assigned that as their PRIMARY category today, see
+ * ProductsModule.getSofaPricelistExportProducts's query doc comment), in
+ * which case this falls through to the `categories` m2m relation exactly as
+ * if `primary_category` were unset entirely. Returns null when neither
+ * source yields a usable (non-root) category — the caller's Uncategorized
+ * bucket.
+ *
+ * `categories` is ERP-owned and rewritten nightly: the import full-replaces
+ * it for erp_synced categories (admin-curated, non-erp_synced links are
+ * left alone) — see the "Nightly category-link wipe" memory. A product
+ * relying on this fallback can therefore move to a different heading, or
+ * into Uncategorized, after the next import run.
+ */
+function resolveCandidateCategory(
+  product: PricelistExportProduct
+): PricelistExportCategoryRef | null {
+  const primary = product.primary_category
+  if (primary && !primary.is_root_category) {
+    return primary
+  }
+  return pickMostSpecificNonRootCategory(product.categories ?? [])
+}
+
+interface ResolvedProductCategoryGroup {
+  branch: CategoryGroupHeading
+  leaf: CategoryGroupHeading | null
+}
+
+/**
+ * Resolves one product's `{ branch, leaf }` group, or null (Uncategorized).
+ * `branch` = the candidate category's parent, or the candidate itself when
+ * it has none (a product whose primary/linked category IS a top-level
+ * branch groups directly under that branch, with no leaf sub-heading). Only
+ * ONE level up is ever read — a candidate 3+ levels deep still groups under
+ * its immediate parent, never a grandparent (per this feature's spec:
+ * "don't walk further"). The `parent.is_root_category` check is defensive,
+ * not exercised by today's data (every real leaf's parent is a true branch,
+ * never the "All Products" root) — kept because the query already carries
+ * that field for free, and it keeps the tree internally consistent (never
+ * shows the meaningless root as a heading) if that ever changes.
+ */
+function resolveProductCategoryGroup(
+  product: PricelistExportProduct,
+  language: string
+): ResolvedProductCategoryGroup | null {
+  const candidate = resolveCandidateCategory(product)
+  if (!candidate) return null
+
+  const parent = candidate.parent_category
+  if (candidate.parent_categoryId != null && !parent) {
+    // Data/query gap, not the expected "this category has no parent" case
+    // below — Category.parent_categoryId says a parent EXISTS, but the
+    // query response didn't carry it. Warn so a since-deleted parent or a
+    // partial GraphQL response is traceable, instead of silently rendering
+    // `candidate` as if it genuinely were a top-level branch.
+    console.warn(
+      `[pricelist-export] category ${candidate.id} has parent_categoryId=` +
+        `${candidate.parent_categoryId} but no parent_category in the ` +
+        "query response — grouping it as a branch-level heading."
+    )
+  }
+  if (!parent || parent.is_root_category) {
+    return { branch: toCategoryHeading(candidate, language), leaf: null }
+  }
+  return {
+    branch: toCategoryHeading(parent, language),
+    leaf: toCategoryHeading(candidate, language),
+  }
+}
+
+export interface CategoryLeafGroup<T> {
+  leaf: CategoryGroupHeading | null
+  items: T[]
+}
+
+export interface CategoryBranchGroup<T> {
+  branch: CategoryGroupHeading
+  leaves: CategoryLeafGroup<T>[]
+}
+
+// Internal accumulator shapes for groupProductsByCategory below — module
+// scope (not nested in the function) purely so their generic parameter
+// doesn't shadow the function's own `T`, and so they're readable in
+// isolation. `heading`/`items` (not CategoryLeafGroup's public `leaf`/
+// `items`) is renamed to the public shape only at groupProductsByCategory's
+// final `.map` boundary.
+interface LeafAcc<TItem> {
+  heading: CategoryGroupHeading | null
+  items: TItem[]
+}
+interface BranchAcc<TItem> {
+  heading: CategoryGroupHeading
+  leaves: Map<number, LeafAcc<TItem>>
+}
+
+/**
+ * Groups `items` by category — admin/menu order (branch menu_order asc,
+ * then leaf menu_order asc, ties by id; mirrors FIND_MENU_CATEGORIES's own
+ * ordering in categories/index.ts), Uncategorized branch always LAST,
+ * products within a leaf alphabetical by `item.productName` (locale "en",
+ * base sensitivity; ties by `item.product.id`). Within a branch, the
+ * null-leaf group (products whose resolved category IS the branch, no leaf
+ * sub-heading) always sorts FIRST — otherwise it would render below a real
+ * leaf sub-heading and read as belonging to that leaf.
+ *
+ * Drives BOTH the product-sheet order and the Info sheet's headed index —
+ * see buildPricelistWorkbook, which runs this exactly once and derives both
+ * from the single returned tree, so sheet order and index headings can
+ * never disagree. This is the ONE place that invariant is established;
+ * callers reference it rather than re-stating it.
+ *
+ * `items` must already be the FINAL admitted/renderable set (every skip —
+ * no advanced_product, a sofa with zero priced forms, a component product
+ * with zero priced rows — already applied). Grouping a product that will
+ * never get a sheet would render an Info-sheet heading over nothing.
+ */
+export function groupProductsByCategory<
+  T extends { product: PricelistExportProduct; productName: string }
+>(items: T[], language: string): CategoryBranchGroup<T>[] {
+  const branches = new Map<number, BranchAcc<T>>()
+
+  for (const item of items) {
+    const group = resolveProductCategoryGroup(item.product, language)
+    const branchKey = group ? group.branch.id : NO_CATEGORY_KEY
+    let branchAcc = branches.get(branchKey)
+    if (!branchAcc) {
+      branchAcc = {
+        heading: group
+          ? group.branch
+          : {
+              id: NO_CATEGORY_KEY,
+              name: resolveUncategorizedLabel(language),
+              order: Number.POSITIVE_INFINITY,
+            },
+        leaves: new Map(),
+      }
+      branches.set(branchKey, branchAcc)
+    }
+    const leafKey = group?.leaf ? group.leaf.id : NO_CATEGORY_KEY
+    let leafAcc = branchAcc.leaves.get(leafKey)
+    if (!leafAcc) {
+      leafAcc = { heading: group?.leaf ?? null, items: [] }
+      branchAcc.leaves.set(leafKey, leafAcc)
+    }
+    leafAcc.items.push(item)
+  }
+
+  const sortedBranches = Array.from(branches.values()).sort(
+    (a, b) => a.heading.order - b.heading.order || a.heading.id - b.heading.id
+  )
+
+  return sortedBranches.map((branchAcc) => {
+    const sortedLeaves = Array.from(branchAcc.leaves.values()).sort((a, b) => {
+      const orderA = a.heading ? a.heading.order : Number.NEGATIVE_INFINITY
+      const orderB = b.heading ? b.heading.order : Number.NEGATIVE_INFINITY
+      if (orderA !== orderB) return orderA - orderB
+      const idA = a.heading ? a.heading.id : Number.NEGATIVE_INFINITY
+      const idB = b.heading ? b.heading.id : Number.NEGATIVE_INFINITY
+      return idA - idB
+    })
+    for (const leafAcc of sortedLeaves) {
+      leafAcc.items.sort(
+        (x, y) =>
+          x.productName.localeCompare(y.productName, "en", {
+            sensitivity: "base",
+          }) || x.product.id - y.product.id
+      )
+    }
+    return {
+      branch: branchAcc.heading,
+      leaves: sortedLeaves.map((leafAcc) => ({
+        leaf: leafAcc.heading,
+        items: leafAcc.items,
+      })),
+    }
+  })
+}
+
+/**
+ * One admitted product, resolved once by buildPricelistWorkbook's pre-pass
+ * before category grouping runs — see groupProductsByCategory (which groups
+ * these) for the ordering/invariant this feeds, and buildPricelistWorkbook
+ * for where `sheetName` gets filled in (its own dedicated pass, run AFTER
+ * grouping — see that pass's own comment for why).
+ */
+interface RenderableProduct {
+  product: PricelistExportProduct
+  advancedProduct: PricelistExportAdvancedProduct
+  isSofa: boolean
+  componentRows: ComponentSheetRow[]
+  productName: string
+  sheetName: string
 }
 
 /**
@@ -1513,18 +2173,37 @@ function writeComponentDataRow(
  * two-tier catalog header (see writeHeaderRows).
  *
  * `photoBuffers` maps a product's category-photo URL to its already-fetched,
- * already-validated JPEG bytes (see fetchPricelistPhotos) — a missing entry,
- * or `null`, means "no photo for this product" and is never an error: an
- * absent decorative photo must never cost the customer their price data.
- * The same URL is deliberately embedded into the workbook at most once
- * (tracked via `imageIdByUrl` below) since many products share one photo.
+ * already-validated, already-RESIZED JPEG (see fetchPricelistPhotos and
+ * PricelistImage's doc comment for what a `null` `width`/`height` means) — a
+ * missing entry, or `null`, means "no photo for this product" and is never
+ * an error: an absent decorative photo must never cost the customer their
+ * price data. The same URL is deliberately embedded into the workbook at
+ * most once (tracked via `imageIdByUrl` below) since many products share one
+ * photo.
  *
- * `blueprintBuffers` is the same shape (url -> buffer|null) but for
+ * `blueprintBuffers` is a similar shape (url -> buffer|null) but for
  * per-MODULE blueprint thumbnails (see fetchPricelistBlueprints) and is
  * deduped separately, via `blueprintIdByUrl` — two independent maps because
  * the two image sets share nothing (different URLs, different cells,
  * different sizing rule: fixed-box for the photo vs. proportional-per-sheet
- * for blueprints, see computeBlueprintScale).
+ * for blueprints, see computeBlueprintScale). Blueprints are NOT resized
+ * (still a bare `Buffer`, not `PricelistImage`) — they're tiny PNGs already
+ * (measured ~400-1,300 bytes each), nowhere near the byte pressure that
+ * motivated resizing the two JPEG pools.
+ *
+ * `componentPhotoBuffers` is the same `PricelistImage` shape as
+ * `photoBuffers` but for each OTHER/OTHER_WITH_FABRICS component's OWN photo
+ * (see fetchPricelistComponentPhotos, which fetches a SUBSET of
+ * collectComponentPhotoUrls's full candidate set — that fetch pool further
+ * filters out the shared image404 placeholder and enforces its own
+ * count/byte budget, so this map's keys are a subset of, never a superset
+ * of, what collectComponentPhotoUrls returns), deduped separately via its
+ * own `componentPhotoIdByUrl` for the same reason as
+ * `blueprintIdByUrl`. Unlike the other two image sets, whether a given row
+ * GETS this image also changes that row's height (DATA_ROW_HEIGHT vs
+ * COMPONENT_DATA_ROW_HEIGHT — see writeComponentDataRow's doc comment);
+ * sofa rows and the category-photo/blueprint embeds are entirely unaffected
+ * by this parameter.
  *
  * Price columns are derived once from the distinct fabric-category
  * `group_number`s that actually have a price row anywhere in `products`
@@ -1535,8 +2214,9 @@ function writeComponentDataRow(
 export async function buildPricelistWorkbook(
   products: PricelistExportProduct[],
   meta: PricelistWorkbookMeta,
-  photoBuffers: Map<string, Buffer | null>,
+  photoBuffers: Map<string, PricelistImage | null>,
   blueprintBuffers: Map<string, Buffer | null>,
+  componentPhotoBuffers: Map<string, PricelistImage | null>,
   settings?: PricelistWorkbookSettings
 ): Promise<ExcelJS.Buffer> {
   // Resolved ONCE for the whole workbook — every sheet shares the same
@@ -1544,6 +2224,10 @@ export async function buildPricelistWorkbook(
   // `settings` (every pre-existing caller, incl. this file's own
   // verification harnesses) resolves to today's exact hardcoded constants.
   const cfg = resolveRenderConfig(settings)
+  // Drives category-heading name resolution (resolveCategoryName) and the
+  // Uncategorized bucket's label (resolveUncategorizedLabel) — see
+  // PricelistWorkbookMeta.language's doc comment for the "en" default.
+  const language = meta.language ?? "en"
 
   // NOTE: this pool is intentionally shared by EVERY sheet, sofa and
   // OTHER_WITH_FABRICS/OTHER alike (see this function's doc comment on
@@ -1637,7 +2321,6 @@ export async function buildPricelistWorkbook(
   // reserves the Info tab's own name so no product can collide with it,
   // case-insensitively.
   const usedSheetNames = new Set<string>(["info"])
-  const indexRows: { productName: string; sheetName: string }[] = []
 
   // Dedupes embedded images by source URL: `workbook.addImage` is called at
   // most once per distinct URL, and every sheet sharing that photo reuses
@@ -1650,6 +2333,26 @@ export async function buildPricelistWorkbook(
   // a URL, but even if they somehow did, sharing one map would wrongly reuse
   // a JPEG-typed embed id for a PNG buffer or vice versa.
   const blueprintIdByUrl = new Map<string, number>()
+
+  // Same dedupe pattern again, kept SEPARATE from both maps above (see
+  // ComponentPhotoEmbedContext's doc comment) — a component photo and a
+  // category photo are both JPEGs but never share a URL in practice (one is
+  // AdvancedProduct.category_photo, the other AdditionalComponent.image),
+  // and keeping every image set on its own map means a future change to one
+  // can never accidentally corrupt another's dedupe.
+  const componentPhotoIdByUrl = new Map<string, number>()
+
+  // Resolves the FINAL admitted/renderable set that will produce a sheet —
+  // the same skip-checks the sheet-writing loop used to run inline, moved
+  // out front so groupProductsByCategory can group them BEFORE any sheet
+  // gets built (see that function's doc comment for why this must already
+  // be the final set). Also resolves everything a sheet needs exactly
+  // once: isSofa/isComponentBased, componentRows (buildComponentRows is
+  // not cheap), and productName (see resolveProductName — used as both the
+  // category-sort key and the sheet name's input, so the two can never
+  // diverge). `sheetName` is left blank here — see the dedicated pass right
+  // after grouping, below.
+  const renderableProducts: RenderableProduct[] = []
 
   for (const product of products) {
     const advancedProduct = product.advanced_product
@@ -1713,11 +2416,40 @@ export async function buildPricelistWorkbook(
     }
     if (!isSofa && !isComponentBased) continue
 
-    const productName =
-      advancedProduct.advanced_product_profiles[0]?.name ??
-      `Product ${product.id}`
-    const sheetName = safeSheetName(productName, usedSheetNames)
-    indexRows.push({ productName, sheetName })
+    renderableProducts.push({
+      product,
+      advancedProduct,
+      isSofa,
+      componentRows,
+      productName: resolveProductName(advancedProduct, product.id),
+      sheetName: "",
+    })
+  }
+
+  // Ordered by category — see groupProductsByCategory's doc comment for the
+  // single-tree invariant this establishes (both the sheet loop below and
+  // the Info index writer further down read from this same tree).
+  const categoryGroups = groupProductsByCategory(renderableProducts, language)
+  const orderedRenderableProducts = categoryGroups.flatMap((branchGroup) =>
+    branchGroup.leaves.flatMap((leafGroup) => leafGroup.items)
+  )
+
+  // Sheet names resolved in their own pass, in this FINAL grouped order,
+  // before any worksheet is created — safeSheetName's dedupe suffix (e.g.
+  // "Name (2)") depends on iteration order, so it can't run any earlier
+  // than this. Both the sheet-writing loop right below and the Info index
+  // writer further down read `sheetName` off the same RenderableProduct
+  // object afterwards.
+  for (const renderableProduct of orderedRenderableProducts) {
+    renderableProduct.sheetName = safeSheetName(
+      renderableProduct.productName,
+      usedSheetNames
+    )
+  }
+
+  for (const renderableProduct of orderedRenderableProducts) {
+    const { advancedProduct, isSofa, componentRows, productName, sheetName } =
+      renderableProduct
 
     const sheet = workbook.addWorksheet(sheetName)
 
@@ -1739,8 +2471,8 @@ export async function buildPricelistWorkbook(
     }
 
     const photoUrl = advancedProduct.category_photo?.src_facebook ?? null
-    const photoBuffer = photoUrl ? photoBuffers.get(photoUrl) : null
-    if (photoUrl && photoBuffer) {
+    const photoEntry = photoUrl ? photoBuffers.get(photoUrl) : null
+    if (photoUrl && photoEntry) {
       let imageId = imageIdByUrl.get(photoUrl)
       if (imageId === undefined) {
         imageId = workbook.addImage({
@@ -1752,16 +2484,21 @@ export async function buildPricelistWorkbook(
           // implements, so a real Buffer never structurally satisfies it —
           // an upstream typing bug, not a runtime issue (ExcelJS reads this
           // field as a plain Node Buffer at runtime).
-          buffer: photoBuffer as any,
+          buffer: photoEntry.buffer as any,
           extension: "jpeg",
         })
         imageIdByUrl.set(photoUrl, imageId)
       }
       // Fixed-size oneCellAnchor (not a range) — see PHOTO_SIZE_PX comment
-      // above for why a range anchor is wrong here.
+      // above for why a range anchor is wrong here. `ext` is resolved from
+      // the actual resized dimensions when known (see resolvePhotoExt) —
+      // today this is a no-op (src_facebook is uniformly square, so a
+      // successful resize always yields back a PHOTO_SIZE_PX square here,
+      // byte-for-byte the same box as before resizing existed) but keeps
+      // this correct if that ever stops being true, without stretching.
       sheet.addImage(imageId, {
         tl: { col: 0, row: 0 },
-        ext: { width: PHOTO_SIZE_PX, height: PHOTO_SIZE_PX },
+        ext: resolvePhotoExt(photoEntry, { width: PHOTO_SIZE_PX, height: PHOTO_SIZE_PX }),
       })
     }
 
@@ -1804,6 +2541,12 @@ export async function buildPricelistWorkbook(
       // OTHER_WITH_FABRICS/OTHER: `componentRows` was already built above
       // (before the empty-sheet skip check) — see buildComponentRows's doc
       // comment.
+      const componentPhotoCtx: ComponentPhotoEmbedContext = {
+        workbook,
+        buffers: componentPhotoBuffers,
+        idByUrl: componentPhotoIdByUrl,
+      }
+
       let rowNumber = DATA_START_ROW
       for (const row of componentRows) {
         if (row.kind === "section") {
@@ -1816,7 +2559,14 @@ export async function buildPricelistWorkbook(
             cfg
           )
         } else {
-          writeComponentDataRow(sheet, rowNumber, row, sortedGroupNumbers, cfg)
+          writeComponentDataRow(
+            sheet,
+            rowNumber,
+            row,
+            sortedGroupNumbers,
+            componentPhotoCtx,
+            cfg
+          )
         }
         rowNumber++
       }
@@ -1825,42 +2575,79 @@ export async function buildPricelistWorkbook(
 
   infoSheet.addRow([])
 
-  // Index: sheet names get sanitised/truncated (see safeSheetName), so this
-  // lets a customer find the sheet for a product whose name was mangled.
-  // The "Sheet name" column stays plain text (not a link) — it exists so
-  // someone can find a tab manually when a long name was truncated.
+  // Index: headed by category — branch, then leaf sub-heading where one
+  // exists — in the exact same order as the sheet tabs above, since both
+  // come from the same `categoryGroups` tree (see groupProductsByCategory's
+  // doc comment). Sheet names get sanitised/truncated (see safeSheetName),
+  // so this lets a customer find the sheet for a product whose name was
+  // mangled. The "Sheet name" column stays plain text (not a link) — it
+  // exists so someone can find a tab manually when a long name was
+  // truncated.
   const indexHeaderRow = infoSheet.addRow(["Product name", "Sheet name"])
   indexHeaderRow.font = { bold: true }
   indexHeaderRow.getCell(1).border = cfg.thinBorder
   indexHeaderRow.getCell(2).border = cfg.thinBorder
 
-  for (const { productName, sheetName } of indexRows) {
-    // Deliberately a HYPERLINK() FORMULA, not ExcelJS's native
-    // `cell.value = { text, hyperlink }`. The native form emits both a
-    // `<hyperlink>` element AND an OOXML relationship with
-    // `TargetMode="External"` even for an internal `#'Sheet'!A1` target —
-    // Excel then warns the customer that "this workbook contains links to
-    // one or more external sources" on open, which reads as untrustworthy
-    // on a customer-facing pricelist. The formula form produces neither a
-    // hyperlinks element nor a relationship (verified against the raw XML).
-    //
-    // Link to `sheetName` (the sanitised/deduped value from safeSheetName),
-    // never the raw `productName` — after truncation or a " (2)" collision
-    // suffix those can differ, and linking to the raw name would point at a
-    // sheet that doesn't exist.
-    const escapedSheetName = escapeSheetNameForHyperlinkTarget(sheetName)
-    const escapedDisplayName = escapeFormulaStringLiteral(productName)
-    const row = infoSheet.addRow([
-      {
-        formula: `HYPERLINK("#'${escapedSheetName}'!A1","${escapedDisplayName}")`,
-        result: productName,
-      },
-      sheetName,
-    ])
-    row.getCell(1).font = INDEX_LINK_FONT
-    row.getCell(1).border = cfg.thinBorder
-    row.getCell(2).border = cfg.thinBorder
-  }
+  categoryGroups.forEach((branchGroup, branchIndex) => {
+    // Blank row BETWEEN branches only — none before the first (it already
+    // follows the header row above) and none trailing after the last.
+    if (branchIndex > 0) {
+      infoSheet.addRow([])
+    }
+
+    // Branch heading: same dark bar as GROUP_HEADER_ROW on every product
+    // sheet (cfg.groupHeaderFill/Font — see writeSectionLabelRow), merged
+    // across both of the Info sheet's columns for a solid-looking bar.
+    const branchRow = infoSheet.addRow([branchGroup.branch.name])
+    branchRow.getCell(1).font = cfg.groupHeaderFont
+    branchRow.getCell(1).fill = cfg.groupHeaderFill
+    branchRow.getCell(2).fill = cfg.groupHeaderFill
+    infoSheet.mergeCells(branchRow.number, 1, branchRow.number, 2)
+
+    for (const leafGroup of branchGroup.leaves) {
+      if (leafGroup.leaf) {
+        // Leaf sub-heading: no distinct "light" theme surface exists for
+        // this (cfg only resolves the one dark group-header fill/font) —
+        // plain bold + an indent, per this feature's spec fallback. Bordered
+        // the same as every product/branch row below/above it — otherwise
+        // it punches an unbordered gap through what otherwise reads as one
+        // continuous bordered table.
+        const leafRow = infoSheet.addRow([leafGroup.leaf.name])
+        leafRow.getCell(1).font = { bold: true }
+        leafRow.getCell(1).alignment = { indent: 1 }
+        leafRow.getCell(1).border = cfg.thinBorder
+        leafRow.getCell(2).border = cfg.thinBorder
+      }
+
+      for (const { productName, sheetName } of leafGroup.items) {
+        // Deliberately a HYPERLINK() FORMULA, not ExcelJS's native
+        // `cell.value = { text, hyperlink }`. The native form emits both a
+        // `<hyperlink>` element AND an OOXML relationship with
+        // `TargetMode="External"` even for an internal `#'Sheet'!A1` target —
+        // Excel then warns the customer that "this workbook contains links to
+        // one or more external sources" on open, which reads as untrustworthy
+        // on a customer-facing pricelist. The formula form produces neither a
+        // hyperlinks element nor a relationship (verified against the raw XML).
+        //
+        // Link to `sheetName` (the sanitised/deduped value from safeSheetName),
+        // never the raw `productName` — after truncation or a " (2)" collision
+        // suffix those can differ, and linking to the raw name would point at a
+        // sheet that doesn't exist.
+        const escapedSheetName = escapeSheetNameForHyperlinkTarget(sheetName)
+        const escapedDisplayName = escapeFormulaStringLiteral(productName)
+        const row = infoSheet.addRow([
+          {
+            formula: `HYPERLINK("#'${escapedSheetName}'!A1","${escapedDisplayName}")`,
+            result: productName,
+          },
+          sheetName,
+        ])
+        row.getCell(1).font = INDEX_LINK_FONT
+        row.getCell(1).border = cfg.thinBorder
+        row.getCell(2).border = cfg.thinBorder
+      }
+    }
+  })
 
   return workbook.xlsx.writeBuffer()
 }

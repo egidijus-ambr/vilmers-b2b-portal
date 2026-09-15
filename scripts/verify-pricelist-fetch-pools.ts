@@ -12,6 +12,7 @@ import * as http from "http"
 import { fetchPricelistPhotos } from "../src/lib/util/pricelist-photos"
 import { fetchPricelistBlueprints } from "../src/lib/util/pricelist-blueprints"
 import type { PricelistExportProduct } from "../src/lib/furnisystems-sdk/modules/products/types"
+import type { PricelistImage } from "../src/lib/util/image-resize"
 
 const REAL_PNG_PATH =
   "/Users/egidijus/Documents/GitHub/furnisystems-workspace/furnisystems-backend/blueprint-preview/32256-CORNERCUTL-thumb.png"
@@ -160,9 +161,20 @@ async function main() {
   const buffersEqual = (a: Buffer | null | undefined, b: Buffer): boolean =>
     !!a && a.equals(b as any)
 
+  // fetchPricelistPhotos now returns a PricelistImage (buffer + resized
+  // width/height, see image-resize.ts) rather than a bare Buffer -- sharp
+  // can't decode `syntheticJpegBytes` (it's only a valid SOI marker, not a
+  // real decodable image), so resizeForEmbed's own try/catch falls back to
+  // the ORIGINAL fetched buffer unchanged. This still exercises exactly what
+  // this check is for (byte-identical passthrough of what the server sent).
+  const photoBuffersEqual = (
+    a: PricelistImage | null | undefined,
+    b: Buffer
+  ): boolean => !!a && buffersEqual(a.buffer, b)
+
   check(
     "photo pool: /photo.jpg fetched and accepted as JPEG",
-    buffersEqual(photoBuffers.get(`${base}/photo.jpg`), syntheticJpegBytes)
+    photoBuffersEqual(photoBuffers.get(`${base}/photo.jpg`), syntheticJpegBytes)
   )
   check(
     "photo pool: dedup -- /photo.jpg requested exactly once despite 2 products referencing it",

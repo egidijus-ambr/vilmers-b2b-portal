@@ -536,6 +536,57 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
   ) {
     findManyProductContainer(where: $where) {
       id
+      # Category-grouping support (see pricelist-workbook.ts's "Category
+      # grouping" section, groupProductsByCategory / ProductsModule
+      # types.ts's PricelistExportCategoryRef). category_profiles is
+      # deliberately UNFILTERED by language on both this field and
+      # categories below - the top-level "branch" categories (Soft
+      # Furniture/Hard Furniture/Other) carry only an en CategoryProfile
+      # today, so a server-side language filter would blank their
+      # heading in de/fr instead of falling back (see
+      # pricelist-workbook.ts's resolveCategoryName).
+      primary_category {
+        id
+        menu_order
+        parent_categoryId
+        is_root_category
+        category_profiles {
+          language
+          name
+        }
+        parent_category {
+          id
+          menu_order
+          is_root_category
+          category_profiles {
+            language
+            name
+          }
+        }
+      }
+      # m2m fallback used when primary_category is unset or itself
+      # root-level (e.g. the "All Products" root - real, visible products
+      # are assigned that as their PRIMARY category today) - see
+      # resolveCandidateCategory's doc comment.
+      categories {
+        id
+        menu_order
+        parent_categoryId
+        is_root_category
+        category_profiles {
+          language
+          name
+        }
+        parent_category {
+          id
+          menu_order
+          is_root_category
+          category_profiles {
+            language
+            name
+          }
+        }
+      }
       advanced_product {
         id
         advanced_product_type
@@ -606,6 +657,13 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
             id
             code
             component_sku
+            # Component's own photo (see pricelist-component-photos.ts's
+            # fetch pool and pricelist-workbook.ts's writeComponentDataRow
+            # embed) — src_facebook mirrors category_photo's uniformly-JPEG
+            # 1080x1080 crop above, so the same embed machinery applies.
+            image {
+              src_facebook
+            }
             additional_component_profiles(
               where: { language: { equals: $language } }
             ) {

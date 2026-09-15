@@ -24,6 +24,7 @@ import type {
   PricelistExportProduct,
   PricelistExportSofaForm,
 } from "../src/lib/furnisystems-sdk/modules/products/types"
+import type { PricelistImage } from "../src/lib/util/image-resize"
 
 const BACKEND_DIR = path.resolve(
   __dirname,
@@ -138,7 +139,7 @@ function buildForm(
 
 async function main() {
   const blueprintBuffers = new Map<string, Buffer | null>()
-  const photoBuffers = new Map<string, Buffer | null>()
+  const photoBuffers = new Map<string, PricelistImage | null>()
 
   // Sheet 1: a genuinely mixed family, including one big COMPOSITE (the
   // full assembled sofa) alongside small individual modules, plus one
@@ -306,7 +307,13 @@ async function main() {
     currency: "EUR",
   }
 
-  const buf = await buildPricelistWorkbook(products, meta, photoBuffers, blueprintBuffers)
+  const buf = await buildPricelistWorkbook(
+    products,
+    meta,
+    photoBuffers,
+    blueprintBuffers,
+    new Map() // componentPhotoBuffers — this fixture only exercises sofa blueprints
+  )
 
   fs.mkdirSync(OUT_DIR, { recursive: true })
   const outPath = path.join(OUT_DIR, "pricelist-blueprint-sample.xlsx")
