@@ -593,7 +593,14 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
         advanced_product_profiles(where: { language: { equals: $language } }) {
           name
         }
+        # Header photo (see pricelist-workbook.ts's CATEGORY_HEADER_PHOTO_BOX
+        # and pricelist-photos.ts's resolveCategoryPhotoUrl): src_lg is the
+        # ORIGINAL-aspect-ratio WEBP (preferred — src_facebook below is a
+        # square crop that cuts a wide sofa photo), src is a mixed png/jpg
+        # fallback, src_facebook is the last-resort guaranteed-JPEG square.
         category_photo {
+          src_lg
+          src
           src_facebook
         }
         sofa_forms(

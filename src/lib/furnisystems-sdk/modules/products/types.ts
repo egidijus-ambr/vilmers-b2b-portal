@@ -327,7 +327,16 @@ export interface PricelistExportSofaForm {
   blueprint: PricelistExportSofaFormBlueprint | null
 }
 
+// `src_lg`/`src` power the enlarged product-sheet header photo (see
+// pricelist-photos.ts's resolveCategoryPhotoUrl and pricelist-workbook.ts's
+// CATEGORY_HEADER_PHOTO_BOX) — `src_facebook`'s square crop cuts a wide
+// sofa photo, so the original-aspect `src_lg` (WEBP) is preferred, `src`
+// (mixed png/jpg) next, `src_facebook` last. Verified against local data:
+// `src_lg` is populated on 274/274 visible products' category photos (not
+// sparse), 2000x1419 WEBP.
 export interface PricelistExportCategoryPhoto {
+  src_lg: string | null
+  src: string | null
   src_facebook: string | null
 }
 

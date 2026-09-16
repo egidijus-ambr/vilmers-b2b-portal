@@ -9,8 +9,10 @@
 // Run with: pnpm exec sucrase-node scripts/verify-pricelist-fetch-pools.ts
 import * as fs from "fs"
 import * as http from "http"
+import sharp from "sharp"
 import { fetchPricelistPhotos } from "../src/lib/util/pricelist-photos"
 import { fetchPricelistBlueprints } from "../src/lib/util/pricelist-blueprints"
+import { resolveCategoryPhotoUrls } from "../src/lib/util/pricelist-workbook"
 import type { PricelistExportProduct } from "../src/lib/furnisystems-sdk/modules/products/types"
 import type { PricelistImage } from "../src/lib/util/image-resize"
 
@@ -25,6 +27,12 @@ const syntheticJpegBytes = Buffer.from([
   0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0xff, 0xd9,
 ])
 
+// A REAL, decodable WEBP — generated from the real PNG fixture via sharp
+// (not a hand-rolled magic-byte stub like syntheticJpegBytes above) so the
+// end-to-end multi-format check below exercises the actual decode step,
+// not just the RIFF/WEBP signature sniff.
+let realWebpBytes: Buffer
+
 const requestCounts = new Map<string, number>()
 
 function handler(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -34,12 +42,23 @@ function handler(req: http.IncomingMessage, res: http.ServerResponse) {
   if (url === "/photo.jpg") {
     res.writeHead(200, { "Content-Type": "image/jpeg" })
     res.end(syntheticJpegBytes)
+  } else if (url === "/photo.webp") {
+    res.writeHead(200, { "Content-Type": "image/webp" })
+    res.end(realWebpBytes)
+  } else if (url === "/photo-src.png") {
+    res.writeHead(200, { "Content-Type": "image/png" })
+    res.end(realPngBytes)
   } else if (url === "/thumb.png") {
     res.writeHead(200, { "Content-Type": "image/png" })
     res.end(realPngBytes)
   } else if (url === "/notanimage") {
     res.writeHead(200, { "Content-Type": "text/plain" })
     res.end("hello world, definitely not an image")
+  } else if (url === "/photo-403.webp") {
+    // Mirrors the real ALVAR 403 seen against live PL50 data — a candidate
+    // that fails at the HTTP layer, not a format/validation failure.
+    res.writeHead(403)
+    res.end("forbidden")
   } else {
     res.writeHead(404)
     res.end("not found")
@@ -53,6 +72,8 @@ function check(label: string, cond: boolean) {
 }
 
 async function main() {
+  realWebpBytes = await sharp(realPngBytes).webp().toBuffer()
+
   const server = http.createServer(handler)
   await new Promise<void>((resolve) => server.listen(0, resolve))
   const address = server.address()
@@ -71,7 +92,7 @@ async function main() {
         id: 101,
         advanced_product_type: "SOFA",
         advanced_product_profiles: [{ name: "Product A" }],
-        category_photo: { src_facebook: `${base}/photo.jpg` },
+        category_photo: { src_lg: null, src: null, src_facebook: `${base}/photo.jpg` },
         advanced_product_price_fabric_category: [],
         additional_component_to_advanced_product: [],
         sofa_forms: [
@@ -127,7 +148,7 @@ async function main() {
         advanced_product_type: "SOFA",
         advanced_product_profiles: [{ name: "Product B" }],
         // Same photo URL as Product A -- tests photo-pool dedup.
-        category_photo: { src_facebook: `${base}/photo.jpg` },
+        category_photo: { src_lg: null, src: null, src_facebook: `${base}/photo.jpg` },
         advanced_product_price_fabric_category: [],
         additional_component_to_advanced_product: [],
         sofa_forms: [
@@ -197,6 +218,145 @@ async function main() {
     blueprintBuffers.get(`${base}/notanimage`) === null
   )
 
+  // --- resolveCategoryPhotoUrls: pure-function coverage of every branch of
+  // the src_lg -> src -> src_facebook candidate-list ordering, including the
+  // sharp-unavailable override. This is deliberately NOT an end-to-end test
+  // that actually disables the real sharp binary (loadSharp's promise is
+  // memoised at module scope for the whole process — see image-resize.ts's
+  // own doc comment — so "really" making sharp unavailable mid-process
+  // isn't meaningfully possible without a separate process/mock). Testing
+  // the exported pure function directly exercises the EXACT same logic
+  // fetchPricelistPhotos calls, deterministically. Returns the FULL ordered
+  // candidate LIST now (see that function's own doc comment for why a
+  // single "most preferred" URL isn't enough — a candidate can fail at
+  // fetch time independently of preference order), so every assertion here
+  // checks the whole array, not just its first element. ---
+  const fullPhoto = { src_lg: "LG", src: "SRC", src_facebook: "FB" }
+  const arraysEqual = (a: string[], b: string[]): boolean =>
+    a.length === b.length && a.every((v, i) => v === b[i])
+  check(
+    "resolveCategoryPhotoUrls: full candidate list, in order, when sharp is available",
+    arraysEqual(resolveCategoryPhotoUrls(fullPhoto, true), ["LG", "SRC", "FB"])
+  )
+  check(
+    "resolveCategoryPhotoUrls: skips null src_lg, keeping order for the rest",
+    arraysEqual(
+      resolveCategoryPhotoUrls({ src_lg: null, src: "SRC", src_facebook: "FB" }, true),
+      ["SRC", "FB"]
+    )
+  )
+  check(
+    "resolveCategoryPhotoUrls: only src_facebook when src_lg and src are both null",
+    arraysEqual(
+      resolveCategoryPhotoUrls({ src_lg: null, src: null, src_facebook: "FB" }, true),
+      ["FB"]
+    )
+  )
+  check(
+    "resolveCategoryPhotoUrls: SHARP UNAVAILABLE collapses to [src_facebook] only, even when src_lg/src are present",
+    arraysEqual(resolveCategoryPhotoUrls(fullPhoto, false), ["FB"])
+  )
+  check(
+    "resolveCategoryPhotoUrls: null category_photo resolves to [] regardless of sharp availability",
+    arraysEqual(resolveCategoryPhotoUrls(null, true), []) &&
+      arraysEqual(resolveCategoryPhotoUrls(null, false), [])
+  )
+  check(
+    "resolveCategoryPhotoUrls: all-null category_photo (no candidates at all) resolves to []",
+    arraysEqual(
+      resolveCategoryPhotoUrls({ src_lg: null, src: null, src_facebook: null }, true),
+      []
+    )
+  )
+
+  // --- End-to-end multi-format check: sharp IS available in this
+  // environment (confirmed by the earlier resize logs above using it), so a
+  // product exposing all three URLs should fetch ONLY src_lg (the WEBP) —
+  // never src or src_facebook — and successfully decode/resize it despite
+  // the source being WEBP, not JPEG. ---
+  const multiFormatProducts: PricelistExportProduct[] = [
+    {
+      id: 4,
+      advanced_product: {
+        id: 104,
+        advanced_product_type: "SOFA",
+        advanced_product_profiles: [{ name: "Multi-format product" }],
+        category_photo: {
+          src_lg: `${base}/photo.webp`,
+          src: `${base}/photo-src.png`,
+          src_facebook: `${base}/photo.jpg`,
+        },
+        advanced_product_price_fabric_category: [],
+        additional_component_to_advanced_product: [],
+        sofa_forms: [],
+      },
+    },
+  ]
+  const photoJpgCountBeforeMultiFormat = requestCounts.get("/photo.jpg") ?? 0
+  const multiFormatPhotoBuffers = await fetchPricelistPhotos(multiFormatProducts)
+  const webpEntry = multiFormatPhotoBuffers.get(`${base}/photo.webp`)
+  check(
+    "multi-format: src_lg (WEBP) is fetched and successfully resized (known width/height)",
+    !!webpEntry && webpEntry.width != null && webpEntry.height != null
+  )
+  check(
+    "multi-format: resized WEBP source is re-encoded to JPEG (extension === 'jpeg')",
+    webpEntry?.extension === "jpeg"
+  )
+  check(
+    "multi-format: src (PNG fallback) was NEVER requested — src_lg took priority",
+    !requestCounts.has("/photo-src.png")
+  )
+  check(
+    "multi-format: src_facebook (JPEG last-resort) was NEVER requested — src_lg took priority",
+    requestCounts.get("/photo.jpg") === photoJpgCountBeforeMultiFormat
+  )
+
+  // --- W1 regression check: candidate 1 (src_lg) fails at the HTTP layer
+  // (403 — mirrors real ALVAR data), candidate 2 (src) is served fine. The
+  // pool must fall through to candidate 2 rather than giving up the whole
+  // photo the moment the preferred candidate fails — this is the exact
+  // regression HEAD had before resolveCategoryPhotoUrls returned a list. ---
+  const fallbackProducts: PricelistExportProduct[] = [
+    {
+      id: 5,
+      advanced_product: {
+        id: 105,
+        advanced_product_type: "SOFA",
+        advanced_product_profiles: [{ name: "Fallback-chain product" }],
+        category_photo: {
+          src_lg: `${base}/photo-403.webp`,
+          src: `${base}/photo-src.png`,
+          src_facebook: `${base}/photo.jpg`,
+        },
+        advanced_product_price_fabric_category: [],
+        additional_component_to_advanced_product: [],
+        sofa_forms: [],
+      },
+    },
+  ]
+  const photoSrcPngCountBefore = requestCounts.get("/photo-src.png") ?? 0
+  const fallbackPhotoBuffers = await fetchPricelistPhotos(fallbackProducts)
+  check(
+    "W1: candidate 1 (src_lg, 403) resolves to a null map entry, not left unattempted",
+    fallbackPhotoBuffers.get(`${base}/photo-403.webp`) === null
+  )
+  check(
+    "W1: candidate 2 (src) was fetched and successfully resized after candidate 1 failed",
+    (() => {
+      const entry = fallbackPhotoBuffers.get(`${base}/photo-src.png`)
+      return !!entry && entry.width != null && entry.height != null
+    })()
+  )
+  check(
+    "W1: candidate 3 (src_facebook) was NEVER requested — candidate 2 already succeeded",
+    (requestCounts.get("/photo.jpg") ?? 0) === photoJpgCountBeforeMultiFormat
+  )
+  check(
+    "W1: candidate 2 (src) was requested exactly once for this product",
+    requestCounts.get("/photo-src.png") === photoSrcPngCountBefore + 1
+  )
+
   // --- Cross-validator check: the whole risk of the image-fetch.ts extraction ---
   const crossProducts: PricelistExportProduct[] = [
     {
@@ -205,9 +365,14 @@ async function main() {
         id: 103,
         advanced_product_type: "SOFA",
         advanced_product_profiles: [{ name: "Cross-check product" }],
-        // A PNG served as the "category photo" URL -- the JPEG pool's
-        // isJpeg validator MUST reject it.
-        category_photo: { src_facebook: `${base}/thumb.png` },
+        // Genuinely non-image content (plain text) served as the "category
+        // photo" URL -- the photo pool's validator (isEmbeddableSourceImage,
+        // now that it accepts jpeg/png/webp — see resolveCategoryPhotoUrl's
+        // multi-format support above) must STILL reject non-image content.
+        // A real PNG here would no longer prove anything: accepting a PNG
+        // at this pool is now correct, intentional behaviour (see the
+        // multi-format checks above), not a validator leak.
+        category_photo: { src_lg: null, src: null, src_facebook: `${base}/notanimage` },
         advanced_product_price_fabric_category: [],
         additional_component_to_advanced_product: [],
         sofa_forms: [
@@ -234,8 +399,8 @@ async function main() {
   const crossPhotoBuffers = await fetchPricelistPhotos(crossProducts)
   const crossBlueprintBuffers = await fetchPricelistBlueprints(crossProducts)
   check(
-    "CROSS-VALIDATION: JPEG pool rejects a real PNG served at the photo URL",
-    crossPhotoBuffers.get(`${base}/thumb.png`) === null
+    "CROSS-VALIDATION: photo pool rejects genuinely non-image content served at the photo URL",
+    crossPhotoBuffers.get(`${base}/notanimage`) === null
   )
   check(
     "CROSS-VALIDATION: PNG pool rejects a real JPEG served at the blueprint URL",

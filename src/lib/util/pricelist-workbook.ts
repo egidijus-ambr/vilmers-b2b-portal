@@ -9,8 +9,10 @@ import type {
   PricelistExportPriceRow,
   PricelistExportCategoryRef,
   PricelistExportCategoryParentRef,
+  PricelistExportCategoryPhoto,
 } from "@lib/furnisystems-sdk/modules/products/types"
 import type { PricelistImage } from "./image-resize"
+import { isSharpAvailable } from "./image-resize"
 
 const INVALID_SHEET_NAME_CHARS = /[\[\]:*?/\\]/g
 const MAX_SHEET_NAME_LENGTH = 31
@@ -272,9 +274,10 @@ const EMU_PER_PX = 9525
 
 // Column A pixel width, computed once. Hoisted up here (rather than living
 // next to the blueprint-sizing constants that were its original motivation
-// — see BLUEPRINT_USABLE_WIDTH_PX below) because PHOTO_SIZE_PX also needs it
-// and PHOTO_SIZE_PX is declared before DATA_ROW_HEIGHT exists, so this must
-// sit above both use sites.
+// — see BLUEPRINT_USABLE_WIDTH_PX below) because CATEGORY_HEADER_PHOTO_BOX
+// (near MULTIPLIER_ROW, further down) and COMPONENT_PHOTO_BOX both need it
+// too, and both are declared before DATA_ROW_HEIGHT exists, so this must
+// sit above every use site.
 const PICTURE_COLUMN_PX = columnWidthToPx(COLUMN_WIDTHS[0])
 
 // Rounds a module/component dimension to `decimals` decimal places (default
@@ -327,6 +330,27 @@ const PHOTO_ROW_COUNT = 10
 const PHOTO_ROW_HEIGHT = 18 // an anchored image doesn't create row height on its own
 const TOP_HEADER_ROW = PHOTO_ROW_COUNT + 1 // 11: PICTURE / DESCRIPTION / ART.CODE / M³ / "PRICE (EUR)"
 const GROUP_HEADER_ROW = TOP_HEADER_ROW + 1 // 12: "MODULES" / (blank) / per-group labels
+
+// Product display name block, INSIDE the photo band (rows 1-10) but never
+// written to by anything else there — see its own writing code in
+// buildPricelistWorkbook for the column range (confined to the price/CAT
+// columns, so it can never collide with the header photo, which is
+// confined to columns A-B). Two rows (3-4), not one, purely so a long
+// product name has room to wrap at font size 20 without the merge block
+// looking cramped — merged as one block via `sheet.mergeCells`, so the text
+// itself still renders as a single vertically-centred block, not two
+// separate lines pinned to each row.
+const PRODUCT_NAME_ROW = 3
+const PRODUCT_NAME_ROW_END = 4
+// No `name` (font family) set — same convention as TOP_HEADER_FONT/
+// GROUP_HEADER_FONT below, which likewise omit it and inherit the sheet's
+// default (Calibri 11, per DATA_ROW_HEIGHT's own doc comment) — "whatever
+// the header rows use" means "don't override it", not "look up and repeat
+// a specific family name".
+const PRODUCT_NAME_FONT: Partial<ExcelJS.Font> = {
+  bold: true,
+  size: 20,
+}
 const DATA_START_ROW = GROUP_HEADER_ROW + 1 // 13
 // Raised 30 -> 110 to fit a legible module-blueprint thumbnail (see the
 // blueprint-embedding block in writeDataRow below). wrapText alone doesn't
@@ -345,37 +369,30 @@ const DATA_START_ROW = GROUP_HEADER_ROW + 1 // 13
 // including cell padding, comfortably under 55pt. A 4th wrapped line would
 // be tight; this was not hit by any real product/module name sampled.
 const DATA_ROW_HEIGHT = 55
-// 10 rows * 18pt ≈ 240px — the PHOTO_ROW_COUNT/PHOTO_ROW_HEIGHT band this
-// image sits in is taller than PHOTO_SIZE_PX needs, see this change's report
-// for the resulting dead-space measurement (deliberately not acted on here).
-// Width == height because src_facebook is a square (1080x1080) crop — a
-// range anchor (e.g. addImage(id, "A1:F10")) would stretch it to fill a
-// wide, short range and visibly distort it, so this uses a fixed-size
-// oneCellAnchor instead (see addImage call below).
-//
-// Shrunk 180 -> derived from PICTURE_COLUMN_PX: this was left at a stale 180
-// when COLUMN_WIDTHS[0] (PICTURE) was halved 25 -> 12.5 for the per-module
-// blueprint thumbnails (see that constant's own comment), which made this
-// fixed-size anchor extend past column A (~93px) into column B for photo
-// rows 1-8. Now sized to leave a trailing margin — PHOTO_MARGIN_PX, same
-// value and float-anchor rationale as BLUEPRINT_MARGIN_PX below
+// Margin kept for every image this file anchors with a real gap around it
 // (oneCellAnchor images float above the grid and are never clipped to their
-// cell, so a real gap is needed even when the image is nominally "column
-// width sized") — rather than hardcoding the ~93px column width directly.
-// The `* 2` mirrors BLUEPRINT_USABLE_WIDTH_PX's centered two-sided math
-// below, but this anchor is NOT centered (`tl: {col: 0, row: 0}`, see the
-// addImage call in buildPricelistWorkbook) — the full 2x margin ends up as
-// slack on the right/bottom edges only, not split evenly on all four sides.
+// cell, so a real gap is needed even when an image is nominally "cell
+// sized") — the category-photo BAND box (see CATEGORY_HEADER_PHOTO_BOX,
+// defined further down near MULTIPLIER_ROW, which its height depends on)
+// and the per-module blueprint/component-photo boxes below all subtract
+// this same constant.
 const PHOTO_MARGIN_PX = 4
-// Exported so pricelist-photos.ts can derive its pre-embed resize target
-// (2x this, for a retina-sharp source at the same on-screen size — see that
-// file's own doc comment) from the SAME constant this file anchors the
-// image at, rather than a second, independently-maintained magic number.
-export const PHOTO_SIZE_PX = PICTURE_COLUMN_PX - PHOTO_MARGIN_PX * 2
+
+// Left inset for the enlarged header photo specifically — DISTINCT from
+// PHOTO_MARGIN_PX, which every other embed in this file (including this
+// same header photo's right/top/bottom edges) uses. A user-requested
+// visual adjustment: pushes the photo in from column A's left edge by more
+// than the plain 4px margin every other edge gets, so it reads as inset
+// rather than flush against the sheet's outer border. See
+// CATEGORY_HEADER_PHOTO_BOX's own doc comment for how this narrows the
+// photo's available width, and addPictureBandImage's call site
+// (buildPricelistWorkbook) for where it's actually applied as the anchor's
+// x-offset.
+const HEADER_PHOTO_LEFT_INSET_PX = 24
 
 // Per-module blueprint thumbnail sizing (column A on a DATA row, as opposed
-// to the category-photo block above which occupies column A on the PHOTO
-// rows). Deliberately NOT a fixed box like PHOTO_SIZE_PX: blueprints are
+// to the category-photo header band which occupies columns A-B on the PHOTO
+// rows — see CATEGORY_HEADER_PHOTO_BOX). Deliberately NOT a fixed box: blueprints are
 // rendered at a fixed 1px/cm and the whole point of embedding them is that
 // their PIXEL size stays proportional to real module size across a sheet
 // (see buildPricelistWorkbook's blueprint doc comment) — fitting each one
@@ -437,9 +454,9 @@ const BLUEPRINT_USABLE_HEIGHT_PX = DATA_ROW_PX - BLUEPRINT_MARGIN_PX * 2
 // were trimmed; that fixed-square design is what this rectangular box
 // replaces.)
 //
-// Exported for the same reason as PHOTO_SIZE_PX above — pricelist-component-
-// photos.ts derives its resize target (2x this box, per axis) from here
-// instead of a second pair of magic numbers.
+// Exported for the same reason as CATEGORY_HEADER_PHOTO_BOX below —
+// pricelist-component-photos.ts derives its resize target (2x this box, per
+// axis) from here instead of a second pair of magic numbers.
 export const COMPONENT_PHOTO_BOX = {
   width: PICTURE_COLUMN_PX - PHOTO_MARGIN_PX * 2,
   height: DATA_ROW_PX - PHOTO_MARGIN_PX * 2,
@@ -501,13 +518,15 @@ function fitInsideBox(
  * `box`: `entry.width`/`height` when known (see PricelistImage —
  * resizeForEmbed populated these from sharp's own resize output, using the
  * SAME `box` scaled 2x as the resize target — see
- * pricelist-photos.ts/pricelist-component-photos.ts's `RESIZE_MAX_*`), else
- * the square that fits inside `box` — the exact pre-resize fallback
- * behaviour (a 1080x1080 `src_facebook` fit inside a non-square
- * `COMPONENT_PHOTO_BOX` comes out to a centered square sized off the box's
- * shorter axis, same as before component photos had a `width`/`height` to
- * read at all), for the "sharp unavailable/resize failed, embedding the
- * original buffer" case.
+ * pricelist-component-photos.ts's `RESIZE_BOX`, derived from this file's
+ * `COMPONENT_PHOTO_BOX`), else the square that fits inside `box` — the
+ * exact pre-resize fallback behaviour (a 1080x1080 `src_facebook` fit
+ * inside a non-square `COMPONENT_PHOTO_BOX` comes out to a centered square
+ * sized off the box's shorter axis, same as before component photos had a
+ * `width`/`height` to read at all), for the "sharp unavailable/resize
+ * failed, embedding the original buffer" case. (The category header photo
+ * uses a DIFFERENT resolver, `resolveHeaderPhotoExt` below — this function
+ * remains used for component photos only.)
  */
 function resolvePhotoExt(
   entry: PricelistImage,
@@ -518,6 +537,81 @@ function resolvePhotoExt(
     return { width: squareSize, height: squareSize }
   }
   return fitInsideBox(entry.width, entry.height, box)
+}
+
+/**
+ * The ORDERED candidate URLs to try for a product's header photo — see
+ * PricelistExportCategoryPhoto's own doc comment for the fallback chain
+ * rationale (`src_lg`'s original aspect ratio vs `src_facebook`'s square
+ * crop that cuts a wide sofa photo). Returns every NON-NULL candidate, in
+ * preference order, never just the first: a real candidate can fail at
+ * FETCH time (verified against live data — `ALVAR - ALVAR-src_lg.webp`
+ * 403s) independently of whether it was the right thing to prefer, and a
+ * caller that only ever sees "the one preferred URL" has no way to try the
+ * next one when that happens — this used to return a single `string |
+ * null` and silently gave up on the whole photo the first time `src_lg`
+ * failed, even though `src_facebook` would have worked fine.
+ *
+ * Used by BOTH pricelist-photos.ts's fetch pool AND this file's own embed
+ * call site so the two can never resolve to a DIFFERENT candidate order for
+ * the same product.
+ *
+ * `sharpAvailable` gates `src_lg`/`src` entirely, not per-photo: without
+ * sharp there is no way to decode a WEBP `src_lg` or convert a mixed-format
+ * `src` into something ExcelJS can embed, so `src_facebook` (guaranteed
+ * JPEG, embeddable with zero conversion) is the ONLY candidate in that case
+ * — see `isSharpAvailable`'s own doc comment for why this is checked ONCE
+ * per export, not per photo.
+ */
+export function resolveCategoryPhotoUrls(
+  categoryPhoto: PricelistExportCategoryPhoto | null | undefined,
+  sharpAvailable: boolean
+): string[] {
+  if (!categoryPhoto) return []
+  if (!sharpAvailable) {
+    return categoryPhoto.src_facebook ? [categoryPhoto.src_facebook] : []
+  }
+  return [categoryPhoto.src_lg, categoryPhoto.src, categoryPhoto.src_facebook].filter(
+    (url): url is string => !!url
+  )
+}
+
+/**
+ * Resolves the `ext` for the enlarged header photo specifically — DELIBERATELY
+ * NOT `resolvePhotoExt`, because that function's "unknown dims -> square"
+ * fallback is only correct when the SOURCE is known to be square
+ * (src_facebook always is, which is why component/old-category-photo
+ * fallbacks used it safely). The header photo's preferred sources
+ * (`src_lg`/`src`) are NOT square — squashing an unresized 2000x1419 WEBP
+ * into a square `ext` would visibly stretch/distort it, which is far more
+ * noticeable on a large hero image than it ever was on a small decorative
+ * one.
+ *
+ * `isSquareCropSource` must be an EXACT URL comparison — `photoUrl ===
+ * categoryPhoto.src_facebook` — not derived from `sharpAvailable`. Now that
+ * `resolveCategoryPhotoUrls` returns an ordered candidate LIST (see that
+ * function's own doc comment for why: a candidate can fail at fetch time
+ * independently of preference order), `src_facebook` can end up being the
+ * URL that actually resolved even when sharp WAS available — e.g. `src_lg`
+ * AND `src` both failed to fetch, so the caller fell through to
+ * `src_facebook` as the last surviving candidate. Gating on `sharpAvailable`
+ * would have wrongly treated that as "not guaranteed square" (since sharp
+ * was available) and skipped the embed even though the resolved URL is
+ * definitely the square crop.
+ */
+function resolveHeaderPhotoExt(
+  entry: PricelistImage,
+  box: PhotoBox,
+  isSquareCropSource: boolean
+): { width: number; height: number } | null {
+  if (entry.width != null && entry.height != null) {
+    return fitInsideBox(entry.width, entry.height, box)
+  }
+  if (isSquareCropSource) {
+    const squareSize = Math.min(box.width, box.height)
+    return { width: squareSize, height: squareSize }
+  }
+  return null
 }
 
 const BORDER_COLOR = "FF7F6000"
@@ -561,12 +655,17 @@ const INDEX_LINK_FONT: Partial<ExcelJS.Font> = {
 }
 
 // Per-sheet price-multiplier input. Row 9 sits inside the photo band
-// (PHOTO_ROW_COUNT = 10) but below the actual image: rows 1-10 are
-// PHOTO_ROW_HEIGHT (18pt = 24px) each, so row 9 starts at 192px cumulative.
-// The oneCellAnchor photo (PHOTO_SIZE_PX, now derived from
-// PICTURE_COLUMN_PX — see that constant's own comment) is well under that
-// regardless of the column width it's sized against, so row 9 stays clear.
-// See writeMultiplierCell below.
+// (PHOTO_ROW_COUNT = 10 rows total) — see CATEGORY_HEADER_PHOTO_BOX/
+// PHOTO_BAND_ROWS_BEFORE_MULTIPLIER just below, whose HEIGHT is deliberately
+// derived from THIS row (minus one), NOT all `PHOTO_ROW_COUNT`, specifically
+// so the enlarged header photo never reaches down into this row. This is a
+// REAL geometry constraint, not a stylistic choice: sizing the photo off
+// the full 10-row band (232px) would visually cover this row's "Price
+// multiplier" label — oneCellAnchor images float above the grid and are
+// never clipped to their cell (see PHOTO_MARGIN_PX's doc comment), so an
+// image reaching this far down hides the label even though the underlying
+// cell still works fine. Stopping one row short (184px) clears it with the
+// same margin as every other edge. See writeMultiplierCell below.
 const MULTIPLIER_ROW = 9
 const MULTIPLIER_LABEL_COL = 2 // B
 const MULTIPLIER_VALUE_COL = 3 // C
@@ -584,6 +683,62 @@ const MULTIPLIER_INPUT_BORDER: Partial<ExcelJS.Borders> = {
   left: { style: "thin", color: { argb: "FF999999" } },
   bottom: { style: "thin", color: { argb: "FF999999" } },
   right: { style: "thin", color: { argb: "FF999999" } },
+}
+
+// The header photo band is every PHOTO_ROW row from row 1 up to, but NEVER
+// including, MULTIPLIER_ROW — named (not just computed inline as
+// `MULTIPLIER_ROW - 1`) so that boundary reads directly off this
+// constant's name rather than requiring the reader to already know why
+// `- 1` is there. See MULTIPLIER_ROW's own doc comment for why stopping
+// here is load-bearing, not cosmetic: the full PHOTO_ROW_COUNT band would
+// visually cover this row's "Price multiplier" label.
+const PHOTO_BAND_ROWS_BEFORE_MULTIPLIER = MULTIPLIER_ROW - 1
+
+// Full pixel height of the header photo band (rows 1..PHOTO_BAND_ROWS_
+// BEFORE_MULTIPLIER, i.e. BEFORE any margin is subtracted) — kept as its
+// own named value, separate from CATEGORY_HEADER_PHOTO_BOX.height, because
+// the two are no longer the same thing: the BOX height still caps how TALL
+// the photo may be sized (184px, so a worst-case height-bound image still
+// leaves PHOTO_MARGIN_PX clear top and bottom), but the photo is now
+// CENTRED vertically within the FULL band (192px), not pinned to the top —
+// see addPictureBandImage's call site (buildPricelistWorkbook) for the
+// centering math this feeds.
+const HEADER_PHOTO_BAND_HEIGHT_PX =
+  PHOTO_BAND_ROWS_BEFORE_MULTIPLIER * rowHeightToPx(PHOTO_ROW_HEIGHT)
+
+/**
+ * Enlarged product-sheet header photo box (category_photo — see
+ * resolveCategoryPhotoUrls/resolveHeaderPhotoExt below, and
+ * pricelist-photos.ts's fetch pool) — replaces the old small, fixed-square
+ * embed this feature used before (a single PHOTO_SIZE_PX square anchored at
+ * A1). Spans the SAME columns the band always reserved (A+B — PICTURE +
+ * DESCRIPTION), but its HEIGHT is deliberately derived from
+ * `PHOTO_BAND_ROWS_BEFORE_MULTIPLIER`, not `PHOTO_ROW_COUNT` — see that
+ * constant's own doc comment for why.
+ *
+ * WIDTH is asymmetric, unlike every other box in this file: the LEFT edge
+ * uses `HEADER_PHOTO_LEFT_INSET_PX` (24px, a deliberate visual inset — see
+ * that constant's own doc comment), while the RIGHT edge still uses the
+ * plain `PHOTO_MARGIN_PX` (4px) every other edge of this box uses. Width
+ * sums each of the two columns' OWN `columnWidthToPx` conversion (not one
+ * conversion of their combined character width) — this matches how Excel
+ * actually pads adjacent columns independently (see `columnWidthToPx`'s own
+ * doc comment on the MDW+padding model), so two separate calls, not
+ * `columnWidthToPx(COLUMN_WIDTHS[0] + COLUMN_WIDTHS[1])`.
+ *
+ * Computed: width = 93 (PICTURE) + 243 (DESCRIPTION) - 24 (left inset) - 4
+ * (right margin) = 308px; height = 8 rows * 24px/row - 2*4 margin = 184px
+ * (see HEADER_PHOTO_BAND_HEIGHT_PX's own doc comment for why THIS margin
+ * math still applies to height even though the photo is centred, not
+ * top-anchored, vertically).
+ */
+export const CATEGORY_HEADER_PHOTO_BOX = {
+  width:
+    PICTURE_COLUMN_PX +
+    columnWidthToPx(COLUMN_WIDTHS[1]) -
+    HEADER_PHOTO_LEFT_INSET_PX -
+    PHOTO_MARGIN_PX,
+  height: HEADER_PHOTO_BAND_HEIGHT_PX - PHOTO_MARGIN_PX * 2,
 }
 
 /**
@@ -905,9 +1060,11 @@ interface BlueprintEmbedContext {
  * column/row. `Anchor`'s DEFAULT-width fallback (`colWidth = 640000` when
  * `isCustomWidth` is false) happens to roughly match Excel's real default
  * column width in EMU, which is almost certainly why this went unnoticed
- * upstream. It also does not affect the category-photo anchor in
- * buildPricelistWorkbook (`tl: {col: 0, row: 0}`) — an INTEGER anchor has no
- * fractional part to mis-convert.
+ * upstream. The header/category photo embed (`addPictureBandImage`, further
+ * down) uses this exact same native-EMU technique too, for the same reason —
+ * it is NOT a `tl: {col: 0, row: 0}` integer anchor (that was an earlier,
+ * smaller-photo version of this feature; see addPictureBandImage's own doc
+ * comment for its current anchor).
  *
  * Shared by writeDataRow's blueprint embed and writeComponentDataRow's photo
  * embed — the two were, before this extraction, two copies of the exact
@@ -929,6 +1086,39 @@ function addCenteredPictureCellImage(
       nativeColOff: Math.round(colOffsetPx * EMU_PER_PX),
       nativeRow: rowNumber - 1,
       nativeRowOff: Math.round(rowOffsetPx * EMU_PER_PX),
+    } as any,
+    ext,
+  })
+}
+
+/**
+ * Anchors the enlarged header photo in the picture band (row 1, column A)
+ * at an EXPLICIT `offsetXPx`/`offsetYPx` — same native-EMU technique as
+ * addCenteredPictureCellImage (see that function's doc comment for the
+ * exceljs fractional-anchor bug this sidesteps), generalised to take
+ * arbitrary offsets rather than assuming `PHOTO_MARGIN_PX` on both axes (an
+ * earlier version of this function did exactly that — pinned top-left with
+ * a fixed margin; see this function's OWN call site in
+ * buildPricelistWorkbook for the current offsets: `HEADER_PHOTO_LEFT_INSET_PX`
+ * on the x-axis, vertical-centre-in-band on the y-axis).
+ *
+ * Callers remain responsible for choosing offsets that keep `ext` inside
+ * the sheet's real bounds (column C, MULTIPLIER_ROW) — this function itself
+ * places the image exactly where told, with no bounds-checking of its own.
+ */
+function addPictureBandImage(
+  sheet: ExcelJS.Worksheet,
+  imageId: number,
+  ext: { width: number; height: number },
+  offsetXPx: number,
+  offsetYPx: number
+): void {
+  sheet.addImage(imageId, {
+    tl: {
+      nativeCol: PICTURE_COL - 1,
+      nativeColOff: Math.round(offsetXPx * EMU_PER_PX),
+      nativeRow: 0,
+      nativeRowOff: Math.round(offsetYPx * EMU_PER_PX),
     } as any,
     ext,
   })
@@ -1781,7 +1971,13 @@ function writeComponentDataRow(
         // comment for why `as any` is correct here, not a type-safety
         // workaround.
         buffer: photoEntry.buffer as any,
-        extension: "jpeg",
+        // Component photos only ever come from src_facebook (guaranteed
+        // JPEG — see pricelist-component-photos.ts), so this is always
+        // "jpeg" in practice; reading it off `photoEntry.extension` rather
+        // than hardcoding keeps this consistent with the header-photo embed
+        // now that PricelistImage tracks the real format (see that type's
+        // own doc comment).
+        extension: photoEntry.extension,
       })
       photoCtx.idByUrl.set(data.photoUrl, imageId)
     }
@@ -2172,14 +2368,20 @@ interface RenderableProduct {
  * section above) under a 10-row photo block (see PHOTO_ROW_COUNT) and a
  * two-tier catalog header (see writeHeaderRows).
  *
- * `photoBuffers` maps a product's category-photo URL to its already-fetched,
- * already-validated, already-RESIZED JPEG (see fetchPricelistPhotos and
- * PricelistImage's doc comment for what a `null` `width`/`height` means) — a
- * missing entry, or `null`, means "no photo for this product" and is never
- * an error: an absent decorative photo must never cost the customer their
- * price data. The same URL is deliberately embedded into the workbook at
- * most once (tracked via `imageIdByUrl` below) since many products share one
- * photo.
+ * `photoBuffers` maps a header-photo URL — one of the CANDIDATES
+ * `resolveCategoryPhotoUrls` returns for a product (NOT always
+ * `category_photo.src_facebook` anymore; could be `src_lg`/`src` too, and
+ * the embed loop below tries them in order, same as the fetch pool) — to
+ * its already-fetched,
+ * already-validated, already-RESIZED image (see fetchPricelistPhotos and
+ * PricelistImage's doc comment for what a `null` `width`/`height` — vs a
+ * `null` MAP ENTRY — means) — a missing entry, or `null`, means "no photo
+ * for this product" and is never an error: an absent decorative photo must
+ * never cost the customer their price data. The same URL is deliberately
+ * embedded into the workbook at most once (tracked via `imageIdByUrl`
+ * below) since many products share one photo. This is now a BIG hero photo
+ * spanning most of the picture band (see CATEGORY_HEADER_PHOTO_BOX), not
+ * the small fixed square this parameter originally fed.
  *
  * `blueprintBuffers` is a similar shape (url -> buffer|null) but for
  * per-MODULE blueprint thumbnails (see fetchPricelistBlueprints) and is
@@ -2219,6 +2421,13 @@ export async function buildPricelistWorkbook(
   componentPhotoBuffers: Map<string, PricelistImage | null>,
   settings?: PricelistWorkbookSettings
 ): Promise<ExcelJS.Buffer> {
+  // Resolved ONCE for the whole workbook (not per product) — mirrors the
+  // SAME check pricelist-photos.ts's fetch pool makes, via the SAME
+  // memoised `isSharpAvailable` (see that function's doc comment), so this
+  // embed loop's `resolveCategoryPhotoUrls`/`resolveHeaderPhotoExt` calls can
+  // never disagree with what the pool actually fetched.
+  const sharpAvailableForHeaderPhoto = await isSharpAvailable()
+
   // Resolved ONCE for the whole workbook — every sheet shares the same
   // rendering config (see RenderConfig/resolveRenderConfig above). Absent
   // `settings` (every pre-existing caller, incl. this file's own
@@ -2470,37 +2679,126 @@ export async function buildPricelistWorkbook(
       sheet.getRow(rowNumber).height = PHOTO_ROW_HEIGHT
     }
 
-    const photoUrl = advancedProduct.category_photo?.src_facebook ?? null
-    const photoEntry = photoUrl ? photoBuffers.get(photoUrl) : null
-    if (photoUrl && photoEntry) {
-      let imageId = imageIdByUrl.get(photoUrl)
-      if (imageId === undefined) {
-        imageId = workbook.addImage({
-          // exceljs's own .d.ts declares a LOCAL `interface Buffer extends
-          // ArrayBuffer {}` (not the real Node Buffer) for this field. Under
-          // this project's `lib: ["esnext"]`, the global ArrayBuffer type
-          // that local interface extends carries newer members (e.g.
-          // `resizable`) that Node's actual Buffer (from @types/node) never
-          // implements, so a real Buffer never structurally satisfies it —
-          // an upstream typing bug, not a runtime issue (ExcelJS reads this
-          // field as a plain Node Buffer at runtime).
-          buffer: photoEntry.buffer as any,
-          extension: "jpeg",
-        })
-        imageIdByUrl.set(photoUrl, imageId)
+    // Enlarged header photo — see resolveCategoryPhotoUrls/
+    // resolveHeaderPhotoExt/CATEGORY_HEADER_PHOTO_BOX/addPictureBandImage's
+    // own doc comments. `sharpAvailableForHeaderPhoto` is resolved ONCE for
+    // the whole workbook (see its own declaration above the product loop),
+    // NOT per product.
+    //
+    // Iterates the SAME ordered candidate list the fetch pool tried (see
+    // fetchPricelistPhotos's own doc comment for the matching per-round
+    // fetch strategy) and takes the FIRST candidate with a non-null map
+    // entry — a candidate can fail at FETCH time independently of
+    // preference order (verified against live data: `ALVAR`'s `src_lg`
+    // 403s), so only ever looking up the single most-preferred URL would
+    // silently show no header photo for a product whose LESS-preferred
+    // candidate actually fetched fine.
+    const photoCandidates = resolveCategoryPhotoUrls(
+      advancedProduct.category_photo,
+      sharpAvailableForHeaderPhoto
+    )
+    let photoUrl: string | null = null
+    let photoEntry: PricelistImage | null = null
+    for (const candidateUrl of photoCandidates) {
+      const candidateEntry = photoBuffers.get(candidateUrl)
+      if (candidateEntry) {
+        photoUrl = candidateUrl
+        photoEntry = candidateEntry
+        break
       }
-      // Fixed-size oneCellAnchor (not a range) — see PHOTO_SIZE_PX comment
-      // above for why a range anchor is wrong here. `ext` is resolved from
-      // the actual resized dimensions when known (see resolvePhotoExt) —
-      // today this is a no-op (src_facebook is uniformly square, so a
-      // successful resize always yields back a PHOTO_SIZE_PX square here,
-      // byte-for-byte the same box as before resizing existed) but keeps
-      // this correct if that ever stops being true, without stretching.
-      sheet.addImage(imageId, {
-        tl: { col: 0, row: 0 },
-        ext: resolvePhotoExt(photoEntry, { width: PHOTO_SIZE_PX, height: PHOTO_SIZE_PX }),
-      })
     }
+    if (photoUrl && photoEntry) {
+      // `isSquareCropSource` is an EXACT url comparison against
+      // `src_facebook` (see resolveHeaderPhotoExt's own doc comment for why
+      // this must NOT be derived from `sharpAvailableForHeaderPhoto`
+      // anymore) — `src_facebook` can be the URL that actually resolved
+      // even with sharp available, if it was the last surviving candidate.
+      const isSquareCropSource =
+        photoUrl === advancedProduct.category_photo?.src_facebook
+      const ext = resolveHeaderPhotoExt(
+        photoEntry,
+        CATEGORY_HEADER_PHOTO_BOX,
+        isSquareCropSource
+      )
+      // `ext === null` means "unknown dims AND the source isn't guaranteed
+      // square" (see resolveHeaderPhotoExt's doc comment) — skip the embed
+      // entirely rather than guess and risk visibly distorting a large hero
+      // image. Never an error: the sheet just shows no header photo, same
+      // "never fail the export over a decorative image" discipline as every
+      // other embed in this file.
+      if (ext) {
+        let imageId = imageIdByUrl.get(photoUrl)
+        if (imageId === undefined) {
+          imageId = workbook.addImage({
+            // exceljs's own .d.ts declares a LOCAL `interface Buffer extends
+            // ArrayBuffer {}` (not the real Node Buffer) for this field.
+            // Under this project's `lib: ["esnext"]`, the global ArrayBuffer
+            // type that local interface extends carries newer members (e.g.
+            // `resizable`) that Node's actual Buffer (from @types/node)
+            // never implements, so a real Buffer never structurally
+            // satisfies it — an upstream typing bug, not a runtime issue
+            // (ExcelJS reads this field as a plain Node Buffer at runtime).
+            buffer: photoEntry.buffer as any,
+            // `photoEntry.extension` — NEVER hardcoded "jpeg" — reflects
+            // whatever format `photoEntry.buffer` ACTUALLY is: "jpeg" on
+            // every successful resize (resizeForEmbed always re-encodes to
+            // JPEG), but on the resize-failure fallback path it's whatever
+            // `detectEmbeddableExtension` sniffed the ORIGINAL fetched
+            // buffer as (jpeg or png — resizeForEmbed already refused to
+            // return a WEBP fallback entry at all, see that function's doc
+            // comment, so this is never "webp" here).
+            extension: photoEntry.extension,
+          })
+          imageIdByUrl.set(photoUrl, imageId)
+        }
+        // x: fixed HEADER_PHOTO_LEFT_INSET_PX inset from column A's left
+        // edge (see that constant's own doc comment — a deliberate visual
+        // choice, distinct from the plain PHOTO_MARGIN_PX every other edge
+        // of this box uses). y: centred vertically within the FULL band
+        // (HEADER_PHOTO_BAND_HEIGHT_PX, not CATEGORY_HEADER_PHOTO_BOX.height
+        // — see that constant's own doc comment for why they're different
+        // numbers) — never negative, since `ext.height` can never exceed
+        // `CATEGORY_HEADER_PHOTO_BOX.height`, which is itself always <=
+        // `HEADER_PHOTO_BAND_HEIGHT_PX`.
+        const offsetYPx = (HEADER_PHOTO_BAND_HEIGHT_PX - ext.height) / 2
+        addPictureBandImage(sheet, imageId, ext, HEADER_PHOTO_LEFT_INSET_PX, offsetYPx)
+      }
+    }
+
+    // Product display name, big and bold, over the price-column area of the
+    // header band (rows 3-4) — the SAME `productName` used for the sheet
+    // name/Info index (see resolveProductName), so the two can never say
+    // different things for the same product. Confined to columns >=
+    // `cfg.fixedColumnCount + 1` (the first price/CAT column — E when
+    // showVolumeColumn is on, D when off; NEVER hardcoded, see
+    // RenderConfig.fixedColumnCount's own doc comment) specifically so it
+    // can NEVER collide with the header photo, which itself is confined to
+    // columns A-B (PICTURE_COL/DESCRIPTION_COL) — see
+    // CATEGORY_HEADER_PHOTO_BOX's own width derivation for why that's a
+    // real invariant, not an assumption. Rows 1-8 (the whole photo band)
+    // are otherwise untouched by any other writer in this file, so this
+    // merge is guaranteed to be the only thing writing to rows 3-4.
+    const nameFirstCol = cfg.fixedColumnCount + 1
+    // Extends at least 6 columns past the first price column (7 total,
+    // e.g. E:K) — or further, to the LAST actual price column, on a sheet
+    // with more than 6 (see writeHeaderRows/writeDataRow's own `lastCol`
+    // for the identical `cfg.fixedColumnCount + sortedGroupNumbers.length`
+    // expression this mirrors). `sortedGroupNumbers` is always at least
+    // 1-long (see PRICE_ONLY_GROUP_NUMBER's own doc comment for the
+    // empty-pool sentinel), so a sheet with just the one flat "PRICE"
+    // column still gets the full 7-column-wide merge, not a 1-column one.
+    const nameLastCol = Math.max(
+      nameFirstCol + 6,
+      cfg.fixedColumnCount + sortedGroupNumbers.length
+    )
+    const nameRow = sheet.getRow(PRODUCT_NAME_ROW)
+    nameRow.getCell(nameFirstCol).value = productName
+    nameRow.getCell(nameFirstCol).font = PRODUCT_NAME_FONT
+    nameRow.getCell(nameFirstCol).alignment = {
+      vertical: "middle",
+      horizontal: "left",
+    }
+    sheet.mergeCells(PRODUCT_NAME_ROW, nameFirstCol, PRODUCT_NAME_ROW_END, nameLastCol)
 
     writeHeaderRows(sheet, sortedGroupNumbers, cfg)
     // Per-sheet B9/C9 multiplier input — gated by cfg.showMultiplierRow

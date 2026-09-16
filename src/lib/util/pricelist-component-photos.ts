@@ -1,8 +1,8 @@
 import type { PricelistExportProduct } from "@lib/furnisystems-sdk/modules/products/types"
 import { fetchImagePool } from "./image-fetch"
-import { isJpeg } from "./pricelist-photos"
+import { isJpeg } from "./image-magic"
 import { collectComponentPhotoUrls, COMPONENT_PHOTO_BOX } from "./pricelist-workbook"
-import { resizeForEmbed, type PricelistImage } from "./image-resize"
+import { resizeForEmbed, TRIM_THRESHOLD, type PricelistImage } from "./image-resize"
 
 // Same concurrency/timeout profile as pricelist-photos.ts (JPEGs of the same
 // origin/size class — src_facebook — unlike the much smaller PNG blueprints
@@ -73,20 +73,21 @@ const RESIZE_BOX = {
 // renders as a tiny, hard-to-see image inside its already-small cell — the
 // user-visible bug this whole change fixes.
 //
-// Value 25 was checked against 6 real component photos pulled from a live
-// priceListId=50 batch across a spread of shapes (a small pillow/bracket
-// item trimming to ~18%x30% of its frame — visually confirmed to be the
-// "hammer-shaped" item from the user's screenshot; a wider flat item at
-// ~75%x23%; a full-bleed fabric-texture macro shot that trim correctly left
-// almost untouched; a tall thin metal leg at ~16%x11%; and more) at
-// thresholds 10/25/40/60 — the trimmed box varied by at most 1-2px across
-// that whole range for every sample (i.e. none of these real photos have
-// enough JPEG noise around their background for the threshold choice to
-// matter), so 25 sits in the middle of a wide safe range rather than near an
-// edge. None of the 6 samples hit the "trim finds nothing" failure path
-// either — that fallback exists for a plain/blank photo this sample set
-// didn't happen to include, not because it was observed.
-const TRIM_THRESHOLD = 25
+// `TRIM_THRESHOLD` is IMPORTED from image-resize.ts, shared with
+// pricelist-photos.ts's category-photo pool — not redeclared here. It was
+// tuned against 6 real component photos pulled from a live priceListId=50
+// batch across a spread of shapes (a small pillow/bracket item trimming to
+// ~18%x30% of its frame — visually confirmed to be the "hammer-shaped" item
+// from the user's screenshot; a wider flat item at ~75%x23%; a full-bleed
+// fabric-texture macro shot that trim correctly left almost untouched; a
+// tall thin metal leg at ~16%x11%; and more) at thresholds 10/25/40/60 —
+// the trimmed box varied by at most 1-2px across that whole range for every
+// sample (i.e. none of these real photos have enough JPEG noise around
+// their background for the threshold choice to matter), so 25 sits in the
+// middle of a wide safe range rather than near an edge. None of the 6
+// samples hit the "trim finds nothing" failure path either — that fallback
+// exists for a plain/blank photo this sample set didn't happen to include,
+// not because it was observed.
 
 /**
  * Fetches every distinct component-photo URL that will actually be embedded
@@ -168,7 +169,17 @@ export async function fetchPricelistComponentPhotos(
         return
       }
       const image = await resizeForEmbed(buffer, RESIZE_BOX, { trimThreshold: TRIM_THRESHOLD })
-      totalResizedBytes += image.buffer.length
+      // `image` can only be `null` when the fetched buffer isn't a format
+      // ExcelJS can embed at all (see resizeForEmbed's doc comment) — never
+      // reachable here in practice, since every buffer reaching this point
+      // already passed `isJpeg` validation in the fetch pool above, and
+      // `detectEmbeddableExtension` always recognises a real JPEG. Handled
+      // anyway rather than asserted, since "component photos are always
+      // JPEG" is a fact about today's data, not something this function
+      // enforces.
+      if (image) {
+        totalResizedBytes += image.buffer.length
+      }
       resized.set(url, image)
     })
   )
