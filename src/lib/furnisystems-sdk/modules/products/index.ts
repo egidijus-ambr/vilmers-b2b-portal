@@ -709,14 +709,77 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
   }
 `
 
+// Code of the AdditionalComponentGroup holding a product's "main"
+// size/model variant — the analogue of a sofa module for
+// OTHER_WITH_FABRICS/OTHER/etc. products (e.g. a bed's frame, as opposed to
+// its mattress) — keyed by advanced_product_type: OTHER products' main
+// group is "model-other"; every other type's is "model". The type check
+// (not just the code) is required: some OTHER products (e.g. COF-QUADRO,
+// advanced product 1818) carry stale ENABLED, PRICED
+// additional_component_to_advanced_product rows sitting in group "model"
+// with NO AdditionalComponentGroupToAdvancedProduct link — a bare
+// `code in ["model", "model-other"]` check would let those stale rows
+// admit the product even though its real, group-linked main group
+// ("model-other") is unpriced on that list. Verified against the running
+// backend (2026-09-17): no visible product's advanced_product_type/main
+// group pairing contradicts this mapping. Mirrors
+// src/configurator/lib/vilmers.ts's `MODEL_CODE`/`MODEL_CODE_OTHER` and
+// src/lib/util/pricelist-workbook.ts's `MODEL_GROUP_CODE`/
+// `MODEL_GROUP_CODE_OTHER`/`modelGroupCodeFor` — re-declared here (not
+// imported) for the same reason as those: importing
+// configurator/lib/vilmers.ts would drag the Konva-based configurator
+// context into this server-side SDK module.
+const MAIN_GROUP_CODE_FOR_OTHER = "model-other"
+const MAIN_GROUP_CODE_DEFAULT = "model"
+
+// One entry per advanced_product_type bucket this file distinguishes for
+// main-group admission: OTHER products vs every other type. Shared by both
+// the main-group-priced branch and the fallback's "has no main-group
+// component" check in buildWhereFilter, so the two branches can't drift
+// out of sync with each other.
+const MAIN_GROUP_BY_TYPE = [
+  {
+    typeFilter: { advanced_product_type: { equals: "OTHER" } },
+    groupCode: MAIN_GROUP_CODE_FOR_OTHER,
+  },
+  {
+    typeFilter: { advanced_product_type: { not: { equals: "OTHER" } } },
+    groupCode: MAIN_GROUP_CODE_DEFAULT,
+  },
+]
+
+// A join row's component sits in `groupCode` — see
+// MAIN_GROUP_CODE_FOR_OTHER/MAIN_GROUP_CODE_DEFAULT/MAIN_GROUP_BY_TYPE.
+function inComponentGroup(groupCode: string) {
+  return {
+    additional_component: {
+      is: {
+        additional_component_group: { is: { code: { equals: groupCode } } },
+      },
+    },
+  }
+}
+
 /**
  * Builds a component-priced admission branch (OTHER_WITH_FABRICS or OTHER)
  * for ProductsModule.getSofaPricelistExportProducts's admission `where`:
- * admits a product of `advancedProductType` only if it has at least one
- * ENABLED additional component actually priced in THIS pricelist (mirrors
- * sofaModulePricedClause's purpose for the sofa branch). Shared by both
- * `otherWithFabricsBranch` and `otherBranch` since they're otherwise
- * identical in shape.
+ * by itself, admits a product of `advancedProductType` if it has at least
+ * one ENABLED additional component actually priced in THIS pricelist
+ * (mirrors sofaModulePricedClause's purpose for the sofa branch) —
+ * regardless of which AdditionalComponentGroup that component sits in.
+ * Shared by both `otherWithFabricsBranch` and `otherBranch` since they're
+ * otherwise identical in shape.
+ *
+ * This is NOT the sole admission gate for the export, though: the branch
+ * built here is ANDed with `productWhere` (buildWhereFilter's output) at
+ * the call site, which — since the type-aware main-group fix — additionally
+ * requires that the product's actual main-group component (see
+ * MAIN_GROUP_CODE_FOR_OTHER/MAIN_GROUP_CODE_DEFAULT) be enabled and priced
+ * on this list, or that the product have no main-group component at all.
+ * So the export's real admission is stricter than "any enabled priced
+ * component" — a product whose only priced component sits in the wrong
+ * group for its type (see COF-QUADRO's stale rows, advanced product 1818)
+ * is excluded even though this branch alone would admit it.
  */
 function buildComponentPricedBranch(
   advancedProductType: "OTHER_WITH_FABRICS" | "OTHER",
@@ -798,6 +861,21 @@ export class ProductsModule {
         },
       }
 
+      // A join row is "priced on the customer's lists" if it has a matching
+      // price_fabric_category OR extra_prices row.
+      const pricedOnListsOr = [
+        {
+          price_fabric_category: {
+            some: priceListSelect,
+          },
+        },
+        {
+          extra_prices: {
+            some: priceListSelect,
+          },
+        },
+      ]
+
       const priceFilter = {
         OR: [
           // Single products always pass through
@@ -830,23 +908,62 @@ export class ProductsModule {
                       some: priceListSelect,
                     },
                   },
-                  {
+                  // Main-group branch, one OR entry per MAIN_GROUP_BY_TYPE
+                  // pair: a product of this advanced_product_type that HAS
+                  // a component in ITS type's main group is only admitted
+                  // through a main-group row that is itself enabled, in
+                  // that main group, AND priced on the customer's lists.
+                  // `enabled`, the group-code check, and the priced check
+                  // are all asserted on the SAME
+                  // additional_component_to_advanced_product row inside one
+                  // `some` — that's what matters here, not the number of
+                  // `some` blocks in general (a plain OR of independent
+                  // `some` checks, like price_fabric_category/extra_prices
+                  // below, is harmless: "some row is priced list A OR some
+                  // row is priced list B" is equivalent to "some row is
+                  // priced A-or-B"). But splitting `enabled`,
+                  // group-membership, and "priced" into separate `some`
+                  // blocks would let an unrelated enabled row satisfy
+                  // "enabled", an unrelated main-group row satisfy "main
+                  // group", and an unrelated priced row (e.g. a mattress)
+                  // satisfy "priced" — independently of each other — which
+                  // is not the same claim as "this one row is an enabled,
+                  // priced, main-group component".
+                  ...MAIN_GROUP_BY_TYPE.map(({ typeFilter, groupCode }) => ({
+                    ...typeFilter,
                     additional_component_to_advanced_product: {
                       some: {
-                        price_fabric_category: {
-                          some: priceListSelect,
-                        },
+                        enabled: { equals: true },
+                        ...inComponentGroup(groupCode),
+                        OR: pricedOnListsOr,
                       },
                     },
-                  },
+                  })),
+                  // Fallback branch: products with NO component in THEIR
+                  // type's main group (e.g. sofas, which don't use
+                  // "model"/"model-other" groups here) keep the
+                  // pre-existing behaviour — admitted by ANY priced join
+                  // row, regardless of group or enabled.
                   {
-                    additional_component_to_advanced_product: {
-                      some: {
-                        extra_prices: {
-                          some: priceListSelect,
+                    AND: [
+                      {
+                        OR: MAIN_GROUP_BY_TYPE.map(
+                          ({ typeFilter, groupCode }) => ({
+                            ...typeFilter,
+                            additional_component_to_advanced_product: {
+                              none: inComponentGroup(groupCode),
+                            },
+                          })
+                        ),
+                      },
+                      {
+                        additional_component_to_advanced_product: {
+                          some: {
+                            OR: pricedOnListsOr,
+                          },
                         },
                       },
-                    },
+                    ],
                   },
                 ],
               },
@@ -1567,11 +1684,15 @@ export class ProductsModule {
     // (chairs/armchairs etc.) and OTHER products (coffee tables, tops,
     // etc.) are both priced as a base + additional components, not sofa
     // modules — see pricelist-workbook.ts's buildComponentRows for how
-    // their sheet rows are built. The two types differ only in which
+    // their sheet rows are built. The two types differ in which
     // AdditionalComponentGroup carries their size/variant list ("model" vs
-    // "model-other" — see pricelist-workbook.ts's modelGroupCodeFor), which
-    // is a rendering concern, not an admission one, so both branches share
-    // this same shape via `buildComponentPricedBranch`.
+    // "model-other" — see pricelist-workbook.ts's modelGroupCodeFor), so
+    // both branches share this same shape via `buildComponentPricedBranch`
+    // — but which group is which is NOT purely a rendering concern: since
+    // buildWhereFilter's main-group fix, it's also an admission gate (see
+    // buildComponentPricedBranch's doc comment above), so a product whose
+    // only priced component sits in the wrong group for its type is
+    // excluded from the export even though it satisfies this branch alone.
     const otherWithFabricsBranch = buildComponentPricedBranch(
       "OTHER_WITH_FABRICS",
       priceListId
