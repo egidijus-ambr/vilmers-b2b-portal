@@ -88,8 +88,11 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
       },
     ],
     prefer_related_applications: false,
-    launch_handler: {
-      client_mode: "focus-existing",
-    },
+    // launch_handler with client_mode "focus-existing" was removed: per the
+    // Launch Handler spec it brings an already-open PWA window to the front
+    // WITHOUT navigating it, and only exposes the target URL via
+    // window.launchQueue — which this app never consumes. That silently
+    // dropped links like the admin impersonation URL (window "just opens").
+    // Do not re-add this without also wiring up a launchQueue.setConsumer().
   }
 }

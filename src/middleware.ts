@@ -105,9 +105,35 @@ export async function middleware(request: NextRequest) {
   }
 
   // Detect preferred language and redirect immediately
-  const preferredLanguage = detectLanguage(request)
-  const redirectPath =
-    request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
+  const detectedLanguage = detectLanguage(request)
+  // Guard against detectLanguage ever resolving to a code outside
+  // supportedLanguages (e.g. "da"), which would otherwise make the
+  // redirect below target itself forever.
+  const preferredLanguage = (
+    supportedLanguages as readonly string[]
+  ).includes(detectedLanguage)
+    ? detectedLanguage
+    : DEFAULT_LANGUAGE
+
+  // The first path segment may look like a locale code the portal doesn't
+  // serve (e.g. a stale "/lt/..." link from another app). In that case
+  // replace it with the preferred language instead of prepending — prepending
+  // would produce "/en/lt/..." which 404s. A normal path with no locale
+  // prefix keeps the existing behaviour of prepending the language.
+  const LOCALE_LIKE_SEGMENT = /^[a-z]{2}(-[a-zA-Z]{2})?$/
+  const pathSegments = request.nextUrl.pathname.split("/")
+  const firstSegment = pathSegments[1] ?? ""
+  const firstSegmentIsUnsupportedLocale =
+    LOCALE_LIKE_SEGMENT.test(firstSegment) &&
+    !(supportedLanguages as readonly string[]).includes(
+      firstSegment.toLowerCase()
+    )
+
+  const remainingSegments = firstSegmentIsUnsupportedLocale
+    ? pathSegments.slice(2)
+    : pathSegments.slice(1)
+  const remainingPath = remainingSegments.join("/")
+  const redirectPath = remainingPath ? `/${remainingPath}` : ""
   const queryString = request.nextUrl.search ? request.nextUrl.search : ""
 
   const redirectUrl = `${request.nextUrl.origin}/${preferredLanguage}${redirectPath}${queryString}`
