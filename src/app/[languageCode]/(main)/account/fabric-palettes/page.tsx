@@ -19,6 +19,12 @@ import {
 import FabricGroupInfoModal from "@modules/fabric-palettes/components/fabric-group-info-modal"
 import FabricImageModal from "@modules/fabric-palettes/components/fabric-image-modal"
 import { groupSelectedFeatures, matchesFeatureSelection, buildFeatureToGroupMap } from "@modules/fabric-palettes/utils/feature-filter-logic"
+import {
+  mergeFabricGroupsAcrossPalettes,
+  resolveMergedGroupDisplayName,
+  resolveMergedGroupSearchNames,
+  type MergedFabricGroupEntry,
+} from "@modules/fabric-palettes/utils/fabric-profile-helpers"
 import { getFabricCalloutSettings } from "@lib/data/fabric-callout-settings"
 import type { FabricCalloutSettings } from "@lib/data/fabric-callout-settings"
 import { Info } from 'lucide-react'
@@ -58,6 +64,7 @@ export default function FabricPalettesPage() {
   const [selectedFabric, setSelectedFabric] = useState<{
     name: string
     imageSrc: string
+    groupName: string
     groupData: FabricGroupDetail
     itemId?: string
     configId?: string
@@ -69,7 +76,6 @@ export default function FabricPalettesPage() {
   const loadPalettes = useCallback(async () => {
     try {
       const data = await getFabricPalettes()
-      console.log("[palette-pdf-debug] page loadPalettes result", { total: data.length, withCode: data.filter((p: any) => !!p?.code).length, withoutCode: data.filter((p: any) => !p?.code).length, firstItemKeys: data[0] ? Object.keys(data[0]) : [], firstItemCode: (data[0] as any)?.code ?? null })
       setPalettes(data)
     } catch (error) {
       console.error("[FabricPalettesPage] Error loading palettes:", error)
@@ -88,16 +94,17 @@ export default function FabricPalettesPage() {
 
   const actingCustomerId = actingCustomer?.id ?? null
   useEffect(() => {
+    // Redirecting is a side effect and must happen here, not during render —
+    // this also keeps every hook below unconditional (see the guarded
+    // `return null` right before the JSX return, at the end of the render
+    // body: hooks must never sit after an early return, or the hook count
+    // changes across the customer -> null transition and React throws).
     if (!customer) {
+      router.push("/account")
       return
     }
     loadPalettes()
-  }, [customer, actingCustomerId, loadPalettes])
-
-  if (!customer) {
-    router.push("/account")
-    return null
-  }
+  }, [customer, actingCustomerId, loadPalettes, router])
 
   const breadcrumbItems = [
     { label: t("breadcrumb-home"), href: "/" },
@@ -105,106 +112,109 @@ export default function FabricPalettesPage() {
     { label: t("breadcrumb-fabric-palettes"), href: null },
   ]
 
-  const resolveGroupName = (
-    entry: FabricPaletteDetail["fabric_groups"][number]
-  ): string => {
-    const profileMatch = entry.fabric_group.fabric_group_profiles.find(
-      (p) => p.language === backendLang
-    )
-    if (profileMatch?.name) return profileMatch.name
-    if (entry.name) return entry.name
-    return `Group ${entry.id}`
-  }
+  // One row per fabric group: a customer can hold several palettes (direct
+  // + via customer_group), and the same group commonly sits in more than
+  // one of them. Dedupe up front so the rest of the pipeline (search,
+  // filters, sort, pagination) counts and paginates each group exactly
+  // once, regardless of how many palettes it's a member of.
+  const mergedGroups = useMemo(
+    () => mergeFabricGroupsAcrossPalettes(palettes),
+    [palettes]
+  )
 
-  const filteredPalettes = useMemo(() => {
+  // Display name: which palette's override wins is only partly ordered —
+  // direct memberships outrank group memberships, but ties within either
+  // are arbitrary (see the caveat on MergedFabricGroupEntry in
+  // fabric-profile-helpers.ts). This is the customer's own palette page,
+  // so they should see whichever override wins.
+  const resolveGroupName = useCallback(
+    (merged: MergedFabricGroupEntry): string =>
+      resolveMergedGroupDisplayName(merged, backendLang),
+    [backendLang]
+  )
+
+  // Every name this group is known by across the customer's palettes
+  // (every override plus the manufacturer default) — used so search
+  // matches whichever spelling the customer types, not just the one
+  // currently displayed as the winning override.
+  const resolveGroupSearchNames = useCallback(
+    (merged: MergedFabricGroupEntry): string[] =>
+      resolveMergedGroupSearchNames(merged, backendLang),
+    [backendLang]
+  )
+
+  const searchFilteredGroups = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return palettes
+    if (!query) return mergedGroups
 
-    return palettes
-      .map((palette) => {
-        const filteredGroups = palette.fabric_groups.reduce<
-          typeof palette.fabric_groups
-        >((acc, entry) => {
-          const groupName = resolveGroupName(entry).toLowerCase()
-          const groupNameMatches = groupName.includes(query)
+    return mergedGroups.reduce<MergedFabricGroupEntry[]>((acc, merged) => {
+      const nameMatches = resolveGroupSearchNames(merged).some((name) =>
+        name.toLowerCase().includes(query)
+      )
 
-          if (groupNameMatches) {
-            acc.push(entry)
-            return acc
-          }
+      if (nameMatches) {
+        acc.push(merged)
+        return acc
+      }
 
-          const matchingFabrics = entry.fabric_group.fabrics.filter(
-            (fabric) =>
-              (fabric.color_name?.toLowerCase() ?? "").includes(query) ||
-              (fabric.code?.toLowerCase() ?? "").includes(query)
-          )
+      const matchingFabrics = merged.fabric_group.fabrics.filter(
+        (fabric) =>
+          (fabric.color_name?.toLowerCase() ?? "").includes(query) ||
+          (fabric.code?.toLowerCase() ?? "").includes(query)
+      )
 
-          if (matchingFabrics.length > 0) {
-            acc.push({
-              ...entry,
-              fabric_group: {
-                ...entry.fabric_group,
-                fabrics: matchingFabrics,
-              },
-            })
-          }
+      if (matchingFabrics.length > 0) {
+        acc.push({
+          ...merged,
+          fabric_group: { ...merged.fabric_group, fabrics: matchingFabrics },
+        })
+      }
 
-          return acc
-        }, [])
+      return acc
+    }, [])
+  }, [mergedGroups, searchQuery, resolveGroupSearchNames])
 
-        return { ...palette, fabric_groups: filteredGroups }
-      })
-      .filter((palette) => palette.fabric_groups.length > 0)
-  }, [palettes, searchQuery, resolveGroupName])
-
-  const featureFilteredPalettes = useMemo(() => {
+  const featureFilteredGroups = useMemo(() => {
     if (selectedFeatures.size === 0 && selectedPriceCategories.size === 0)
-      return filteredPalettes
+      return searchFilteredGroups
 
     const grouped = groupSelectedFeatures(selectedFeatures, featureToGroupMap)
 
-    return filteredPalettes
-      .map((palette) => ({
-        ...palette,
-        fabric_groups: palette.fabric_groups.filter((entry) => {
-          // Feature filter (OR within group, AND across groups)
-          if (selectedFeatures.size > 0) {
-            const groupFeatureIds = new Set(
-              (entry.fabric_group.fabric_features ?? []).map(
-                (ff) => ff.fabric_feature.id
-              )
-            )
-            if (!matchesFeatureSelection(groupFeatureIds, grouped)) return false
-          }
-          // Price category filter (OR logic) - unchanged
-          if (selectedPriceCategories.size > 0) {
-            const groupPriceCats = new Set(
-              (entry.fabric_group.fabric_price_category ?? []).map(
-                (pc) => pc.group_number
-              )
-            )
-            if (
-              !Array.from(selectedPriceCategories).some((gn) =>
-                groupPriceCats.has(gn)
-              )
-            )
-              return false
-          }
-          return true
-        }),
-      }))
-      .filter((palette) => palette.fabric_groups.length > 0)
-  }, [filteredPalettes, selectedFeatures, selectedPriceCategories, featureToGroupMap])
+    return searchFilteredGroups.filter((merged) => {
+      // Feature filter (OR within group, AND across groups)
+      if (selectedFeatures.size > 0) {
+        const groupFeatureIds = new Set(
+          (merged.fabric_group.fabric_features ?? []).map(
+            (ff) => ff.fabric_feature.id
+          )
+        )
+        if (!matchesFeatureSelection(groupFeatureIds, grouped)) return false
+      }
+      // Price category filter (OR logic) - unchanged
+      if (selectedPriceCategories.size > 0) {
+        const groupPriceCats = new Set(
+          (merged.fabric_group.fabric_price_category ?? []).map(
+            (pc) => pc.group_number
+          )
+        )
+        if (
+          !Array.from(selectedPriceCategories).some((gn) =>
+            groupPriceCats.has(gn)
+          )
+        )
+          return false
+      }
+      return true
+    })
+  }, [searchFilteredGroups, selectedFeatures, selectedPriceCategories, featureToGroupMap])
 
   const allFilteredGroups = useMemo(
     () =>
-      featureFilteredPalettes.flatMap((palette) =>
-        palette.fabric_groups.map((entry) => ({
-          entry,
-          groupName: resolveGroupName(entry),
-        }))
-      ),
-    [featureFilteredPalettes, resolveGroupName]
+      featureFilteredGroups.map((merged) => ({
+        merged,
+        groupName: resolveGroupName(merged),
+      })),
+    [featureFilteredGroups, resolveGroupName]
   )
 
   const sortedGroups = useMemo(
@@ -231,10 +241,14 @@ export default function FabricPalettesPage() {
     setCurrentPage(1)
   }, [searchQuery, sortOrder, selectedFeatures, selectedPriceCategories])
 
-  const hasContent =
-    palettes.length > 0 && palettes.some((p) => p.fabric_groups.length > 0)
+  // All hooks above run unconditionally on every render; this guard is not
+  // itself a hook, so it's safe here even though the redirect effect above
+  // means we'll only ever render past this point with a real customer.
+  if (!customer) {
+    return null
+  }
 
-  console.log("[palette-pdf-debug] page render gate", { loading, totalPalettes: palettes.length, withCode: palettes.filter((p: any) => !!p?.code).length, hasContent, totalGroups, buttonsWouldRender: !loading && hasContent && totalGroups !== 0 && palettes.filter((p: any) => !!p?.code).length > 0 })
+  const hasContent = mergedGroups.length > 0
 
   return (
     <>
@@ -381,20 +395,20 @@ export default function FabricPalettesPage() {
               </div>
 
               <div>
-                {paginatedGroups.map(({ entry, groupName }) => {
-                  const sortedFabrics = [...entry.fabric_group.fabrics].sort(
+                {paginatedGroups.map(({ merged, groupName }) => {
+                  const sortedFabrics = [...merged.fabric_group.fabrics].sort(
                     (a, b) => a.order - b.order
                   )
 
                   return (
-                    <div key={entry.id}>
+                    <div key={merged.fabric_group_id}>
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold">{groupName}</h2>
                         <button
                           onClick={() =>
                             setInfoGroup({
                               name: groupName,
-                              data: entry.fabric_group,
+                              data: merged.fabric_group,
                             })
                           }
                           className="flex items-center justify-center w-8 h-8 rounded-full bg-gold hover:bg-gold/90 text-white transition-colors flex-shrink-0"
@@ -413,8 +427,9 @@ export default function FabricPalettesPage() {
                                   setSelectedFabric({
                                     name: fabric.color_name || fabric.code,
                                     imageSrc: fabric.image.src || fabric.image.src_md || fabric.image.src_thumbnail || '',
-                                    groupData: entry.fabric_group,
-                                    itemId: entry.fabric_group.code,
+                                    groupName,
+                                    groupData: merged.fabric_group,
+                                    itemId: merged.fabric_group.code,
                                     configId: fabric.code,
                                   })
                                 }
@@ -475,6 +490,7 @@ export default function FabricPalettesPage() {
           onClose={() => setSelectedFabric(null)}
           fabricName={selectedFabric.name}
           imageSrc={selectedFabric.imageSrc}
+          groupName={selectedFabric.groupName}
           groupData={selectedFabric.groupData}
           languageCode={backendLang}
           itemId={selectedFabric.itemId}

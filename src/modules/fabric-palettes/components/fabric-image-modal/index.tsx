@@ -7,7 +7,6 @@ import Button from "@modules/common/components/button"
 import type { FabricGroupDetail } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations } from "@lib/i18n"
 import { useFabricGroupDetails } from "../../hooks/use-fabric-group-details"
-import { resolveProfile } from "../../utils/fabric-profile-helpers"
 import {
   FabricTextFeaturesGrid,
   FabricCharacteristicsDisplay,
@@ -38,6 +37,13 @@ interface FabricImageModalProps {
   onClose: () => void
   fabricName: string
   imageSrc: string
+  /**
+   * Resolved display name for the fabric group, passed in by the page so
+   * this modal always agrees with the page heading — including the
+   * palette name override, which this modal has no way to re-derive on
+   * its own (`groupData` alone only carries the manufacturer default).
+   */
+  groupName: string
   groupData: FabricGroupDetail
   languageCode: string
   itemId?: string
@@ -60,6 +66,7 @@ export default function FabricImageModal({
   onClose,
   fabricName,
   imageSrc,
+  groupName,
   groupData,
   languageCode,
   itemId,
@@ -69,14 +76,6 @@ export default function FabricImageModal({
   const { t } = useTranslations("account")
   const { priceCategory, featuresWithPhoto, featureGroups } =
     useFabricGroupDetails(groupData, languageCode)
-
-  const resolvedGroupName = (() => {
-    const profile = resolveProfile(
-      groupData.fabric_group_profiles,
-      languageCode
-    )
-    return (profile as any)?.name ?? null
-  })()
 
   const [stock, setStock] = useState<StockState>(INITIAL_STOCK_STATE)
   const requestIdRef = useRef(0)
@@ -132,10 +131,6 @@ export default function FabricImageModal({
 
   const showStockSection = isOpen && !!itemId && !!configId
 
-  console.log("Rendering FabricImageModal", {
-    calloutSettings,
-  })
-
   return (
     <ResponsiveDialog isOpen={isOpen} onClose={onClose} title={fabricName}>
       {/* Content: Image + Details */}
@@ -152,12 +147,12 @@ export default function FabricImageModal({
 
         {/* Details Panel */}
         <div className="w-full md:w-80 lg:w-96 flex-shrink-0 md:overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200 p-6">
-          {/* Group Name */}
-          {resolvedGroupName && (
-            <h3 className="text-xl font-semibold text-dark-blue">
-              {resolvedGroupName}
-            </h3>
-          )}
+          {/* Group Name — always present: the page resolves a synthetic
+              "Group {id}" fallback when the group has no profile name, so
+              this heading and the page's own <h2> never disagree. */}
+          <h3 className="text-xl font-semibold text-dark-blue">
+            {groupName}
+          </h3>
           {/* Price Category */}
           {priceCategory && (
             <p className="text-sm text-gold tracking-wider uppercase mt-1">
