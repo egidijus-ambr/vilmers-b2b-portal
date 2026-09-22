@@ -38,9 +38,10 @@ interface NavProps {
   canShowAllProducts: boolean
   showAllProductsActive: boolean
   canShowGoToConfigurator: boolean
+  isImpersonatedByManager: boolean
 }
 
-export default function Nav({ customer, categories, canShowAllProducts, showAllProductsActive, canShowGoToConfigurator }: NavProps) {
+export default function Nav({ customer, categories, canShowAllProducts, showAllProductsActive, canShowGoToConfigurator, isImpersonatedByManager }: NavProps) {
   const pathname = usePathname()
   const { languageCode } = useParams() as { languageCode: string }
   const { t, isReady } = useTranslations()
@@ -353,14 +354,14 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
       </header>
 
       {/* Agent / Admin sub-header: callout + customer selector, right-aligned */}
-      {!isHomePage && isAgentOrAdmin(customer) && (
+      {!isHomePage && (isAgentOrAdmin(customer) || isImpersonatedByManager) && (
         <div className="flex h-10 items-center justify-end gap-4 border-b border-line bg-beige-20 px-6">
           <ActingCustomerCallout />
           {canShowAllProducts && (
             <ShowAllProductsToggle initialChecked={showAllProductsActive} />
           )}
           {canShowGoToConfigurator && <GoToConfiguratorToggle />}
-          <CustomerSelector />
+          {isAgentOrAdmin(customer) && <CustomerSelector />}
         </div>
       )}
 

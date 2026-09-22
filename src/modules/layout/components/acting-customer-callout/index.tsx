@@ -6,9 +6,9 @@ import { isAgentOrAdmin } from "@lib/util/roles"
 
 export default function ActingCustomerCallout() {
   const { customer } = useCustomer()
-  const { actingCustomer } = useActingCustomer()
+  const { actingCustomer, isImpersonatedByManager } = useActingCustomer()
 
-  if (!isAgentOrAdmin(customer)) return null
+  if (!isAgentOrAdmin(customer) && !isImpersonatedByManager) return null
   if (actingCustomer) return null
 
   return (

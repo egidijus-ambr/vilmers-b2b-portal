@@ -131,6 +131,7 @@ export default async function PageLayout({
                     canShowAllProducts={canShowAllProducts}
                     showAllProductsActive={showAllProductsActive}
                     canShowGoToConfigurator={canShowGoToConfigurator}
+                    isImpersonatedByManager={impersonated}
                   />
                   <main className="flex-1">{children}</main>
                   <Footer language={validLanguage} shopSettings={shopSettings} />
