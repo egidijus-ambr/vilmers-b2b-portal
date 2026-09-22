@@ -84,6 +84,8 @@
   "warning-no-market": "\"{{product}}\" — aucun catalogue pour le marché {{market}}",
   "no-valid-catalogues": "Aucun des produits sélectionnés n'a de catalogues disponibles",
   "merge-error-generic": "Impossible de générer le catalogue. Veuillez réessayer.",
+  "merge-limit-exceeded-hint": "La fusion prend en charge jusqu'à {{limit}} produits — les sélections plus importantes sont téléchargées sous forme de fichier zip.",
+  "download-limit-exceeded": "Sélection trop importante pour être téléchargée. Veuillez sélectionner {{limit}} produits ou moins.",
   "back": "Retour",
   "select-all": "Tout sélectionner",
   "deselect-all": "Tout désélectionner",

@@ -2,11 +2,17 @@
 
 import { useMemo, useRef, useState } from "react"
 import { X, ChevronDown } from "lucide-react"
+import { toast } from "@medusajs/ui"
 import { useTranslations } from "@lib/i18n"
 import { useRequiredCatalogBuilder } from "@lib/context/catalog-builder-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { getCustomerMarket } from "@lib/util/customer-market"
 import { sdk } from "@lib/config"
+import {
+  FurnisystemsError,
+  MAX_PRODUCTS_PER_MERGE,
+  MAX_PRODUCTS_PER_SPLIT,
+} from "@lib/furnisystems-sdk"
 import Spinner from "@modules/common/icons/spinner"
 
 type WarningKind = "no-catalogue" | "no-market"
@@ -64,9 +70,31 @@ export default function FloatingCatalogBar() {
 
   const hasWarnings = warnings.length > 0
 
+  // The backend enforces these caps per mode (pdf-lib merge is memory-heavy;
+  // zip split is not) — see MAX_PRODUCTS_PER_MERGE/SPLIT for the source of
+  // truth. Mirror them here so the UI never sends a request doomed to a 400.
+  const overMergeCap = selectedProducts.size > MAX_PRODUCTS_PER_MERGE
+  const overSplitCap = selectedProducts.size > MAX_PRODUCTS_PER_SPLIT
+  // Over the merge cap, "merge" silently can't serve this selection — fall
+  // back to "split" (which still works up to a much higher cap) without
+  // touching the user's stored preference, so it reverts automatically once
+  // the selection shrinks back under the cap.
+  const effectiveMode: "merge" | "split" = overMergeCap ? "split" : selectedMode
+
   // Download handler
   async function handleDownload() {
-    if (selectedProducts.size === 0 || isDownloading) return
+    if (
+      selectedProducts.size === 0 ||
+      isDownloading ||
+      allProductNamesLoading
+    )
+      return
+
+    if (overSplitCap) {
+      toast.error(t("download-limit-exceeded", { limit: MAX_PRODUCTS_PER_SPLIT }))
+      return
+    }
+
     setIsDownloading(true)
     try {
       const productNames = Array.from(selectedProducts)
@@ -75,19 +103,30 @@ export default function FloatingCatalogBar() {
         productNames,
         productReferences,
         market: customerMarket ?? "EN",
-        mode: selectedMode,
+        mode: effectiveMode,
         compressed,
       })
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.download = selectedMode === "split" ? "collection.zip" : "catalog.pdf"
+      link.download = effectiveMode === "split" ? "collection.zip" : "catalog.pdf"
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
     } catch (err) {
       console.error("Catalog download failed:", err)
+      // Prefer the backend's own error string (e.g. the over-cap message)
+      // when it sent one; otherwise fall back to a generic, translated
+      // message. `details` is only populated by the SDK when the backend
+      // returned a JSON body with an `error` field — a technical NetworkError
+      // (bad connection, non-JSON body, etc.) has no `details.error`.
+      const backendMessage =
+        err instanceof FurnisystemsError &&
+        typeof err.details?.error === "string"
+          ? err.details.error
+          : null
+      toast.error(backendMessage ?? t("merge-error-generic"))
     } finally {
       setIsDownloading(false)
     }
@@ -195,29 +234,66 @@ export default function FloatingCatalogBar() {
             onClick={() => setModeOpen(!modeOpen)}
             className="flex items-center gap-1 w-full justify-between small:w-auto small:justify-start px-3 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap"
           >
-            {selectedMode === "merge" ? t("merge-pages") : t("split-pages")}
+            {effectiveMode === "merge" ? t("merge-pages") : t("split-pages")}
             <ChevronDown
               className={`w-3.5 h-3.5 transition-transform ${modeOpen ? "rotate-180" : ""}`}
             />
           </button>
+
+          {/* Over-cap explanation — unconditionally visible (not hover-gated)
+              so the user isn't left guessing why merge got swapped out, or
+              why the download is blocked outright. Hidden while the dropdown
+              is open: both are absolutely positioned bottom-full off the
+              same anchor and would overlap — the disabled merge item's
+              subtext (below) carries the same message in that state. */}
+          {overMergeCap && !modeOpen && (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-[80]">
+              {overSplitCap
+                ? t("download-limit-exceeded", { limit: MAX_PRODUCTS_PER_SPLIT })
+                : t("merge-limit-exceeded-hint", { limit: MAX_PRODUCTS_PER_MERGE })}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+            </div>
+          )}
+
           {modeOpen && (
             <div className="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px] z-[80]">
-              {(["merge", "split"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => {
-                    setSelectedMode(m)
-                    setModeOpen(false)
-                  }}
-                  className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                    selectedMode === m
-                      ? "text-gold font-medium"
-                      : "text-gray-700"
-                  }`}
-                >
-                  {m === "merge" ? t("merge-pages") : t("split-pages")}
-                </button>
-              ))}
+              {(["merge", "split"] as const).map((m) => {
+                const disabled = m === "merge" && overMergeCap
+                return (
+                  <button
+                    key={m}
+                    disabled={disabled}
+                    onClick={() => {
+                      if (disabled) return
+                      setSelectedMode(m)
+                      setModeOpen(false)
+                    }}
+                    title={
+                      disabled
+                        ? t("merge-limit-exceeded-hint", {
+                            limit: MAX_PRODUCTS_PER_MERGE,
+                          })
+                        : undefined
+                    }
+                    className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                      disabled
+                        ? "text-gray-300 cursor-not-allowed"
+                        : effectiveMode === m
+                          ? "text-gold font-medium hover:bg-gray-50"
+                          : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {m === "merge" ? t("merge-pages") : t("split-pages")}
+                    {disabled && (
+                      <span className="block text-[11px] font-normal text-gray-300 normal-case">
+                        {t("merge-limit-exceeded-hint", {
+                          limit: MAX_PRODUCTS_PER_MERGE,
+                        })}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
@@ -261,9 +337,18 @@ export default function FloatingCatalogBar() {
         */}
         <button
           onClick={handleDownload}
-          disabled={selectedProducts.size === 0 || isDownloading}
+          disabled={
+            selectedProducts.size === 0 ||
+            isDownloading ||
+            allProductNamesLoading ||
+            overSplitCap
+          }
           className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-gold hover:bg-gold/90 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed small:w-9 small:h-9 small:py-0 small:rounded-full small:gap-0"
-          title={t("download")}
+          title={
+            overSplitCap
+              ? t("download-limit-exceeded", { limit: MAX_PRODUCTS_PER_SPLIT })
+              : t("download")
+          }
         >
           {isDownloading ? (
             <Spinner size="16" color="white" />

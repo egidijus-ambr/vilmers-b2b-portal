@@ -7,6 +7,14 @@ import {
 } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
 
+// Mode-specific product caps enforced by the backend. Keep these in sync
+// with MAX_PRODUCTS_PER_MERGE / MAX_PRODUCTS_PER_SPLIT in
+// furnisystems-backend/src/rest-api/routes/s3Catalogues.ts — that file is
+// the source of truth; a request over these caps is rejected there
+// regardless of what the client sends.
+export const MAX_PRODUCTS_PER_MERGE = 100
+export const MAX_PRODUCTS_PER_SPLIT = 500
+
 export class ProductCataloguesModule {
   private restApiUrl: string
 
@@ -180,6 +188,26 @@ export class ProductCataloguesModule {
       )
 
       if (!response.ok) {
+        // The backend returns a JSON body with a human-readable `error`
+        // string for deliberate failures (e.g. over the per-mode product
+        // cap — see MAX_PRODUCTS_PER_MERGE/SPLIT above). Preserve it on
+        // `details` so callers can show it instead of a generic status
+        // line; fall back to NetworkError when the body isn't JSON or
+        // doesn't carry an `error` string.
+        let data: { error?: string; [key: string]: unknown } | undefined
+        try {
+          data = await response.json()
+        } catch {
+          // Non-JSON error body — handled by the NetworkError fallback below.
+        }
+        if (data && typeof data.error === "string" && data.error.length > 0) {
+          throw new FurnisystemsError(
+            data.error,
+            undefined,
+            response.status,
+            data
+          )
+        }
         throw new NetworkError(
           `Failed to merge catalogues: ${response.status} ${response.statusText}`
         )

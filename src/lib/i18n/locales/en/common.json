@@ -85,6 +85,8 @@
   "warning-no-market": "\"{{product}}\" — no catalogue for market {{market}}",
   "no-valid-catalogues": "None of the selected products have available catalogues",
   "merge-error-generic": "Failed to generate catalogue. Please try again.",
+  "merge-limit-exceeded-hint": "Merge supports up to {{limit}} products — larger selections download as a zip.",
+  "download-limit-exceeded": "Selection too large to download. Please select {{limit}} products or fewer.",
   "select-all": "Select all",
   "deselect-all": "Deselect all",
   "download-selected": "Download selected ({{count}})",

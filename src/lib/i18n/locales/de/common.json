@@ -84,6 +84,8 @@
   "warning-no-market": "\"{{product}}\" — kein Katalog für Markt {{market}}",
   "no-valid-catalogues": "Keines der ausgewählten Produkte hat verfügbare Kataloge",
   "merge-error-generic": "Katalog konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+  "merge-limit-exceeded-hint": "Zusammenführen unterstützt bis zu {{limit}} Produkte — größere Auswahlen werden als ZIP heruntergeladen.",
+  "download-limit-exceeded": "Die Auswahl ist zu groß zum Herunterladen. Bitte wählen Sie {{limit}} Produkte oder weniger.",
   "back": "Zurück",
   "select-all": "Alle auswählen",
   "deselect-all": "Alle abwählen",
