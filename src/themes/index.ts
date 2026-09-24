@@ -196,5 +196,22 @@ export function themeToCssVars(theme: Theme): string {
   // trailing `\n` this leaves before the closing `}` is harmless CSS.
   const typographyDeclarations = typographyEntries.join("\n")
 
-  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n${layoutDeclarations}\n${radiusDeclarations}\n${typographyDeclarations}\n}`
+  // Gallery object-fit tokens (`--gallery-main-fit`/`--gallery-thumb-fit`)
+  // — same "emit only when the brand actually sets it" pattern as the
+  // heading typography tokens above: `product-image-gallery`'s own inline
+  // `var(--gallery-*-fit, cover)` fallback reproduces today's live `cover`
+  // behavior whenever this is absent, so leaving `theme.gallery` (or either
+  // field within it) unset is a visual no-op. Emitted raw (like
+  // `layoutDeclarations`/`radiusDeclarations`), NOT run through
+  // `toChannels` — these are keywords, not colors.
+  const galleryEntries: string[] = []
+  if (theme.gallery?.mainImageFit != null) {
+    galleryEntries.push(`  --gallery-main-fit: ${theme.gallery.mainImageFit};`)
+  }
+  if (theme.gallery?.thumbnailFit != null) {
+    galleryEntries.push(`  --gallery-thumb-fit: ${theme.gallery.thumbnailFit};`)
+  }
+  const galleryDeclarations = galleryEntries.join("\n")
+
+  return `:root {\n${colorDeclarations}\n${surfaceDeclarations}\n${layoutDeclarations}\n${radiusDeclarations}\n${typographyDeclarations}\n${galleryDeclarations}\n}`
 }

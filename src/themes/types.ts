@@ -62,6 +62,38 @@ export interface Theme {
    */
   typography?: ThemeTypography
   /**
+   * PDP photo gallery configuration (`product-image-gallery` — the hero +
+   * thumbnail-strip gallery on the product page). Optional at every level;
+   * absent fields fall back to today's live behavior (`cover`), so an
+   * absent `gallery` block is a visual no-op. The background color behind
+   * the gallery images is NOT here — it's `surfaces.gallery_image_background`
+   * (a color token, same primitive-or-hex convention as the rest of that
+   * tier), consistent with colors living in `surfaces` everywhere else.
+   */
+  gallery?: {
+    /**
+     * `object-fit` for the MAIN hero image — applies only to the DB
+     * ("original") product photos; the configurator/API-photo hero already
+     * always renders `contain` today and is intentionally left hardcoded
+     * (unaffected by this token). Rendered as the `--gallery-main-fit` CSS
+     * var (raw keyword, NOT a color — not run through `toChannels`) by
+     * `themeToCssVars`, consumed via an arbitrary `object-fit` CSS property
+     * with an inline `cover` fallback in `product-image-gallery`, because
+     * Tailwind 3's `objectFit` core plugin is static and ignores
+     * `theme.extend.objectFit` (unlike `borderRadius.button`/`.input`,
+     * this can't be a normal `tailwind.config.js` token). Default when
+     * absent: `"cover"` (today's live behavior).
+     */
+    mainImageFit?: "cover" | "contain"
+    /**
+     * `object-fit` for the side thumbnail cards (both the `<Image>` and
+     * `<video>` thumbnail elements). Rendered as `--gallery-thumb-fit`,
+     * same mechanism/rationale as `mainImageFit`. Default when absent:
+     * `"cover"` (today's live behavior).
+     */
+    thumbnailFit?: "cover" | "contain"
+  }
+  /**
    * Navbar/header layout configuration — lets each brand configure whether
    * the top bar shows, where the language switcher lives, where the logo
    * sits, and how tall the nav is (driven by logo size). Rendered as raw px

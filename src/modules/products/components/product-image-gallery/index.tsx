@@ -460,7 +460,7 @@ const ProductImageGallery = ({
         <div className="flex flex-col lg:flex-row lg:items-stretch gap-3">
         {/* Main image */}
         <div
-          className="relative w-full lg:flex-1 lg:min-w-0 bg-[#DCDBD8] overflow-hidden cursor-zoom-in group"
+          className="relative w-full lg:flex-1 lg:min-w-0 bg-gallery-image-background overflow-hidden cursor-zoom-in group"
           style={{ aspectRatio: "1360 / 840" }}
           onClick={() => {
             const idx = displayImages.indexOf(currentImage)
@@ -480,7 +480,7 @@ const ProductImageGallery = ({
                 src={currentImage.src}
                 className={`absolute inset-0 w-full h-full ${
                   currentImage.type === "original"
-                    ? "object-cover"
+                    ? "[object-fit:var(--gallery-main-fit,cover)]"
                     : "object-contain"
                 }`}
                 controls
@@ -495,7 +495,7 @@ const ProductImageGallery = ({
                 alt={`${productTitle} - image ${selectedIndex + 1}`}
                 fill
                 priority={selectedIndex === 0}
-                className="object-cover"
+                className="[object-fit:var(--gallery-main-fit,cover)]"
                 sizes="(max-width: 768px) 100vw, 60vw"
                 quality={85}
                 onLoad={() => setImageLoading(false)}
@@ -516,7 +516,7 @@ const ProductImageGallery = ({
               <video
                 key={images[0].src}
                 src={images[0].src}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full [object-fit:var(--gallery-main-fit,cover)]"
                 controls
                 playsInline
                 preload="metadata"
@@ -528,7 +528,7 @@ const ProductImageGallery = ({
                 alt={productTitle}
                 fill
                 priority
-                className="object-cover"
+                className="[object-fit:var(--gallery-main-fit,cover)]"
                 sizes="(max-width: 768px) 100vw, 60vw"
                 quality={85}
               />
@@ -590,7 +590,7 @@ const ProductImageGallery = ({
                   key={image.id}
                   onClick={() => setSelectedIndex(index)}
                   className={[
-                    "relative flex-shrink-0 overflow-hidden border-2 rounded-sm transition-all duration-150 bg-[#DCDBD8]",
+                    "relative flex-shrink-0 overflow-hidden border-2 rounded-sm transition-all duration-150 bg-gallery-image-background",
                     // Mobile: 4 visible at once via calc width; the rest scroll
                     // horizontally. Lg: thumb takes full column width and the
                     // parent's pinned aspect ratio yields ~4 thumbs visible
@@ -614,7 +614,7 @@ const ProductImageGallery = ({
                         muted
                         playsInline
                         preload="metadata"
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full [object-fit:var(--gallery-thumb-fit,cover)]"
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                         <svg
@@ -632,7 +632,7 @@ const ProductImageGallery = ({
                       src={image.thumbnail}
                       alt={`${productTitle} thumbnail ${index + 1}`}
                       fill
-                      className={`object-cover transition-opacity duration-500 ${
+                      className={`[object-fit:var(--gallery-thumb-fit,cover)] transition-opacity duration-500 ${
                         loadedThumbnails.has(image.thumbnail) ? "opacity-100" : "opacity-0"
                       }`}
                       style={{ transitionDelay: `${index * 100}ms` }}

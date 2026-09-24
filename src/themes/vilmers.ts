@@ -41,6 +41,12 @@ export const vilmers: Theme = {
     "white-80": "rgba(255, 255, 255, 0.8)", // #FFFFFF · 80%
     "beige-10": "#FCFBF9",
     "gray-inactive": "#F4F4F5",
+    // PDP gallery background primitive — raw hex, not part of the Figma
+    // design-system palette above (same treatment as `navy`/`navy-hover`);
+    // referenced by `surfaces.gallery_image_background` below. Matches the
+    // `bg-[#DCDBD8]` the gallery (product-image-gallery) rendered with
+    // before tokenization, so activating this surface is a visual no-op.
+    "gallery-grey": "#DCDBD8",
     // Configurator accent primitives (see `surfaces.configurator_accent*`
     // below) — raw hex, not part of the Figma design-system palette above;
     // same treatment as `gold-20` (hex, converted to RGB channels by
@@ -86,6 +92,7 @@ export const vilmers: Theme = {
     footer_foreground: "white", // footer text (headline + social icons)
     hero_background: "dark-blue", // home hero bg (shows behind/beside the capped hero photo) — hero headings are text-white, so dark-blue keeps them readable, same primitive as footer_background
     accent: "gold", // primary/gold button variant (common/components/button)
+    gallery_image_background: "gallery-grey", // PDP gallery (product-image-gallery) main-image + thumbnail-card background — matches the pre-tokenization bg-[#DCDBD8], visual no-op for Vilmers
     // Sofa configurator surfaces (see docs/superpowers/specs/2026-07-13-configurator-theme-tokens-design.md).
     // Visual no-op for Vilmers — these are the raw values the configurator
     // already rendered with (gold-20 / #1e2a3a / #2a3a4a) before tokenization.
@@ -108,6 +115,13 @@ export const vilmers: Theme = {
     circle: "9999px",
     button_radius: "circle", // → 9999px, reproduces today's pill Button
     input_radius: "none", // → 0px, square
+  },
+  // PDP gallery object-fit config (see src/themes/types.ts). Both fits
+  // reproduce today's live `object-cover` behavior for the DB/"original"
+  // hero image and the thumbnail cards — visual no-op for Vilmers.
+  gallery: {
+    mainImageFit: "cover",
+    thumbnailFit: "cover",
   },
   // Navbar/layout config (see src/themes/types.ts). These are the CURRENT
   // live values — this block is a visual no-op for Vilmers.

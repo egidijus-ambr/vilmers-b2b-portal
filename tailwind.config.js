@@ -101,6 +101,8 @@ module.exports = {
         "footer-foreground": "rgb(var(--footer-foreground) / <alpha-value>)",
         "hero-background": "rgb(var(--hero-background) / <alpha-value>)",
         accent: "rgb(var(--accent) / <alpha-value>)",
+        "gallery-image-background":
+          "rgb(var(--gallery-image-background) / <alpha-value>)",
         // Sofa configurator surfaces — see
         // docs/superpowers/specs/2026-07-13-configurator-theme-tokens-design.md
         "configurator-surface":

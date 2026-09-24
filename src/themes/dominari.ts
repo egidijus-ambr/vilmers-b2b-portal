@@ -73,11 +73,13 @@ export const dominari: Theme = {
     top_menu_foreground: "white",
     nav_background: "white",
     nav_foreground: "grey-80",
-    product_card_background: "grey-20",
+    product_card_background: "white",
     footer_background: "dark-blue",
     footer_foreground: "white",
     hero_background: "grey-90", // home hero bg — hero headings are text-white, so dark-blue (dominari's own #22232c) keeps them readable, same primitive as footer_background
     accent: "gold",
+    gallery_image_background: "white", // PDP gallery (product-image-gallery) main-image + thumbnail-card background — white, matching product_card_background rather than Vilmers's warm gallery-grey
+
     // Sofa configurator surfaces (see docs/superpowers/specs/2026-07-13-configurator-theme-tokens-design.md).
     // Surface/card use dominari's grey scale (matching product_card_background)
     // instead of the warm gold-20 the configurator hardcoded before — that was
@@ -117,6 +119,14 @@ export const dominari: Theme = {
       size: "1.75rem", // 2rem -> 1.75rem (-12.5%)
       sizeLg: "2.125rem", // 2.5rem -> 2.125rem (-15%)
     },
+  },
+  // PDP gallery object-fit config (see src/themes/types.ts) — DISTINCT from
+  // Vilmers: both the main hero image and the thumbnail cards use "fit"
+  // (contain, centered on the gallery_image_background surface above)
+  // rather than "fill" (cover) crops.
+  gallery: {
+    mainImageFit: "contain",
+    thumbnailFit: "contain",
   },
   // Navbar/layout config (see src/themes/types.ts) — DISTINCT from Vilmers,
   // used to verify the mechanism: top bar hidden, switcher moved into the
