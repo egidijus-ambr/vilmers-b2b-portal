@@ -7,6 +7,16 @@ import { getAuthHeaders } from "./cookies"
 
 const PAGE_CACHE_TAG = "cms-pages"
 
+// Bump this whenever a field is added to/removed from the pages module's
+// ContentBlockFields fragment (pages/index.ts). unstable_cache's Data Cache
+// entries below are keyed only by code/slug/path + language with no TTL
+// (tag-only revalidation via PAGE_CACHE_TAG / the /api/revalidate route,
+// fired on page edits) — a fragment change alone does NOT invalidate
+// existing entries, so a stale entry cached before a field was added would
+// serve pre-change shape forever. Changing this suffix forces fresh keys.
+// Bumped 2026-09-28 for ContentBlock.grid_product_containers.
+const CONTENT_BLOCK_SCHEMA_VERSION = "cb2"
+
 export const getPageByCode = async (
   code: string,
   language?: string
@@ -21,7 +31,7 @@ export const getPageByCode = async (
         return null
       }
     },
-    [`page-${code}-${language ?? "default"}`],
+    [`page-${code}-${language ?? "default"}-${CONTENT_BLOCK_SCHEMA_VERSION}`],
     { tags: [PAGE_CACHE_TAG] }
   )
   return cached()
@@ -41,7 +51,7 @@ export const getPageBySlug = async (
         return null
       }
     },
-    [`page-slug-${slug}-${language ?? "default"}`],
+    [`page-slug-${slug}-${language ?? "default"}-${CONTENT_BLOCK_SCHEMA_VERSION}`],
     { tags: [PAGE_CACHE_TAG] }
   )
   return cached()
@@ -61,7 +71,7 @@ export const getPageByPath = async (
         return null
       }
     },
-    [`page-path-${path}-${language}`],
+    [`page-path-${path}-${language}-${CONTENT_BLOCK_SCHEMA_VERSION}`],
     { tags: [PAGE_CACHE_TAG] }
   )
   return cached()

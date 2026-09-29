@@ -191,8 +191,12 @@ const SEARCH_PRODUCTS = gql`
 // enrichContentBlocksWithTileCategories / enrichContentBlocksWithPages, all
 // in src/lib/data/). Those hydration functions read only `config` (mode,
 // max_products, tag_ids, category_ids, page_ids, parent_id, ...) and, for
-// product_grid's manual mode, `product_containers { id }` — page_grid and
-// category_tiles need no extra selection beyond `config`, since their
+// product_grid's manual mode, `grid_product_containers { id }` — the
+// admin-ordered grid picks (backed by ContentBlockGridProduct.position).
+// This is DISTINCT from `product_containers`, which now means only "this
+// block is shown on these products' pages" and must never be used as a
+// grid-contents source. page_grid and category_tiles need no extra
+// selection beyond `config`, since their
 // `grid_pages`/`grid_tags`/`categories` are populated by a post-query
 // hydration step, not selected directly here (same as the pages fragment).
 // Deliberately NOT mirroring cta_link_page/cta_link_category/`ancestors`:
@@ -264,7 +268,7 @@ const PRODUCT_CONTENT_BLOCK_FRAGMENT = gql`
       }
     }
     config
-    product_containers {
+    grid_product_containers {
       id
     }
   }

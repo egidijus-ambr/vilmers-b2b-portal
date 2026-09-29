@@ -27,6 +27,12 @@ import Button from "@modules/common/components/button"
 import { splitSections } from "./sectionMarker"
 import { buildLinkPageHref, type CtaLike } from "./linkResolver"
 import { subscribeEmailSignup, EmailSignupState } from "@lib/data/email-signup"
+// Plain mode has no DOM-init library (unlike PageFlip below) and its
+// server-rendered <object> markup is exactly what we want in the initial
+// HTML, so it's a normal static import rather than a `dynamic(..., { ssr:
+// false })` one — code-splitting a tiny component buys nothing here, and
+// `ssr: false` would only cost a blank-then-pop instead of an immediate embed.
+import PdfPlainViewer from "./pdf-plain-viewer"
 
 // PageFlip touches the DOM at init, so the viewer must never render server-side.
 const PdfFlipbookViewer = dynamic(() => import("./pdf-flipbook-viewer"), {
@@ -118,6 +124,20 @@ export default function ContentBlock({
   // Default ON so existing uploaded videos with no stored value get controls.
   const videoControls =
     ((data.config as any)?.video_controls as boolean | undefined) ?? true
+
+  // `pdf_flipbook` render mode. Config is free-form JSON authored by the
+  // admin toggle (built in parallel by another agent) — only the exact
+  // string `'plain'` switches away from the flipbook; absent, null, or any
+  // unrecognised value (including a future/typo'd one) falls through to the
+  // existing page-flip flipbook so every already-published block, which has
+  // no `viewer_mode` key at all, is completely unaffected. `pdf_url` is
+  // similarly untrusted — coerced to `string | null` rather than cast.
+  const pdfPlainMode = (data.config as any)?.viewer_mode === "plain"
+  const plainPdfUrlRaw = (data.config as any)?.pdf_url
+  const plainPdfUrl =
+    typeof plainPdfUrlRaw === "string" && plainPdfUrlRaw.trim() !== ""
+      ? plainPdfUrlRaw
+      : null
   // Image/text width ratio for `side_by_side` & `image_left` (image:text).
   // Coerce unknown/missing values to the neutral 50/50 so the literal-class
   // lookup below always resolves to a real Tailwind class.
@@ -343,7 +363,20 @@ export default function ContentBlock({
         />
       )}
 
-      {data.type === "pdf_flipbook" && flipbook && (
+      {/* Plain mode needs only `config.pdf_url` — no server-fetched
+          manifest — so this branch sits OUTSIDE the `&& flipbook` guard
+          below. That also means it works on the four other <ContentBlock>
+          call sites (home/category/collection/product), which pass no
+          `flipbook` prop at all; that's intended. */}
+      {data.type === "pdf_flipbook" && pdfPlainMode && plainPdfUrl && (
+        <PdfPlainViewer pdfUrl={plainPdfUrl} languageCode={languageCode} />
+      )}
+
+      {/* Original flipbook branch, unchanged except for the leading
+          `!pdfPlainMode &&`: when `viewer_mode` is absent/null/unrecognised,
+          `pdfPlainMode` is `false`, so `!pdfPlainMode` is `true` and this
+          expression reduces to exactly what it was before. */}
+      {data.type === "pdf_flipbook" && !pdfPlainMode && flipbook && (
         <PdfFlipbookViewer
           pageUrls={flipbook.pageUrls}
           pageWidth={flipbook.pageWidth}

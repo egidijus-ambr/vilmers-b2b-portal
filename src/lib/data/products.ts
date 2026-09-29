@@ -191,14 +191,34 @@ export async function enrichContentBlocksWithProducts(
           blockWhere
         )
       } else if (mode === "manual") {
-        const productIds = (block.product_containers ?? []).map(
+        // `grid_product_containers` is the admin-ORDERED list of grid picks
+        // (backend ContentBlockGridProduct.position). Deliberately no
+        // fallback to `product_containers` — that field now means only
+        // "this block is shown on these products' pages". The backfill
+        // already copied every existing pick FROM product_containers INTO
+        // grid_products, so an empty grid_product_containers here is
+        // intentional; falling back to product_containers would wrongly
+        // show PDP attachments as grid contents.
+        const productIds = (block.grid_product_containers ?? []).map(
           (pc) => pc.id
         )
         if (productIds.length > 0) {
-          products = await sdk.products.getProductsByIds(
+          const fetched = await sdk.products.getProductsByIds(
             productIds,
             language,
             where
+          )
+          // findManyProductContainer(where: { id: { in: ids } }) returns rows
+          // in DB order, not admin-chosen order — reorder to match
+          // productIds. Products dropped by visibility/customer filters
+          // (present in productIds but absent from `fetched`) are simply
+          // skipped, not re-inserted.
+          const positionById = new Map(
+            productIds.map((id, index) => [id, index])
+          )
+          products = [...fetched].sort(
+            (a, b) =>
+              (positionById.get(a.id) ?? 0) - (positionById.get(b.id) ?? 0)
           )
         }
       }

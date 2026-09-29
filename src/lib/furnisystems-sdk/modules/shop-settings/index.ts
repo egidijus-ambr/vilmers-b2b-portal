@@ -184,7 +184,7 @@ export const APP_SHOP_SETTINGS = gql`
           }
         }
         config
-        product_containers {
+        grid_product_containers {
           id
         }
       }

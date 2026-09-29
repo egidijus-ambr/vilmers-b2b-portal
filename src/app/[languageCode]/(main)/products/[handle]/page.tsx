@@ -282,12 +282,14 @@ export default async function ProductPage({ params }: Props) {
   )
   contentBlocks = await enrichContentBlocksWithPages(contentBlocks, languageCode)
 
-  // Self-exclusion: `product_containers` on a product_grid block doubles as
-  // "which product pages show this block", so a manually curated grid
-  // attached to this product's own page always includes this product among
-  // its hydrated `products`. Filter it out here — PDP-only. CMS pages have
-  // no "current product" concept and must not be affected, so this stays out
-  // of enrichContentBlocksWithProducts itself.
+  // Self-exclusion: an admin can pick a product into a manual product_grid
+  // block that is ALSO attached to that same product's own PDP (via
+  // `product_containers`, which is independent of the grid picks now that
+  // grid contents live in `grid_product_containers`). When that happens the
+  // grid's hydrated `products` legitimately includes the current product —
+  // filter it out here so a PDP never shows itself in its own grid.
+  // PDP-only. CMS pages have no "current product" concept and must not be
+  // affected, so this stays out of enrichContentBlocksWithProducts itself.
   contentBlocks = contentBlocks.map((block) =>
     block.type === "product_grid" && block.products
       ? {

@@ -98,7 +98,11 @@ export interface ContentBlock {
   config?: Record<string, unknown> | null
   categories?: CategoryTileItem[]
   products?: ProductContainer[]
-  product_containers?: { id: number }[]
+  // Manual product_grid picks, ORDERED by admin-chosen position (backend
+  // `ContentBlock.grid_product_containers`, backed by `grid_products` /
+  // ContentBlockGridProduct.position). NOT the same as `product_containers`,
+  // which now means only "this block is shown on these products' pages".
+  grid_product_containers?: { id: number }[]
   grid_pages?: {
     id: string
     page_profiles: { slug: string; title: string; language: string }[]

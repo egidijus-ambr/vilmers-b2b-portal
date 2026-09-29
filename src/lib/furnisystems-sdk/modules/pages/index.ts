@@ -111,7 +111,7 @@ const CONTENT_BLOCK_FIELDS = gql`
       }
     }
     config
-    product_containers {
+    grid_product_containers {
       id
     }
   }
