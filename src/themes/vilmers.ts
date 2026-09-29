@@ -138,6 +138,9 @@ export const vilmers: Theme = {
       paddingY: 24, // navHeight = 24 + 2*24 = 72
     },
     productCard: { showCategory: true },
+    // Top-level "Overview" link in the left nav, next to Store — Vilmers-only
+    // (see src/themes/types.ts). Logged-in customers only.
+    overviewLink: { show: true },
     footer: {
       facebook: "https://lt-lt.facebook.com/vilmersuab",
       linkedin: "https://www.linkedin.com/company/vilmers-uab",

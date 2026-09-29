@@ -216,8 +216,8 @@ function mapFurnisystemsProduct(
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle, languageCode } = await params
-  const { priceListIds } = await getCustomerFilterData()
-  const product = await getProductByPermalink(handle, languageCode, priceListIds)
+  const { customerTagIds, priceListIds } = await getCustomerFilterData()
+  const product = await getProductByPermalink(handle, languageCode, priceListIds, customerTagIds)
 
   if (!product) {
     return { title: "Product Not Found" }
@@ -265,12 +265,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { handle, languageCode } = await params
-  const [{ priceListIds }, showAllProducts] = await Promise.all([
+  const [{ customerTagIds, priceListIds }, showAllProducts] = await Promise.all([
     getCustomerFilterData(),
     getShowAllProductsActive(),
   ])
   const [product, menuCategories] = await Promise.all([
-    getProductByPermalink(handle, languageCode, priceListIds),
+    getProductByPermalink(handle, languageCode, priceListIds, customerTagIds),
     listMenuCategories(languageCode),
   ])
 

@@ -211,6 +211,16 @@ export interface ThemeLayout {
   }
   /** Per-brand visibility for the category pill on B2BProductCard (category-product-card). */
   productCard: { showCategory: boolean }
+  /**
+   * Whether the left top-menu shows a top-level "Overview" link (same
+   * href/label as the account dropdown's Overview item) right after the
+   * first nav item. Optional — absent/omitted means `false` (today's live
+   * behavior, a visual no-op for any brand that doesn't set it). Read as
+   * `activeTheme.layout.overviewLink?.show ?? false` in `nav/index.tsx`.
+   * Only ever rendered for logged-in customers (mirrors the account
+   * dropdown's own `!customer` guard) — the overview page is account-only.
+   */
+  overviewLink?: { show: boolean }
   /** Footer links; each link is hidden when its value is absent/empty. */
   footer?: {
     variant?: "full" | "compact" // defaults to "full" when omitted

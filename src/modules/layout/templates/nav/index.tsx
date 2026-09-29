@@ -15,6 +15,7 @@ import GoToConfiguratorToggle from "@modules/layout/components/go-to-configurato
 import SearchModal from "@modules/search/components/search-modal"
 import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
 import { buildNavigationFromSettings } from "@modules/layout/config/navigation-db"
+import type { MenuItem } from "@modules/layout/components/nav-menu-item"
 import type { CategoryData } from "@lib/furnisystems-sdk"
 import {
   supportedLanguages,
@@ -64,7 +65,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   // previously produced a solid white rectangle instead of a white wordmark.
   const whiteLogoSrc = shopSettings?.footer_logo_image?.src
 
-  const { topBar, backButton, searchButton, homepageHeader, languageSwitcher, logo } =
+  const { topBar, backButton, searchButton, homepageHeader, languageSwitcher, logo, overviewLink } =
     activeTheme.layout
 
   useEffect(() => {
@@ -137,6 +138,36 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
       ? storeOnlyItems
       : menuItems
     : menuItems
+
+  // Desktop-only top-level "Overview" link — theme-gated
+  // (`layout.overviewLink.show`, see src/themes/types.ts) and account-only:
+  // guests never see it, mirroring the account dropdown's own `!customer`
+  // guard (AccountDropdown returns nothing when `customer` is falsy). Reuses
+  // the dropdown's own href/label — no new translation string. Inserted
+  // right after the Store item (matched by the same stable `isStoreLink`
+  // flag the logo-left trim above uses, not by array position, since a
+  // DB-authored nav's item order isn't guaranteed); if no item is flagged
+  // Store, it falls back to right after the first item, and to the end if
+  // the menu is empty. Deliberately NOT added to `navMenuItems` itself:
+  // that array also feeds `MobileMenu` below, whose drawer already has its
+  // own unconditional Overview row in the account section — adding it here
+  // too would duplicate it there.
+  const desktopNavMenuItems = (() => {
+    if (!isLoggedIn || !overviewLink?.show) return navMenuItems
+    const overviewItem: MenuItem = {
+      id: "nav-overview",
+      label: t("overview"),
+      type: "link",
+      href: "/account",
+    }
+    const storeIndex = navMenuItems.findIndex((i) => i.isStoreLink)
+    const insertAt = storeIndex >= 0 ? storeIndex + 1 : Math.min(1, navMenuItems.length)
+    return [
+      ...navMenuItems.slice(0, insertAt),
+      overviewItem,
+      ...navMenuItems.slice(insertAt),
+    ]
+  })()
 
   // Logo — shared between the "center" cluster and the "left" cluster (see
   // `logo.position` below). Transparent state: prefer the already-white
@@ -255,7 +286,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
             {!isLogoLeft && (
               <div className="hidden small:flex items-center h-full">
                 <NavMenu
-                  menuItems={navMenuItems}
+                  menuItems={desktopNavMenuItems}
                   isHomePage={isTransparent}
                   isInteractive={isClient && isReady}
                 />
@@ -277,7 +308,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
             {isLogoLeft && (
               <div className="hidden small:flex items-center h-full">
                 <NavMenu
-                  menuItems={navMenuItems}
+                  menuItems={desktopNavMenuItems}
                   isHomePage={isTransparent}
                   isInteractive={isClient && isReady}
                 />

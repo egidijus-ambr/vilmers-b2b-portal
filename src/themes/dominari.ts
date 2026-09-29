@@ -144,6 +144,12 @@ export const dominari: Theme = {
       paddingY: 20, // navHeight = 40 + 2*24 = 88
     },
     productCard: { showCategory: false },
+    // Top-level "Overview" link disabled for Dominari — Vilmers-only for now
+    // (see src/themes/types.ts). Note: if this were ever flipped on here,
+    // it would still render correctly under the logo-left Store-only trim
+    // (nav/index.tsx derives the Overview insertion from the ALREADY-trimmed
+    // list, so it'd render as `[Store, Overview]`), not get silently dropped.
+    overviewLink: { show: false },
     footer: {
       variant: "compact",
       facebook: "https://www.facebook.com/dominarigrupe/",

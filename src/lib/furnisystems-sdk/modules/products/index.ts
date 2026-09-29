@@ -280,6 +280,7 @@ const GET_PRODUCT_BY_PERMALINK = gql`
   query GetProductByPermalink(
     $where: ProductContainerWhereInput!
     $language: Language
+    $linkedWhere: LinkedProductWhereInput
   ) {
     findFirstProductContainer(where: $where) {
       id
@@ -458,7 +459,10 @@ const GET_PRODUCT_BY_PERMALINK = gql`
           }
         }
       }
-      linked_products_as_source(orderBy: [{ display_order: asc }]) {
+      linked_products_as_source(
+        where: $linkedWhere
+        orderBy: [{ display_order: asc }]
+      ) {
         link_type
         display_order
         target_product {
@@ -1294,7 +1298,8 @@ export class ProductsModule {
   async getProductByPermalink(
     permalink: string,
     language?: string,
-    priceListIds?: number[]
+    priceListIds?: number[],
+    customerTagIds?: number[]
   ): Promise<FurnisystemsProductDetail | null> {
     // Raw GraphQL response type (permalink nested under meta_information)
     type RawProfile = {
@@ -1523,8 +1528,27 @@ export class ProductsModule {
       where = { AND: [permalinkFilter, priceListFilter] }
     }
 
-    console.log("=========>")
-    console.dir(where, { depth: 0 })
+    // Linked products ("linked_products_as_source") must be admitted with
+    // the exact same rules as category listings / content-block grids
+    // (language profile, customer/anonymous tag allow-list, price-list
+    // admission incl. the main-group rule) PLUS visible: true — findMany-
+    // style relation fields don't enforce visibility server-side on their
+    // own (see getNewestProducts/getProductsByIds). Only built when we have
+    // a language to resolve profiles against — `lang` being undefined would
+    // otherwise coerce to "" inside buildWhereFilter's Language-enum
+    // comparisons and fail the whole query's GraphQL validation.
+    const linkedWhere = lang
+      ? {
+          target_product: {
+            is: {
+              AND: [
+                this.buildWhereFilter(lang, customerTagIds, priceListIds),
+                { visible: { equals: true } },
+              ],
+            },
+          },
+        }
+      : undefined
 
     try {
       const response = await this.client.query<RawResponse>(
@@ -1533,6 +1557,7 @@ export class ProductsModule {
           variables: {
             where,
             ...(lang ? { language: lang } : {}),
+            linkedWhere,
           },
           fetchPolicy: "no-cache",
           errorPolicy: "all",

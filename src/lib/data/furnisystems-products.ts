@@ -4,10 +4,11 @@ import { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/product
 export const getProductByPermalink = async (
   permalink: string,
   language?: string,
-  priceListIds?: number[]
+  priceListIds?: number[],
+  customerTagIds?: number[]
 ): Promise<FurnisystemsProductDetail | null> => {
   try {
-    return await sdk.products.getProductByPermalink(permalink, language, priceListIds)
+    return await sdk.products.getProductByPermalink(permalink, language, priceListIds, customerTagIds)
   } catch (error) {
     console.error(`Error fetching product by permalink "${permalink}":`, error)
     return null
