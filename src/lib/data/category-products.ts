@@ -56,7 +56,11 @@ export async function getAllCategoryProductNames(
   sortBy: string,
   attrIds: number[],
   catIds: number[]
-): Promise<{ names: string[]; totalCount: number }> {
+): Promise<{
+  names: string[]
+  products: { id: number; name: string }[]
+  totalCount: number
+}> {
   // Build filter based on customer tags and price lists
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
   const where = sdk.products.buildWhereFilter(language, customerTagIds, priceListIds)
@@ -84,6 +88,7 @@ export async function getAllCategoryProductNames(
 
   return {
     names: result.names,
+    products: result.products ?? [],
     totalCount: result.totalCount,
   }
 }

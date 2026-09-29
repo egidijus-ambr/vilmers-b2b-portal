@@ -1,3 +1,7 @@
+/**
+ * One catalogue PDF attached to a product container (a ProductFile row on the
+ * backend). Served by /product-files/catalogues, keyed by product container id.
+ */
 export interface CatalogueFile {
   url: string
   filename: string
@@ -6,44 +10,20 @@ export interface CatalogueFile {
 }
 
 export interface ProductCataloguesResponse {
-  productName: string
+  productContainerId: number
   catalogues: CatalogueFile[]
   count: number
-  fromCache: boolean
 }
 
 export interface BatchProductCataloguesResponse {
+  /** Keyed by product container id (stringified by JSON). */
   products: Record<string, { catalogues: CatalogueFile[]; count: number }>
   totalCount: number
-  fromCache: boolean
-}
-
-export interface CatalogueCacheStatus {
-  lastSync: string | null
-  totalKeys: number
-  productCount: number
-  isHealthy: boolean
-}
-
-export interface CatalogueCacheStatusResponse {
-  cache: CatalogueCacheStatus
-  timestamp: string
-}
-
-export interface CatalogueCachePopulateStats {
-  totalCached: number
-  skipped: number
-}
-
-export interface CatalogueCachePopulateResponse {
-  message: string
-  stats: CatalogueCachePopulateStats
-  status: CatalogueCacheStatus
 }
 
 export interface MergeCataloguesRequest {
-  productNames: string[]
-  productReferences?: (string | null | undefined)[]
+  /** Product container ids, in the order the output should follow. */
+  productIds: number[]
   market: string
   mode?: "merge" | "split"
   compressed?: boolean

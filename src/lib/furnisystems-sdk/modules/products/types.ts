@@ -79,6 +79,8 @@ export interface CategoryProductsResponse {
 
 export interface CategoryProductNamesResponse {
   names: string[]
+  /** Same products as `names`, with container ids (names are not unique). */
+  products: { id: number; name: string }[]
   totalCount: number
 }
 
@@ -233,8 +235,11 @@ export interface FurnisystemsProductDetail {
     }[]
     additional_component_to_advanced_product?: ProductComponentAssociation[] | null
   } | null
+  /** m2m categories — only `code` is selected (scopes the PDP S3 photos). */
+  categories?: { code: string | null }[] | null
   primary_category: {
     id: number
+    code?: string | null
     is_root_category?: boolean
     category_profiles: {
       name: string

@@ -1,45 +1,39 @@
 import {
   ProductCataloguesResponse,
   BatchProductCataloguesResponse,
-  CatalogueCacheStatusResponse,
-  CatalogueCachePopulateResponse,
   MergeCataloguesRequest,
 } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
 
 // Mode-specific product caps enforced by the backend. Keep these in sync
 // with MAX_PRODUCTS_PER_MERGE / MAX_PRODUCTS_PER_SPLIT in
-// furnisystems-backend/src/rest-api/routes/s3Catalogues.ts — that file is
+// furnisystems-backend/src/rest-api/routes/productFileCatalogues.ts — that file is
 // the source of truth; a request over these caps is rejected there
 // regardless of what the client sends.
 export const MAX_PRODUCTS_PER_MERGE = 100
 export const MAX_PRODUCTS_PER_SPLIT = 500
 
 export class ProductCataloguesModule {
-  private restApiUrl: string
+  /** Base URL of the backend catalogue routes (ProductFile-backed). */
+  private cataloguesUrl: string
 
   constructor(restApiUrl: string) {
-    this.restApiUrl = restApiUrl
+    this.cataloguesUrl = `${restApiUrl}/product-files/catalogues`
   }
 
   /**
-   * Get catalogues for a specific product
+   * Get the catalogues attached to one product container.
    */
   async getProductCatalogues(
-    productName: string,
-    reference?: string | null
+    productContainerId: number
   ): Promise<ProductCataloguesResponse> {
     try {
-      const refQuery =
-        typeof reference === "string" && reference.length > 0
-          ? `?reference=${encodeURIComponent(reference)}`
-          : ""
       const response = await fetch(
-        `${this.restApiUrl}/s3/product-catalogues/${encodeURIComponent(
-          productName
-        )}${refQuery}`,
+        `${this.cataloguesUrl}/product/${encodeURIComponent(
+          String(productContainerId)
+        )}`,
         {
-          // Catalogue listings change rarely — avoid an uncached fetch on
+          // Catalogue attachments change rarely — avoid an uncached fetch on
           // every product page request.
           next: { revalidate: 3600 },
         }
@@ -58,7 +52,7 @@ export class ProductCataloguesModule {
         throw error
       }
       throw new NetworkError(
-        `Failed to fetch product catalogues for ${productName}: ${
+        `Failed to fetch product catalogues for product ${productContainerId}: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       )
@@ -66,32 +60,16 @@ export class ProductCataloguesModule {
   }
 
   /**
-   * Get catalogues for multiple products in a single request
+   * Get catalogues for several product containers in a single request
+   * (backend caps this at MAX_PRODUCTS_PER_LISTING = 500 ids).
    */
   async getBatchProductCatalogues(
-    names: string[],
-    references?: (string | null | undefined)[]
+    productContainerIds: number[]
   ): Promise<BatchProductCataloguesResponse> {
-    if (Array.isArray(references) && references.length !== names.length) {
-      throw new FurnisystemsError(
-        `getBatchProductCatalogues: references length (${references.length}) does not match names length (${names.length}). The two arrays must be positionally aligned.`
-      )
-    }
     try {
-      const query = names.map((n) => encodeURIComponent(n)).join(",")
-      // Preserve positional alignment with `names` so backend can pair entries
-      const hasAnyReference =
-        Array.isArray(references) &&
-        references.some((r) => typeof r === "string" && r.length > 0)
-      const referencesQuery = hasAnyReference
-        ? `&references=${(references as (string | null | undefined)[])
-            .map((r) =>
-              typeof r === "string" && r.length > 0 ? encodeURIComponent(r) : ""
-            )
-            .join(",")}`
-        : ""
+      const query = productContainerIds.map((id) => String(id)).join(",")
       const response = await fetch(
-        `${this.restApiUrl}/s3/product-catalogues?names=${query}${referencesQuery}`
+        `${this.cataloguesUrl}?ids=${encodeURIComponent(query)}`
       )
 
       if (!response.ok) {
@@ -115,77 +93,15 @@ export class ProductCataloguesModule {
   }
 
   /**
-   * Populate the catalogue cache
-   */
-  async populateCache(): Promise<CatalogueCachePopulateResponse> {
-    try {
-      const response = await fetch(
-        `${this.restApiUrl}/s3/product-catalogues/cache/populate`,
-        { method: "POST" }
-      )
-
-      if (!response.ok) {
-        throw new NetworkError(
-          `Failed to populate catalogue cache: ${response.status} ${response.statusText}`
-        )
-      }
-
-      const data: CatalogueCachePopulateResponse = await response.json()
-      return data
-    } catch (error) {
-      if (error instanceof FurnisystemsError) {
-        throw error
-      }
-      throw new NetworkError(
-        `Failed to populate catalogue cache: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      )
-    }
-  }
-
-  /**
-   * Get the current cache status
-   */
-  async getCacheStatus(): Promise<CatalogueCacheStatusResponse> {
-    try {
-      const response = await fetch(
-        `${this.restApiUrl}/s3/product-catalogues/cache/status`
-      )
-
-      if (!response.ok) {
-        throw new NetworkError(
-          `Failed to fetch catalogue cache status: ${response.status} ${response.statusText}`
-        )
-      }
-
-      const data: CatalogueCacheStatusResponse = await response.json()
-      return data
-    } catch (error) {
-      if (error instanceof FurnisystemsError) {
-        throw error
-      }
-      throw new NetworkError(
-        `Failed to fetch catalogue cache status: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      )
-    }
-  }
-
-  /**
    * Merge catalogues for multiple products into a single PDF
    */
   async mergeCatalogues(params: MergeCataloguesRequest): Promise<Blob> {
     try {
-      const response = await fetch(
-        `${this.restApiUrl}/s3/product-catalogues/merge`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(params),
-        }
-      )
+      const response = await fetch(`${this.cataloguesUrl}/merge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      })
 
       if (!response.ok) {
         // The backend returns a JSON body with a human-readable `error`
@@ -220,33 +136,6 @@ export class ProductCataloguesModule {
       }
       throw new NetworkError(
         `Failed to merge catalogues: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      )
-    }
-  }
-
-  /**
-   * Clear the catalogue cache
-   */
-  async clearCache(): Promise<void> {
-    try {
-      const response = await fetch(
-        `${this.restApiUrl}/s3/product-catalogues/cache/clear`,
-        { method: "DELETE" }
-      )
-
-      if (!response.ok) {
-        throw new NetworkError(
-          `Failed to clear catalogue cache: ${response.status} ${response.statusText}`
-        )
-      }
-    } catch (error) {
-      if (error instanceof FurnisystemsError) {
-        throw error
-      }
-      throw new NetworkError(
-        `Failed to clear catalogue cache: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       )

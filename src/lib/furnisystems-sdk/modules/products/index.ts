@@ -405,8 +405,15 @@ const GET_PRODUCT_BY_PERMALINK = gql`
           }
         }
       }
+      # Category codes scope the PDP S3 photo lookup: product names are not
+      # unique ("PURE FLOW" is both a bed and a pet bed), the category folder
+      # in the S3 tree is. See interior-gallery-section.
+      categories {
+        code
+      }
       primary_category {
         id
+        code
         is_root_category
         category_profiles(where: { language: { equals: $language } }) {
           name
@@ -476,6 +483,10 @@ const GET_CATEGORY_PRODUCT_NAMES = gql`
       selectedCategoryIds: $selectedCategoryIds
     ) {
       names
+      products {
+        id
+        name
+      }
       totalCount
     }
   }
@@ -1105,6 +1116,7 @@ export class ProductsModule {
       )
       return {
         names: [],
+        products: [],
         totalCount: 0,
       }
     }
@@ -1394,8 +1406,10 @@ export class ProductsModule {
               }[]
             | null
         } | null
+        categories?: { code: string | null }[] | null
         primary_category: {
           id: number
+          code?: string | null
           is_root_category?: boolean
           category_profiles: {
             name: string

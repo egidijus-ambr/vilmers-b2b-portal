@@ -15,9 +15,15 @@ import { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/
 // Types
 // ---------------------------------------------------------------------------
 
+/**
+ * A product as the catalogue builder addresses it. `id` is the product
+ * container id and is the ONLY key: names are not unique (e.g. the PURE FLOW
+ * bed and the PURE FLOW pet bed), so keying by name merged their catalogues
+ * and their selection state. `name` is for display only.
+ */
 export interface ProductRef {
+  id: number
   name: string
-  reference?: string | null
 }
 
 interface CatalogBuilderContextType {
@@ -25,26 +31,26 @@ interface CatalogBuilderContextType {
   pageProducts: ProductRef[]
   setPageProducts: (items: ProductRef[]) => void
 
-  // All product names across all pages (loaded on demand)
-  allProductNames: string[]
+  // All products across all pages (loaded on demand)
+  allProducts: ProductRef[]
   allProductNamesLoading: boolean
 
   // Filter tracking — resets state when filters change
   filterKey: string
   setFilterKey: (key: string) => void
 
-  // Catalogue availability (incrementally built)
-  catalogueMap: Record<string, CatalogueFile[]>
+  // Catalogue availability keyed by product container id (incrementally built)
+  catalogueMap: Record<number, CatalogueFile[]>
   catalogueLoading: boolean
 
-  // Reference lookup keyed by product name (for callers building merge requests)
-  referenceByName: Record<string, string | undefined>
+  // Display names keyed by product container id (for warnings / labels)
+  nameById: Record<number, string>
 
-  // Selection state (persists across page navigation)
+  // Selection state (persists across page navigation), product container ids
   selectionMode: boolean
   toggleSelectionMode: () => void
-  selectedProducts: Set<string>
-  toggleProduct: (name: string) => void
+  selectedProducts: Set<number>
+  toggleProduct: (productId: number) => void
   selectAll: () => Promise<void>
   deselectAll: () => void
 }
@@ -61,53 +67,45 @@ const CatalogBuilderContext = createContext<
 // Helpers
 // ---------------------------------------------------------------------------
 
-const BATCH_SIZE = 50
+// Ids per batch request (backend cap is MAX_PRODUCTS_PER_LISTING = 500).
+const BATCH_SIZE = 200
 
-async function fetchCataloguesForRefs(
-  items: ProductRef[],
-  existing: Record<string, CatalogueFile[]>,
-  fetchedReferences: Record<string, string | null>
-): Promise<{
-  catalogueMap: Record<string, CatalogueFile[]>
-  fetchedReferenceByName: Record<string, string | null>
-}> {
-  // Fetch names we don't have, plus names whose stored reference differs from
-  // the now-known reference (refresh stale entries)
-  const newItems = items.filter((it) => {
-    const incomingRef = it.reference ?? null
-    if (!(it.name in existing)) return true
-    const fetchedRef = fetchedReferences[it.name] ?? null
-    return fetchedRef !== incomingRef
-  })
-  if (newItems.length === 0) {
-    return { catalogueMap: existing, fetchedReferenceByName: fetchedReferences }
-  }
+async function fetchCataloguesForIds(
+  ids: number[],
+  existing: Record<number, CatalogueFile[]>
+): Promise<Record<number, CatalogueFile[]>> {
+  const newIds = Array.from(new Set(ids)).filter((id) => !(id in existing))
+  if (newIds.length === 0) return existing
 
   const mergedMap = { ...existing }
-  const mergedRefs = { ...fetchedReferences }
 
-  // Batch in groups of 50 (backend limit)
-  for (let i = 0; i < newItems.length; i += BATCH_SIZE) {
-    const batch = newItems.slice(i, i + BATCH_SIZE)
-    const names = batch.map((it) => it.name)
-    const references = batch.map((it) => it.reference ?? undefined)
+  for (let i = 0; i < newIds.length; i += BATCH_SIZE) {
+    const batch = newIds.slice(i, i + BATCH_SIZE)
     try {
-      const data = await sdk.productCatalogues.getBatchProductCatalogues(
-        names,
-        references
-      )
-      for (const [name, entry] of Object.entries(data.products)) {
-        mergedMap[name] = entry.catalogues
-      }
-      for (const it of batch) {
-        mergedRefs[it.name] = it.reference ?? null
+      const data = await sdk.productCatalogues.getBatchProductCatalogues(batch)
+      for (const id of batch) {
+        mergedMap[id] = data.products[String(id)]?.catalogues ?? []
       }
     } catch (err) {
       console.error("Failed to fetch catalogues for batch:", err)
     }
   }
 
-  return { catalogueMap: mergedMap, fetchedReferenceByName: mergedRefs }
+  return mergedMap
+}
+
+function mergeNames(
+  prev: Record<number, string>,
+  items: ProductRef[]
+): Record<number, string> {
+  let next = prev
+  for (const it of items) {
+    if (next[it.id] !== it.name) {
+      if (next === prev) next = { ...prev }
+      next[it.id] = it.name
+    }
+  }
+  return next
 }
 
 // ---------------------------------------------------------------------------
@@ -124,34 +122,23 @@ export function CatalogBuilderProvider({
 
   // Page products
   const [pageProducts, setPageProductsState] = useState<ProductRef[]>([])
-  const [allProductNames, setAllProductNames] = useState<string[]>([])
+  const [allProducts, setAllProducts] = useState<ProductRef[]>([])
   const [allProductNamesLoading, setAllProductNamesLoading] = useState(false)
 
-  // Catalogue map — grows incrementally
+  // Catalogue map — grows incrementally, keyed by product container id
   const [catalogueMap, setCatalogueMap] = useState<
-    Record<string, CatalogueFile[]>
+    Record<number, CatalogueFile[]>
   >({})
-  const catalogueMapRef = useRef<Record<string, CatalogueFile[]>>({})
+  const catalogueMapRef = useRef<Record<number, CatalogueFile[]>>({})
   catalogueMapRef.current = catalogueMap
   const [catalogueLoading, setCatalogueLoading] = useState(false)
 
-  // Tracks the reference value used the last time each name was fetched
-  // (`null` = fetched without reference). Lets us detect when a previously
-  // cached entry was fetched against a stale/missing reference and needs refresh.
-  const [fetchedReferenceByName, setFetchedReferenceByName] = useState<
-    Record<string, string | null>
-  >({})
-  const fetchedReferenceByNameRef = useRef<Record<string, string | null>>({})
-  fetchedReferenceByNameRef.current = fetchedReferenceByName
-
-  // Reference lookup keyed by name — merged from every page that loads
-  const [referenceByName, setReferenceByName] = useState<
-    Record<string, string | undefined>
-  >({})
+  // Display names keyed by id — merged from every page that loads
+  const [nameById, setNameById] = useState<Record<number, string>>({})
 
   // Selection
   const [selectionMode, setSelectionMode] = useState(false)
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(
+  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
     new Set()
   )
 
@@ -166,11 +153,10 @@ export function CatalogBuilderProvider({
     setFilterKeyState((prev) => {
       if (prev === key) return prev
       filterVersionRef.current++
-      setAllProductNames([])
+      setAllProducts([])
       setSelectedProducts(new Set())
       setCatalogueMap({})
-      setFetchedReferenceByName({})
-      setReferenceByName({})
+      setNameById({})
       setSelectionMode(false)
       return key
     })
@@ -179,18 +165,7 @@ export function CatalogBuilderProvider({
   // --- Page products setter: triggers incremental catalogue fetch ---
   const setPageProducts = useCallback((items: ProductRef[]) => {
     setPageProductsState(items)
-    setReferenceByName((prev) => {
-      const next = { ...prev }
-      let changed = false
-      for (const it of items) {
-        const ref = it.reference ?? undefined
-        if (ref !== undefined && next[it.name] !== ref) {
-          next[it.name] = ref
-          changed = true
-        }
-      }
-      return changed ? next : prev
-    })
+    setNameById((prev) => mergeNames(prev, items))
   }, [])
 
   // Fetch catalogues for current page products when they change
@@ -200,15 +175,12 @@ export function CatalogBuilderProvider({
 
     const run = async () => {
       setCatalogueLoading(true)
-      const { catalogueMap: updatedMap, fetchedReferenceByName: updatedRefs } =
-        await fetchCataloguesForRefs(
-          pageProducts,
-          catalogueMapRef.current,
-          fetchedReferenceByNameRef.current
-        )
+      const updatedMap = await fetchCataloguesForIds(
+        pageProducts.map((p) => p.id),
+        catalogueMapRef.current
+      )
       if (!cancelled) {
         setCatalogueMap(updatedMap)
-        setFetchedReferenceByName(updatedRefs)
         setCatalogueLoading(false)
       }
     }
@@ -226,35 +198,35 @@ export function CatalogBuilderProvider({
     setSelectionMode((prev) => {
       if (prev) {
         setSelectedProducts(new Set())
-        setAllProductNames([])
+        setAllProducts([])
       }
       return !prev
     })
   }, [])
 
-  const toggleProduct = useCallback((name: string) => {
+  const toggleProduct = useCallback((productId: number) => {
     setSelectedProducts((prev) => {
       const next = new Set(prev)
-      if (next.has(name)) {
-        next.delete(name)
+      if (next.has(productId)) {
+        next.delete(productId)
       } else {
-        next.add(name)
+        next.add(productId)
       }
       return next
     })
   }, [])
 
-  // --- Select all: fetches all product names + their catalogues ---
+  // --- Select all: fetches all products (with ids) + their catalogues ---
   const selectAll = useCallback(async () => {
     if (selectAllInProgress.current) return
     selectAllInProgress.current = true
     const version = filterVersionRef.current
 
     try {
-      let names = allProductNames
+      let products = allProducts
 
-      // If we haven't fetched all names yet, fetch them
-      if (names.length === 0) {
+      // If we haven't fetched all products yet, fetch them
+      if (products.length === 0) {
         setAllProductNamesLoading(true)
         try {
           const [permalink, attrs, sort, cats] = filterKey.split("|")
@@ -273,9 +245,9 @@ export function CatalogBuilderProvider({
           )
           if (res.ok) {
             const data = await res.json()
-            names = data.names ?? []
+            products = Array.isArray(data.products) ? data.products : []
             if (filterVersionRef.current !== version) return
-            setAllProductNames(names)
+            setAllProducts(products)
           }
         } catch (err) {
           console.error("Failed to fetch all product names:", err)
@@ -284,51 +256,28 @@ export function CatalogBuilderProvider({
         }
       }
 
-      if (names.length === 0 || filterVersionRef.current !== version) return
+      if (products.length === 0 || filterVersionRef.current !== version) return
 
-      // Fetch catalogues for all names — selectAll lacks reference info, so
-      // entries already known via referenceByName get reused, others fall back
-      // to undefined which the SDK treats as name-only lookup
+      setNameById((prev) => mergeNames(prev, products))
+
       setCatalogueLoading(true)
-      const items: ProductRef[] = names.map((name) => ({
-        name,
-        reference: referenceByName[name],
-      }))
-      const { catalogueMap: updated, fetchedReferenceByName: updatedRefs } =
-        await fetchCataloguesForRefs(
-          items,
-          catalogueMapRef.current,
-          fetchedReferenceByNameRef.current
-        )
+      const updated = await fetchCataloguesForIds(
+        products.map((p) => p.id),
+        catalogueMapRef.current
+      )
       if (filterVersionRef.current !== version) return
       setCatalogueMap(updated)
-      setFetchedReferenceByName(updatedRefs)
       setCatalogueLoading(false)
 
-      // Merge any newly-known references into the lookup
-      setReferenceByName((prev) => {
-        const next = { ...prev }
-        let changed = false
-        for (const it of items) {
-          const ref = it.reference ?? undefined
-          if (ref !== undefined && next[it.name] !== ref) {
-            next[it.name] = ref
-            changed = true
-          }
-        }
-        return changed ? next : prev
-      })
-
       // Select all that have catalogues
-      const withCatalogues = names.filter(
-        (name) => (updated[name] ?? []).length > 0
-      )
+      const withCatalogues = products
+        .map((p) => p.id)
+        .filter((id) => (updated[id] ?? []).length > 0)
       setSelectedProducts(new Set(withCatalogues))
     } finally {
       selectAllInProgress.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allProductNames, filterKey, referenceByName])
+  }, [allProducts, filterKey])
 
   const deselectAll = useCallback(() => {
     setSelectedProducts(new Set())
@@ -339,13 +288,13 @@ export function CatalogBuilderProvider({
       value={{
         pageProducts,
         setPageProducts,
-        allProductNames,
+        allProducts,
         allProductNamesLoading,
         filterKey,
         setFilterKey,
         catalogueMap,
         catalogueLoading,
-        referenceByName,
+        nameById,
         selectionMode,
         toggleSelectionMode,
         selectedProducts,

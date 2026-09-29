@@ -47,7 +47,8 @@ export default async function CategoryProductGrid({
     catIds
   )
 
-  // Extract product name + reference pairs for the CatalogBuilderProvider batch lookup.
+  // Extract product container id + display name for the CatalogBuilderProvider.
+  // Catalogues and selection are keyed by id; the name is display-only.
   // Mirrors the name resolution logic in B2BProductCard / extractProductDisplayData.
   const productRefs = products
     .map((container) => {
@@ -57,14 +58,14 @@ export default async function CategoryProductGrid({
           profiles?.find((p) => p.language === language)?.name ??
           profiles?.[0]?.name ??
           ""
-        return { name, reference: container.reference ?? null }
+        return { id: container.id, name }
       }
       const profiles = container.single_product?.product_profiles
       const name =
         profiles?.find((p) => p.language === language)?.name ??
         profiles?.[0]?.name ??
         ""
-      return { name, reference: container.reference ?? null }
+      return { id: container.id, name }
     })
     .filter((p) => Boolean(p.name))
 

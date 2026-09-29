@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result)
   } catch (error) {
     console.error("Failed to fetch category product names:", error)
-    return NextResponse.json({ names: [], totalCount: 0 }, { status: 500 })
+    return NextResponse.json(
+      { names: [], products: [], totalCount: 0 },
+      { status: 500 }
+    )
   }
 }

@@ -51,6 +51,19 @@ function mapFurnisystemsProduct(
 
   const profile = profiles[0]
 
+  // Category codes that scope the S3 photo lookup (strict, no fallback):
+  // unique non-empty codes of the m2m categories plus the primary category.
+  const photoCategoryCodes = Array.from(
+    new Set(
+      [
+        ...(container.categories ?? []).map((c) => c.code),
+        container.primary_category?.code,
+      ]
+        .map((code) => code?.trim())
+        .filter((code): code is string => !!code)
+    )
+  )
+
   const child = container.advanced_product ?? container.single_product
   const galleryImages = child?.gallery_photos?.length
     ? child.gallery_photos
@@ -186,6 +199,7 @@ function mapFurnisystemsProduct(
     description: profile?.description ?? null,
     images: galleryImages,
     productName: profile?.name ?? null,
+    photoCategoryCodes,
     breadcrumbs,
     features,
     catalogues,
@@ -299,17 +313,9 @@ export default async function ProductPage({ params }: Props) {
       : block
   )
 
-  // Catalogues are keyed by the FULL profile name (the same value as
-  // `productName`) plus the container reference.
-  const isAdvanced = product.type === "ADVANCED_PRODUCT" || !!product.advanced_product
-  const catalogueProfiles = isAdvanced
-    ? product.advanced_product?.advanced_product_profiles ?? []
-    : product.single_product?.product_profiles ?? []
-  const catalogueProductName = catalogueProfiles[0]?.name ?? null
-
-  const catalogues = catalogueProductName
-    ? await getProductCatalogues(catalogueProductName, product.reference)
-    : []
+  // Only the catalogue PDFs attached to THIS product container (its
+  // ProductFile rows) - never looked up by name, which is not unique.
+  const catalogues = await getProductCatalogues(product.id)
 
   const productData = mapFurnisystemsProduct(
     product,

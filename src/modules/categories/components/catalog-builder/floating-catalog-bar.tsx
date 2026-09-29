@@ -18,6 +18,7 @@ import Spinner from "@modules/common/icons/spinner"
 type WarningKind = "no-catalogue" | "no-market"
 
 interface ProductWarning {
+  productId: number
   product: string
   kind: WarningKind
 }
@@ -33,7 +34,7 @@ export default function FloatingCatalogBar() {
     deselectAll,
     catalogueMap,
     allProductNamesLoading,
-    referenceByName,
+    nameById,
   } = useRequiredCatalogBuilder()
 
   const { customer } = useCustomer()
@@ -50,23 +51,24 @@ export default function FloatingCatalogBar() {
   // Validation warnings for selected products
   const warnings = useMemo<ProductWarning[]>(() => {
     const result: ProductWarning[] = []
-    for (const product of Array.from(selectedProducts)) {
-      const files = catalogueMap[product] ?? []
+    for (const productId of Array.from(selectedProducts)) {
+      const product = nameById[productId] ?? String(productId)
+      const files = catalogueMap[productId] ?? []
       if (files.length === 0) {
         // Skip warnings for products whose catalogues haven't been fetched yet
-        if (!(product in catalogueMap)) continue
-        result.push({ product, kind: "no-catalogue" })
+        if (!(productId in catalogueMap)) continue
+        result.push({ productId, product, kind: "no-catalogue" })
         continue
       }
       if (customerMarket) {
         const forMarket = files.filter((f) => f.market === customerMarket)
         if (forMarket.length === 0) {
-          result.push({ product, kind: "no-market" })
+          result.push({ productId, product, kind: "no-market" })
         }
       }
     }
     return result
-  }, [catalogueMap, selectedProducts, customerMarket])
+  }, [catalogueMap, selectedProducts, customerMarket, nameById])
 
   const hasWarnings = warnings.length > 0
 
@@ -97,11 +99,8 @@ export default function FloatingCatalogBar() {
 
     setIsDownloading(true)
     try {
-      const productNames = Array.from(selectedProducts)
-      const productReferences = productNames.map((n) => referenceByName[n])
       const blob = await sdk.productCatalogues.mergeCatalogues({
-        productNames,
-        productReferences,
+        productIds: Array.from(selectedProducts),
         market: customerMarket ?? "EN",
         mode: effectiveMode,
         compressed,
@@ -216,7 +215,7 @@ export default function FloatingCatalogBar() {
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-[80]">
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                 {warnings.map((w) => (
-                  <p key={`${w.product}-${w.kind}`}>
+                  <p key={`${w.productId}-${w.kind}`}>
                     {getWarningMessage(w)}
                   </p>
                 ))}

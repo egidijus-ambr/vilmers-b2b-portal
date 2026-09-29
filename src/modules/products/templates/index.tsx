@@ -25,6 +25,8 @@ export type ProductPageData = {
   description: string | null
   images: ProductImage[]
   productName: string | null
+  /** Category.code list scoping the S3 photo lookup (may be empty = no photos). */
+  photoCategoryCodes: string[]
   breadcrumbs: BreadcrumbItem[]
   features: ProductPageFeature[]
   catalogues: CatalogueFile[]
@@ -72,6 +74,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
             images={product.images}
             productTitle={product.title}
             productName={product.productName}
+            categoryCodes={product.photoCategoryCodes}
             showCategoryFilter={false}
           />
         </ProductSection>
@@ -94,7 +97,10 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
       </PageContent>
       <div className="w-full bg-white pt-8 pb-12">
         <PageContent>
-          <InteriorGallerySection productName={product.productName} />
+          <InteriorGallerySection
+            productName={product.productName}
+            categoryCodes={product.photoCategoryCodes}
+          />
           <LinkedProductsSection
             groups={product.linkedProductGroups}
             languageCode={product.languageCode}

@@ -111,10 +111,11 @@ export default function B2BProductCard({
   const { enabled: goToConfigurator } = useGoToConfigurator()
   const catalogBuilder = useCatalogBuilder()
   const inSelectionMode = !!catalogBuilder?.selectionMode
-  const hasCatalogues = (catalogBuilder?.catalogueMap[name] ?? []).length > 0
+  const hasCatalogues =
+    (catalogBuilder?.catalogueMap[container.id] ?? []).length > 0
   const { customer } = useCustomer()
   const customerMarket = getCustomerMarket(customer)
-  const catalogues = catalogBuilder?.catalogueMap[name] ?? []
+  const catalogues = catalogBuilder?.catalogueMap[container.id] ?? []
   const marketCodes = Array.from(new Set(catalogues.map((c) => c.market)))
 
   const configuratorEnabled = features.configurator
@@ -130,7 +131,7 @@ export default function B2BProductCard({
     if (inSelectionMode && hasCatalogues) {
       e.preventDefault()
       e.stopPropagation()
-      catalogBuilder?.toggleProduct(name)
+      catalogBuilder?.toggleProduct(container.id)
     }
   }
 
@@ -144,9 +145,9 @@ export default function B2BProductCard({
       {/* Top-right overlay: checkbox in selection mode, PDF icon otherwise */}
       <div className="absolute top-3 right-3 z-10">
         {inSelectionMode ? (
-          <SelectionCheckbox productName={name} />
+          <SelectionCheckbox productId={container.id} productName={name} />
         ) : (
-          <PdfCatalogueButton productName={name} />
+          <PdfCatalogueButton productId={container.id} />
         )}
       </div>
 

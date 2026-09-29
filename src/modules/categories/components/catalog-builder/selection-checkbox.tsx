@@ -3,10 +3,12 @@
 import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
 
 interface SelectionCheckboxProps {
+  productId: number
   productName: string
 }
 
 export default function SelectionCheckbox({
+  productId,
   productName,
 }: SelectionCheckboxProps) {
   const context = useCatalogBuilder()
@@ -17,10 +19,10 @@ export default function SelectionCheckbox({
   const { selectedProducts, toggleProduct, catalogueMap } = context
 
   // Only show checkbox for products that have PDF catalogues
-  const hasCatalogues = (catalogueMap[productName] ?? []).length > 0
+  const hasCatalogues = (catalogueMap[productId] ?? []).length > 0
   if (!hasCatalogues) return null
 
-  const isChecked = selectedProducts.has(productName)
+  const isChecked = selectedProducts.has(productId)
 
   return (
     <button
@@ -31,7 +33,7 @@ export default function SelectionCheckbox({
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        toggleProduct(productName)
+        toggleProduct(productId)
       }}
       className={`flex items-center justify-center w-6 h-6 rounded-full border-2 cursor-pointer transition-colors ${
         isChecked ? "border-gold bg-gold" : "border-gold bg-gold-20"

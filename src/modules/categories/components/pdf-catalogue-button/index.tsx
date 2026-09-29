@@ -8,7 +8,7 @@ import { CatalogueFile } from "@lib/furnisystems-sdk/modules/product-catalogues/
 import { CatalogDownloadIcon } from "@modules/common/icons/catalog-download"
 
 interface PdfCatalogueButtonProps {
-  productName: string
+  productId: number
 }
 
 function downloadCatalogue(catalogue: CatalogueFile): void {
@@ -23,7 +23,7 @@ function downloadCatalogue(catalogue: CatalogueFile): void {
 }
 
 export default function PdfCatalogueButton({
-  productName,
+  productId,
 }: PdfCatalogueButtonProps) {
   const context = useCatalogBuilder()
   const catalogueMap = context?.catalogueMap ?? {}
@@ -33,7 +33,7 @@ export default function PdfCatalogueButton({
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const allCatalogues = catalogueMap[productName] ?? []
+  const allCatalogues = catalogueMap[productId] ?? []
   const marketMatches = customerMarket
     ? allCatalogues.filter((c) => c.market === customerMarket)
     : []

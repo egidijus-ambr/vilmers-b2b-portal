@@ -66,6 +66,11 @@ type ProductImageGalleryProps = {
   images: ProductImage[]
   productTitle: string
   productName: string | null
+  /**
+   * Category.code list scoping the S3 photo lookup. Always sent (even empty)
+   * so the backend scopes strictly — product names are not unique.
+   */
+  categoryCodes: string[]
   showCategoryFilter?: boolean
   alwaysExpanded?: boolean
   showPanelHeader?: boolean
@@ -155,6 +160,7 @@ const ProductImageGallery = ({
   images,
   productTitle,
   productName,
+  categoryCodes,
   showCategoryFilter = true,
   alwaysExpanded = false,
   showPanelHeader = true,
@@ -176,6 +182,9 @@ const ProductImageGallery = ({
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null)
   const [loadedThumbnails, setLoadedThumbnails] = useState<Set<string>>(new Set())
 
+  // Stable primitive for the effect deps (the array is rebuilt every render).
+  const categoryCodesParam = categoryCodes.join(",")
+
   // Fetch additional S3 product photos
   useEffect(() => {
     if (!productName) return
@@ -187,7 +196,7 @@ const ProductImageGallery = ({
       try {
         const apiUrl = `${restApiUrl}/s3/product-photos/${encodeURIComponent(
           productName
-        )}`
+        )}?categoryCodes=${encodeURIComponent(categoryCodesParam)}`
         const response = await fetch(apiUrl, { signal: controller.signal })
         if (response.ok) {
           const data = await response.json()
@@ -204,7 +213,7 @@ const ProductImageGallery = ({
     }
     fetchPhotos()
     return () => controller.abort()
-  }, [productName])
+  }, [productName, categoryCodesParam])
 
   // Auto-expand panel when alwaysExpanded is set and photos are available
   useEffect(() => {
