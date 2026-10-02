@@ -140,11 +140,12 @@ const MobileMenu = ({
 
   const displayName = customer?.full_name || customer?.name || "Test User"
 
-  // Show menu if user appears to be logged in
-  // This will be validated by the parent component's isLoggedIn logic
-  if (!isLoggedIn) {
-    return null
-  }
+  // Note: the drawer always renders (site navigation + language switcher are
+  // useful to guests too) — only the account-specific sections below
+  // (name header, overview/orders/carts/fabric-palettes links, logout) are
+  // gated on `isLoggedIn`. The hamburger button that opens this (nav/index.tsx)
+  // has no login guard of its own, so returning null here unconditionally
+  // used to make it a dead button for anonymous visitors.
 
   return (
     <>
@@ -169,12 +170,14 @@ const MobileMenu = ({
         }}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="px-6 py-6 border-b border-ui-border-base">
-            <h2 className="text-lg font-medium text-dark-blue">
-              {displayName}
-            </h2>
-          </div>
+          {/* Header — account-specific, logged-in only */}
+          {isLoggedIn && (
+            <div className="px-6 py-6 border-b border-ui-border-base">
+              <h2 className="text-lg font-medium text-dark-blue">
+                {displayName}
+              </h2>
+            </div>
+          )}
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto">
@@ -314,92 +317,115 @@ const MobileMenu = ({
               <div className="border-t border-ui-border-base" />
             )}
 
-            {/* Account Items */}
+            {/* Account Items — logged-in only; guests get a single link to
+                the login page instead (mirrors the desktop `nav-login-link`,
+                see nav/index.tsx). */}
             <div className="py-4">
-              <LocalizedClientLink
-                href="/account"
-                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-                onClick={onClose}
-                data-testid="mobile-menu-overview-link"
-              >
-                <Image
-                  src="/images/profile-icon.svg"
-                  alt="Profile"
-                  width={20}
-                  height={20}
-                />
-                <span>{t("overview")}</span>
-              </LocalizedClientLink>
+              {isLoggedIn ? (
+                <>
+                  <LocalizedClientLink
+                    href="/account"
+                    className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                    onClick={onClose}
+                    data-testid="mobile-menu-overview-link"
+                  >
+                    <Image
+                      src="/images/profile-icon.svg"
+                      alt="Profile"
+                      width={20}
+                      height={20}
+                    />
+                    <span>{t("overview")}</span>
+                  </LocalizedClientLink>
 
-              <LocalizedClientLink
-                href="/account/orders"
-                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-                onClick={onClose}
-                data-testid="mobile-menu-orders-link"
-              >
-                <Image
-                  src="/images/orders-icon.svg"
-                  alt="Orders"
-                  width={20}
-                  height={20}
-                />
-                <span>{t("orders")}</span>
-              </LocalizedClientLink>
+                  <LocalizedClientLink
+                    href="/account/orders"
+                    className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                    onClick={onClose}
+                    data-testid="mobile-menu-orders-link"
+                  >
+                    <Image
+                      src="/images/orders-icon.svg"
+                      alt="Orders"
+                      width={20}
+                      height={20}
+                    />
+                    <span>{t("orders")}</span>
+                  </LocalizedClientLink>
 
-              <LocalizedClientLink
-                href="/account/carts"
-                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-                onClick={onClose}
-                data-testid="mobile-menu-carts-link"
-              >
-                <Image
-                  src="/images/orders-icon.svg"
-                  alt="Carts"
-                  width={20}
-                  height={20}
-                />
-                <span>{t("carts")}</span>
-              </LocalizedClientLink>
+                  <LocalizedClientLink
+                    href="/account/carts"
+                    className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                    onClick={onClose}
+                    data-testid="mobile-menu-carts-link"
+                  >
+                    <Image
+                      src="/images/orders-icon.svg"
+                      alt="Carts"
+                      width={20}
+                      height={20}
+                    />
+                    <span>{t("carts")}</span>
+                  </LocalizedClientLink>
 
-              <LocalizedClientLink
-                href="/account/fabric-palettes"
-                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
-                onClick={onClose}
-                data-testid="mobile-menu-fabric-palettes-link"
-              >
-                <Image
-                  src="/images/fabric-palettes-icon.svg"
-                  alt="Fabric Palette"
-                  width={20}
-                  height={20}
-                />
-                <span>{t("fabric-palettes")}</span>
-              </LocalizedClientLink>
+                  <LocalizedClientLink
+                    href="/account/fabric-palettes"
+                    className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                    onClick={onClose}
+                    data-testid="mobile-menu-fabric-palettes-link"
+                  >
+                    <Image
+                      src="/images/fabric-palettes-icon.svg"
+                      alt="Fabric Palette"
+                      width={20}
+                      height={20}
+                    />
+                    <span>{t("fabric-palettes")}</span>
+                  </LocalizedClientLink>
+                </>
+              ) : (
+                <LocalizedClientLink
+                  href="/account"
+                  className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors"
+                  onClick={onClose}
+                  data-testid="mobile-menu-login-link"
+                >
+                  <Image
+                    src="/images/profile-icon.svg"
+                    alt="Profile"
+                    width={20}
+                    height={20}
+                  />
+                  <span>{t("log-in")}</span>
+                </LocalizedClientLink>
+              )}
             </div>
           </div>
 
-          {/* Language Switcher */}
+          {/* Language Switcher — available to guests too */}
           <div className="px-6 py-4 border-t border-ui-border-base">
             <CompactLanguageSwitcher size="default" dropdownAlign="left" />
           </div>
 
-          {/* Logout Button */}
-          <div className="border-t border-ui-border-base p-4">
-            <button
-              type="button"
-              className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors w-full text-left"
-              onClick={handleLogout}
-              data-testid="mobile-menu-logout-button"
-            >
-              <Image
-                src="/images/logout-icon.svg"
-                alt="Logout"
-                width={20}
-                height={20}
-              />
-              <span>{t("log-out")}</span>
-            </button>
-          </div>
+          {/* Logout Button — logged-in only */}
+          {isLoggedIn && (
+            <div className="border-t border-ui-border-base p-4">
+              <button
+                type="button"
+                className="flex items-center gap-x-3 px-6 py-4 text-base text-dark-blue hover:bg-ui-bg-subtle transition-colors w-full text-left"
+                onClick={handleLogout}
+                data-testid="mobile-menu-logout-button"
+              >
+                <Image
+                  src="/images/logout-icon.svg"
+                  alt="Logout"
+                  width={20}
+                  height={20}
+                />
+                <span>{t("log-out")}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

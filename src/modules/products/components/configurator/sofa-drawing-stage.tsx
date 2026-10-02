@@ -205,10 +205,20 @@ const sofaShapeElements: Record<string, React.ComponentType<any>> = {
 // Local Konva helpers (not yet in B2B utils)
 // ============================================================
 
-/** Returns all sofa_shape_group nodes in the layer, excluding COMPOSITE children. */
+/** Nearest ancestor COMPOSITE module group, or null when `node` isn't inside one. */
+function getCompositeAncestor(node: any): any | null {
+  let parent = node?.getParent?.()
+  while (parent) {
+    if (parent.attrs?.type === "COMPOSITE") return parent
+    parent = parent.getParent?.()
+  }
+  return null
+}
+
+/** Returns all sofa_shape_group nodes in the layer, excluding COMPOSITE descendants at any depth. */
 function getSofaShapesInLayer(layer: any): any[] {
   return layer.find(".sofa_shape_group").filter((group: any) => {
-    return group.parent?.attrs?.type !== "COMPOSITE"
+    return !getCompositeAncestor(group)
   })
 }
 
@@ -424,6 +434,15 @@ const SofaDrawingStage = ({
   const [activeSofaShape, setActiveSofaShape] = useState<any>(null)
   const [dragTargetShape, setDragTargetShape] = useState<any>(null)
   const [connectedGroupsInStage, setConnectedGroupsInStage] = useState<any[][]>([])
+  // Bumped by a COMPOSITE module once its async members finish loading and
+  // report their real measured extent (see COMPOSITE.tsx's onExtentChange).
+  // Triggers the effect below to regenerate connected groups so the live
+  // canvas's arrows/positions reflect the real geometry instead of the
+  // placeholder dims the module started with.
+  const [compositeExtentTick, setCompositeExtentTick] = useState(0)
+  const handleCompositeExtentChange = useCallback(() => {
+    setCompositeExtentTick((t) => t + 1)
+  }, [])
 
   // ---- Refs ----
   const stageRef = React.useRef<any>(null)
@@ -744,8 +763,9 @@ const SofaDrawingStage = ({
   // ---- Click handler ----
   const handleClick = (e: any) => {
     let target = e.target.getParent()
-    if (target.getParent()?.attrs?.type === "COMPOSITE") {
-      target = target.getParent()
+    const composite = getCompositeAncestor(target)
+    if (composite) {
+      target = composite
     }
     if (target.attrs.name === "sofa_shape_group") {
       setActiveSofaShape(target)
@@ -972,6 +992,17 @@ const SofaDrawingStage = ({
     }
   }, [showArrows, scale, dragTargetShape, connectedGroupsInStage])
 
+  // ---- Effect: a COMPOSITE module finished loading its real members and
+  // reported a measured extent different from its placeholder dims —
+  // regenerate connected groups so arrows, positions and (via
+  // onCombinationsChange) sofaMeasurements/price all pick up the corrected
+  // geometry. Skips tick 0 (initial mount, nothing changed yet).
+  useEffect(() => {
+    if (compositeExtentTick === 0 || !layer) return
+    const connectedGroups = generateConnectedGroupsWithScale(layer, scale, null)
+    setConnectedGroupsInStage(connectedGroups)
+  }, [compositeExtentTick])
+
   // ---- Ref tracking the previously-applied armrest width overrides, so the
   // reflow effect below only runs when overrides actually change (mirrors
   // the shop's prevSelectedComponentsRef) and skips the very first mount —
@@ -1191,6 +1222,11 @@ const SofaDrawingStage = ({
           cornerRadius={dims.corner_radius}
           rotation={item.rotation}
           composition={dims.composition}
+          onExtentChange={
+            item.sofaForm.type === "COMPOSITE"
+              ? handleCompositeExtentChange
+              : undefined
+          }
           angle={dims.angle}
           seatHeight={dims.seat_height}
           extendablePartLength={dims.extendable_part_length}
@@ -1210,7 +1246,16 @@ const SofaDrawingStage = ({
     }
 
     return elements
-  }, [modifiedSofaShapes, layer, onDelete, showButtons, width, height, armrestWidthArray])
+  }, [
+    modifiedSofaShapes,
+    layer,
+    onDelete,
+    showButtons,
+    width,
+    height,
+    armrestWidthArray,
+    handleCompositeExtentChange,
+  ])
 
   // ============================================================
   // Render

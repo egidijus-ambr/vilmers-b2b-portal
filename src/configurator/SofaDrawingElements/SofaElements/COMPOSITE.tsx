@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Layer,
   Stage,
@@ -139,13 +139,78 @@ const COMPOSITE = ({
   composition = null,
   armrestWidthOverride = null,
   rotation = 0,
+  onExtentChange = null,
   ...props
 }) => {
   const [loadedShapes, setLoadedShapes] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const groupRef = useRef(null)
+  const membersGroupRef = useRef(null)
+  const [measuredExtent, setMeasuredExtent] = useState(null)
+  const lastReportedRef = useRef(null)
+  // Set (for this render only) when composition is empty/invalid and we
+  // fall back below to the placeholder default composition. Captured
+  // synchronously (before any `await`) by the load-shapes effect so it can
+  // tag whether the load in flight is for placeholder or real data — the
+  // measuring effect then skips syncing measuredExtent while the shapes
+  // currently rendered are the placeholder set.
+  const usingDefaultCompositionRef = useRef(false)
+  usingDefaultCompositionRef.current = false
+  // Whether the shapes CURRENTLY in `loadedShapes` came from a placeholder
+  // (default) composition or a real one — set alongside setLoadedShapes.
+  const loadedIsPlaceholderRef = useRef(false)
+
+  // Measure the real bounding box of the laid-out members after each
+  // render. relativeTo the outer group makes the result independent of the
+  // group's own position/rotation on the stage, and excludes the marker
+  // Rect below (which lives outside the members sub-group).
+  useEffect(() => {
+    const membersNode = membersGroupRef.current
+    const groupNode = groupRef.current
+    if (!membersNode || !groupNode || isLoading || loadedShapes.length === 0) {
+      return
+    }
+    if (loadedIsPlaceholderRef.current) {
+      // Currently rendered shapes are the placeholder default composition —
+      // keep the last measured extent, don't sync.
+      return
+    }
+    const rect = membersNode.getClientRect({
+      relativeTo: groupNode,
+      skipStroke: true,
+      skipShadow: true,
+    })
+    const extent = {
+      x: Math.round(rect.x),
+      y: Math.round(rect.y),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    }
+    setMeasuredExtent(prev =>
+      prev &&
+      prev.x === extent.x &&
+      prev.y === extent.y &&
+      prev.width === extent.width &&
+      prev.height === extent.height
+        ? prev
+        : extent
+    )
+    if (
+      onExtentChange &&
+      (!lastReportedRef.current ||
+        lastReportedRef.current.width !== extent.width ||
+        lastReportedRef.current.height !== extent.height)
+    ) {
+      lastReportedRef.current = { width: extent.width, height: extent.height }
+      onExtentChange({ width: extent.width, height: extent.height })
+    }
+  })
 
   // Load shapes asynchronously
   useEffect(() => {
+    let cancelled = false
+    const isPlaceholderForThisLoad = usingDefaultCompositionRef.current
+
     const loadShapes = async () => {
       if (!composition || composition.length === 0) return
 
@@ -161,16 +226,25 @@ const COMPOSITE = ({
 
       try {
         const loadedShapeData = await Promise.all(shapePromises)
+        if (cancelled) return
+        loadedIsPlaceholderRef.current = isPlaceholderForThisLoad
         setLoadedShapes(loadedShapeData)
       } catch (error) {
+        if (cancelled) return
         console.error('Error loading shapes:', error)
         setLoadedShapes([])
       } finally {
-        setIsLoading(false)
+        if (!cancelled) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadShapes()
+
+    return () => {
+      cancelled = true
+    }
   }, [composition])
 
   if (composition?.length === 0 || !composition) {
@@ -179,6 +253,7 @@ const COMPOSITE = ({
     composition = defaults.composition
     width = defaults.dimensions.width
     height = defaults.dimensions.length
+    usingDefaultCompositionRef.current = true
   } else if (composition?.startsWith && composition.startsWith('[')) {
     // console.log('composition', composition)
 
@@ -194,11 +269,13 @@ const COMPOSITE = ({
       } else {
         const defaults = getDefaultSettings()
         composition = defaults.composition
+        usingDefaultCompositionRef.current = true
       }
     } catch (error) {
       console.error('error', error.message)
       const defaults = getDefaultSettings()
       composition = defaults.composition
+      usingDefaultCompositionRef.current = true
     }
   }
 
@@ -414,6 +491,7 @@ const COMPOSITE = ({
 
   return (
     <Group
+      ref={groupRef}
       id={id}
       draggable={draggable}
       name={'sofa_shape_group'}
@@ -422,8 +500,8 @@ const COMPOSITE = ({
       type="COMPOSITE"
       x={x}
       y={y}
-      originalWidth={width}
-      originalHeight={height}
+      originalWidth={measuredExtent?.width ?? width}
+      originalHeight={measuredExtent?.height ?? height}
       dragBoundFunc={dragBound(scale, width, height, stageWidth, stageHeight)}
       originalSofaForm={originalSofaForm}
       connectors={props.enabled_connectors == false ? [] : connectors}
@@ -438,13 +516,15 @@ const COMPOSITE = ({
         <HorizontalMetric x={0} y={0 - 50} height={null} width={width} />
       )}
       <Rect // This rect is needed to properly get getClientRect dimensions.
-        x={0}
-        y={0}
-        width={width}
-        height={height}
+        x={measuredExtent?.x ?? 0}
+        y={measuredExtent?.y ?? 0}
+        width={measuredExtent?.width ?? width}
+        height={measuredExtent?.height ?? height}
         name={'sofa_shape'}
       />
-      {shapesItems}
+      <Group ref={membersGroupRef} name="composite_members">
+        {shapesItems}
+      </Group>
       {/* {(props.enabled_connectors == false ? [] : connectors)?.map((conn, index) => (
         <Gizmo
           key={`gizmo-${index}`}

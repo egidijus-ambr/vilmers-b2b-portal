@@ -155,6 +155,29 @@ const SofaDrawingPreview = ({
 
   const [metricLayers, setMetricLayers] = useState(false)
 
+  // COMPOSITE members mount asynchronously, after the metric lines below have
+  // already been drawn once from the placeholder geometry (see COMPOSITE.tsx).
+  // COMPOSITE reports its real measured extent via onExtentChange once the
+  // members are laid out; extentTick bumps only when a given module's
+  // reported extent actually changed, re-running the metric-lines effect
+  // below so it redraws from the (by-then-updated) live node attrs instead
+  // of the stale placeholder ones.
+  const compositeExtentsRef = useRef<Map<string, { width: number; height: number }>>(
+    new Map()
+  )
+  const [extentTick, setExtentTick] = useState(0)
+  const handleCompositeExtentChange = useCallback(
+    (id: string, extent: { width: number; height: number }) => {
+      const prev = compositeExtentsRef.current.get(id)
+      if (prev && prev.width === extent.width && prev.height === extent.height) {
+        return
+      }
+      compositeExtentsRef.current.set(id, extent)
+      setExtentTick(t => t + 1)
+    },
+    []
+  )
+
   // Compute bounding box from attrs (local coordinates) — consistent with rendering
   const groupRect = computeGroupRectFromAttrs(combination, sofaScale)
 
@@ -184,7 +207,10 @@ const SofaDrawingPreview = ({
       // Static mode: mark as ready for image export immediately
       setMetricLayers(true)
     }
-  }, [combination, layer])
+    // extentTick: re-run once a COMPOSITE member reports its real measured
+    // extent (see handleCompositeExtentChange above), so the one-shot draw
+    // above doesn't stay stuck on placeholder geometry.
+  }, [combination, layer, extentTick])
 
   // Calculate distance between groups (if they overlap distance should be negative)
   // Move all groups to center
@@ -265,6 +291,12 @@ const SofaDrawingPreview = ({
             cornerPartLength={dims.corner_part_length}
             cornerRadius={dims.corner_radius}
             composition={dims.composition}
+            onExtentChange={
+              item.attrs.type === 'COMPOSITE'
+                ? (extent: { width: number; height: number }) =>
+                    handleCompositeExtentChange(item.attrs.id, extent)
+                : undefined
+            }
             armrestWidthOverride={
               item.attrs.new_armrest_width ??
               armrestWidthOverrides.find(m => m.moduleId === item.attrs.id)
