@@ -143,7 +143,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   // (`layout.overviewLink.show`, see src/themes/types.ts) and account-only:
   // guests never see it, mirroring the account dropdown's own `!customer`
   // guard (AccountDropdown returns nothing when `customer` is falsy). Reuses
-  // the dropdown's own href/label — no new translation string. Inserted
+  // the dropdown's href, labelled "My Vilmers" (`my-vilmers`). Inserted
   // right after the Store item (matched by the same stable `isStoreLink`
   // flag the logo-left trim above uses, not by array position, since a
   // DB-authored nav's item order isn't guaranteed); if no item is flagged
@@ -156,7 +156,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
     if (!isLoggedIn || !overviewLink?.show) return navMenuItems
     const overviewItem: MenuItem = {
       id: "nav-overview",
-      label: t("overview"),
+      label: t("my-vilmers"),
       type: "link",
       href: "/account",
     }
