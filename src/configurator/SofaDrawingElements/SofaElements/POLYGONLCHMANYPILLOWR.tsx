@@ -337,7 +337,7 @@ const POLYGONLCHMANYPILLOWR = ({
             shapeHeight - backPillowSize / 2,
           ]}
           tension={0.3}
-          stroke="Purple"
+          stroke={PILLOW_STROKE_COLOR}
           strokeWidth={4}
           fill={PILLOW_FILL_COLOR}
         />

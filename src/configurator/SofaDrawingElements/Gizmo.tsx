@@ -55,7 +55,24 @@ const Gizmo: React.FC<CircleLineProps> = ({
   shapeWidth = 50,
   shapeHeight = 50,
 }) => {
-  if (process.env.NEXT_PUBLIC_SHOW_SOFA_SHAPE_GIZMO !== 'true') {
+  // Blueprint-renderer override (saas-admin-ui/src/blueprint-renderer): when
+  // `window.__BLUEPRINT_SHOW_GIZMO__` is a boolean, it wins outright. When it
+  // is undefined — every consumer of this file except the blueprint renderer
+  // — behaviour is byte-for-byte identical to the original env-only check
+  // below. This file is rsync-copied into vilmers-b2b-portal,
+  // furnibay-frontend-shop and furnisystems-admin-v2-graphql; none of those
+  // apps ever set that global, so the override branch is dead code there and
+  // the fallback branch is what runs, unchanged. Legacy admin's sync script
+  // also does a whole-file sed rewrite of the env var's NEXT_PUBLIC_ prefix
+  // to REACT_APP_ (CRA convention) — that substitution still finds and
+  // rewrites the identifier on the fallback line below exactly as before.
+  const blueprintGizmoOverride =
+    typeof window !== 'undefined' ? (window as any).__BLUEPRINT_SHOW_GIZMO__ : undefined
+  if (
+    blueprintGizmoOverride === undefined
+      ? process.env.NEXT_PUBLIC_SHOW_SOFA_SHAPE_GIZMO !== 'true'
+      : !blueprintGizmoOverride
+  ) {
     return null
   }
 

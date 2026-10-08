@@ -148,22 +148,29 @@ const COMPOSITE = ({
   const membersGroupRef = useRef(null)
   const [measuredExtent, setMeasuredExtent] = useState(null)
   const lastReportedRef = useRef(null)
-  // Set (for this render only) when composition is empty/invalid and we
-  // fall back below to the placeholder default composition. Captured
-  // synchronously (before any `await`) by the load-shapes effect so it can
-  // tag whether the load in flight is for placeholder or real data — the
-  // measuring effect then skips syncing measuredExtent while the shapes
-  // currently rendered are the placeholder set.
+  // Reset then (maybe) set below in the same render when composition is
+  // empty/invalid and we fell back to the placeholder default composition.
+  // A ref (not a plain `let`) so it can be read inside the loadShapes effect
+  // below without eslint wanting it added as a dependency — its value is
+  // only ever consumed by the effect closures that read `.current` fresh at
+  // call time, never by this render's own output. This is only used to tag
+  // the *load* that's in flight (see loadedIsPlaceholderRef below) — it
+  // must NOT gate the measuring effect directly, because `composition` can
+  // already say "real" on a render where `loadedShapes` still holds the
+  // previous (placeholder) load's shapes, e.g. right after a user adds the
+  // first member to an empty composition. Gating on this render-local flag
+  // would measure/sync the still-rendered placeholder geometry under a
+  // "real" label for that one commit.
   const usingDefaultCompositionRef = useRef(false)
   usingDefaultCompositionRef.current = false
-  // Whether the shapes CURRENTLY in `loadedShapes` came from a placeholder
-  // (default) composition or a real one — set alongside setLoadedShapes.
+  // Tracks whether the shapes CURRENTLY in `loadedShapes` came from a
+  // placeholder (default) composition or a real one — set alongside
+  // `setLoadedShapes` in the load effect below, so it always describes what
+  // was actually loaded/rendered, not what the latest render intends.
   const loadedIsPlaceholderRef = useRef(false)
 
-  // Measure the real bounding box of the laid-out members after each
-  // render. relativeTo the outer group makes the result independent of the
-  // group's own position/rotation on the stage, and excludes the marker
-  // Rect below (which lives outside the members sub-group).
+  // Measure the real bounding box of the laid-out members after each render.
+  // relativeTo the outer group makes the result stage-scale independent.
   useEffect(() => {
     const membersNode = membersGroupRef.current
     const groupNode = groupRef.current
@@ -171,8 +178,8 @@ const COMPOSITE = ({
       return
     }
     if (loadedIsPlaceholderRef.current) {
-      // Currently rendered shapes are the placeholder default composition —
-      // keep the last measured extent, don't sync.
+      // The currently loaded/rendered shapes are the placeholder default
+      // composition — keep last measured extent, don't sync.
       return
     }
     const rect = membersNode.getClientRect({
@@ -206,7 +213,26 @@ const COMPOSITE = ({
     }
   })
 
-  // Load shapes asynchronously
+  // Load shapes asynchronously.
+  //
+  // Two hazards, both from `composition` being able to change again before a
+  // previous load resolves (dynamic imports are async; modules are usually
+  // warm-cached so the window is narrow, but real):
+  //
+  // 1. Stale-response race: if an OLDER invocation's promises happen to
+  //    settle AFTER a NEWER invocation's (no ordering guarantee), the older
+  //    one would overwrite the newer, already-correct `loadedShapes` with
+  //    outdated data. `cancelled` (set in the cleanup, which React runs
+  //    before starting the next invocation) discards a superseded
+  //    invocation's results entirely — only the latest invocation can ever
+  //    commit `setLoadedShapes` / `loadedIsPlaceholderRef` / `setIsLoading`.
+  // 2. Verdict-staleness race: `usingDefaultCompositionRef` is one shared
+  //    box mutated by every render's synchronous body. Reading it AFTER an
+  //    `await` (as a prior version of this fix did) risks reading a LATER
+  //    render's verdict instead of the one that scheduled THIS invocation.
+  //    Capturing `isPlaceholderForThisLoad` synchronously, before the first
+  //    `await`, freezes the correct verdict for this invocation regardless
+  //    of what any later render does to the shared ref afterwards.
   useEffect(() => {
     let cancelled = false
     const isPlaceholderForThisLoad = usingDefaultCompositionRef.current
@@ -226,7 +252,13 @@ const COMPOSITE = ({
 
       try {
         const loadedShapeData = await Promise.all(shapePromises)
-        if (cancelled) return
+        if (cancelled) {
+          // Superseded by a newer composition while this load was in
+          // flight — discard so an out-of-order resolution can never
+          // overwrite fresher state with stale (possibly placeholder)
+          // shapes.
+          return
+        }
         loadedIsPlaceholderRef.current = isPlaceholderForThisLoad
         setLoadedShapes(loadedShapeData)
       } catch (error) {
@@ -510,10 +542,20 @@ const COMPOSITE = ({
       opacity={0.8}
     >
       {verticalMetric && (
-        <VerticalMetric x={0 - 50} y={0} height={height} width={null} />
+        <VerticalMetric
+          x={(measuredExtent?.x ?? 0) - 50}
+          y={measuredExtent?.y ?? 0}
+          height={measuredExtent?.height ?? height}
+          width={null}
+        />
       )}
       {horizontalMetric && (
-        <HorizontalMetric x={0} y={0 - 50} height={null} width={width} />
+        <HorizontalMetric
+          x={measuredExtent?.x ?? 0}
+          y={(measuredExtent?.y ?? 0) - 50}
+          height={null}
+          width={measuredExtent?.width ?? width}
+        />
       )}
       <Rect // This rect is needed to properly get getClientRect dimensions.
         x={measuredExtent?.x ?? 0}
