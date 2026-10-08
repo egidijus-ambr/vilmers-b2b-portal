@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from "react"
 
+const DISPLAY_MODES = [
+  "standalone",
+  "window-controls-overlay",
+  "fullscreen",
+  "minimal-ui",
+] as const
+
 /**
  * Hook to detect if the app is running in PWA standalone mode
  *
@@ -34,13 +41,22 @@ export function useIsPWAStandalone(): boolean {
   useEffect(() => {
     // Check if running in standalone mode (PWA desktop/mobile app)
     // This covers Chrome, Edge, Firefox PWAs
-    const standaloneMode = window.matchMedia("(display-mode: standalone)").matches
+    // Installed apps may use any of these display modes
+    const queries = DISPLAY_MODES.map((m) =>
+      window.matchMedia(`(display-mode: ${m})`)
+    )
 
-    // Check iOS Safari standalone mode
-    // iOS uses navigator.standalone property
-    const iosStandalone = (window.navigator as any).standalone === true
+    const check = () => {
+      // iOS Safari uses the navigator.standalone property
+      const iosStandalone = (window.navigator as any).standalone === true
+      setIsStandalone(iosStandalone || queries.some((q) => q.matches))
+    }
 
-    setIsStandalone(standaloneMode || iosStandalone)
+    check()
+    queries.forEach((q) => q.addEventListener?.("change", check))
+    return () => {
+      queries.forEach((q) => q.removeEventListener?.("change", check))
+    }
   }, [])
 
   return isStandalone

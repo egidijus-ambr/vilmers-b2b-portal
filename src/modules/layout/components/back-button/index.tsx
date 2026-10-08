@@ -6,6 +6,7 @@ import Back from "@modules/common/icons/back"
 import { ArrowLeft } from "lucide-react"
 import { useTranslations } from "@lib/i18n"
 import { supportedLanguages } from "@lib/i18n"
+import { useIsPWAStandalone } from "@lib/hooks/use-is-pwa-standalone"
 
 interface BackButtonProps {
   isHomePage?: boolean
@@ -21,6 +22,7 @@ const BackButton = ({
   const { t, isReady } = useTranslations("common")
   const [canGoBack, setCanGoBack] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const isStandalone = useIsPWAStandalone()
 
   useEffect(() => {
     setIsClient(true)
@@ -52,7 +54,8 @@ const BackButton = ({
   // - Not client-side yet
   // - On home page
   // - Can't go back
-  if (!isClient || isOnHomePage || !canGoBack) {
+  // - Running as an installed PWA is the only place the button is shown
+  if (!isClient || isOnHomePage || !canGoBack || !isStandalone) {
     return null
   }
 
