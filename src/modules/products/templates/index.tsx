@@ -81,12 +81,6 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
         {product.features.length > 0 && (
           <ProductFeatureSection features={product.features} />
         )}
-        {product.catalogues.length > 0 && (
-          <ProductDownloadsSection
-            catalogues={product.catalogues}
-            languageCode={product.languageCode}
-          />
-        )}
         {product.contentBlocks.length > 0 && (
           <ProductContentBlocks
             blocks={product.contentBlocks}
@@ -94,6 +88,12 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
           />
         )}
         {product.comfortData && <ComfortSection data={product.comfortData} />}
+        {product.catalogues.length > 0 && (
+          <ProductDownloadsSection
+            catalogues={product.catalogues}
+            languageCode={product.languageCode}
+          />
+        )}
       </PageContent>
       <div className="w-full bg-white pt-8 pb-12">
         <PageContent>
