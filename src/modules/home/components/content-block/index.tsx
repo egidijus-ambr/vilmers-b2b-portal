@@ -1196,10 +1196,12 @@ function CategoryTiles({
   return (
     <div className="content-container">
       <div
-        className="grid w-full overflow-hidden"
-        style={{
-          gridTemplateColumns: `repeat(${tiles.length}, minmax(250px, 1fr))`,
-        }}
+        // One flex layout at all widths, equivalent to the old
+        // `grid-template-columns: repeat(N, minmax(250px, 1fr))`: tiles
+        // share the width equally (flex-1 basis-0) but never shrink below
+        // 250px, so when they overflow the row scrolls (touch/trackpad)
+        // with per-tile snap.
+        className="no-scrollbar flex w-full snap-x snap-mandatory overflow-x-auto"
       >
         {tiles.map((category) => {
           const profile =
@@ -1218,7 +1220,7 @@ function CategoryTiles({
             <a
               key={category.id}
               href={href}
-              className="group relative block overflow-hidden"
+              className="group relative block min-w-[250px] flex-1 basis-0 shrink-0 snap-start overflow-hidden"
             >
               <div className="h-[450px] md:h-[600px] w-full">
                 {imageSrc ? (
