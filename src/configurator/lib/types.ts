@@ -138,12 +138,16 @@ export interface Fabric {
   id: number
   code: string
   color_name: string | null
+  default_color_name?: string | null
+  color_search_names?: string[]
   order: number
   image: { src: string; src_md: string | null; src_xs: string | null } | null
 }
 
 export interface FabricGroupPalette {
   name: string | null
+  color_codes?: unknown
+  color_overrides?: unknown
   fabric_palette: {
     id: number
   }

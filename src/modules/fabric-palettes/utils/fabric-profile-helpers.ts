@@ -1,3 +1,4 @@
+import { resolvePaletteFabrics } from "../../../lib/fabric-palettes/palette-colors"
 import type {
   FabricFeatureDetail,
   FabricGroupDetail,
@@ -64,6 +65,10 @@ export function resolveGroupDefaultName(
  * itself, not on the palette join row, so nothing is lost by collapsing
  * duplicate memberships into a single row keyed by `fabric_group.id`.
  *
+ * The merged `fabric_group.fabrics` is the per-palette resolved colour set
+ * (see `resolvePaletteFabrics`): the union of colours selected across all
+ * entries, with override names applied in `entries` priority order.
+ *
  * `entries` only partially preserves a priority order. `palettes` is
  * returned direct-palettes-first then group-palettes, deduped by palette id
  * (see `getFabricPalettes` and its acting-customer sibling
@@ -110,7 +115,14 @@ export function mergeFabricGroupsAcrossPalettes(
     }
   }
 
-  return merged
+  // Apply per-palette colour selections / override names. `entries` are in
+  // priority order (direct palettes first). A row is dropped only when an
+  // explicit selection leaves it with zero colours.
+  return merged.flatMap((row) => {
+    const fabrics = resolvePaletteFabrics(row.fabric_group.fabrics, row.entries)
+    if (fabrics.length === 0) return []
+    return [{ ...row, fabric_group: { ...row.fabric_group, fabrics } }]
+  })
 }
 
 /**

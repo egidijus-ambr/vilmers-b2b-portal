@@ -159,7 +159,9 @@ export default function FabricPalettesPage() {
 
       const matchingFabrics = merged.fabric_group.fabrics.filter(
         (fabric) =>
-          (fabric.color_name?.toLowerCase() ?? "").includes(query) ||
+          (fabric.color_search_names ?? [fabric.color_name ?? ""]).some((n) =>
+            n.toLowerCase().includes(query)
+          ) ||
           (fabric.code?.toLowerCase() ?? "").includes(query)
       )
 

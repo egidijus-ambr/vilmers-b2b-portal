@@ -429,6 +429,8 @@ const FABRIC_PALETTE_FRAGMENT = gql`
     fabric_groups {
       id
       name
+      color_codes
+      color_overrides
       fabric_group {
         id
         code

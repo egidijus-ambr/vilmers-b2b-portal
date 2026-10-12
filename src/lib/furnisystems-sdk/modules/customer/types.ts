@@ -15,6 +15,8 @@ export interface FabricDetail {
   id: number
   code: string
   color_name?: string
+  default_color_name?: string | null
+  color_search_names?: string[]
   order: number
   image: FabricImage
 }
@@ -59,6 +61,8 @@ export interface FabricGroupDetail {
 export interface FabricGroupToPaletteEntry {
   id: number
   name?: string
+  color_codes?: unknown
+  color_overrides?: unknown
   fabric_group: FabricGroupDetail
 }
 

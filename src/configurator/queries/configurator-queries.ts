@@ -18,6 +18,7 @@ export const GET_CONFIGURATOR_DATA = gql`
     $priceListId: Int!
     $language: Language
     $fabricWhere: FabricGroupWhereInput
+    $paletteIds: [Int!]
   ) {
     findUniqueProductContainer(where: { id: $productContainerId }) {
       id
@@ -319,8 +320,12 @@ export const GET_CONFIGURATOR_DATA = gql`
               name
               language
             }
-            fabric_palettes {
+            fabric_palettes(
+              where: { fabricPaletteId: { in: $paletteIds } }
+            ) {
               name
+              color_codes
+              color_overrides
               fabric_palette {
                 id
               }

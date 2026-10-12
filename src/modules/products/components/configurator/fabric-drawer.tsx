@@ -65,7 +65,8 @@ const FabricDrawer = ({
         const matchingFabrics = group.fabrics.filter(
           (f) =>
             f.code?.toLowerCase().includes(query) ||
-            f.color_name?.toLowerCase().includes(query)
+            f.color_name?.toLowerCase().includes(query) ||
+            f.color_search_names?.some((n) => n.toLowerCase().includes(query))
         )
 
         if (matchingFabrics.length === 0) return null

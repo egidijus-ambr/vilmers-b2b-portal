@@ -1640,12 +1640,19 @@ export class ProductsModule {
           priceListId,
           ...(language ? { language: language.toLowerCase() } : {}),
           fabricWhere,
+          paletteIds: paletteIds ?? [],
         },
         fetchPolicy: "no-cache",
         errorPolicy: "all",
       })
 
-      return response.findUniqueProductContainer ?? null
+      const { applyPaletteColors } = await import(
+        "@configurator/lib/apply-palette-colors"
+      )
+      return applyPaletteColors(
+        response.findUniqueProductContainer ?? null,
+        paletteIds ?? []
+      )
     } catch (error) {
       console.error(
         `Error fetching configurator data for product ${productContainerId}:`,
