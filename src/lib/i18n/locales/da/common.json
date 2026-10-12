@@ -73,5 +73,10 @@
   "linked-products-ACCESSORY": "Tilbehør",
   "linked-products-GOES_WELL_WITH": "Passer godt til",
   "linked-products-ALTERNATIVE": "Alternativer",
-  "downloads": "Downloads"
+  "downloads": "Downloads",
+  "fabric-not-in-palette": "Disse farver er ikke tilgængelige i dine stofpaletter: {{codes}}. Fjern varerne fra kurven, eller vælg en anden farve.",
+  "fabric-not-in-palette-generic": "En eller flere valgte farver er ikke tilgængelige i dine stofpaletter. Vælg en anden farve.",
+  "checkout-select-customer-required": "Vælg en kunde, før du afgiver en ordre. Ordrer skal afgives på vegne af en kunde med en kundekode.",
+  "checkout-select-customer-title": "Vælg først en kunde",
+  "order-buyer-not-authorized": "Ordren kunne ikke afgives, fordi ingen gyldig kunde er valgt. Vælg en kunde med en kundekode, og prøv igen."
 }

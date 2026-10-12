@@ -35,8 +35,15 @@ function getItemColour(
   item: FurnisystemsCartItem,
   language: string
 ): string | null {
-  const fabric = item.cartItemFabrics?.[0]?.fabric
-  if (fabric?.color_name) return fabric.color_name
+  // Snapshots first: they carry the palette-resolved name and survive the
+  // live fabric relation being nulled by a fabric-group re-save.
+  const first = item.cartItemFabrics?.[0]
+  if (first?.fabric_color_name) return first.fabric_color_name
+  if (item.fabric_color_name) return item.fabric_color_name
+  if (first?.fabric?.color_name) return first.fabric.color_name
+
+  if (first?.fabric_group_name) return first.fabric_group_name
+  if (item.fabric_group_name) return item.fabric_group_name
 
   const groupProfiles =
     item.cartItemFabrics?.[0]?.fabric_group?.fabric_group_profiles
@@ -48,12 +55,16 @@ function getItemColour(
     if (groupProfiles[0]?.name) return groupProfiles[0].name
   }
 
-  if (item.fabric_group_name) return item.fabric_group_name
   return null
 }
 
 function getItemCode(item: FurnisystemsCartItem): string | null {
-  return item.fabric_code || item.cartItemFabrics?.[0]?.fabric?.code || null
+  return (
+    item.fabric_code ||
+    item.cartItemFabrics?.[0]?.fabric_code ||
+    item.cartItemFabrics?.[0]?.fabric?.code ||
+    null
+  )
 }
 
 function isAdvancedItem(item: FurnisystemsCartItem): boolean {

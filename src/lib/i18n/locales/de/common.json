@@ -98,5 +98,10 @@
   "linked-products-ACCESSORY": "Zubehör",
   "linked-products-GOES_WELL_WITH": "Passt gut zu",
   "linked-products-ALTERNATIVE": "Alternativen",
-  "downloads": "Downloads"
+  "downloads": "Downloads",
+  "fabric-not-in-palette": "Diese Farben sind in Ihren Stoffpaletten nicht verfügbar: {{codes}}. Bitte entfernen Sie die Artikel aus dem Warenkorb oder wählen Sie eine andere Farbe.",
+  "fabric-not-in-palette-generic": "Eine oder mehrere ausgewählte Farben sind in Ihren Stoffpaletten nicht verfügbar. Bitte wählen Sie eine andere Farbe.",
+  "checkout-select-customer-required": "Wählen Sie einen Kunden aus, bevor Sie eine Bestellung aufgeben. Bestellungen müssen im Namen eines Kunden mit Kundennummer aufgegeben werden.",
+  "checkout-select-customer-title": "Bitte zuerst einen Kunden auswählen",
+  "order-buyer-not-authorized": "Die Bestellung konnte nicht aufgegeben werden, da kein gültiger Kunde ausgewählt ist. Bitte wählen Sie einen Kunden mit Kundennummer und versuchen Sie es erneut."
 }

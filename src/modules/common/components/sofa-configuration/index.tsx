@@ -343,6 +343,13 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                 ) ||
                 cif.combination_option?.fabricCombinationOptionProfiles?.[0]
 
+              // Snapshot (palette-resolved at add-to-cart time) first, then
+              // the live relation, which is null once the fabric is re-saved.
+              const groupName =
+                cif.fabric_group_name || fabricGroupProfile?.name
+              const colorCode = cif.fabric_code || cif.fabric?.code
+              const colorName = cif.fabric_color_name || cif.fabric?.color_name
+
               return (
                 <div
                   key={cif.id}
@@ -362,22 +369,20 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
                         {optionProfile?.name ? `: ${optionProfile.name}` : ""}
                       </p>
                     )}
-                    {fabricGroupProfile?.name && (
+                    {groupName && (
                       <p className="text-dark-blue-70">
                         {t("group")}:{" "}
                         <span className="font-semibold text-dark-blue">
-                          {fabricGroupProfile.name}
+                          {groupName}
                         </span>
                       </p>
                     )}
-                    {cif.fabric?.code && (
+                    {colorCode && (
                       <p className="text-dark-blue-70">
                         {t("color")}:{" "}
                         <span className="font-semibold text-dark-blue">
-                          {cif.fabric.code}
-                          {cif.fabric.color_name
-                            ? ` - ${cif.fabric.color_name}`
-                            : ""}
+                          {colorCode}
+                          {colorName ? ` - ${colorName}` : ""}
                         </span>
                       </p>
                     )}
@@ -405,6 +410,9 @@ const SofaConfigurationDetail: React.FC<SofaConfigurationDetailProps> = ({
             {item.cart_item.fabric_code && (
               <p className="text-dark-blue-70">
                 {t("color")}: {item.cart_item.fabric_code}
+                {item.cart_item.fabric_color_name
+                  ? ` - ${item.cart_item.fabric_color_name}`
+                  : ""}
               </p>
             )}
           </div>

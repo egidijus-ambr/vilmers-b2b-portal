@@ -1,3 +1,4 @@
+import { orderPalettes } from "@lib/fabric-palettes/palette-order"
 import { gql } from "@apollo/client"
 import { GraphQLClient } from "../../client"
 import { GraphQLRequestConfig } from "../../client/types"
@@ -243,8 +244,12 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
             selected_sofa_combinations
             fabric_code
             fabric_group_name
+            fabric_color_name
             cartItemFabrics {
               id
+              fabric_code
+              fabric_color_name
+              fabric_group_name
               fabric_group {
                 id
                 code
@@ -1043,6 +1048,7 @@ export class CustomerModule {
                 selected_sofa_combinations?: string
                 fabric_code?: string
                 fabric_group_name?: string
+                fabric_color_name?: string
                 product_container?: {
                   single_product?: {
                     images?: {
@@ -1263,16 +1269,8 @@ export class CustomerModule {
       const groupPalettes =
         response?.getMe?.customer_group?.fabric_palettes ?? []
 
-      // Merge and deduplicate by ID
-      const allPalettes = [...directPalettes]
-      const existingIds = new Set(directPalettes.map((p) => p.id))
-      for (const palette of groupPalettes) {
-        if (!existingIds.has(palette.id)) {
-          allPalettes.push(palette)
-        }
-      }
-
-      return allPalettes
+      // Priority order shared with the backend snapshot resolution.
+      return orderPalettes(directPalettes, groupPalettes)
     } catch (error) {
       console.error("[getFabricPalettes] Error:", error)
       return []
@@ -1305,16 +1303,8 @@ export class CustomerModule {
     const directPalettes = result?.fabric_palettes ?? []
     const groupPalettes = result?.customer_group?.fabric_palettes ?? []
 
-    // Merge and deduplicate by ID
-    const allPalettes = [...directPalettes]
-    const existingIds = new Set(directPalettes.map((p) => p.id))
-    for (const palette of groupPalettes) {
-      if (!existingIds.has(palette.id)) {
-        allPalettes.push(palette)
-      }
-    }
-
-    return allPalettes
+    // Priority order shared with the backend snapshot resolution.
+    return orderPalettes(directPalettes, groupPalettes)
   }
 
   async searchCustomers(

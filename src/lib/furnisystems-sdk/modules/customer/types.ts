@@ -233,6 +233,10 @@ export interface OrderDetailProductProfile {
 
 export interface CartItemFabricDetail {
   id: string
+  /** Snapshots written at add-to-cart time; prefer over the live fabric. */
+  fabric_code?: string | null
+  fabric_color_name?: string | null
+  fabric_group_name?: string | null
   fabric?: {
     id: string
     code?: string
@@ -377,6 +381,7 @@ export interface OrderDetailItem {
     selected_sofa_combinations?: string
     fabric_code?: string
     fabric_group_name?: string
+    fabric_color_name?: string
     cartItemFabrics?: CartItemFabricDetail[]
     fabricCombination?: {
       id?: number

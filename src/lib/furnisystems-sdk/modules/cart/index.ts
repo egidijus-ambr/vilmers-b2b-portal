@@ -18,6 +18,7 @@ const CART_ITEM_FRAGMENT = gql`
     advanced_product_type
     fabric_code
     fabric_group_name
+    fabric_color_name
     fabric {
       id
     }
@@ -138,6 +139,9 @@ const CART_ITEM_FRAGMENT = gql`
     }
     cartItemFabrics {
       id
+      fabric_code
+      fabric_color_name
+      fabric_group_name
       fabric {
         id
         code
@@ -227,6 +231,7 @@ const ADD_ITEM_TO_CART = gql`
     $fabricCombinationId: Int
     $fabric_code: String
     $fabric_group_name: String
+    $language: String
     $selected_sofa_combinations: String
     $additionalComponentIds: [Int!]
     $componentsByModule: [ComponentByModuleInput!]
@@ -246,6 +251,7 @@ const ADD_ITEM_TO_CART = gql`
       fabricCombinationId: $fabricCombinationId
       fabric_code: $fabric_code
       fabric_group_name: $fabric_group_name
+      language: $language
       selected_sofa_combinations: $selected_sofa_combinations
       additionalComponentIds: $additionalComponentIds
       componentsByModule: $componentsByModule
@@ -383,6 +389,8 @@ export class CartModule {
         fabricCombinationId: input.fabricCombinationId || null,
         fabric_code: input.fabric_code || null,
         fabric_group_name: input.fabric_group_name || null,
+        // Backend arg `language` (single place to rename if it changes).
+        language: input.language || null,
         selected_sofa_combinations: input.selected_sofa_combinations || null,
         additionalComponentIds: input.additionalComponentIds || [],
         componentsByModule: input.componentsByModule || [],

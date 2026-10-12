@@ -3,7 +3,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { sdk } from "@lib/config"
 import { FurnisystemsCart, FurnisystemsCartItem, AddCartItemInput } from "@lib/furnisystems-sdk/modules/cart/types"
-import { renameCartAction, setActiveCartAction, startNewCartAction } from "@lib/data/carts"
+import { addCartItemAction, renameCartAction, setActiveCartAction, startNewCartAction } from "@lib/data/carts"
+import { PaletteActionError } from "@lib/fabric-palettes/palette-error"
+import { useParams } from "next/navigation"
 import { useActingCustomer } from "./acting-customer-context"
 
 interface CartContextValue {
@@ -24,6 +26,8 @@ const CartContext = createContext<CartContextValue | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { actingCustomer } = useActingCustomer()
+  const routeParams = useParams()
+  const uiLanguage = (routeParams?.languageCode as string | undefined)?.toLowerCase()
   const [cart, setCart] = useState<FurnisystemsCart | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -77,13 +81,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addItem = useCallback(async (input: AddCartItemInput) => {
     if (!cart) return
     try {
-      await sdk.cart.addItem(cart.id, input)
+      const res = await addCartItemAction(cart.id, {
+        ...input,
+        language: input.language ?? uiLanguage,
+      })
+      if (!res.ok) throw new PaletteActionError(res.error)
       await refreshCart()
     } catch (error) {
       console.error("[CartContext] Failed to add item:", error)
       throw error
     }
-  }, [cart, refreshCart])
+  }, [cart, refreshCart, uiLanguage])
 
   const updateItemQuantity = useCallback(async (cartItemId: number, quantity: number) => {
     try {

@@ -1,5 +1,6 @@
 "use server"
 
+import { toActionError, type PaletteErrorItem } from "@lib/fabric-palettes/palette-error"
 import { sdk } from "@lib/config"
 import { GET_ADDITIONAL_ADDRESS, CREATE_ORDER, GET_PAYMENT_METHOD } from "@modules/checkout/queries/checkout-queries"
 
@@ -31,7 +32,19 @@ export async function fetchDefaultPaymentMethod(): Promise<number | null> {
   }
 }
 
-export async function placeOrder(variables: Record<string, any>) {
+export type PlaceOrderResult =
+  | { success: true; orderId: number | string }
+  | {
+      success: false
+      error: string
+      /** e.g. FABRIC_NOT_IN_PALETTE */
+      code?: string
+      items?: PaletteErrorItem[]
+    }
+
+export async function placeOrder(
+  variables: Record<string, any>
+): Promise<PlaceOrderResult> {
   try {
     console.log("[placeOrder] purchased_by:", JSON.stringify(variables.purchased_by))
     const result = await sdk.getApolloClient().mutate({
@@ -45,6 +58,7 @@ export async function placeOrder(variables: Record<string, any>) {
     return { success: true, orderId }
   } catch (err: any) {
     console.error("Failed to place order:", err)
-    return { success: false, error: err.message || "Failed to place order" }
+    const e = toActionError(err, "Failed to place order")
+    return { success: false, error: e.message, code: e.code, items: e.items }
   }
 }

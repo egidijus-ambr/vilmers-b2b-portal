@@ -117,6 +117,7 @@ export function furnisystemsCartItemToProductItemRow(
             selected_sofa_combinations: item.selected_sofa_combinations,
             fabric_code: item.fabric_code,
             fabric_group_name: item.fabric_group_name,
+            fabric_color_name: item.fabric_color_name ?? undefined,
             cartItemFabrics: item.cartItemFabrics,
             product_container: item.product_container,
             additional_components: item.additional_components,

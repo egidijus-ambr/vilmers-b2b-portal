@@ -26,6 +26,8 @@ import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
 import { hasUnjoinedConnectableModules } from "@configurator/lib/sofa-connectivity"
 import { useDebugMode } from "@lib/hooks/use-debug-mode"
 import { useTranslations } from "@lib/i18n"
+import { PaletteActionError } from "@lib/fabric-palettes/palette-error"
+import { paletteErrorMessage } from "@lib/fabric-palettes/palette-error-message"
 import ReferenceStep from "./reference-step"
 import { MissingReferenceModal } from "./missing-reference-modal"
 import { DisconnectedModulesModal } from "./disconnected-modules-modal"
@@ -72,6 +74,7 @@ const ConfiguratorContent = ({
   const [showReferenceModal, setShowReferenceModal] = useState(false)
   const [showDisconnectWarning, setShowDisconnectWarning] = useState(false)
   const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
 
   // Use the customer's effective pricelist (direct wins over group). The
   // configurator data layer needs a single ID; charges always come from the
@@ -356,7 +359,6 @@ const ConfiguratorContent = ({
         fabric_groupId: state.selectedFabric.fabricGroupObject?.id,
         fabricCombinationId: state.selectedFabricCombination?.fabricCombination?.id,
         fabric_code: state.selectedFabric.fabricObject?.code,
-        fabric_group_name: state.selectedFabric.fabricGroupObject?.name,
         selected_sofa_combinations: sofaCombinationsWithArmrestWidth.length > 0
           ? JSON.stringify(sofaCombinationsWithArmrestWidth)
           : undefined,
@@ -382,9 +384,16 @@ const ConfiguratorContent = ({
       })
       setToast({ message: "Item added to cart", type: "success" })
     } catch (error) {
-      setToast({ message: "Failed to add item to cart", type: "error" })
+      const paletteMessage =
+        error instanceof PaletteActionError
+          ? paletteErrorMessage(tc, error.code, error.items)
+          : null
+      setToast({
+        message: paletteMessage ?? "Failed to add item to cart",
+        type: "error",
+      })
     }
-  }, [productData, state, totalVolume, addItem])
+  }, [productData, state, totalVolume, addItem, tc])
 
   const proceedToReferenceGate = async () => {
     if (!state.referenceText.trim()) {

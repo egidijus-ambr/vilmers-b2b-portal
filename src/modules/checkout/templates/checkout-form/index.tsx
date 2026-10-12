@@ -3,9 +3,12 @@
 import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useCart } from "@lib/context/cart-context"
+import CustomerSelector from "@modules/layout/components/customer-selector"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { fetchCustomerAddresses, placeOrder, fetchDefaultPaymentMethod } from "@lib/data/checkout"
 import { sdk } from "@lib/config"
+import { useTranslations } from "@lib/i18n"
+import { paletteErrorMessage } from "@lib/fabric-palettes/palette-error-message"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
 import ShippingDetails from "@modules/checkout/components/shipping-details"
 import { Address } from "@modules/checkout/components/address-select"
@@ -76,7 +79,13 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const params = useParams()
   const languageCode = params.languageCode as string
   const { items } = useCart()
-  const { actingCustomer: customer } = useActingCustomer() as { actingCustomer: any }
+  const { t: tc } = useTranslations("common")
+  const { actingCustomer: customer, isAgentOrAdmin } = useActingCustomer() as {
+    actingCustomer: any
+    isAgentOrAdmin: boolean
+  }
+  // Agents/admins must act for a customer that has an account code.
+  const needsActingCustomer = isAgentOrAdmin && !customer?.account_code
 
   const [addresses, setAddresses] = useState<Address[]>([])
   const [addressData, setAddressData] = useState<AddressFormData | null>(null)
@@ -114,6 +123,11 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   )
 
   async function handlePlaceOrder() {
+    if (needsActingCustomer) {
+      setError(tc("checkout-select-customer-required"))
+      return
+    }
+
     if (!isAddressValid || !orderType) {
       setShowErrors(true)
       // Scroll to first error
@@ -207,7 +221,11 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
         window.location.href = `/${languageCode}/account/orders/details/${result.orderId}?placed=1`
         return
       } else {
-        setError(result.error || "Failed to place order. Please try again.")
+        setError(
+          paletteErrorMessage(tc, result.success ? undefined : result.code, result.success ? undefined : result.items) ||
+            (result.success ? null : result.error) ||
+            "Failed to place order. Please try again."
+        )
       }
     } catch (err: any) {
       setError(err.message || "Failed to place order. Please try again.")
@@ -218,6 +236,20 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
 
   return (
     <div className="flex flex-col gap-y-6">
+      {needsActingCustomer && (
+        <div
+          role="alert"
+          className="flex flex-col gap-y-3 border border-gold bg-white p-4 md:p-6"
+        >
+          <p className="text-sm text-dark-blue">
+            {tc("checkout-select-customer-required")}
+          </p>
+          <div>
+            <CustomerSelector />
+          </div>
+        </div>
+      )}
+
       {/* Customer information */}
       <div className="bg-white pb-6 p-4 md:p-6">
         <h3 className="font-medium text-gray-900 mb-6">

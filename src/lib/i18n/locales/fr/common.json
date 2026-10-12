@@ -98,5 +98,10 @@
   "linked-products-ACCESSORY": "Accessoires",
   "linked-products-GOES_WELL_WITH": "Se marie bien avec",
   "linked-products-ALTERNATIVE": "Alternatives",
-  "downloads": "Téléchargements"
+  "downloads": "Téléchargements",
+  "fabric-not-in-palette": "Ces couleurs ne sont pas disponibles dans vos palettes de tissus : {{codes}}. Veuillez retirer ces articles du panier ou choisir une autre couleur.",
+  "fabric-not-in-palette-generic": "Une ou plusieurs couleurs sélectionnées ne sont pas disponibles dans vos palettes de tissus. Veuillez choisir une autre couleur.",
+  "checkout-select-customer-required": "Sélectionnez un client avant de passer commande. Les commandes doivent être passées au nom d'un client disposant d'un code client.",
+  "checkout-select-customer-title": "Sélectionnez d'abord un client",
+  "order-buyer-not-authorized": "La commande n'a pas pu être passée car aucun client valide n'est sélectionné. Veuillez sélectionner un client disposant d'un code client et réessayer."
 }

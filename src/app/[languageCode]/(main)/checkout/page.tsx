@@ -18,10 +18,13 @@ export default function Checkout() {
   const { items, isLoading } = useCart()
   const { customer } = useCustomer()
   const { actingCustomer } = useActingCustomer()
-  const blockedNoActingCustomer = isAgentOrAdmin(customer) && !actingCustomer
+  const blockedNoActingCustomer =
+    isAgentOrAdmin(customer) &&
+    !(actingCustomer as { account_code?: string | null } | null)?.account_code
   const { languageCode } = useParams() as { languageCode: string }
   const router = useRouter()
   const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const checkoutRef = useRef<CheckoutFormHandle>(null)
   const [checkoutState, setCheckoutState] = useState<CheckoutFormState>({ isSubmitting: false })
 
@@ -81,7 +84,7 @@ export default function Checkout() {
                     disabled={checkoutState.isSubmitting || blockedNoActingCustomer}
                     title={
                       blockedNoActingCustomer
-                        ? "Select a customer first"
+                        ? tc("checkout-select-customer-title")
                         : undefined
                     }
                   >

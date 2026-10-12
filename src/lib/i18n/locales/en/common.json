@@ -98,5 +98,10 @@
   "linked-products-ACCESSORY": "Accessories",
   "linked-products-GOES_WELL_WITH": "Goes well with",
   "linked-products-ALTERNATIVE": "Alternatives",
-  "downloads": "Downloads"
+  "downloads": "Downloads",
+  "fabric-not-in-palette": "These colours are not available in your fabric palettes: {{codes}}. Please remove those items from your cart or choose another colour.",
+  "fabric-not-in-palette-generic": "One or more selected colours are not available in your fabric palettes. Please choose another colour.",
+  "checkout-select-customer-required": "Select a customer before placing an order. Orders must be placed on behalf of a customer with a customer code.",
+  "checkout-select-customer-title": "Select a customer first",
+  "order-buyer-not-authorized": "This order could not be placed because no valid customer is selected. Please select a customer with a customer code and try again."
 }

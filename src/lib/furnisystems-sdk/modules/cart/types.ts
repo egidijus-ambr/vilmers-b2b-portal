@@ -27,6 +27,8 @@ export interface FurnisystemsCartItem {
   advanced_product_type: string | null
   fabric_code: string | null
   fabric_group_name: string | null
+  /** Server-resolved snapshot (palette override ?? Fabric.color_name). */
+  fabric_color_name?: string | null
   selected_sofa_combinations: string | null
   cartId: number | null
   productContainerId: number | null
@@ -73,6 +75,10 @@ export interface FurnisystemsCartItem {
   }[]
   cartItemFabrics: {
     id: number
+    /** Snapshots written by the server when the item was added. */
+    fabric_code?: string | null
+    fabric_color_name?: string | null
+    fabric_group_name?: string | null
     fabric?: {
       id: number
       code: string
@@ -117,7 +123,10 @@ export interface AddCartItemInput {
   fabric_groupId?: number
   fabricCombinationId?: number
   fabric_code?: string
+  /** @deprecated ignored by the server, which resolves the group name itself. */
   fabric_group_name?: string
+  /** UI language code (en/fr/de); server resolves the default group name in it. */
+  language?: string
   selected_sofa_combinations?: string
   additionalComponentIds?: number[]
   componentsByModule?: Array<{

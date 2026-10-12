@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { useCustomer } from "@lib/context/customer-context"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
+import { orderPaletteIds } from "@lib/fabric-palettes/palette-order"
 import type { FabricGroupWithPrice } from "./types"
 
 /**
@@ -18,9 +19,11 @@ export function useCustomerPaletteIds(): number[] {
       }
     | null
   return useMemo(() => {
-    const direct = source?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-    const group = source?.customer_group?.fabric_palettes?.map((p) => Number(p.id)) ?? []
-    return Array.from(new Set([...direct, ...group]))
+    // Priority order (direct id ASC, then group id ASC) must match the backend.
+    return orderPaletteIds(
+      source?.fabric_palettes,
+      source?.customer_group?.fabric_palettes
+    )
   }, [source?.fabric_palettes, source?.customer_group?.fabric_palettes])
 }
 

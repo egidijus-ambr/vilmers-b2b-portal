@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
-import { sdk } from "@lib/config"
+import { getConfiguratorDataAction } from "@lib/data/configurator"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
 import { buildSortedFabricGroups } from "@configurator/lib/group-logic"
 import { useCustomerPaletteIds } from "../lib/palette-utils"
@@ -49,7 +49,7 @@ export function useConfiguratorData(
       dispatch({ type: "SET_LOADING", payload: true })
 
       try {
-        const data = await sdk.products.getConfiguratorData(
+        const data = await getConfiguratorDataAction(
           productContainerId!,
           priceListId,
           language,

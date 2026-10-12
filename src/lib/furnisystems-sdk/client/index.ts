@@ -402,6 +402,20 @@ export class ApolloGraphQLClient {
       if (error instanceof FurnisystemsError) {
         throw error
       }
+      // Apollo throws (errorPolicy "none") instead of returning result.errors.
+      // Keep structured extensions so callers can read e.g. FABRIC_NOT_IN_PALETTE.
+      const gqlErrors = (error as any)?.graphQLErrors as
+        | { message: string; extensions?: Record<string, any> }[]
+        | undefined
+      const coded = gqlErrors?.find((e) => e.extensions?.code)
+      if (coded) {
+        throw new FurnisystemsError(
+          coded.message,
+          String(coded.extensions!.code),
+          undefined,
+          { extensions: coded.extensions }
+        )
+      }
       throw new NetworkError(
         `Mutation failed: ${
           error instanceof Error ? error.message : "Unknown error"

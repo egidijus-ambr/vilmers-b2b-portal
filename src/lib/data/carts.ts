@@ -4,10 +4,12 @@ import { sdk } from "@lib/config"
 import { validateSession } from "@lib/util/session-validation"
 import { unstable_noStore } from "next/cache"
 import {
+  AddCartItemInput,
   CartSummary,
   FurnisystemsCart,
 } from "@lib/furnisystems-sdk/modules/cart/types"
 import { getActingCustomer } from "./acting-customer"
+import { toActionError, type ActionError } from "@lib/fabric-palettes/palette-error"
 
 /**
  * Resolve the Customer (company) id whose carts we should operate on, using the
@@ -114,5 +116,33 @@ export const deleteCartAction = async (
   } catch (error: any) {
     console.error("[deleteCartAction] Error deleting cart:", error)
     return { ok: false, error: error?.message ?? "Failed to delete cart" }
+  }
+}
+
+/**
+ * Add an item to a cart. Runs server-side so the SDK attaches the cookie
+ * auth token (the browser SDK has no token), which the backend needs for
+ * palette enforcement and the cart ownership check. Errors are returned, not
+ * thrown, because production redacts thrown server-action error details.
+ */
+export const addCartItemAction = async (
+  cartId: number,
+  input: AddCartItemInput
+): Promise<{ ok: true } | { ok: false; error: ActionError }> => {
+  unstable_noStore()
+
+  try {
+    const validation = await validateSession()
+    if (!validation.isValid) {
+      return { ok: false, error: { message: "Authentication required" } }
+    }
+    await sdk.cart.addItem(cartId, input)
+    return { ok: true }
+  } catch (error: any) {
+    console.error("[addCartItemAction] Error adding item:", error)
+    return {
+      ok: false,
+      error: toActionError(error, "Failed to add item to cart"),
+    }
   }
 }
