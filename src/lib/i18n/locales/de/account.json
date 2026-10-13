@@ -226,5 +226,9 @@
   "email-invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
   "email-send-failed": "E-Mail konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
   "email-session-expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
-  "send": "Senden"
+  "send": "Senden",
+  "price-missing-modules": "{{count}} Modul(e) haben keinen Preis für die gewählte Stoffkategorie. Wählen Sie einen anderen Stoff oder entfernen Sie sie.",
+  "price-missing-base": "Für die gewählte Stoffkategorie ist kein Preis verfügbar. Wählen Sie einen anderen Stoff.",
+  "fabric-category-unavailable": "Für die gewählten Module nicht verfügbar",
+  "price-unavailable": "Kein Preis"
 }

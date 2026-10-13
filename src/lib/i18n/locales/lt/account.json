@@ -226,5 +226,9 @@
   "email-invalid": "Įveskite galiojantį el. pašto adresą",
   "email-send-failed": "Nepavyko išsiųsti el. laiško. Bandykite dar kartą.",
   "email-session-expired": "Jūsų sesija baigėsi. Prisijunkite iš naujo.",
-  "send": "Siųsti"
+  "send": "Siųsti",
+  "price-missing-modules": "{{count}} modul(ių) neturi kainos pasirinktai audinio kategorijai. Pasirinkite kitą audinį arba pašalinkite juos.",
+  "price-missing-base": "Pasirinktai audinio kategorijai kaina nepasiekiama. Pasirinkite kitą audinį.",
+  "fabric-category-unavailable": "Nepasiekiama pasirinktiems moduliams",
+  "price-unavailable": "Nėra kainos"
 }

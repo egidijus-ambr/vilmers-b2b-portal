@@ -404,6 +404,15 @@ const ConfiguratorContent = ({
   }
 
   const requestAddToCart = async () => {
+    // Defence in depth: the footer disables the button, but never submit an
+    // unpriced configuration (a missing price must not become a 0 line item).
+    if (
+      state.totalPrice == null ||
+      state.unpricedModuleIds.length > 0 ||
+      state.basePriceMissing
+    ) {
+      return
+    }
     if (hasUnjoinedConnectableModules(state.sofaCombinations.flat())) {
       setShowDisconnectWarning(true)
       return

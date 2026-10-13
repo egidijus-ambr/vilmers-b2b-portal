@@ -226,5 +226,9 @@
   "email-invalid": "Please enter a valid email address",
   "email-send-failed": "Could not send the email. Please try again.",
   "email-session-expired": "Your session has expired. Please sign in again.",
-  "send": "Send"
+  "send": "Send",
+  "price-missing-modules": "{{count}} module(s) have no price for the selected fabric category. Choose another fabric or remove them.",
+  "price-missing-base": "No price is available for the selected fabric category. Choose another fabric.",
+  "fabric-category-unavailable": "Not available for the selected modules",
+  "price-unavailable": "No price"
 }

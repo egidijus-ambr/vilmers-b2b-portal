@@ -5,6 +5,8 @@ import { Dialog, Transition } from "@headlessui/react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import FabricDrawerCard from "./fabric-drawer-card"
 import type { FabricGroupWithPrice, FabricCombinationOption } from "@configurator/lib/types"
+import { useFabricCategoryAvailability } from "@configurator/hooks/use-fabric-category-availability"
+import { useTranslations } from "@lib/i18n"
 import { useCustomerPaletteIds, getGroupName } from "@configurator/lib/palette-utils"
 
 type FabricDrawerProps = {
@@ -35,6 +37,9 @@ const FabricDrawer = ({
   const [searchValue, setSearchValue] = useState("")
 
   const customerPaletteIds = useCustomerPaletteIds()
+  const { t } = useTranslations("account")
+  const isCategoryUnavailable = useFabricCategoryAvailability(option?.id ?? null)
+  const unavailableReason = t("fabric-category-unavailable")
 
   // Current selected fabric id for highlighting
   const selectedFabricId = option
@@ -77,6 +82,7 @@ const FabricDrawer = ({
   }, [fabricGroups, searchValue, languageCode, customerPaletteIds])
 
   const handleFabricSelect = (fabric: any, fabricGroup: FabricGroupWithPrice) => {
+    if (isCategoryUnavailable(fabricGroup.form_price_fabric_category?.group_number)) return
     if (option) {
       // Combination mode
       dispatch({
@@ -172,6 +178,7 @@ const FabricDrawer = ({
                     {filteredGroups.map((fabricGroup) => {
                       const groupName = getGroupName(fabricGroup, languageCode, customerPaletteIds)
                       const catNumber = fabricGroup.form_price_fabric_category?.group_number
+                      const unavailable = isCategoryUnavailable(catNumber)
 
                       // Sort fabrics by color_name
                       const sortedFabrics = [...fabricGroup.fabrics].sort((a, b) =>
@@ -181,9 +188,23 @@ const FabricDrawer = ({
                       return (
                         <div key={fabricGroup.id} className="mb-4">
                           {/* Group header */}
-                          <div className="flex items-center justify-between py-2 border-b border-gray-100 mb-2">
-                            <span className="text-sm font-medium text-gray-800">
+                          <div
+                            className="flex items-center justify-between py-2 border-b border-gray-100 mb-2"
+                            title={unavailable ? unavailableReason : undefined}
+                          >
+                            <span
+                              className={
+                                unavailable
+                                  ? "text-sm font-medium text-gray-400"
+                                  : "text-sm font-medium text-gray-800"
+                              }
+                            >
                               {groupName}
+                              {unavailable && (
+                                <span className="ml-2 text-xs font-normal text-red-700">
+                                  {unavailableReason}
+                                </span>
+                              )}
                             </span>
                             {catNumber != null && (
                               <span className="text-xs text-gray-500">
@@ -199,6 +220,8 @@ const FabricDrawer = ({
                                 key={fabric.id}
                                 fabric={fabric}
                                 isSelected={selectedFabricId === fabric.id}
+                                disabled={unavailable}
+                                disabledReason={unavailableReason}
                                 onClick={() => handleFabricSelect(fabric, fabricGroup)}
                               />
                             ))}

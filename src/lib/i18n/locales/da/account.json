@@ -226,5 +226,9 @@
   "email-invalid": "Indtast en gyldig e-mailadresse",
   "email-send-failed": "E-mailen kunne ikke sendes. Prøv igen.",
   "email-session-expired": "Din session er udløbet. Log ind igen.",
-  "send": "Send"
+  "send": "Send",
+  "price-missing-modules": "{{count}} modul(er) har ingen pris for den valgte stofkategori. Vælg et andet stof, eller fjern dem.",
+  "price-missing-base": "Der er ingen pris for den valgte stofkategori. Vælg et andet stof.",
+  "fabric-category-unavailable": "Ikke tilgængelig for de valgte moduler",
+  "price-unavailable": "Ingen pris"
 }

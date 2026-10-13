@@ -2,7 +2,10 @@
 
 import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
-import { getAdvancedProductPrice } from "@configurator/lib/price-utils"
+import {
+  computeAdvancedProductPrice,
+  productRequiresBasePrice,
+} from "@configurator/lib/price-utils"
 
 /**
  * Hook that recalculates the total price whenever configurator selections change.
@@ -29,15 +32,27 @@ export function useConfiguratorPrice(priceListId: number) {
       },
     }
 
-    const price = getAdvancedProductPrice(
+    // Products without sofa modules (e.g. OTHER_WITH_FABRICS) are priced by
+    // their own fabric-category price, so a missing one must block.
+    const requireBasePrice = productRequiresBasePrice(productData.advanced_product)
+
+    const result = computeAdvancedProductPrice(
       product,
       sofaCombinations,
       selectedAdditionalComponents,
       selectedFabric,
-      priceListId
+      priceListId,
+      requireBasePrice
     )
 
-    dispatch({ type: "SET_TOTAL_PRICE", payload: price })
+    dispatch({ type: "SET_TOTAL_PRICE", payload: result.total })
+    dispatch({
+      type: "SET_PRICE_ISSUES",
+      payload: {
+        unpricedModuleIds: result.unpricedModuleIds,
+        basePriceMissing: result.baseMissing,
+      },
+    })
   }, [
     productData,
     sofaCombinations,

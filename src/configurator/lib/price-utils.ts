@@ -33,42 +33,100 @@ export const priceFormatter = (
 }
 
 /**
+ * Group numbers (price categories) implied by a fabric selection.
+ * Combination mode: the unique categories of all option fabrics.
+ */
+export const getSelectedGroupNumbers = (
+  selectedFabric: SelectedFabricState
+): number[] => {
+  if (selectedFabric.combinationFabrics) {
+    const nums = Object.values(selectedFabric.combinationFabrics)
+      .map((o) => o.fabricGroupObject?.form_price_fabric_category?.group_number)
+      .filter((n): n is number => n != null)
+    return nums.filter((v, i, self) => self.indexOf(v) === i)
+  }
+  const n = selectedFabric.fabricGroupObject?.form_price_fabric_category?.group_number
+  return n != null ? [n] : []
+}
+
+/**
+ * Core lookup: highest price among the rows whose category is in `groupNumbers`.
+ * Returns null when no row matches ("no price" — distinct from a price of 0).
+ * Single source of truth shared by totals, drawers and the fabric selector.
+ */
+export const getPriceForGroupNumbers = (
+  groupNumbers: number[],
+  priceFabricCategories: PriceFabricCategory[] | null | undefined
+): number | null => {
+  let best: number | null = null
+  for (const category of priceFabricCategories ?? []) {
+    if (category.price == null) continue
+    if (!groupNumbers.includes(category.fabrice_price_category.group_number)) continue
+    if (best == null || category.price > best) best = category.price
+  }
+  return best
+}
+
+/**
  * Look up the price for a selected fabric in a list of price-fabric-categories.
  * If combination fabrics are selected, finds the highest-priced category matching any of them.
+ * Returns null when there is no price (NOT 0).
  */
 export const getPriceFromPriceCategories = (
   selectedFabric: SelectedFabricState,
   priceFabricCategories: PriceFabricCategory[]
-): number | null => {
-  let matchingCategories: PriceFabricCategory[]
-
-  if (selectedFabric.combinationFabrics) {
-    // Get all group numbers from combination fabrics
-    const groupNumbers = Object.values(selectedFabric.combinationFabrics).map(
-      (option) => option.fabricGroupObject?.form_price_fabric_category?.group_number
-    )
-    const uniqueGroupNumbers = groupNumbers.filter(
-      (value, index, self) => self.indexOf(value) === index
-    )
-    matchingCategories = priceFabricCategories?.filter((category) =>
-      uniqueGroupNumbers.includes(category.fabrice_price_category.group_number)
-    ) ?? []
-  } else {
-    matchingCategories = priceFabricCategories.filter(
-      (category) =>
-        category.fabrice_price_category.group_number ===
-        selectedFabric.fabricGroupObject?.form_price_fabric_category?.group_number
-    )
-  }
-
-  if (!matchingCategories || matchingCategories.length === 0) return null
-
-  // Return the highest price among matching categories
-  const highest = matchingCategories.reduce((prev, current) =>
-    prev && prev.price > current.price ? prev : current
+): number | null =>
+  getPriceForGroupNumbers(
+    getSelectedGroupNumbers(selectedFabric),
+    priceFabricCategories
   )
 
-  return highest?.price ?? null
+/**
+ * Products without sofa modules (e.g. OTHER_WITH_FABRICS, tables) are priced by
+ * their own price, so a missing one must block rather than become 0.
+ */
+export const productRequiresBasePrice = (
+  advancedProduct:
+    | { advanced_product_type?: string; sofa_forms?: unknown[] }
+    | null
+    | undefined
+): boolean =>
+  advancedProduct?.advanced_product_type !== "SOFA" &&
+  (advancedProduct?.sofa_forms?.length ?? 0) === 0
+
+export type AdvancedProductPriceResult = {
+  /** null when the price cannot be computed (see unpriced* / baseMissing). */
+  total: number | null
+  /** Ids of canvas modules that have no price for the selected fabric category. */
+  unpricedModuleIds: string[]
+  /** Fabric product whose own (non-module) price is missing for the fabric category. */
+  baseMissing: boolean
+}
+
+const moduleKey = (shape: any, index: number): string =>
+  String(shape?.attrs?.id ?? shape?.attrs?.name ?? `module-${index}`)
+
+/**
+ * Modules on the canvas that have no price for the given fabric categories.
+ */
+export const getUnpricedModuleIds = (
+  groupNumbers: number[],
+  sofaCombinations: any[][]
+): string[] => {
+  const ids: string[] = []
+  let i = 0
+  for (const combination of sofaCombinations) {
+    for (const shape of combination) {
+      const item = shape.attrs?.originalSofaForm
+      if (item) {
+        if (getPriceForGroupNumbers(groupNumbers, item.form_price_fabric_category) == null) {
+          ids.push(moduleKey(shape, i))
+        }
+      }
+      i++
+    }
+  }
+  return ids
 }
 
 /**
@@ -76,8 +134,14 @@ export const getPriceFromPriceCategories = (
  * - Sofa module prices (from form_price_fabric_category)
  * - Base price (for non-fabric products like tables)
  * - Additional component prices (extra_price or price_fabric_category)
+ *
+ * A missing price is never treated as 0: if any module (or, when
+ * `requireBasePrice`, the product's own fabric-category price) has no price,
+ * `total` is null and the offending modules are listed.
+ * Components keep contributing 0 when they have no price for the fabric
+ * (unchanged behaviour; many component groups intentionally allow unpriced picks).
  */
-export const getAdvancedProductPrice = (
+export const computeAdvancedProductPrice = (
   product: {
     advanced_product?: {
       advanced_product_price_fabric_category?: PriceFabricCategory[]
@@ -87,59 +151,69 @@ export const getAdvancedProductPrice = (
   sofaCombinations: any[][],
   selectedAdditionalComponents: SelectedComponent[],
   selectedFabric: SelectedFabricState,
-  priceListId: number = 1
-): number => {
-  // 1) Sum prices of all sofa modules
+  priceListId: number = 1,
+  requireBasePrice: boolean = false
+): AdvancedProductPriceResult => {
+  const fabricGroup = selectedFabric?.fabricGroupObject
+  const groupNumbers = getSelectedGroupNumbers(selectedFabric)
+  const hasModules = sofaCombinations.some((c) => c.some((s) => s.attrs?.originalSofaForm))
+
+  // 1) Sofa modules
   let totalSofaModulesPrice = 0
-  if (sofaCombinations.length > 0) {
+  let unpricedModuleIds: string[] = []
+  if (hasModules) {
+    if (!fabricGroup) {
+      // Fabric not chosen yet: price is simply not available (not "unpriced").
+      return { total: null, unpricedModuleIds: [], baseMissing: false }
+    }
+    unpricedModuleIds = getUnpricedModuleIds(groupNumbers, sofaCombinations)
     for (const combination of sofaCombinations) {
       for (const shape of combination) {
         const item = shape.attrs?.originalSofaForm
         if (item) {
-          const price = getPriceFromPriceCategories(
-            selectedFabric,
-            item.form_price_fabric_category ?? []
-          )
-          totalSofaModulesPrice += price ?? 0
+          totalSofaModulesPrice +=
+            getPriceForGroupNumbers(groupNumbers, item.form_price_fabric_category) ?? 0
         }
       }
     }
   }
 
-  // 2) Calculate base/fabric price + component extras
+  // 2) Base/fabric price + component extras
   const priceCategories =
     product?.advanced_product?.advanced_product_price_fabric_category?.filter(
       (cat) => cat.price_listId === priceListId
     ) ?? []
 
-  const fabricGroup = selectedFabric?.fabricGroupObject
   let totalPrice = 0
+  let baseMissing = false
 
   if (fabricGroup) {
-    // Fabric-based product: look up base price by fabric category
-    totalPrice =
-      getPriceFromPriceCategories(selectedFabric, priceCategories) ?? 0
+    const base = getPriceFromPriceCategories(selectedFabric, priceCategories)
+    if (base == null) {
+      baseMissing = requireBasePrice
+    } else {
+      totalPrice = base
+    }
 
-    // Add additional component prices
     for (const component of selectedAdditionalComponents) {
       if (component.price_fabric_category && component.price_fabric_category.length > 0) {
-        const price = getPriceFromPriceCategories(
-          selectedFabric,
-          component.price_fabric_category
-        )
-        totalPrice += price ?? 0
+        totalPrice +=
+          getPriceFromPriceCategories(selectedFabric, component.price_fabric_category) ?? 0
       } else if (component.extra_price) {
         totalPrice += component.extra_price
       }
     }
   } else {
     // Non-fabric product (tables, lights): use base price
-    const basePrice =
-      product?.advanced_product?.base_prices?.find(
-        (p) => p.price_listId === priceListId
-      )?.price ?? 0
+    const basePrice = product?.advanced_product?.base_prices?.find(
+      (p) => p.price_listId === priceListId
+    )?.price
 
-    totalPrice = basePrice
+    if (basePrice == null) {
+      baseMissing = requireBasePrice
+    } else {
+      totalPrice = basePrice
+    }
 
     for (const component of selectedAdditionalComponents) {
       if (component.extra_price) {
@@ -148,7 +222,78 @@ export const getAdvancedProductPrice = (
     }
   }
 
-  return totalPrice + totalSofaModulesPrice
+  const unpriced = unpricedModuleIds.length > 0 || baseMissing
+  return {
+    total: unpriced ? null : totalPrice + totalSofaModulesPrice,
+    unpricedModuleIds,
+    baseMissing,
+  }
+}
+
+/**
+ * Backwards-compatible wrapper: total, or null when anything is unpriced.
+ */
+export const getAdvancedProductPrice = (
+  product: Parameters<typeof computeAdvancedProductPrice>[0],
+  sofaCombinations: any[][],
+  selectedAdditionalComponents: SelectedComponent[],
+  selectedFabric: SelectedFabricState,
+  priceListId: number = 1,
+  requireBasePrice: boolean = false
+): number | null =>
+  computeAdvancedProductPrice(
+    product,
+    sofaCombinations,
+    selectedAdditionalComponents,
+    selectedFabric,
+    priceListId,
+    requireBasePrice
+  ).total
+
+/**
+ * Whether a fabric price category (`candidate`) is unavailable, i.e. choosing
+ * it would leave something unpriced. Uses the exact same lookups as
+ * computeAdvancedProductPrice so the selector and the total cannot disagree.
+ *
+ * - Canvas non-empty: unavailable if any canvas module has no price in it.
+ * - Canvas empty: unavailable if no module of the product (`sofaForms`) is
+ *   priced in it (skipped when the product has no sofa forms).
+ * - Products that need a base fabric price: unavailable if that is missing.
+ *
+ * `otherGroupNumbers` are the categories of the *other* combination options
+ * (combination mode takes the best price across the selected categories).
+ */
+export const isFabricCategoryUnavailable = ({
+  candidate,
+  otherGroupNumbers = [],
+  sofaCombinations,
+  sofaForms,
+  productPriceCategories,
+  requireBasePrice,
+}: {
+  candidate: number
+  otherGroupNumbers?: number[]
+  sofaCombinations: any[][]
+  sofaForms: { form_price_fabric_category?: PriceFabricCategory[] }[]
+  productPriceCategories: PriceFabricCategory[]
+  requireBasePrice: boolean
+}): boolean => {
+  const groupNumbers = [...otherGroupNumbers, candidate]
+  const hasModules = sofaCombinations.some((c) => c.some((s) => s.attrs?.originalSofaForm))
+
+  if (hasModules) {
+    if (getUnpricedModuleIds(groupNumbers, sofaCombinations).length > 0) return true
+  } else if (sofaForms.length > 0) {
+    const anyPriced = sofaForms.some(
+      (f) => getPriceForGroupNumbers(groupNumbers, f.form_price_fabric_category) != null
+    )
+    if (!anyPriced) return true
+  }
+
+  if (requireBasePrice) {
+    if (getPriceForGroupNumbers(groupNumbers, productPriceCategories) == null) return true
+  }
+  return false
 }
 
 /**

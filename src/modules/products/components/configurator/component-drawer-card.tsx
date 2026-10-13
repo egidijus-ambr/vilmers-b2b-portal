@@ -230,7 +230,7 @@ const ComponentDrawerCard = ({
       {!(isWrapper && tall) && (
         <div className="px-2 py-1.5 flex-1">
           <p
-            className="text-xs font-medium text-gray-800 leading-tight line-clamp-2 break-words min-h-[2.5em]"
+            className="text-xs font-medium text-gray-800 leading-tight line-clamp-3 break-words min-h-[3.75em]"
             title={name}
           >
             {name}

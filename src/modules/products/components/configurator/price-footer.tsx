@@ -9,6 +9,7 @@ import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import PriceDisplay from "@modules/common/components/price-display"
 import Button from "@modules/common/components/button"
+import { useTranslations } from "@lib/i18n"
 
 type PriceFooterProps = {
   currency?: string
@@ -29,7 +30,8 @@ const PriceFooter = ({
   onAddToCart,
 }: PriceFooterProps) => {
   const { state, dispatch } = useConfigurator()
-  const { totalPrice, quantity } = state
+  const { totalPrice, quantity, unpricedModuleIds, basePriceMissing } = state
+  const { t } = useTranslations("account")
   const [isAdding, setIsAdding] = useState(false)
   const canSeePrices = useCanSeePrices()
   const { customer } = useCustomer()
@@ -51,13 +53,32 @@ const PriceFooter = ({
     displayPrice != null ? applyDiscount(displayPrice, discountPct) : null
   const displayVolume = volume * quantity
 
+  // Unpriced modules / missing base price: never show a 0 total, block add-to-cart.
+  const priceIssueMessage =
+    unpricedModuleIds.length > 0
+      ? t("price-missing-modules", { count: unpricedModuleIds.length })
+      : basePriceMissing
+        ? t("price-missing-base")
+        : null
+  const hasPriceIssue = priceIssueMessage != null
+
   const hasMissingRequired = missingRequiredGroupNames.length > 0
   const missingMessage = hasMissingRequired
     ? `Please select ${missingRequiredGroupNames.join(", ")}`
     : null
+  const blockReason = missingMessage ?? priceIssueMessage
 
   return (
     <div className="sticky bottom-0 mt-4 border-t bg-configurator-surface pt-4 pb-4 px-6 flex flex-col gap-2">
+      {priceIssueMessage && (
+        <p
+          className="text-xs text-red-700 text-right"
+          role="alert"
+          aria-live="polite"
+        >
+          {priceIssueMessage}
+        </p>
+      )}
       {missingMessage && (
         <p
           className="text-xs text-red-700 text-right"
@@ -112,7 +133,9 @@ const PriceFooter = ({
         <div className="text-right">
           {priced == null ? (
             <p className="text-sm text-gray-400">
-              {canSeePrices ? "Select options to see price" : "Select options to continue"}
+              {hasPriceIssue
+                ? t("price-unavailable")
+                : canSeePrices ? "Select options to see price" : "Select options to continue"}
             </p>
           ) : canSeePrices ? (
             <PriceDisplay
@@ -128,7 +151,7 @@ const PriceFooter = ({
         {/* Add to cart */}
         <Button
           onClick={
-            blockedNoActingCustomer || hasMissingRequired
+            blockedNoActingCustomer || hasMissingRequired || hasPriceIssue
               ? undefined
               : handleAddToCart
           }
@@ -136,12 +159,13 @@ const PriceFooter = ({
             totalPrice == null ||
             isAdding ||
             blockedNoActingCustomer ||
-            hasMissingRequired
+            hasMissingRequired ||
+            hasPriceIssue
           }
           title={
             blockedNoActingCustomer
               ? "Select a customer first"
-              : missingMessage ?? undefined
+              : blockReason ?? undefined
           }
         >
           {isAdding ? (

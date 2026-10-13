@@ -12,19 +12,32 @@ type FabricDrawerCardProps = {
   }
   isSelected: boolean
   onClick: () => void
+  /** Greyed and not selectable (e.g. no price for the modules on the canvas) */
+  disabled?: boolean
+  disabledReason?: string
 }
 
-const FabricDrawerCard = ({ fabric, isSelected, onClick }: FabricDrawerCardProps) => {
+const FabricDrawerCard = ({
+  fabric,
+  isSelected,
+  onClick,
+  disabled = false,
+  disabledReason,
+}: FabricDrawerCardProps) => {
   const imageSrc = fabric.image?.src_md ?? fabric.image?.src_xs ?? fabric.image?.src
 
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
+      title={disabled ? disabledReason : undefined}
       className={clx(
         "relative w-full text-left overflow-hidden transition-all focus:outline-none",
         {
           "ring-2 ring-configurator-accent": isSelected,
-          "hover:ring-1 hover:ring-gray-300": !isSelected,
+          "hover:ring-1 hover:ring-gray-300": !isSelected && !disabled,
+          "opacity-40 grayscale cursor-not-allowed": disabled,
         }
       )}
     >
