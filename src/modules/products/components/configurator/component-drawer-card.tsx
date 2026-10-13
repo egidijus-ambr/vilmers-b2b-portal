@@ -39,7 +39,7 @@ const ComponentDrawerCard = ({
   const { state } = useConfigurator()
   const { discountPct } = useCustomerDiscount()
   const price = getPriceFromPriceCategories(state.selectedFabric, component.price_fabric_category)
-  const imageHeightClass = tall ? "h-44" : "h-32"
+  const imageHeightClass = tall ? "h-44 shrink-0" : "h-32 shrink-0"
   const buttonRef = React.useRef<HTMLButtonElement>(null)
   const [zoomVisible, setZoomVisible] = React.useState(false)
   const [zoomPos, setZoomPos] = React.useState<{
@@ -95,7 +95,7 @@ const ComponentDrawerCard = ({
       onFocus={showZoom}
       onBlur={hideZoom}
       className={clx(
-        "relative w-full text-left overflow-hidden border transition-all focus:outline-none",
+        "relative w-full h-full flex flex-col items-stretch justify-start text-left overflow-hidden border transition-all focus:outline-none",
         {
           "ring-2 ring-configurator-accent border-configurator-accent": isSelected,
           "hover:ring-1 hover:ring-gray-300 border-gray-200": !isSelected,
@@ -228,8 +228,11 @@ const ComponentDrawerCard = ({
 
       {/* Label */}
       {!(isWrapper && tall) && (
-        <div className="px-2 py-1.5">
-          <p className="text-xs font-medium text-gray-800 leading-tight truncate">
+        <div className="px-2 py-1.5 flex-1">
+          <p
+            className="text-xs font-medium text-gray-800 leading-tight line-clamp-2 break-words min-h-[2.5em]"
+            title={name}
+          >
             {name}
           </p>
           {description && (
