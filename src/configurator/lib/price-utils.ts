@@ -250,20 +250,24 @@ export const getAdvancedProductPrice = (
     requireBasePrice
   ).total
 
+export type FabricCategoryAvailability = "available" | "disabled" | "hidden"
+
 /**
- * Whether a fabric price category (`candidate`) is unavailable, i.e. choosing
- * it would leave something unpriced. Uses the exact same lookups as
- * computeAdvancedProductPrice so the selector and the total cannot disagree.
+ * Availability of a fabric price category (`candidate`). Uses the exact same
+ * lookups as computeAdvancedProductPrice so the selector and total cannot
+ * disagree. `sofaForms` are the product's enabled modules, already filtered to
+ * the customer's price list by the configurator query.
  *
- * - Canvas non-empty: unavailable if any canvas module has no price in it.
- * - Canvas empty: unavailable if no module of the product (`sofaForms`) is
- *   priced in it (skipped when the product has no sofa forms).
- * - Products that need a base fabric price: unavailable if that is missing.
+ * - hidden: no module of the product is priced in the category (products
+ *   without modules that need a base price: that price is missing).
+ * - disabled: some module is priced in it, but at least one module currently
+ *   on the canvas is not.
+ * - available: otherwise. An empty canvas is therefore never "disabled".
  *
  * `otherGroupNumbers` are the categories of the *other* combination options
  * (combination mode takes the best price across the selected categories).
  */
-export const isFabricCategoryUnavailable = ({
+export const getFabricCategoryAvailability = ({
   candidate,
   otherGroupNumbers = [],
   sofaCombinations,
@@ -277,23 +281,25 @@ export const isFabricCategoryUnavailable = ({
   sofaForms: { form_price_fabric_category?: PriceFabricCategory[] }[]
   productPriceCategories: PriceFabricCategory[]
   requireBasePrice: boolean
-}): boolean => {
+}): FabricCategoryAvailability => {
   const groupNumbers = [...otherGroupNumbers, candidate]
-  const hasModules = sofaCombinations.some((c) => c.some((s) => s.attrs?.originalSofaForm))
 
-  if (hasModules) {
-    if (getUnpricedModuleIds(groupNumbers, sofaCombinations).length > 0) return true
-  } else if (sofaForms.length > 0) {
+  if (sofaForms.length > 0) {
     const anyPriced = sofaForms.some(
       (f) => getPriceForGroupNumbers(groupNumbers, f.form_price_fabric_category) != null
     )
-    if (!anyPriced) return true
+    if (!anyPriced) return "hidden"
   }
 
   if (requireBasePrice) {
-    if (getPriceForGroupNumbers(groupNumbers, productPriceCategories) == null) return true
+    if (getPriceForGroupNumbers(groupNumbers, productPriceCategories) == null) return "hidden"
   }
-  return false
+
+  const hasModules = sofaCombinations.some((c) => c.some((s) => s.attrs?.originalSofaForm))
+  if (hasModules && getUnpricedModuleIds(groupNumbers, sofaCombinations).length > 0) {
+    return "disabled"
+  }
+  return "available"
 }
 
 /**

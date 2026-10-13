@@ -38,7 +38,7 @@ const FabricDrawer = ({
 
   const customerPaletteIds = useCustomerPaletteIds()
   const { t } = useTranslations("account")
-  const isCategoryUnavailable = useFabricCategoryAvailability(option?.id ?? null)
+  const getCategoryAvailability = useFabricCategoryAvailability(option?.id ?? null)
   const unavailableReason = t("fabric-category-unavailable")
 
   // Current selected fabric id for highlighting
@@ -46,14 +46,24 @@ const FabricDrawer = ({
     ? selectedFabric.combinationFabrics?.[option.id]?.fabricObject?.id ?? null
     : selectedFabric.fabricObject?.id ?? null
 
+  // Drop groups whose price category is hidden (unpriced for every module).
+  // Done before search so hidden fabrics are never shown or matched.
+  const visibleGroups = useMemo(
+    () =>
+      fabricGroups.filter(
+        (g) => getCategoryAvailability(g.form_price_fabric_category?.group_number) !== "hidden"
+      ),
+    [fabricGroups, getCategoryAvailability]
+  )
+
   // Filter fabric groups by search
   const filteredGroups = useMemo(() => {
     if (!searchValue || searchValue.length < 2) {
-      return fabricGroups
+      return visibleGroups
     }
     const query = searchValue.toLowerCase()
 
-    return fabricGroups
+    return visibleGroups
       .map((group) => {
         const groupName = getGroupName(group, languageCode, customerPaletteIds)
         const originalName = getGroupName(group, languageCode)
@@ -79,10 +89,10 @@ const FabricDrawer = ({
         return { ...group, fabrics: matchingFabrics }
       })
       .filter(Boolean) as FabricGroupWithPrice[]
-  }, [fabricGroups, searchValue, languageCode, customerPaletteIds])
+  }, [visibleGroups, searchValue, languageCode, customerPaletteIds])
 
   const handleFabricSelect = (fabric: any, fabricGroup: FabricGroupWithPrice) => {
-    if (isCategoryUnavailable(fabricGroup.form_price_fabric_category?.group_number)) return
+    if (getCategoryAvailability(fabricGroup.form_price_fabric_category?.group_number) !== "available") return
     if (option) {
       // Combination mode
       dispatch({
@@ -178,7 +188,7 @@ const FabricDrawer = ({
                     {filteredGroups.map((fabricGroup) => {
                       const groupName = getGroupName(fabricGroup, languageCode, customerPaletteIds)
                       const catNumber = fabricGroup.form_price_fabric_category?.group_number
-                      const unavailable = isCategoryUnavailable(catNumber)
+                      const unavailable = getCategoryAvailability(catNumber) === "disabled"
 
                       // Sort fabrics by color_name
                       const sortedFabrics = [...fabricGroup.fabrics].sort((a, b) =>

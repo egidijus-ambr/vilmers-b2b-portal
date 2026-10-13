@@ -3,15 +3,16 @@
 import { useCallback } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import {
-  isFabricCategoryUnavailable,
+  getFabricCategoryAvailability,
+  type FabricCategoryAvailability,
   productRequiresBasePrice,
   getSelectedGroupNumbers,
 } from "@configurator/lib/price-utils"
 
 /**
- * Returns a predicate telling whether a fabric price category (by group
- * number) is unavailable for the current canvas, using the same price lookups
- * as the total (see isFabricCategoryUnavailable). `optionId` is the
+ * Returns a function giving the availability (available | disabled | hidden) of
+ * a fabric price category (by group number) for the current canvas, using the same price lookups
+ * as the total (see getFabricCategoryAvailability). `optionId` is the
  * combination option being edited (null outside combination mode).
  */
 export function useFabricCategoryAvailability(optionId: number | string | null) {
@@ -19,8 +20,8 @@ export function useFabricCategoryAvailability(optionId: number | string | null) 
   const { productData, sofaCombinations, sofaForms, selectedFabric } = state
 
   return useCallback(
-    (groupNumber: number | null | undefined): boolean => {
-      if (groupNumber == null) return false
+    (groupNumber: number | null | undefined): FabricCategoryAvailability => {
+      if (groupNumber == null) return "available"
 
       // In combination mode the best price across all option categories is
       // used, so the other options' categories count alongside the candidate.
@@ -34,7 +35,14 @@ export function useFabricCategoryAvailability(optionId: number | string | null) 
         })
       }
 
-      return isFabricCategoryUnavailable({
+      // The category of the fabric currently selected (for this option in
+      // combination mode) must never vanish: hidden degrades to disabled.
+      const currentGroup = optionId != null
+        ? selectedFabric.combinationFabrics?.[optionId as any]?.fabricGroupObject
+        : selectedFabric.fabricGroupObject
+      const currentGroupNumber = currentGroup?.form_price_fabric_category?.group_number
+
+      const result = getFabricCategoryAvailability({
         candidate: groupNumber,
         otherGroupNumbers,
         sofaCombinations,
@@ -43,6 +51,8 @@ export function useFabricCategoryAvailability(optionId: number | string | null) 
           productData?.advanced_product?.advanced_product_price_fabric_category ?? [],
         requireBasePrice: productRequiresBasePrice(productData?.advanced_product),
       })
+      if (result === "hidden" && currentGroupNumber === groupNumber) return "disabled"
+      return result
     },
     [productData, sofaCombinations, sofaForms, selectedFabric, optionId]
   )
