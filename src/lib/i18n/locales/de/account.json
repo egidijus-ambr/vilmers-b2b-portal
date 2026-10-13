@@ -228,7 +228,8 @@
   "email-session-expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
   "send": "Senden",
   "price-missing-modules": "{{count}} Modul(e) haben keinen Preis für die gewählte Stoffkategorie. Wählen Sie einen anderen Stoff oder entfernen Sie sie.",
-  "price-missing-base": "Für die gewählte Stoffkategorie ist kein Preis verfügbar. Wählen Sie einen anderen Stoff.",
+  "price-missing-main-component": "Für die gewählte Option ist in der gewählten Stoffkategorie kein Preis verfügbar. Wählen Sie einen anderen Stoff oder eine andere Option.",
   "fabric-category-unavailable": "Für die gewählten Module nicht verfügbar",
+  "fabric-category-unavailable-options": "Für die gewählten Optionen nicht verfügbar",
   "price-unavailable": "Kein Preis"
 }

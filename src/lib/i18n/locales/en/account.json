@@ -228,7 +228,8 @@
   "email-session-expired": "Your session has expired. Please sign in again.",
   "send": "Send",
   "price-missing-modules": "{{count}} module(s) have no price for the selected fabric category. Choose another fabric or remove them.",
-  "price-missing-base": "No price is available for the selected fabric category. Choose another fabric.",
+  "price-missing-main-component": "The selected option has no price for the selected fabric category. Choose another fabric or option.",
   "fabric-category-unavailable": "Not available for the selected modules",
+  "fabric-category-unavailable-options": "Not available for the selected options",
   "price-unavailable": "No price"
 }

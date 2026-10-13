@@ -228,7 +228,8 @@
   "email-session-expired": "Jūsų sesija baigėsi. Prisijunkite iš naujo.",
   "send": "Siųsti",
   "price-missing-modules": "{{count}} modul(ių) neturi kainos pasirinktai audinio kategorijai. Pasirinkite kitą audinį arba pašalinkite juos.",
-  "price-missing-base": "Pasirinktai audinio kategorijai kaina nepasiekiama. Pasirinkite kitą audinį.",
+  "price-missing-main-component": "Pasirinktas variantas neturi kainos pasirinktai audinio kategorijai. Pasirinkite kitą audinį arba variantą.",
   "fabric-category-unavailable": "Nepasiekiama pasirinktiems moduliams",
+  "fabric-category-unavailable-options": "Nepasiekiama pasirinktiems variantams",
   "price-unavailable": "Nėra kainos"
 }

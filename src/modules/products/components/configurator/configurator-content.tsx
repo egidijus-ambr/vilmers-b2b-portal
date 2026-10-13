@@ -409,7 +409,7 @@ const ConfiguratorContent = ({
     if (
       state.totalPrice == null ||
       state.unpricedModuleIds.length > 0 ||
-      state.basePriceMissing
+      state.mainComponentMissing
     ) {
       return
     }

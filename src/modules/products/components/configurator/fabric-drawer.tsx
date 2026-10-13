@@ -39,7 +39,11 @@ const FabricDrawer = ({
   const customerPaletteIds = useCustomerPaletteIds()
   const { t } = useTranslations("account")
   const getCategoryAvailability = useFabricCategoryAvailability(option?.id ?? null)
-  const unavailableReason = t("fabric-category-unavailable")
+  const unavailableReason = t(
+    state.sofaForms.length > 0
+      ? "fabric-category-unavailable"
+      : "fabric-category-unavailable-options"
+  )
 
   // Current selected fabric id for highlighting
   const selectedFabricId = option

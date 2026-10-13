@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import {
   computeAdvancedProductPrice,
-  productRequiresBasePrice,
+  getMainGroupCode,
 } from "@configurator/lib/price-utils"
 
 /**
@@ -32,9 +32,9 @@ export function useConfiguratorPrice(priceListId: number) {
       },
     }
 
-    // Products without sofa modules (e.g. OTHER_WITH_FABRICS) are priced by
-    // their own fabric-category price, so a missing one must block.
-    const requireBasePrice = productRequiresBasePrice(productData.advanced_product)
+    // Component-priced products (beds, tables...) are priced through their
+    // main group (model / model-other): an unpriced selection must block.
+    const mainGroupCode = getMainGroupCode(productData.advanced_product)
 
     const result = computeAdvancedProductPrice(
       product,
@@ -42,7 +42,7 @@ export function useConfiguratorPrice(priceListId: number) {
       selectedAdditionalComponents,
       selectedFabric,
       priceListId,
-      requireBasePrice
+      mainGroupCode
     )
 
     dispatch({ type: "SET_TOTAL_PRICE", payload: result.total })
@@ -50,7 +50,7 @@ export function useConfiguratorPrice(priceListId: number) {
       type: "SET_PRICE_ISSUES",
       payload: {
         unpricedModuleIds: result.unpricedModuleIds,
-        basePriceMissing: result.baseMissing,
+        mainComponentMissing: result.mainComponentMissing,
       },
     })
   }, [

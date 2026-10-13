@@ -228,7 +228,8 @@
   "email-session-expired": "Din session er udløbet. Log ind igen.",
   "send": "Send",
   "price-missing-modules": "{{count}} modul(er) har ingen pris for den valgte stofkategori. Vælg et andet stof, eller fjern dem.",
-  "price-missing-base": "Der er ingen pris for den valgte stofkategori. Vælg et andet stof.",
+  "price-missing-main-component": "Den valgte mulighed har ingen pris for den valgte stofkategori. Vælg et andet stof eller en anden mulighed.",
   "fabric-category-unavailable": "Ikke tilgængelig for de valgte moduler",
+  "fabric-category-unavailable-options": "Ikke tilgængelig for de valgte muligheder",
   "price-unavailable": "Ingen pris"
 }

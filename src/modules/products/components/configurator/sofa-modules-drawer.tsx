@@ -301,7 +301,7 @@ const SofaModulesDrawer = ({
     if (selectedFabric.fabricGroupObject && !showAllProducts) {
       forms = forms.filter((f) => {
         const price = getPriceFromPriceCategories(selectedFabric, f.form_price_fabric_category)
-        return price != null && price > 0
+        return price != null
       })
     }
 

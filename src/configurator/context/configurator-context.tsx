@@ -44,8 +44,8 @@ export interface ConfiguratorState {
   totalPrice: number | null
   /** Canvas modules with no price for the selected fabric category */
   unpricedModuleIds: string[]
-  /** Product's own fabric/base price is missing */
-  basePriceMissing: boolean
+  /** Selected main-group option (e.g. bed Size) has no price for the selected fabric */
+  mainComponentMissing: boolean
   componentsPriceTotal: number | null
   pricesPerModule: Record<string, number> | null
   referenceText: string
@@ -78,7 +78,7 @@ const initialState: ConfiguratorState = {
 
   totalPrice: null,
   unpricedModuleIds: [],
-  basePriceMissing: false,
+  mainComponentMissing: false,
   componentsPriceTotal: null,
   pricesPerModule: null,
   referenceText: "",
@@ -104,7 +104,7 @@ type ConfiguratorAction =
   | { type: "SET_ORIGINAL_COMPONENT_GROUPS"; payload: ComponentGroup[] }
   | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_TOTAL_PRICE"; payload: number | null }
-  | { type: "SET_PRICE_ISSUES"; payload: { unpricedModuleIds: string[]; basePriceMissing: boolean } }
+  | { type: "SET_PRICE_ISSUES"; payload: { unpricedModuleIds: string[]; mainComponentMissing: boolean } }
   | { type: "SET_COMPONENTS_PRICE"; payload: number | null }
   | { type: "SET_PRICES_PER_MODULE"; payload: Record<string, number> | null }
   | { type: "SET_REFERENCE_TEXT"; payload: string }
@@ -146,7 +146,7 @@ function configuratorReducer(
       return { ...state, totalPrice: action.payload }
     case "SET_PRICE_ISSUES": {
       const same =
-        state.basePriceMissing === action.payload.basePriceMissing &&
+        state.mainComponentMissing === action.payload.mainComponentMissing &&
         state.unpricedModuleIds.length === action.payload.unpricedModuleIds.length &&
         state.unpricedModuleIds.every((id, i) => id === action.payload.unpricedModuleIds[i])
       return same ? state : { ...state, ...action.payload }

@@ -5,7 +5,7 @@ import { useConfigurator } from "@configurator/context/configurator-context"
 import {
   getFabricCategoryAvailability,
   type FabricCategoryAvailability,
-  productRequiresBasePrice,
+  resolveMainGroup,
   getSelectedGroupNumbers,
 } from "@configurator/lib/price-utils"
 
@@ -17,7 +17,14 @@ import {
  */
 export function useFabricCategoryAvailability(optionId: number | string | null) {
   const { state } = useConfigurator()
-  const { productData, sofaCombinations, sofaForms, selectedFabric } = state
+  const {
+    productData,
+    sofaCombinations,
+    sofaForms,
+    selectedFabric,
+    originalComponentGroups,
+    selectedAdditionalComponents,
+  } = state
 
   return useCallback(
     (groupNumber: number | null | undefined): FabricCategoryAvailability => {
@@ -47,13 +54,23 @@ export function useFabricCategoryAvailability(optionId: number | string | null) 
         otherGroupNumbers,
         sofaCombinations,
         sofaForms,
-        productPriceCategories:
-          productData?.advanced_product?.advanced_product_price_fabric_category ?? [],
-        requireBasePrice: productRequiresBasePrice(productData?.advanced_product),
+        mainGroup: resolveMainGroup(
+          productData?.advanced_product,
+          originalComponentGroups,
+          selectedAdditionalComponents
+        ),
       })
       if (result === "hidden" && currentGroupNumber === groupNumber) return "disabled"
       return result
     },
-    [productData, sofaCombinations, sofaForms, selectedFabric, optionId]
+    [
+      productData,
+      sofaCombinations,
+      sofaForms,
+      selectedFabric,
+      originalComponentGroups,
+      selectedAdditionalComponents,
+      optionId,
+    ]
   )
 }

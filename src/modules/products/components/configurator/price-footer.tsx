@@ -30,7 +30,7 @@ const PriceFooter = ({
   onAddToCart,
 }: PriceFooterProps) => {
   const { state, dispatch } = useConfigurator()
-  const { totalPrice, quantity, unpricedModuleIds, basePriceMissing } = state
+  const { totalPrice, quantity, unpricedModuleIds, mainComponentMissing } = state
   const { t } = useTranslations("account")
   const [isAdding, setIsAdding] = useState(false)
   const canSeePrices = useCanSeePrices()
@@ -57,8 +57,8 @@ const PriceFooter = ({
   const priceIssueMessage =
     unpricedModuleIds.length > 0
       ? t("price-missing-modules", { count: unpricedModuleIds.length })
-      : basePriceMissing
-        ? t("price-missing-base")
+      : mainComponentMissing
+        ? t("price-missing-main-component")
         : null
   const hasPriceIssue = priceIssueMessage != null
 

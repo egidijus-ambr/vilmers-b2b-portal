@@ -60,7 +60,8 @@ export const getPriceForGroupNumbers = (
 ): number | null => {
   let best: number | null = null
   for (const category of priceFabricCategories ?? []) {
-    if (category.price == null) continue
+    // A price <= 0 is "no price" (the admin price table renders 0 as "-").
+    if (category.price == null || category.price <= 0) continue
     if (!groupNumbers.includes(category.fabrice_price_category.group_number)) continue
     if (best == null || category.price > best) best = category.price
   }
@@ -81,26 +82,94 @@ export const getPriceFromPriceCategories = (
     priceFabricCategories
   )
 
+// Re-declared (not imported from ./vilmers) because vilmers.ts imports this
+// file; keep in sync with MODEL_CODE / MODEL_CODE_OTHER there.
+const MAIN_GROUP_CODE_OTHER = "model-other"
+const MAIN_GROUP_CODE_DEFAULT = "model"
+
 /**
- * Products without sofa modules (e.g. OTHER_WITH_FABRICS, tables) are priced by
- * their own price, so a missing one must block rather than become 0.
+ * Price of one additional component for the given fabric categories, or null
+ * when it has no price ("no price" is never 0).
+ * - With fabric categories (`groupNumbers`) and fabric-category rows: best
+ *   matching row.
+ * - Otherwise the (price-list resolved) flat `extra_price` when > 0.
+ * Single lookup shared by the total, the main-component check and the fabric
+ * category availability.
  */
-export const productRequiresBasePrice = (
+export const getComponentPrice = (
+  component: {
+    price_fabric_category?: PriceFabricCategory[] | null
+    extra_price?: number | null
+  },
+  groupNumbers: number[]
+): number | null => {
+  if (groupNumbers.length > 0 && (component.price_fabric_category?.length ?? 0) > 0) {
+    return getPriceForGroupNumbers(groupNumbers, component.price_fabric_category)
+  }
+  return component.extra_price != null && component.extra_price > 0
+    ? component.extra_price
+    : null
+}
+
+/**
+ * Main component group of a component-priced product, or null.
+ * Products with sofa modules (and every SOFA) are priced by their modules;
+ * all others are priced through their type's main group: `model-other` for
+ * OTHER, `model` for the rest (e.g. beds, OTHER_WITH_FABRICS). Mirrors the
+ * type-aware rule in the SDK's buildWhereFilter (listing admission).
+ */
+export const getMainGroupCode = (
   advancedProduct:
     | { advanced_product_type?: string; sofa_forms?: unknown[] }
     | null
     | undefined
-): boolean =>
-  advancedProduct?.advanced_product_type !== "SOFA" &&
-  (advancedProduct?.sofa_forms?.length ?? 0) === 0
+): string | null => {
+  if (!advancedProduct) return null
+  if (advancedProduct.advanced_product_type === "SOFA") return null
+  if ((advancedProduct.sofa_forms?.length ?? 0) > 0) return null
+  return advancedProduct.advanced_product_type === "OTHER"
+    ? MAIN_GROUP_CODE_OTHER
+    : MAIN_GROUP_CODE_DEFAULT
+}
+
+export type MainGroupInfo = {
+  code: string
+  /** Enabled options of the main group on the current price list (no "0" placeholder). */
+  options: SelectedComponent[]
+  /** Currently selected option, if any. */
+  selected: SelectedComponent | null
+  /** True when the group is priced per fabric category (some option has category rows). */
+  fabricPriced: boolean
+}
+
+export const resolveMainGroup = (
+  advancedProduct:
+    | { advanced_product_type?: string; sofa_forms?: unknown[] }
+    | null
+    | undefined,
+  groups: { code: string; additional_components?: any[] }[],
+  selectedComponents: SelectedComponent[]
+): MainGroupInfo | null => {
+  const code = getMainGroupCode(advancedProduct)
+  if (!code) return null
+  const group = groups.find((g) => g.code === code)
+  const options = ((group?.additional_components ?? []) as SelectedComponent[]).filter(
+    (c) => c.code !== "0"
+  )
+  if (options.length === 0) return null
+  const selected =
+    selectedComponents.find((c) => c.groupCode === code && c.code !== "0") ?? null
+  const fabricPriced = options.some((c) => (c.price_fabric_category?.length ?? 0) > 0)
+  return { code, options, selected, fabricPriced }
+}
 
 export type AdvancedProductPriceResult = {
   /** null when the price cannot be computed (see unpriced* / baseMissing). */
   total: number | null
   /** Ids of canvas modules that have no price for the selected fabric category. */
   unpricedModuleIds: string[]
-  /** Fabric product whose own (non-module) price is missing for the fabric category. */
-  baseMissing: boolean
+  /** The selected main-group option (e.g. bed Size) has no price for the selected fabric category. */
+  mainComponentMissing: boolean
 }
 
 const moduleKey = (shape: any, index: number): string =>
@@ -132,14 +201,13 @@ export const getUnpricedModuleIds = (
 /**
  * Calculate the total price for an advanced product based on:
  * - Sofa module prices (from form_price_fabric_category)
- * - Base price (for non-fabric products like tables)
- * - Additional component prices (extra_price or price_fabric_category)
+ * - Base price (when the product has one)
+ * - Additional component prices (fabric-category price or extra_price)
  *
- * A missing price is never treated as 0: if any module (or, when
- * `requireBasePrice`, the product's own fabric-category price) has no price,
- * `total` is null and the offending modules are listed.
- * Components keep contributing 0 when they have no price for the fabric
- * (unchanged behaviour; many component groups intentionally allow unpriced picks).
+ * A missing price is never treated as 0: if any module on the canvas, or the
+ * selected main-group component (`mainGroupCode`, e.g. a bed's Size), has no
+ * price, `total` is null and the culprit is reported. Other components keep
+ * contributing 0 when unpriced (many groups intentionally allow unpriced picks).
  */
 export const computeAdvancedProductPrice = (
   product: {
@@ -152,7 +220,7 @@ export const computeAdvancedProductPrice = (
   selectedAdditionalComponents: SelectedComponent[],
   selectedFabric: SelectedFabricState,
   priceListId: number = 1,
-  requireBasePrice: boolean = false
+  mainGroupCode: string | null = null
 ): AdvancedProductPriceResult => {
   const fabricGroup = selectedFabric?.fabricGroupObject
   const groupNumbers = getSelectedGroupNumbers(selectedFabric)
@@ -164,7 +232,7 @@ export const computeAdvancedProductPrice = (
   if (hasModules) {
     if (!fabricGroup) {
       // Fabric not chosen yet: price is simply not available (not "unpriced").
-      return { total: null, unpricedModuleIds: [], baseMissing: false }
+      return { total: null, unpricedModuleIds: [], mainComponentMissing: false }
     }
     unpricedModuleIds = getUnpricedModuleIds(groupNumbers, sofaCombinations)
     for (const combination of sofaCombinations) {
@@ -178,55 +246,38 @@ export const computeAdvancedProductPrice = (
     }
   }
 
-  // 2) Base/fabric price + component extras
+  // 2) Base/fabric price (if the product has one) + component prices
   const priceCategories =
     product?.advanced_product?.advanced_product_price_fabric_category?.filter(
       (cat) => cat.price_listId === priceListId
     ) ?? []
 
   let totalPrice = 0
-  let baseMissing = false
 
   if (fabricGroup) {
-    const base = getPriceFromPriceCategories(selectedFabric, priceCategories)
-    if (base == null) {
-      baseMissing = requireBasePrice
-    } else {
-      totalPrice = base
-    }
-
-    for (const component of selectedAdditionalComponents) {
-      if (component.price_fabric_category && component.price_fabric_category.length > 0) {
-        totalPrice +=
-          getPriceFromPriceCategories(selectedFabric, component.price_fabric_category) ?? 0
-      } else if (component.extra_price) {
-        totalPrice += component.extra_price
-      }
-    }
+    totalPrice = getPriceFromPriceCategories(selectedFabric, priceCategories) ?? 0
   } else {
-    // Non-fabric product (tables, lights): use base price
-    const basePrice = product?.advanced_product?.base_prices?.find(
-      (p) => p.price_listId === priceListId
-    )?.price
-
-    if (basePrice == null) {
-      baseMissing = requireBasePrice
-    } else {
-      totalPrice = basePrice
-    }
-
-    for (const component of selectedAdditionalComponents) {
-      if (component.extra_price) {
-        totalPrice += component.extra_price
-      }
-    }
+    // Non-fabric product (tables, lights): use base price if any
+    totalPrice =
+      product?.advanced_product?.base_prices?.find((p) => p.price_listId === priceListId)
+        ?.price ?? 0
   }
 
-  const unpriced = unpricedModuleIds.length > 0 || baseMissing
+  // Without a fabric, `groupNumbers` is empty and only extra_price counts.
+  let mainComponentMissing = false
+  for (const component of selectedAdditionalComponents) {
+    const price = getComponentPrice(component, groupNumbers)
+    if (price == null && mainGroupCode && component.groupCode === mainGroupCode && component.code !== "0") {
+      mainComponentMissing = true
+    }
+    totalPrice += price ?? 0
+  }
+
+  const unpriced = unpricedModuleIds.length > 0 || mainComponentMissing
   return {
     total: unpriced ? null : totalPrice + totalSofaModulesPrice,
     unpricedModuleIds,
-    baseMissing,
+    mainComponentMissing,
   }
 }
 
@@ -239,7 +290,7 @@ export const getAdvancedProductPrice = (
   selectedAdditionalComponents: SelectedComponent[],
   selectedFabric: SelectedFabricState,
   priceListId: number = 1,
-  requireBasePrice: boolean = false
+  mainGroupCode: string | null = null
 ): number | null =>
   computeAdvancedProductPrice(
     product,
@@ -247,7 +298,7 @@ export const getAdvancedProductPrice = (
     selectedAdditionalComponents,
     selectedFabric,
     priceListId,
-    requireBasePrice
+    mainGroupCode
   ).total
 
 export type FabricCategoryAvailability = "available" | "disabled" | "hidden"
@@ -255,14 +306,19 @@ export type FabricCategoryAvailability = "available" | "disabled" | "hidden"
 /**
  * Availability of a fabric price category (`candidate`). Uses the exact same
  * lookups as computeAdvancedProductPrice so the selector and total cannot
- * disagree. `sofaForms` are the product's enabled modules, already filtered to
- * the customer's price list by the configurator query.
+ * disagree.
  *
- * - hidden: no module of the product is priced in the category (products
- *   without modules that need a base price: that price is missing).
+ * Module products (`sofaForms` = the product's enabled modules, already
+ * filtered to the customer's price list):
+ * - hidden: no module is priced in the category.
  * - disabled: some module is priced in it, but at least one module currently
- *   on the canvas is not.
- * - available: otherwise. An empty canvas is therefore never "disabled".
+ *   on the canvas is not. An empty canvas is therefore never "disabled".
+ *
+ * Component-priced products (`mainGroup`, e.g. beds priced by Size):
+ * - hidden: no option of the main group is priced in the category.
+ * - disabled: some option is priced, but the selected one is not.
+ * - available when nothing is selected yet (the required-group check blocks
+ *   add-to-cart) or when the main group is not priced per fabric category.
  *
  * `otherGroupNumbers` are the categories of the *other* combination options
  * (combination mode takes the best price across the selected categories).
@@ -272,15 +328,13 @@ export const getFabricCategoryAvailability = ({
   otherGroupNumbers = [],
   sofaCombinations,
   sofaForms,
-  productPriceCategories,
-  requireBasePrice,
+  mainGroup = null,
 }: {
   candidate: number
   otherGroupNumbers?: number[]
   sofaCombinations: any[][]
   sofaForms: { form_price_fabric_category?: PriceFabricCategory[] }[]
-  productPriceCategories: PriceFabricCategory[]
-  requireBasePrice: boolean
+  mainGroup?: MainGroupInfo | null
 }): FabricCategoryAvailability => {
   const groupNumbers = [...otherGroupNumbers, candidate]
 
@@ -291,8 +345,12 @@ export const getFabricCategoryAvailability = ({
     if (!anyPriced) return "hidden"
   }
 
-  if (requireBasePrice) {
-    if (getPriceForGroupNumbers(groupNumbers, productPriceCategories) == null) return "hidden"
+  if (mainGroup?.fabricPriced) {
+    const anyPriced = mainGroup.options.some((o) => getComponentPrice(o, groupNumbers) != null)
+    if (!anyPriced) return "hidden"
+    if (mainGroup.selected && getComponentPrice(mainGroup.selected, groupNumbers) == null) {
+      return "disabled"
+    }
   }
 
   const hasModules = sofaCombinations.some((c) => c.some((s) => s.attrs?.originalSofaForm))
