@@ -143,12 +143,10 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   // (`layout.overviewLink.show`, see src/themes/types.ts) and account-only:
   // guests never see it, mirroring the account dropdown's own `!customer`
   // guard (AccountDropdown returns nothing when `customer` is falsy). Reuses
-  // the dropdown's href, labelled "My Vilmers" (`my-vilmers`). Inserted
-  // right after the Store item (matched by the same stable `isStoreLink`
-  // flag the logo-left trim above uses, not by array position, since a
-  // DB-authored nav's item order isn't guaranteed); if no item is flagged
-  // Store, it falls back to right after the first item, and to the end if
-  // the menu is empty. Deliberately NOT added to `navMenuItems` itself:
+  // the dropdown's href, labelled "My Vilmers" (`my-vilmers`). Appended
+  // at the END of the menu, after every admin-managed
+  // item, so on the logo-center layout it is the last item of the left
+  // cluster, i.e. the one immediately left of the logo. Deliberately NOT added to `navMenuItems` itself:
   // that array also feeds `MobileMenu` below, whose drawer already has its
   // own unconditional Overview row in the account section — adding it here
   // too would duplicate it there.
@@ -160,13 +158,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
       type: "link",
       href: "/account",
     }
-    const storeIndex = navMenuItems.findIndex((i) => i.isStoreLink)
-    const insertAt = storeIndex >= 0 ? storeIndex + 1 : Math.min(1, navMenuItems.length)
-    return [
-      ...navMenuItems.slice(0, insertAt),
-      overviewItem,
-      ...navMenuItems.slice(insertAt),
-    ]
+    return [...navMenuItems, overviewItem]
   })()
 
   // Logo — shared between the "center" cluster and the "left" cluster (see
