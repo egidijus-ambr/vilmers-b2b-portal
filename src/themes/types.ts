@@ -157,6 +157,12 @@ export interface Theme {
      */
     showMultiplierRow?: boolean
     /**
+     * Whether bed product sheets (OTHER_WITH_FABRICS with priced frame,
+     * mattress and mattress-cover components) get a FIRST combined
+     * "frame + mattress + cover" section per size. Default `false`.
+     */
+    bedCombinedSection?: boolean
+    /**
      * Whether the M³ (volume) column renders at all. Default `true`.
      * Setting this `false` shifts every price column one index earlier.
      */

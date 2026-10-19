@@ -14,7 +14,50 @@
 
 const LOG_PREFIX = "[pricelist-export]"
 
+/**
+ * Fraction of attempted images that may fail TRANSIENTLY (timeout, network
+ * error, 5xx) while the workbook is still considered cacheable: a build is
+ * degraded when `transientFailures > floor(attempted * tolerance)`. At 1%,
+ * ~1000 images tolerate 10 failures and fewer than 100 images tolerate none.
+ */
+export const TRANSIENT_FAILURE_TOLERANCE = 0.01
+
+/**
+ * Out-param collecting how a pool run went (share ONE report across pools
+ * to sum their counts). A result is "degraded" (see isImageFetchDegraded)
+ * and so blocks caching of the workbook only on a deadline hit, or when
+ * transient failures (timeouts, network errors, 5xx) exceed
+ * TRANSIENT_FAILURE_TOLERANCE of the images attempted. Deterministic misses
+ * (HTTP 4xx, a body that fails validation) and count/byte caps depend only
+ * on the data and would recur on every rebuild, so they never block
+ * caching; `capHit` is informational (logging) only.
+ */
+export interface ImageFetchReport {
+  /** The wall-clock deadline expired with URLs still unfetched. */
+  deadlineHit: boolean
+  /** A count or byte cap dropped otherwise-usable images (informational). */
+  capHit: boolean
+  /** Count of timeouts / network errors / 5xx responses. */
+  transientFailures: number
+  /** Number of image fetches attempted (denominator for the tolerance). */
+  attempted: number
+}
+
+export function createImageFetchReport(): ImageFetchReport {
+  return { deadlineHit: false, capHit: false, transientFailures: 0, attempted: 0 }
+}
+
+export function isImageFetchDegraded(report: ImageFetchReport): boolean {
+  return (
+    report.deadlineHit ||
+    report.transientFailures >
+      Math.floor(report.attempted * TRANSIENT_FAILURE_TOLERANCE)
+  )
+}
+
 export interface ImagePoolConfig {
+  /** Optional out-param, see ImageFetchReport. */
+  report?: ImageFetchReport
   /** Max simultaneous in-flight fetches. */
   concurrency: number
   /** Per-fetch abort timeout, in ms. */
@@ -47,6 +90,7 @@ async function fetchOneImage(
   url: string,
   config: ImagePoolConfig
 ): Promise<Buffer | null> {
+  if (config.report) config.report.attempted++
   try {
     // URLs can come out of the database/CDN with raw spaces (e.g. product
     // codes with " - " in the filename). encodeURI (NOT encodeURIComponent,
@@ -58,6 +102,7 @@ async function fetchOneImage(
       signal: AbortSignal.timeout(config.fetchTimeoutMs),
     })
     if (!response.ok) {
+      if (response.status >= 500 && config.report) config.report.transientFailures++
       console.warn(
         `${LOG_PREFIX} ${config.logLabel} fetch failed (status ${response.status}): ${url}`
       )
@@ -72,6 +117,7 @@ async function fetchOneImage(
     }
     return buffer
   } catch (error) {
+    if (config.report) config.report.transientFailures++
     console.warn(`${LOG_PREFIX} ${config.logLabel} fetch failed: ${url}`, error)
     return null
   }
@@ -102,6 +148,7 @@ export async function fetchImagePool(
       if (Date.now() >= deadlineAt) {
         if (!deadlineWarned) {
           deadlineWarned = true
+          if (config.report) config.report.deadlineHit = true
           console.warn(
             `${LOG_PREFIX} ${config.logLabel} fetch pool hit its ${config.deadlineMs}ms ` +
               `wall-clock deadline with ${queue.length - next} URL(s) still unfetched; ` +

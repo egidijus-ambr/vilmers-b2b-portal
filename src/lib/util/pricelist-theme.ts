@@ -88,6 +88,7 @@ export function resolvePricelistWorkbookSettings(
   return {
     rounding: theme.pricelist?.rounding,
     showMultiplierRow: theme.pricelist?.showMultiplierRow,
+    bedCombinedSection: theme.pricelist?.bedCombinedSection,
     showVolumeColumn: theme.pricelist?.showVolumeColumn,
     colors: {
       groupHeaderFill: resolveSurfaceArgb(

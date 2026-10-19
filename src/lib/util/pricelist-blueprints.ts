@@ -1,5 +1,5 @@
 import type { PricelistExportProduct } from "@lib/furnisystems-sdk/modules/products/types"
-import { fetchImagePool } from "./image-fetch"
+import { fetchImagePool, type ImageFetchReport } from "./image-fetch"
 
 // Blueprint thumbnails are tiny (measured ~400-1,300 bytes each — a 1px/cm
 // crop of a plan-view line drawing) compared to the JPEG category photos,
@@ -92,7 +92,8 @@ function isUsable(
  *    like a failed fetch.
  */
 export async function fetchPricelistBlueprints(
-  products: PricelistExportProduct[]
+  products: PricelistExportProduct[],
+  report?: ImageFetchReport
 ): Promise<Map<string, Buffer | null>> {
   const urls = new Set<string>()
   for (const product of products) {
@@ -110,6 +111,7 @@ export async function fetchPricelistBlueprints(
       ? allUrls.slice(0, MAX_BLUEPRINT_COUNT)
       : allUrls
   if (boundedUrls.length < allUrls.length) {
+    if (report) report.capHit = true
     console.warn(
       `[pricelist-export] Distinct blueprint count (${allUrls.length}) exceeds the ` +
         `embed budget (${MAX_BLUEPRINT_COUNT}); only the first ${MAX_BLUEPRINT_COUNT} ` +
@@ -136,6 +138,7 @@ export async function fetchPricelistBlueprints(
     fetchTimeoutMs: FETCH_TIMEOUT_MS,
     deadlineMs: FETCH_DEADLINE_MS,
     validate,
+    report,
     logLabel: "Blueprint",
   })
 
@@ -144,6 +147,7 @@ export async function fetchPricelistBlueprints(
       `(of ${boundedUrls.length} distinct URL(s) attempted).`
   )
   if (rejectedByByteBudget > 0) {
+    if (report) report.capHit = true
     console.warn(
       `[pricelist-export] Blueprint byte budget (${MAX_TOTAL_BYTES} bytes) reached; ` +
         `${rejectedByByteBudget} otherwise-valid thumbnail(s) were skipped and render as ` +

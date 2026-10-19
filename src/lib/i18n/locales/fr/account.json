@@ -86,10 +86,14 @@
     "title": "Export du tarif",
     "description": "Téléchargez un fichier Excel listant vos prix pour chaque produit canapé.",
     "button": "Télécharger",
-    "downloading": "Préparation…",
     "no-customer": "Aucun client sélectionné. Veuillez sélectionner un client et réessayer.",
     "no-pricelist": "Aucun tarif n'est associé à votre compte. Veuillez contacter votre gestionnaire de compte.",
-    "download-failed": "Impossible de générer le tarif. Veuillez réessayer plus tard."
+    "download-failed": "Impossible de générer le tarif. Veuillez réessayer plus tard.",
+    "unauthorized": "Votre session a expiré. Veuillez vous reconnecter.",
+    "fetch-failed": "Impossible de charger les données de votre tarif. Veuillez réessayer plus tard.",
+    "unexpected": "Une erreur est survenue lors de la génération du tarif. Veuillez réessayer.",
+    "not-found": "L'export du tarif n'est pas disponible.",
+    "forbidden": "Vous n'avez pas accès à ce fichier de tarif."
   },
   "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",

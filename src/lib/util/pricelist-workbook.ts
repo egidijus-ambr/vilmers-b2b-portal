@@ -328,6 +328,13 @@ function formatDimensionCm(
 // GROUP_HEADER_ROW and module data starts at DATA_START_ROW.
 const PHOTO_ROW_COUNT = 10
 const PHOTO_ROW_HEIGHT = 18 // an anchored image doesn't create row height on its own
+// Row 1 holds the "Back to index" link in A1 and stays at PHOTO_ROW_HEIGHT;
+// the hero photo starts BELOW it. Rows 2..8 (the rest of the hero-photo band,
+// above the multiplier row) are taller so the 1.3x-enlarged hero photo (see
+// HEADER_PHOTO_SCALE) fits above row 9: 7 rows * 27pt = 252px of space vs a
+// 239px-tall photo. Rows 9-10 stay at PHOTO_ROW_HEIGHT.
+const PHOTO_BAND_ROW_HEIGHT = 27
+const INFO_SHEET_NAME = "Info"
 const TOP_HEADER_ROW = PHOTO_ROW_COUNT + 1 // 11: PICTURE / DESCRIPTION / ART.CODE / M³ / "PRICE (EUR)"
 const GROUP_HEADER_ROW = TOP_HEADER_ROW + 1 // 12: "MODULES" / (blank) / per-group labels
 
@@ -349,7 +356,7 @@ const PRODUCT_NAME_ROW_END = 4
 // a specific family name".
 const PRODUCT_NAME_FONT: Partial<ExcelJS.Font> = {
   bold: true,
-  size: 20,
+  size: 24,
 }
 const DATA_START_ROW = GROUP_HEADER_ROW + 1 // 13
 // Raised 30 -> 110 to fit a legible module-blueprint thumbnail (see the
@@ -388,7 +395,11 @@ const PHOTO_MARGIN_PX = 4
 // photo's available width, and addPictureBandImage's call site
 // (buildPricelistWorkbook) for where it's actually applied as the anchor's
 // x-offset.
-const HEADER_PHOTO_LEFT_INSET_PX = 24
+const HEADER_PHOTO_LEFT_INSET_PX = 48 // was 24; shifted right with the 1.3x enlargement
+// Hero photo box scale (applied to both axes, so aspect ratio is preserved).
+const HEADER_PHOTO_SCALE = 1.3
+// The inset the pre-enlargement box (308px wide) was derived from.
+const HEADER_PHOTO_BASE_LEFT_INSET_PX = 24
 
 // Per-module blueprint thumbnail sizing (column A on a DATA row, as opposed
 // to the category-photo header band which occupies columns A-B on the PHOTO
@@ -704,7 +715,8 @@ const PHOTO_BAND_ROWS_BEFORE_MULTIPLIER = MULTIPLIER_ROW - 1
 // see addPictureBandImage's call site (buildPricelistWorkbook) for the
 // centering math this feeds.
 const HEADER_PHOTO_BAND_HEIGHT_PX =
-  PHOTO_BAND_ROWS_BEFORE_MULTIPLIER * rowHeightToPx(PHOTO_ROW_HEIGHT)
+  rowHeightToPx(PHOTO_ROW_HEIGHT) +
+  (PHOTO_BAND_ROWS_BEFORE_MULTIPLIER - 1) * rowHeightToPx(PHOTO_BAND_ROW_HEIGHT)
 
 /**
  * Enlarged product-sheet header photo box (category_photo — see
@@ -733,12 +745,23 @@ const HEADER_PHOTO_BAND_HEIGHT_PX =
  * top-anchored, vertically).
  */
 export const CATEGORY_HEADER_PHOTO_BOX = {
-  width:
-    PICTURE_COLUMN_PX +
-    columnWidthToPx(COLUMN_WIDTHS[1]) -
-    HEADER_PHOTO_LEFT_INSET_PX -
-    PHOTO_MARGIN_PX,
-  height: HEADER_PHOTO_BAND_HEIGHT_PX - PHOTO_MARGIN_PX * 2,
+  // 308px base (A+B minus the base inset and right margin) * 1.3 = 400px.
+  // With the 48px inset the right edge lands at 48+400 = 448px, inside
+  // columns A+B+C (93+243+131 = 467px); the product title starts at column D
+  // or later, and column C is otherwise empty on rows 1-8.
+  width: Math.round(
+    (PICTURE_COLUMN_PX +
+      columnWidthToPx(COLUMN_WIDTHS[1]) -
+      HEADER_PHOTO_BASE_LEFT_INSET_PX -
+      PHOTO_MARGIN_PX) *
+      HEADER_PHOTO_SCALE
+  ),
+  // (8 rows * 24pt-row px - 2 * margin) * 1.3 -> 239px in a 256px band.
+  height: Math.round(
+    (PHOTO_BAND_ROWS_BEFORE_MULTIPLIER * rowHeightToPx(PHOTO_ROW_HEIGHT) -
+      PHOTO_MARGIN_PX * 2) *
+      HEADER_PHOTO_SCALE
+  ),
 }
 
 /**
@@ -773,6 +796,8 @@ export interface PricelistWorkbookSettings {
   }
   /** Whether each product sheet renders its own B9/C9 price-multiplier input row. Default true. The Info sheet's master multiplier row is unaffected by this flag — see resolveRenderConfig's doc comment. */
   showMultiplierRow?: boolean
+  /** Vilmers-only: combined frame + mattress + cover section on beds. Default false. */
+  bedCombinedSection?: boolean
   /** Whether the M³ (volume) column renders at all. Default true. Setting this false shifts every price column one index earlier — see resolveRenderConfig. */
   showVolumeColumn?: boolean
   colors?: {
@@ -836,6 +861,7 @@ interface RenderConfig {
   priceNumFmt: string
   dimensionDecimals: number
   showMultiplierRow: boolean
+  bedCombinedSection: boolean
   showVolumeColumn: boolean
   /** FIXED_COLUMN_COUNT (4) when showVolumeColumn, FIXED_COLUMN_COUNT - 1 (3) when not — see writeHeaderRows/writeDataRow for how this shifts price-column indices left by one. Column C (ART.CODE, index 3) is unaffected either way, so the C9 multiplier cell (MULTIPLIER_VALUE_COL, an independent constant) never moves. */
   fixedColumnCount: number
@@ -877,6 +903,7 @@ function resolveRenderConfig(settings?: PricelistWorkbookSettings): RenderConfig
     priceNumFmt: priceNumberFormat(priceDecimals),
     dimensionDecimals,
     showMultiplierRow,
+    bedCombinedSection: settings?.bedCombinedSection ?? false,
     showVolumeColumn,
     fixedColumnCount: showVolumeColumn
       ? FIXED_COLUMN_COUNT
@@ -923,7 +950,8 @@ function resolveRenderConfig(settings?: PricelistWorkbookSettings): RenderConfig
 function writeHeaderRows(
   sheet: ExcelJS.Worksheet,
   sortedGroupNumbers: number[],
-  cfg: RenderConfig
+  cfg: RenderConfig,
+  firstBarLabel = "MODULES"
 ): void {
   const priceColCount = sortedGroupNumbers.length
   const lastCol = cfg.fixedColumnCount + priceColCount
@@ -941,7 +969,7 @@ function writeHeaderRows(
     topRow.getCell(cfg.fixedColumnCount + 1).value = "PRICE (EUR)"
   }
 
-  groupRow.getCell(1).value = "MODULES"
+  groupRow.getCell(1).value = firstBarLabel
   sortedGroupNumbers.forEach((groupNumber, i) => {
     groupRow.getCell(cfg.fixedColumnCount + 1 + i).value = getGroupLabel(
       groupNumber
@@ -1113,12 +1141,16 @@ function addPictureBandImage(
   offsetXPx: number,
   offsetYPx: number
 ): void {
+  // `offsetYPx` is measured from the sheet top. An OOXML row offset must stay
+  // within its row, so an offset past row 1 re-anchors to row 2 (index 1).
+  const row1Px = rowHeightToPx(PHOTO_ROW_HEIGHT)
+  const belowRow1 = offsetYPx >= row1Px
   sheet.addImage(imageId, {
     tl: {
       nativeCol: PICTURE_COL - 1,
       nativeColOff: Math.round(offsetXPx * EMU_PER_PX),
-      nativeRow: 0,
-      nativeRowOff: Math.round(offsetYPx * EMU_PER_PX),
+      nativeRow: belowRow1 ? 1 : 0,
+      nativeRowOff: Math.round((belowRow1 ? offsetYPx - row1Px : offsetYPx) * EMU_PER_PX),
     } as any,
     ext,
   })
@@ -1373,6 +1405,12 @@ interface ComponentSectionLabelRow {
    * blank for an all-flat-priced section (e.g. mattresses).
    */
   hasCategoryPrices: boolean
+  /**
+   * True only for the bed combined section's label. It is NOT written as its
+   * own row: its label replaces the "MODULES" text of the sheet's first bar
+   * (GROUP_HEADER_ROW) so the sheet shows one header, not two.
+   */
+  isCombinedHeader?: boolean
 }
 
 interface ComponentDataRow {
@@ -1570,6 +1608,197 @@ function resolveEnabledGroupIds(
   )
 }
 
+// ===== Bed combined section (frame + mattress + cover per size) =====
+//
+// Vilmers-only (theme.pricelist.bedCombinedSection). On a product that has
+// priced, enabled entries in all of `model`, `product-mattress` and
+// `product-mattress-cover` (structurally a bed), a FIRST section lists one
+// row per (size, frame variant) with price = frame + cover + mattress per
+// CAT column. Built from the SAME already-filtered priced entries as the
+// regular sections (which stay below, unchanged), so the two cannot drift.
+const BED_MATTRESS_GROUP_CODE = "product-mattress"
+const BED_COVER_GROUP_CODE = "product-mattress-cover"
+// e.g. 56-NaturalLife-MS160X0 / 57-NaturalLife-TS160X0 / 91-Mattress-F-TS160X0-EU
+// -> group 1 = size key (S160, D180: S and D stay distinct), group 2 = variant.
+const BED_SIZE_CODE_RE = /-[MT]([SD]\d+)([A-Z])0/
+const BED_HUMAN_SIZE_RE = /(\d{2,3})\s*[xX]\s*(\d{2,3})/
+
+interface PricedComponentEntry {
+  assoc: PricelistExportComponentAssociation
+  priceByGroup: Map<number, number> | null
+  flatPrice: number | null
+}
+
+interface ParsedBedEntry {
+  entry: PricedComponentEntry
+  sizeKey: string
+  variant: string
+  code: string
+}
+
+function parseBedEntries(entries: PricedComponentEntry[], productId: number): ParsedBedEntry[] {
+  const parsed: ParsedBedEntry[] = []
+  for (const entry of entries) {
+    const code = entry.assoc.additional_component.code ?? ""
+    const m = BED_SIZE_CODE_RE.exec(code)
+    if (!m) {
+      console.warn(
+        `[pricelist-export] Bed product ${productId}: component code "${code}" has no ` +
+          "parsable size; left out of the combined section."
+      )
+      continue
+    }
+    parsed.push({ entry, sizeKey: m[1], variant: m[2], code })
+  }
+  return parsed.sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0))
+}
+
+/** Price of an entry in fabric-category group `g` (a flat price applies to every group). */
+function entryPriceInGroup(entry: PricedComponentEntry, g: number): number | undefined {
+  return entry.priceByGroup ? entry.priceByGroup.get(g) : entry.flatPrice ?? undefined
+}
+
+/** Lowest price an entry has anywhere (its flat price, or its cheapest category). */
+function entryMinPrice(entry: PricedComponentEntry): number | null {
+  if (entry.flatPrice !== null) return entry.flatPrice
+  if (entry.priceByGroup && entry.priceByGroup.size > 0) {
+    return Math.min(...Array.from(entry.priceByGroup.values()))
+  }
+  return null
+}
+
+function sumPackageVolume(component: PricelistExportComponent): number {
+  let v = 0
+  for (const pkg of component.package_dimensions) {
+    if (typeof pkg.volume === "number") v += pkg.volume
+  }
+  return v
+}
+
+function componentName(component: PricelistExportComponent): string {
+  return (
+    component.additional_component_profiles[0]?.name ??
+    component.code ??
+    component.component_sku ??
+    `Component ${component.id}`
+  )
+}
+
+function buildBedCombinedRows(
+  groupsById: Map<number, PricelistExportComponentGroup>,
+  pricedByGroupId: Map<number, PricedComponentEntry[]>,
+  modelGroupCode: string,
+  productId: number
+): ComponentSheetRow[] {
+  const groups = Array.from(groupsById.values())
+  const frameGroup = groups.find((g) => g.code === modelGroupCode)
+  const mattressGroup = groups.find((g) => g.code === BED_MATTRESS_GROUP_CODE)
+  const coverGroup = groups.find((g) => g.code === BED_COVER_GROUP_CODE)
+  if (!frameGroup || !mattressGroup || !coverGroup) return []
+
+  const frames = parseBedEntries(pricedByGroupId.get(frameGroup.id) ?? [], productId)
+  const covers = parseBedEntries(pricedByGroupId.get(coverGroup.id) ?? [], productId)
+  const mattresses = parseBedEntries(pricedByGroupId.get(mattressGroup.id) ?? [], productId)
+
+  // ONE mattress price per size: the minimum among that size's mattresses.
+  const mattressBySize = new Map<string, { price: number; entry: ParsedBedEntry }>()
+  for (const m of mattresses) {
+    const price = entryMinPrice(m.entry)
+    if (price === null) continue
+    const current = mattressBySize.get(m.sizeKey)
+    if (!current || price < current.price) mattressBySize.set(m.sizeKey, { price, entry: m })
+  }
+
+  const sizeOrder = (key: string) => [key[0] === "S" ? 0 : 1, Number(key.slice(1))]
+  const sortedFrames = [...frames].sort((a, b) => {
+    const [la, na] = sizeOrder(a.sizeKey)
+    const [lb, nb] = sizeOrder(b.sizeKey)
+    if (la !== lb) return la - lb
+    if (na !== nb) return na - nb
+    if (a.variant !== b.variant) return a.variant < b.variant ? -1 : 1
+    return a.code < b.code ? -1 : 1
+  })
+
+  const dataRows: ComponentDataRow[] = []
+  for (const frame of sortedFrames) {
+    const mattress = mattressBySize.get(frame.sizeKey)
+    if (!mattress) continue // no priced mattress for this size: skip it
+    const sameSizeCovers = covers.filter((c) => c.sizeKey === frame.sizeKey)
+    const cover =
+      sameSizeCovers.find((c) => c.variant === frame.variant) ?? sameSizeCovers[0]
+    if (!cover) continue // no priced cover for this size: skip it
+
+    const frameComponent = frame.entry.assoc.additional_component
+    const coverComponent = cover.entry.assoc.additional_component
+    const mattressComponent = mattress.entry.entry.assoc.additional_component
+
+    const groupNumbers = new Set<number>()
+    for (const e of [frame.entry, cover.entry]) {
+      e.priceByGroup?.forEach((_, g) => groupNumbers.add(g))
+    }
+    let priceByGroup: Map<number, number> | null = null
+    let flatPrice: number | null = null
+    if (groupNumbers.size > 0) {
+      priceByGroup = new Map()
+      groupNumbers.forEach((g) => {
+        const f = entryPriceInGroup(frame.entry, g)
+        const c = entryPriceInGroup(cover.entry, g)
+        // Blank where frame or cover lacks this category.
+        if (f === undefined || c === undefined) return
+        priceByGroup!.set(g, Math.round((f + c + mattress.price) * 100) / 100)
+      })
+      if (priceByGroup.size === 0) continue // no CAT price at all: skip the row
+    } else {
+      const f = frame.entry.flatPrice
+      const c = cover.entry.flatPrice
+      if (f === null || c === null) continue
+      flatPrice = Math.round((f + c + mattress.price) * 100) / 100
+    }
+
+    const humanSize = [coverComponent, mattressComponent]
+      .map((comp) => BED_HUMAN_SIZE_RE.exec(componentName(comp)))
+      .find((m) => m !== null)
+    const sizeLine = humanSize
+      ? `${humanSize[1]}x${humanSize[2]}`
+      : componentName(frameComponent)
+    const composition = [
+      componentName(frameComponent),
+      getGroupName(mattressGroup),
+      getGroupName(coverGroup),
+    ].join(" + ")
+
+    const volume =
+      sumPackageVolume(frameComponent) +
+      sumPackageVolume(coverComponent) +
+      sumPackageVolume(mattressComponent)
+
+    dataRows.push({
+      kind: "data",
+      description: `${sizeLine}\n${composition}`,
+      artCode: frameComponent.code ?? frameComponent.component_sku ?? "",
+      volume: volume > 0 ? Math.round(volume * 1e6) / 1e6 : null,
+      priceByGroup,
+      flatPrice,
+      photoUrl: frameComponent.image?.src_facebook ?? null,
+    })
+  }
+
+  if (dataRows.length === 0) return []
+  return [
+    {
+      kind: "section",
+      label: [
+        getGroupName(frameGroup),
+        getGroupName(mattressGroup),
+        getGroupName(coverGroup),
+      ].join(" + "),
+      hasCategoryPrices: dataRows.some((r) => r.priceByGroup !== null),
+      isCombinedHeader: true,
+    },
+    ...dataRows,
+  ]
+}
+
 /**
  * Builds the OTHER_WITH_FABRICS/OTHER row list for one product: an optional
  * base row, then the model group's rows (the size/model variants — the
@@ -1606,7 +1835,8 @@ function buildComponentRows(
   advancedProduct: PricelistExportAdvancedProduct,
   dimensionDecimals: number,
   modelGroupCode: string,
-  enabledGroupIds: Set<number> | null
+  enabledGroupIds: Set<number> | null,
+  bedCombinedSection = false
 ): ComponentSheetRow[] {
   const rows: ComponentSheetRow[] = []
 
@@ -1696,20 +1926,34 @@ function buildComponentRows(
     (group) => group.code === modelGroupCode
   )
 
+  // New FIRST bed section (every regular section stays below, unchanged).
+  const combinedRows = bedCombinedSection
+    ? buildBedCombinedRows(groupsById, pricedByGroupId, modelGroupCode, advancedProduct.id)
+    : []
+
   // `model` group first, WITHOUT a section label (see this function's doc
-  // comment) — its rows are the main priced items.
+  // comment) — its rows are the main priced items — unless the bed combined
+  // section sits above it, in which case it gets its own label.
   if (modelGroup) {
-    for (const entry of pricedByGroupId.get(modelGroup.id) ?? []) {
-      rows.push(
-        buildComponentDataRow(
-          entry.assoc,
-          entry.priceByGroup,
-          entry.flatPrice,
-          dimensionDecimals
-        )
+    const modelDataRows = (pricedByGroupId.get(modelGroup.id) ?? []).map((entry) =>
+      buildComponentDataRow(
+        entry.assoc,
+        entry.priceByGroup,
+        entry.flatPrice,
+        dimensionDecimals
       )
+    )
+    if (combinedRows.length > 0 && modelDataRows.length > 0) {
+      rows.push({
+        kind: "section",
+        label: getGroupName(modelGroup),
+        hasCategoryPrices: modelDataRows.some((r) => r.priceByGroup !== null),
+      })
     }
+    rows.push(...modelDataRows)
   }
+
+  rows.unshift(...combinedRows)
 
   // Every remaining priced group, each preceded by its own section label.
   const remainingGroups = Array.from(groupsById.values())
@@ -2507,13 +2751,15 @@ export async function buildPricelistWorkbook(
   // once the index rows are known — but the metadata block above them
   // (including the master multiplier) is written right away, since every
   // product sheet's C9 formula needs to reference the multiplier row number.
-  const infoSheet = workbook.addWorksheet("Info")
+  const infoSheet = workbook.addWorksheet(INFO_SHEET_NAME, {
+    views: [{ showGridLines: false }],
+  })
 
   infoSheet.columns = [{ width: 20 }, { width: 50 }]
   infoSheet.addRow(["Company", meta.companyName])
   infoSheet.addRow(["Pricelist", meta.pricelistName])
   infoSheet.addRow([
-    "Generated",
+    "Prices as of",
     meta.generatedAt.toISOString().slice(0, 10),
   ])
   infoSheet.addRow(["Currency", `All prices are in ${meta.currency}.`])
@@ -2594,7 +2840,8 @@ export async function buildPricelistWorkbook(
           advancedProduct,
           cfg.dimensionDecimals,
           modelGroupCodeFor(advancedProduct.advanced_product_type),
-          enabledGroupIds
+          enabledGroupIds,
+          cfg.bedCombinedSection && isOtherWithFabrics
         )
       : []
 
@@ -2660,7 +2907,9 @@ export async function buildPricelistWorkbook(
     const { advancedProduct, isSofa, componentRows, productName, sheetName } =
       renderableProduct
 
-    const sheet = workbook.addWorksheet(sheetName)
+    const sheet = workbook.addWorksheet(sheetName, {
+      views: [{ showGridLines: false }],
+    })
 
     // Widths only (NOT `sheet.columns = [...]`, which also pins each
     // column's `header` to row 1 — incompatible with the header living at
@@ -2672,11 +2921,24 @@ export async function buildPricelistWorkbook(
       sheet.getColumn(cfg.fixedColumnCount + i + 1).width = GROUP_COLUMN_WIDTH
     })
 
+    // "Back to index" link in A1. A HYPERLINK() formula, not ExcelJS's
+    // native { text, hyperlink }, for the same reason as the Info index (see
+    // the index-building loop: native form adds an External relationship that
+    // makes Excel warn about "links to external sources").
+    sheet.getCell("A1").value = {
+      formula: `HYPERLINK("#'${escapeSheetNameForHyperlinkTarget(INFO_SHEET_NAME)}'!A1","\u2190 Back to index")`,
+      result: "\u2190 Back to index",
+    }
+    sheet.getCell("A1").font = INDEX_LINK_FONT
+
     // Photo block: give rows 1-10 explicit height so the reserved space
     // actually renders even when no image is placed (an anchored image
     // does not create row height by itself).
     for (let rowNumber = 1; rowNumber <= PHOTO_ROW_COUNT; rowNumber++) {
-      sheet.getRow(rowNumber).height = PHOTO_ROW_HEIGHT
+      sheet.getRow(rowNumber).height =
+        rowNumber >= 2 && rowNumber <= PHOTO_BAND_ROWS_BEFORE_MULTIPLIER
+          ? PHOTO_BAND_ROW_HEIGHT
+          : PHOTO_ROW_HEIGHT
     }
 
     // Enlarged header photo — see resolveCategoryPhotoUrls/
@@ -2760,7 +3022,11 @@ export async function buildPricelistWorkbook(
         // numbers) — never negative, since `ext.height` can never exceed
         // `CATEGORY_HEADER_PHOTO_BOX.height`, which is itself always <=
         // `HEADER_PHOTO_BAND_HEIGHT_PX`.
-        const offsetYPx = (HEADER_PHOTO_BAND_HEIGHT_PX - ext.height) / 2
+        // Centred within rows 2..8 only: the photo starts below row 1 so
+        // the A1 "Back to index" link stays visible and clickable.
+        const row1Px = rowHeightToPx(PHOTO_ROW_HEIGHT)
+        const offsetYPx =
+          row1Px + (HEADER_PHOTO_BAND_HEIGHT_PX - row1Px - ext.height) / 2
         addPictureBandImage(sheet, imageId, ext, HEADER_PHOTO_LEFT_INSET_PX, offsetYPx)
       }
     }
@@ -2800,7 +3066,14 @@ export async function buildPricelistWorkbook(
     }
     sheet.mergeCells(PRODUCT_NAME_ROW, nameFirstCol, PRODUCT_NAME_ROW_END, nameLastCol)
 
-    writeHeaderRows(sheet, sortedGroupNumbers, cfg)
+    // Bed combined section: its label takes over the first bar's "MODULES"
+    // text instead of being written as a second, duplicate bar below it.
+    const firstComponentRow = componentRows[0]
+    const combinedHeader =
+      firstComponentRow?.kind === "section" && firstComponentRow.isCombinedHeader
+        ? firstComponentRow
+        : null
+    writeHeaderRows(sheet, sortedGroupNumbers, cfg, combinedHeader?.label ?? "MODULES")
     // Per-sheet B9/C9 multiplier input — gated by cfg.showMultiplierRow
     // (see resolveRenderConfig's doc comment for why the Info sheet's own
     // master multiplier row is unaffected by this flag).
@@ -2847,6 +3120,9 @@ export async function buildPricelistWorkbook(
 
       let rowNumber = DATA_START_ROW
       for (const row of componentRows) {
+        if (row.kind === "section" && row.isCombinedHeader) {
+          continue // rendered as the first bar (row 12) by writeHeaderRows
+        }
         if (row.kind === "section") {
           writeSectionLabelRow(
             sheet,

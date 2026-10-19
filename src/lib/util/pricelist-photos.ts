@@ -1,5 +1,5 @@
 import type { PricelistExportProduct } from "@lib/furnisystems-sdk/modules/products/types"
-import { fetchImagePool } from "./image-fetch"
+import { fetchImagePool, type ImageFetchReport } from "./image-fetch"
 import {
   resizeForEmbed,
   isSharpAvailable,
@@ -94,7 +94,8 @@ const MAX_TOTAL_BYTES = 32 * 1024 * 1024 // 32MB
  * legitimately accept here that isn't already a JPEG.
  */
 export async function fetchPricelistPhotos(
-  products: PricelistExportProduct[]
+  products: PricelistExportProduct[],
+  report?: ImageFetchReport
 ): Promise<Map<string, PricelistImage | null>> {
   const sharpAvailable = await isSharpAvailable()
 
@@ -142,6 +143,7 @@ export async function fetchPricelistPhotos(
       fetchTimeoutMs: FETCH_TIMEOUT_MS,
       deadlineMs: FETCH_DEADLINE_MS,
       validate,
+      report,
       logLabel: "Photo",
     })
 
@@ -161,6 +163,7 @@ export async function fetchPricelistPhotos(
       `across ${maxCandidateCount} candidate round(s).`
   )
   if (rejectedByByteBudget > 0) {
+    if (report) report.capHit = true
     console.warn(
       `[pricelist-export] Category-photo byte budget (${MAX_TOTAL_BYTES} bytes) reached; ` +
         `${rejectedByByteBudget} otherwise-valid photo(s) were skipped.`

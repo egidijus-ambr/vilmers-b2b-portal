@@ -86,10 +86,14 @@
     "title": "Pricelist export",
     "description": "Download an Excel file listing your prices for every sofa product.",
     "button": "Download",
-    "downloading": "Preparing…",
     "no-customer": "No customer selected. Please select a customer and try again.",
     "no-pricelist": "No pricelist is assigned to your account. Please contact your account manager.",
-    "download-failed": "Could not generate the pricelist. Please try again later."
+    "download-failed": "Could not generate the pricelist. Please try again later.",
+    "unauthorized": "Your session has expired. Please sign in again.",
+    "fetch-failed": "Could not load your pricelist data. Please try again later.",
+    "unexpected": "Something went wrong while generating the pricelist. Please try again.",
+    "not-found": "The pricelist export is not available.",
+    "forbidden": "You do not have access to this pricelist file."
   },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",

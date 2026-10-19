@@ -86,10 +86,14 @@
     "title": "Prisliste-eksport",
     "description": "Download en Excel-fil med dine priser for hvert sofaprodukt.",
     "button": "Download",
-    "downloading": "Forbereder…",
     "no-customer": "Ingen kunde valgt. Vælg en kunde, og prøv igen.",
     "no-pricelist": "Der er ikke tildelt nogen prisliste til din konto. Kontakt venligst din account manager.",
-    "download-failed": "Prislisten kunne ikke genereres. Prøv igen senere."
+    "download-failed": "Prislisten kunne ikke genereres. Prøv igen senere.",
+    "unauthorized": "Din session er udløbet. Log ind igen.",
+    "fetch-failed": "Dine prislistedata kunne ikke indlæses. Prøv igen senere.",
+    "unexpected": "Der opstod en fejl under oprettelsen af prislisten. Prøv igen.",
+    "not-found": "Prislisteeksporten er ikke tilgængelig.",
+    "forbidden": "Du har ikke adgang til denne prislistefil."
   },
   "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",

@@ -157,6 +157,7 @@ export const vilmers: Theme = {
   pricelist: {
     rounding: { prices: 0, dimensions: 1 },
     showMultiplierRow: true,
+    bedCombinedSection: true,
     showVolumeColumn: true,
   },
 }

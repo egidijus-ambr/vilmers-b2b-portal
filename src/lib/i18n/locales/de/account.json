@@ -86,10 +86,14 @@
     "title": "Preisliste exportieren",
     "description": "Laden Sie eine Excel-Datei mit Ihren Preisen für jedes Sofa-Produkt herunter.",
     "button": "Herunterladen",
-    "downloading": "Wird vorbereitet…",
     "no-customer": "Kein Kunde ausgewählt. Bitte wählen Sie einen Kunden aus und versuchen Sie es erneut.",
     "no-pricelist": "Ihrem Konto ist keine Preisliste zugewiesen. Bitte wenden Sie sich an Ihren Kundenbetreuer.",
-    "download-failed": "Die Preisliste konnte nicht erstellt werden. Bitte versuchen Sie es später erneut."
+    "download-failed": "Die Preisliste konnte nicht erstellt werden. Bitte versuchen Sie es später erneut.",
+    "unauthorized": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "fetch-failed": "Ihre Preislistendaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+    "unexpected": "Beim Erstellen der Preisliste ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+    "not-found": "Der Preislisten-Export ist nicht verfügbar.",
+    "forbidden": "Sie haben keinen Zugriff auf diese Preislistendatei."
   },
   "breadcrumb-fabric-palettes": "Stoffpalette",
   "breadcrumb-home": "Startseite",

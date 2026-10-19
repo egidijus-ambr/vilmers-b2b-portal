@@ -1,5 +1,5 @@
 import type { PricelistExportProduct } from "@lib/furnisystems-sdk/modules/products/types"
-import { fetchImagePool } from "./image-fetch"
+import { fetchImagePool, type ImageFetchReport } from "./image-fetch"
 import { isJpeg } from "./image-magic"
 import { collectComponentPhotoUrls, COMPONENT_PHOTO_BOX } from "./pricelist-workbook"
 import { resizeForEmbed, TRIM_THRESHOLD, type PricelistImage } from "./image-resize"
@@ -113,7 +113,8 @@ const RESIZE_BOX = {
  * writeComponentDataRow).
  */
 export async function fetchPricelistComponentPhotos(
-  products: PricelistExportProduct[]
+  products: PricelistExportProduct[],
+  report?: ImageFetchReport
 ): Promise<Map<string, PricelistImage | null>> {
   const allUrls = Array.from(collectComponentPhotoUrls(products))
 
@@ -131,6 +132,7 @@ export async function fetchPricelistComponentPhotos(
       ? candidateUrls.slice(0, MAX_COMPONENT_PHOTO_COUNT)
       : candidateUrls
   if (boundedUrls.length < candidateUrls.length) {
+    if (report) report.capHit = true
     console.warn(
       `[pricelist-export] Distinct component-photo count (${candidateUrls.length}) exceeds ` +
         `the embed budget (${MAX_COMPONENT_PHOTO_COUNT}); only the first ` +
@@ -157,6 +159,7 @@ export async function fetchPricelistComponentPhotos(
     fetchTimeoutMs: FETCH_TIMEOUT_MS,
     deadlineMs: FETCH_DEADLINE_MS,
     validate,
+    report,
     logLabel: "Component photo",
   })
 
@@ -195,6 +198,7 @@ export async function fetchPricelistComponentPhotos(
     )
   }
   if (rejectedByByteBudget > 0) {
+    if (report) report.capHit = true
     console.warn(
       `[pricelist-export] Component-photo RAW byte budget (${MAX_TOTAL_BYTES} bytes) reached; ` +
         `${rejectedByByteBudget} otherwise-valid photo(s) were skipped and render as ` +

@@ -62,3 +62,6 @@ public/workbox-*.js
 # Claude Code auto-generated files
 CLAUDE.md
 public/sw.js
+
+# pricelist export cache
+/.cache/
