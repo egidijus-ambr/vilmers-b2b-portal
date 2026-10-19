@@ -14,7 +14,8 @@
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
     "translations:download": "node scripts/download-translations.js",
-    "verify:discount": "sucrase-node scripts/verify-apply-discount.ts"
+    "verify:discount": "sucrase-node scripts/verify-apply-discount.ts",
+    "verify:fabric-conditions": "sucrase-node scripts/verify-fabric-conditions.ts"
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",

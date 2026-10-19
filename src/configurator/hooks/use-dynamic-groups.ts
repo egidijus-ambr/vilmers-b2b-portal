@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { isEqual } from "lodash"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import {
@@ -10,6 +10,7 @@ import {
   selectDefaultComponents,
 } from "@configurator/lib/group-logic"
 import type { ComponentGroup } from "@configurator/lib/types"
+import { collectFabricGroupCodes } from "@configurator/lib/component-conditions"
 import type { ValidComponentsOptions } from "@configurator/lib/component-utils"
 
 /**
@@ -42,6 +43,14 @@ export function useDynamicGroups(
     additionalComponentGroups,
     sofaForms,
   } = state
+
+  // Stable string key of the normalised fabric group codes of every selected
+  // material. Effects key on this (not on selectedFabric) so unrelated fabric
+  // object churn (colour swaps within the same group) does not re-run them.
+  const fabricKey = useMemo(
+    () => collectFabricGroupCodes(selectedFabric).join(","),
+    [selectedFabric]
+  )
 
   const prevGroupsRef = useRef<ComponentGroup[]>([])
 
@@ -84,7 +93,12 @@ export function useDynamicGroups(
       )
 
       const newDefaults = newGroups.length > 0
-        ? selectDefaultComponents(newGroups, state.selectedAdditionalComponents, state.sofaCombinations ?? [])
+        ? selectDefaultComponents(
+            newGroups,
+            state.selectedAdditionalComponents,
+            state.sofaCombinations ?? [],
+            { fabricGroupCodes: fabricKey ? fabricKey.split(",") : [] }
+          )
         : []
 
       const updated = [...cleaned, ...newDefaults]
@@ -165,11 +179,12 @@ export function useDynamicGroups(
     if (additionalComponentGroups.length === 0) return
     if (selectedAdditionalComponents.length === 0) return
 
+    const fabricGroupCodes = fabricKey ? fabricKey.split(",") : []
     const reconciled = reconcileSelectedComponents(
       additionalComponentGroups,
       selectedAdditionalComponents,
       sofaCombinations ?? [],
-      getOptionsForGroup
+      (groupCode) => ({ ...getOptionsForGroup(groupCode), fabricGroupCodes })
     )
 
     if (!isEqual(reconciled, selectedAdditionalComponents)) {
@@ -183,5 +198,6 @@ export function useDynamicGroups(
     additionalComponentGroups,
     selectedAdditionalComponents,
     getOptionsForGroup,
+    fabricKey,
   ])
 }

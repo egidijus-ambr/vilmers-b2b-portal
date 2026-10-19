@@ -169,6 +169,24 @@ export interface ComponentGroup {
   additional_components: AdditionalComponent[]
 }
 
+export type ConditionRule =
+  | {
+      type: "fabricGroup"
+      op: "in" | "notIn"
+      codes: string[]
+      source?: "erp" | "manual"
+    }
+  // Unknown rule types are ignored (pass) for forward compatibility.
+  | { type: string; [key: string]: unknown }
+
+export interface ComponentConditions {
+  // legacy
+  onlyWithComponents?: string[]
+  onlyWithComponentsGroup?: string
+  // fabric-aware rules
+  rules?: ConditionRule[]
+}
+
 export interface AdditionalComponent {
   id: number
   code: string
@@ -179,10 +197,10 @@ export interface AdditionalComponent {
   additionalComponentGroupId?: number
   is_wrapper?: boolean
   component_sku?: string | null
-  conditions?: {
-    onlyWithComponents?: string[]
-    onlyWithComponentsGroup?: string
-  } | null
+  /** Per-product join conditions (AdditionalComponentToAdvancedProduct.conditions). */
+  conditions?: ComponentConditions | null
+  /** Component-level conditions (AdditionalComponent.conditions). */
+  componentConditions?: ComponentConditions | null
   dimensions: Record<string, any> | null
   image: { src: string; src_md: string | null; src_xs: string | null } | null
   additional_component_profiles: { name: string; material_name?: string | null; description: string | null; language: string }[]

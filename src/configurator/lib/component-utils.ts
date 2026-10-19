@@ -6,6 +6,7 @@ import type {
   StepDefinition,
 } from "./types"
 import { isHidden } from "./ui-type"
+import { passesConditions } from "./component-conditions"
 import { MODEL_CODE, MODEL_CODE_OTHER } from "./vilmers"
 
 /**
@@ -26,6 +27,12 @@ export interface ValidComponentsOptions {
   priceListIds?: number[]
   showAllProducts?: boolean
   customerComponentCodesForGroup?: Set<string>
+  /**
+   * Normalised FabricGroup codes of every selected material (see
+   * collectFabricGroupCodes). Drives fabricGroup condition rules; empty or
+   * omitted = no fabric picked yet, rules pass.
+   */
+  fabricGroupCodes?: string[]
 }
 
 /**
@@ -73,6 +80,9 @@ export function mergeComponentGroups(
         ...component,
         extra_price: resolvedExtraPrice,
         price_fabric_category: compAssoc.price_fabric_category ?? [],
+        // `component.conditions` here is AdditionalComponent.conditions; keep
+        // it separately, the spread below puts the join row's in `conditions`.
+        componentConditions: component.conditions ?? null,
         conditions: compAssoc.conditions ?? null,
         isDefault: compAssoc.isDefault ?? false,
         groupCode: group.code,
@@ -114,19 +124,11 @@ export function getValidComponents(
 ): AdditionalComponent[] {
   let filtered = [...group.additional_components]
 
-  // Filter by conditions.onlyWithComponents
-  filtered = filtered.filter((component) => {
-    if (!component.conditions?.onlyWithComponents) return true
-
-    const { onlyWithComponents, onlyWithComponentsGroup } = component.conditions
-    if (!onlyWithComponents || !onlyWithComponentsGroup) return true
-
-    const selectedInGroup = selectedComponents
-      .filter((c) => c.groupCode?.startsWith(onlyWithComponentsGroup))
-      .map((c) => c.code)
-
-    return selectedInGroup.every((code) => onlyWithComponents.includes(code))
-  })
+  // Filter by conditions: legacy onlyWithComponents + fabric rules, on both
+  // the component level and the per-product join level (ANDed).
+  filtered = filtered.filter((component) =>
+    passesConditions(component, selectedComponents, options?.fabricGroupCodes)
+  )
 
   // Filter by sofa module metadata (generic metadata[groupCode] filtering)
   // For each sofa module, check if metadata has a key matching this group's code.

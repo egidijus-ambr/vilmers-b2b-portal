@@ -190,6 +190,7 @@ export const GET_CONFIGURATOR_DATA = gql`
             id
             additionalComponentGroupId
             is_wrapper
+            conditions
             additional_component_profiles(
               where: { language: { equals: $language } }
             ) {

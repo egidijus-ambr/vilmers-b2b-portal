@@ -10,6 +10,7 @@ import { useDynamicGroups } from "@configurator/hooks/use-dynamic-groups"
 import { buildIntegrationConfiguration } from "@configurator/lib/vilmers"
 import { getArmrestOverides, measureGroupOfGroups } from "@configurator/SofaDrawingElements/utils"
 import { isValidMeasurement } from "@configurator/lib/types"
+import { collectFabricGroupCodes } from "@configurator/lib/component-conditions"
 import {
   getStepsForProduct,
   getMissingRequiredGroupCodes,
@@ -161,6 +162,13 @@ const ConfiguratorContent = ({
   // pricelist / manager-mode / customer-code inputs the drawer uses.
   useDynamicGroups(state.originalComponentGroups, undefined, getOptionsForGroup)
 
+  // Normalised fabric group codes of every selected material, fed to the
+  // fabricGroup condition rules wherever getValidComponents runs.
+  const fabricGroupCodes = useMemo(
+    () => collectFabricGroupCodes(state.selectedFabric),
+    [state.selectedFabric]
+  )
+
   // Required-group validation: enforce a selection in `model` / `model-other`
   // when those groups have at least one user-selectable component. We MUST
   // run the same `getValidComponents` filter the renderer uses, otherwise a
@@ -174,7 +182,7 @@ const ConfiguratorContent = ({
         g,
         state.selectedAdditionalComponents,
         state.sofaCombinations,
-        { priceListIds: customerPriceListIds, showAllProducts }
+        { priceListIds: customerPriceListIds, showAllProducts, fabricGroupCodes }
       ),
     }))
     const missingCodes = getMissingRequiredGroupCodes(
@@ -192,6 +200,7 @@ const ConfiguratorContent = ({
     state.sofaCombinations,
     customerPriceListIds,
     showAllProducts,
+    fabricGroupCodes,
     languageCode,
   ])
 
@@ -204,12 +213,12 @@ const ConfiguratorContent = ({
         isSofa,
         hasFabricSelection,
         singleEntryGroupCodes,
-        { priceListIds: customerPriceListIds, showAllProducts },
+        { priceListIds: customerPriceListIds, showAllProducts, fabricGroupCodes },
         multiEntryCustomerComponentCodesByGroup
       ),
       { id: "reference" as any, label: t("customer-reference"), groups: [] },
     ],
-    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, singleEntryGroupCodes, customerPriceListIds, showAllProducts, multiEntryCustomerComponentCodesByGroup, t]
+    [state.additionalComponentGroups, state.selectedAdditionalComponents, state.sofaCombinations, isSofa, hasFabricSelection, singleEntryGroupCodes, customerPriceListIds, showAllProducts, fabricGroupCodes, multiEntryCustomerComponentCodesByGroup, t]
   )
 
   const currentStep = Math.min(state.currentStep, Math.max(steps.length - 1, 0))

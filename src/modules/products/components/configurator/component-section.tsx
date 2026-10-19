@@ -4,6 +4,7 @@ import React from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import ComponentSelector from "./component-selector"
 import { getValidComponents } from "@configurator/lib/component-utils"
+import { collectFabricGroupCodes } from "@configurator/lib/component-conditions"
 import { isHidden } from "@configurator/lib/ui-type"
 import type { ComponentGroup } from "@configurator/lib/types"
 
@@ -29,7 +30,10 @@ const ComponentSection = ({
     return components.filter((c) => customerCodes.has(c.code))
   }
 
+  const fabricGroupCodes = collectFabricGroupCodes(state.selectedFabric)
+
   const getOptions = (groupCode: string) => ({
+    fabricGroupCodes,
     priceListIds,
     showAllProducts,
     customerComponentCodesForGroup: multiEntryCustomerComponentCodesByGroup.get(groupCode),
