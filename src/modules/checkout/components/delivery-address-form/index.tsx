@@ -21,13 +21,20 @@ export interface AddressFormData {
 interface DeliveryAddressFormProps {
   addresses: Address[]
   onAddressReady: (data: AddressFormData, isValid: boolean) => void
+  /** True once the user has tried to place the order. */
+  showErrors?: boolean
+  /** Incremented on every blocked place-order attempt; triggers validation of all fields. */
+  submitAttempt?: number
 }
 
 export default function DeliveryAddressForm({
   addresses,
   onAddressReady,
+  showErrors = false,
+  submitAttempt = 0,
 }: DeliveryAddressFormProps) {
   const { language } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [mode, setMode] = useState<"select" | "new">("select")
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
 
@@ -35,6 +42,7 @@ export default function DeliveryAddressForm({
     register,
     setValue,
     watch,
+    trigger,
     formState: { errors, isValid },
   } = useForm<AddressFormData>({
     mode: "onChange",
@@ -51,12 +59,12 @@ export default function DeliveryAddressForm({
 
   // Register validation rules (without spreading onto inputs — SearchInput uses controlled props)
   useEffect(() => {
-    register("address_name", { required: "Address name is required" })
-    register("address_1", { required: "Address is required" })
+    register("address_name", { required: true })
+    register("address_1", { required: true })
     register("address_2")
-    register("city", { required: "City is required" })
-    register("postal_code", { required: "Postal code is required" })
-    register("country", { required: "Country is required" })
+    register("city", { required: true })
+    register("postal_code", { required: true })
+    register("country", { required: true })
     register("state_region")
   }, [register])
 
@@ -82,6 +90,34 @@ export default function DeliveryAddressForm({
       mode === "select" ? selectedAddressId !== null : isValid
     )
   }, [mode, selectedAddressId, isValid])
+
+  // On a blocked place-order attempt, validate every field so each missing one shows its own error
+  useEffect(() => {
+    if (submitAttempt > 0 && mode === "new") {
+      trigger()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submitAttempt])
+
+  const fieldLabels: Record<string, string> = {
+    address_name: tc("checkout-field-address-name"),
+    address_1: tc("checkout-field-address-1"),
+    city: tc("checkout-field-city"),
+    postal_code: tc("checkout-field-postal-code"),
+    country: tc("checkout-field-country"),
+  }
+  const values = watch()
+  const missingFields =
+    mode === "new"
+      ? Object.keys(fieldLabels)
+          .filter((k) => !values[k as keyof AddressFormData])
+          .map((k) => fieldLabels[k])
+      : []
+  const fieldError = (name: keyof typeof fieldLabels) => (
+    <p className="text-sm text-red-500 mt-1">
+      {tc("checkout-field-required", { field: fieldLabels[name] })}
+    </p>
+  )
 
   function handleSelectAddress(addr: Address) {
     setSelectedAddressId(addr.id)
@@ -153,16 +189,15 @@ export default function DeliveryAddressForm({
           </Button>
           <div>
             <SearchInput
-              label="Address name"
+              label={fieldLabels.address_name}
+              error={!!errors.address_name}
               value={watch("address_name")}
               onChange={(val) => setValue("address_name", val, { shouldValidate: true })}
               showSearchIcon={false}
-              placeholder="Address name"
+              placeholder={fieldLabels.address_name}
               autoFocus
             />
-            {errors.address_name && (
-              <p className="text-sm text-red-500 mt-1">{errors.address_name.message}</p>
-            )}
+            {errors.address_name && fieldError("address_name")}
           </div>
         </>
       )}
@@ -172,71 +207,77 @@ export default function DeliveryAddressForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <SearchInput
-              label="Address line 1"
+              label={fieldLabels.address_1}
+              error={!!errors.address_1}
               value={watch("address_1")}
               onChange={(val) => setValue("address_1", val, { shouldValidate: true })}
               showSearchIcon={false}
-              placeholder="Address line 1"
+              placeholder={fieldLabels.address_1}
             />
-            {errors.address_1 && (
-              <p className="text-sm text-red-500 mt-1">{errors.address_1.message}</p>
-            )}
+            {errors.address_1 && fieldError("address_1")}
           </div>
           <div>
             <SearchInput
-              label="Address line 2"
+              label={tc("checkout-field-address-2")}
               value={watch("address_2")}
               onChange={(val) => setValue("address_2", val, { shouldValidate: true })}
               showSearchIcon={false}
-              placeholder="Address line 2"
+              placeholder={tc("checkout-field-address-2")}
             />
           </div>
           <div>
             <SearchInput
-              label="City"
+              label={fieldLabels.city}
+              error={!!errors.city}
               value={watch("city")}
               onChange={(val) => setValue("city", val, { shouldValidate: true })}
               showSearchIcon={false}
-              placeholder="City"
+              placeholder={fieldLabels.city}
             />
-            {errors.city && (
-              <p className="text-sm text-red-500 mt-1">{errors.city.message}</p>
-            )}
+            {errors.city && fieldError("city")}
           </div>
           <div>
             <SearchInput
-              label="Postal code"
+              label={fieldLabels.postal_code}
+              error={!!errors.postal_code}
               value={watch("postal_code")}
               onChange={(val) => setValue("postal_code", val, { shouldValidate: true })}
               showSearchIcon={false}
-              placeholder="Postal code"
+              placeholder={fieldLabels.postal_code}
             />
-            {errors.postal_code && (
-              <p className="text-sm text-red-500 mt-1">{errors.postal_code.message}</p>
-            )}
+            {errors.postal_code && fieldError("postal_code")}
           </div>
           <div>
             <CountrySelect
-              label="Country"
+              label={fieldLabels.country}
+              error={!!errors.country}
+              placeholder={tc("country-placeholder")}
               value={watch("country")}
               onChange={(code) => setValue("country", code, { shouldValidate: true })}
               language={language}
             />
-            {errors.country && (
-              <p className="text-sm text-red-500 mt-1">{errors.country.message}</p>
-            )}
+            {errors.country && fieldError("country")}
           </div>
           <div>
             <SearchInput
-              label="State / Region"
+              label={`${tc("checkout-field-state-region")} ${tc("checkout-field-optional")}`}
               value={watch("state_region")}
               onChange={(val) => setValue("state_region", val, { shouldValidate: true })}
               showSearchIcon={false}
-              placeholder="State / Region"
+              placeholder={tc("checkout-field-state-region")}
             />
           </div>
         </div>
       )}
+
+      {showErrors &&
+        (mode === "select" ? selectedAddressId === null : missingFields.length > 0) && (
+          <p data-checkout-error className="text-sm text-red-500">
+            {mode === "select"
+              ? tc("checkout-field-select-address")
+              : tc("checkout-field-fill-in", { fields: missingFields.join(", ") })}
+          </p>
+        )}
     </div>
   )
 }

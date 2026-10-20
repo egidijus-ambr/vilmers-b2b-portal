@@ -123,7 +123,7 @@ const nextConfig = {
   },
   outputFileTracingRoot: __dirname,
   experimental: {
-    // Offer PDFs are emailed as base64 through a server action; raise the
+    // Offer PDFs are emailed as a File in FormData through a server action; raise the
     // default 1MB body limit so multi-page rasterized PDFs get through.
     serverActions: {
       bodySizeLimit: "10mb",

@@ -9,6 +9,7 @@ interface SearchInputProps {
   showSearchIcon?: boolean
   label?: string
   autoFocus?: boolean
+  error?: boolean
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   "data-testid"?: string
 }
@@ -20,6 +21,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
   showSearchIcon = true,
   label,
   autoFocus,
+  error,
   onKeyDown,
   "data-testid": dataTestId,
 }, ref) => {
@@ -55,9 +57,10 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoFocus={autoFocus}
+          aria-invalid={error ? true : undefined}
           onKeyDown={onKeyDown}
           data-testid={dataTestId}
-          className={`block w-full h-14 text-base ${showSearchIcon ? "pl-10" : "pl-3"} pr-3 border border-gray-300 rounded-input leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
+          className={`block w-full h-14 text-base ${showSearchIcon ? "pl-10" : "pl-3"} pr-3 border ${error ? "border-red-500" : "border-gray-300"} rounded-input leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 ${error ? "focus:ring-red-500 focus:border-red-500" : "focus:ring-blue-500 focus:border-blue-500"}`}
         />
       </div>
     </div>

@@ -95,6 +95,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const [orderType, setOrderType] = useState("")
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
   const [showErrors, setShowErrors] = useState(false)
+  const [submitAttempt, setSubmitAttempt] = useState(0)
   const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -122,6 +123,18 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
     []
   )
 
+  // After a blocked attempt, scroll to the first invalid field (or error message) once errors have rendered
+  useEffect(() => {
+    if (submitAttempt === 0) return
+    const timer = setTimeout(() => {
+      const target =
+        document.querySelector('[aria-invalid="true"]') ??
+        document.querySelector("[data-checkout-error]")
+      target?.scrollIntoView({ behavior: "smooth", block: "center" })
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [submitAttempt])
+
   async function handlePlaceOrder() {
     if (needsActingCustomer) {
       setError(tc("checkout-select-customer-required"))
@@ -130,9 +143,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
 
     if (!isAddressValid || !orderType) {
       setShowErrors(true)
-      // Scroll to first error
-      const firstError = document.querySelector("[data-checkout-error]")
-      firstError?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setSubmitAttempt((n) => n + 1)
       return
     }
 
@@ -285,11 +296,10 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
         <DeliveryAddressForm
           addresses={addresses}
           onAddressReady={handleAddressReady}
+          showErrors={showErrors}
+          submitAttempt={submitAttempt}
         />
       </div>
-      {showErrors && !isAddressValid && (
-        <p data-checkout-error className="text-sm text-red-500 -mt-4">Please select or enter a delivery address</p>
-      )}
 
       <div className="bg-white pb-6 p-4 md:p-6">
         <ShippingDetails

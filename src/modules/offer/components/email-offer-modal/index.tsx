@@ -51,8 +51,19 @@ export default function EmailOfferModal({
     setStatus("sending")
     setErrorMsg(null)
     try {
-      const { base64 } = await generateOfferPdf()
-      const res = await sendCartOfferEmail(cartId, base64, email.trim())
+      const { blob } = await generateOfferPdf()
+      // Send as a File in FormData: a >1MB base64 string argument trips React's
+      // decodeReply 1e6 limit ("Maximum array nesting exceeded").
+      const formData = new FormData()
+      formData.append("cartId", String(cartId))
+      formData.append("recipientEmail", email.trim())
+      formData.append(
+        "pdf",
+        new File([blob], `cart-offer-${cartId}.pdf`, {
+          type: "application/pdf",
+        })
+      )
+      const res = await sendCartOfferEmail(formData)
       if (res.ok) {
         setStatus("success")
       } else {

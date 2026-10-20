@@ -103,5 +103,16 @@
   "fabric-not-in-palette-generic": "Une ou plusieurs couleurs sélectionnées ne sont pas disponibles dans vos palettes de tissus. Veuillez choisir une autre couleur.",
   "checkout-select-customer-required": "Sélectionnez un client avant de passer commande. Les commandes doivent être passées au nom d'un client disposant d'un code client.",
   "checkout-select-customer-title": "Sélectionnez d'abord un client",
-  "order-buyer-not-authorized": "La commande n'a pas pu être passée car aucun client valide n'est sélectionné. Veuillez sélectionner un client disposant d'un code client et réessayer."
+  "order-buyer-not-authorized": "La commande n'a pas pu être passée car aucun client valide n'est sélectionné. Veuillez sélectionner un client disposant d'un code client et réessayer.",
+  "checkout-field-address-name": "Nom de l'adresse",
+  "checkout-field-address-1": "Adresse (ligne 1)",
+  "checkout-field-address-2": "Adresse (ligne 2)",
+  "checkout-field-city": "Ville",
+  "checkout-field-postal-code": "Code postal",
+  "checkout-field-country": "Pays",
+  "checkout-field-state-region": "État / Région",
+  "checkout-field-optional": "(facultatif)",
+  "checkout-field-required": "{{field}} est obligatoire",
+  "checkout-field-fill-in": "Veuillez renseigner : {{fields}}",
+  "checkout-field-select-address": "Veuillez sélectionner une adresse de livraison"
 }

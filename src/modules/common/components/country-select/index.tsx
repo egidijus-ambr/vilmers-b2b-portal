@@ -21,6 +21,7 @@ interface CountrySelectProps {
   onChange: (code: string) => void
   label?: string
   placeholder?: string
+  error?: boolean
   language?: string
 }
 
@@ -29,6 +30,7 @@ export default function CountrySelect({
   onChange,
   label,
   placeholder = "Select country",
+  error,
   language = "en",
 }: CountrySelectProps) {
   const [search, setSearch] = useState("")
@@ -72,7 +74,10 @@ export default function CountrySelect({
         }}
       >
         <div className="relative">
-          <ListboxButton className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 rounded-input bg-white text-left hover:border-gray-400 transition-colors">
+          <ListboxButton
+            aria-invalid={error ? true : undefined}
+            className={`w-full flex items-center justify-between h-14 px-3 text-base border ${error ? "border-red-500" : "border-gray-300 hover:border-gray-400"} rounded-input bg-white text-left transition-colors`}
+          >
             <span className={selectedCountry ? "text-dark-blue" : "text-gray-500"}>
               {selectedCountry ? selectedCountry.name : placeholder}
             </span>

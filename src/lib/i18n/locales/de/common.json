@@ -103,5 +103,16 @@
   "fabric-not-in-palette-generic": "Eine oder mehrere ausgewählte Farben sind in Ihren Stoffpaletten nicht verfügbar. Bitte wählen Sie eine andere Farbe.",
   "checkout-select-customer-required": "Wählen Sie einen Kunden aus, bevor Sie eine Bestellung aufgeben. Bestellungen müssen im Namen eines Kunden mit Kundennummer aufgegeben werden.",
   "checkout-select-customer-title": "Bitte zuerst einen Kunden auswählen",
-  "order-buyer-not-authorized": "Die Bestellung konnte nicht aufgegeben werden, da kein gültiger Kunde ausgewählt ist. Bitte wählen Sie einen Kunden mit Kundennummer und versuchen Sie es erneut."
+  "order-buyer-not-authorized": "Die Bestellung konnte nicht aufgegeben werden, da kein gültiger Kunde ausgewählt ist. Bitte wählen Sie einen Kunden mit Kundennummer und versuchen Sie es erneut.",
+  "checkout-field-address-name": "Adressname",
+  "checkout-field-address-1": "Adresszeile 1",
+  "checkout-field-address-2": "Adresszeile 2",
+  "checkout-field-city": "Stadt",
+  "checkout-field-postal-code": "Postleitzahl",
+  "checkout-field-country": "Land",
+  "checkout-field-state-region": "Bundesland / Region",
+  "checkout-field-optional": "(optional)",
+  "checkout-field-required": "{{field}} ist erforderlich",
+  "checkout-field-fill-in": "Bitte ausfüllen: {{fields}}",
+  "checkout-field-select-address": "Bitte wählen Sie eine Lieferadresse"
 }

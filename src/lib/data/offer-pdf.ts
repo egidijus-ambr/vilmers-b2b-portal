@@ -87,20 +87,40 @@ export const getCartOffer = async (
 }
 
 /**
- * Email a client-generated offer PDF (base64) to the customer (or an explicit
- * recipient). Same session/auth gate as the other offer actions. Returns the
- * backend boolean, or null on an invalid session / error.
+ * Email a client-generated offer PDF to the customer (or an explicit
+ * recipient). Same session/auth gate as the other offer actions.
+ *
+ * The PDF MUST arrive as a File inside a FormData argument, never as a
+ * (base64) string argument: React's server-action reply decoder counts string
+ * length toward a 1,000,000-slot budget whenever the args array has more than
+ * one element, so a >1MB base64 string throws "Maximum array nesting exceeded".
+ * FormData/File parts are outlined and not counted.
+ *
+ * Expected fields: cartId, pdf (File), recipientEmail (optional).
+ * The backend GraphQL mutation still takes `pdfBase64`, so we encode here.
  */
 export const sendCartOfferEmail = async (
-  cartId: number,
-  pdfBase64: string,
-  recipientEmail?: string
+  formData: FormData
 ): Promise<{ ok: true } | { ok: false; error: string }> => {
   unstable_noStore()
 
   try {
     const validation = await validateSession()
     if (!validation.isValid) return { ok: false, error: "session" }
+
+    const cartId = Number(formData.get("cartId"))
+    const pdf = formData.get("pdf")
+    const rawEmail = formData.get("recipientEmail")
+    const recipientEmail =
+      typeof rawEmail === "string" && rawEmail.trim()
+        ? rawEmail.trim()
+        : undefined
+
+    if (!Number.isInteger(cartId) || !(pdf instanceof Blob) || pdf.size === 0) {
+      return { ok: false, error: "send-failed" }
+    }
+
+    const pdfBase64 = Buffer.from(await pdf.arrayBuffer()).toString("base64")
 
     const sent = await sdk.offerPdf.emailCartOffer(cartId, pdfBase64, {
       fileName: `cart-offer-${cartId}.pdf`,

@@ -103,5 +103,16 @@
   "fabric-not-in-palette-generic": "One or more selected colours are not available in your fabric palettes. Please choose another colour.",
   "checkout-select-customer-required": "Select a customer before placing an order. Orders must be placed on behalf of a customer with a customer code.",
   "checkout-select-customer-title": "Select a customer first",
-  "order-buyer-not-authorized": "This order could not be placed because no valid customer is selected. Please select a customer with a customer code and try again."
+  "order-buyer-not-authorized": "This order could not be placed because no valid customer is selected. Please select a customer with a customer code and try again.",
+  "checkout-field-address-name": "Address name",
+  "checkout-field-address-1": "Address line 1",
+  "checkout-field-address-2": "Address line 2",
+  "checkout-field-city": "City",
+  "checkout-field-postal-code": "Postal code",
+  "checkout-field-country": "Country",
+  "checkout-field-state-region": "State / Region",
+  "checkout-field-optional": "(optional)",
+  "checkout-field-required": "{{field}} is required",
+  "checkout-field-fill-in": "Please fill in: {{fields}}",
+  "checkout-field-select-address": "Please select a delivery address"
 }
