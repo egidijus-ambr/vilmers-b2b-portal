@@ -36,20 +36,14 @@ const TawkToChat = () => {
         "[TawkToChat] Generating authentication hash and starting widget..."
       )
 
-      // Get authentication hash from backend API
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_REST_API}/tawk-hash`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: customer.customer_account.email,
-            type: "login",
-          }),
-        }
-      )
+      // Get the authentication hash via the same-origin proxy
+      // (src/app/api/tawk-hash), which forwards the httpOnly session cookie as
+      // a Bearer token. The backend derives the account from that session, so
+      // no email is sent.
+      const response = await fetch("/api/tawk-hash", {
+        method: "POST",
+        credentials: "same-origin",
+      })
 
       if (!response.ok) {
         throw new Error(

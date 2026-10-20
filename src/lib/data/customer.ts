@@ -22,6 +22,7 @@ import {
 import { ErrorHandlers } from "@lib/util/error-handler"
 import { validateSession } from "@lib/util/session-validation"
 import { validateTokenAndExtractCustomerId } from "@lib/util/jwt-utils"
+import { getClientIpFromHeaders } from "@lib/util/client-ip"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
 import { getDefaultPriceListId } from "./default-pricelist"
 import { getAnonymousProductTagIds } from "./anonymous-product-tags"
@@ -335,14 +336,7 @@ export async function requestMagicLink(
     await setReturnToCookie(formData.get("returnTo") as string | null)
 
     // Extract IP address from request headers
-    const headersList = await headers()
-    const ipAddress =
-      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      headersList.get("x-real-ip") ||
-      headersList.get("x-client-ip") ||
-      headersList.get("cf-connecting-ip") ||
-      headersList.get("remote-addr") ||
-      "unknown"
+    const ipAddress = getClientIpFromHeaders(await headers()) ?? "unknown"
 
     console.log("Magic link request from IP:", ipAddress)
 
@@ -397,8 +391,6 @@ export async function verifyMagicLinkAction(
   const token = formData.get("token") as string
   const languageCode = formData.get("languageCode") as string
 
-  console.log("Verifying magic link with token:", token)
-
   // Check existing session state
   const existingSessionValidation = await validateSession()
   console.log("[Magic Link] Existing session status:", {
@@ -428,6 +420,7 @@ export async function verifyMagicLinkAction(
         console.log(
           "[Magic Link] Scenario 1: Same customer with valid token - keeping existing session"
         )
+        await consumeMagicLinkKeepingSession(token)
         redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
         return
       } else {
@@ -448,6 +441,7 @@ export async function verifyMagicLinkAction(
         console.log(
           "[Magic Link] Scenario 3: Same customer with expired token - keeping existing session"
         )
+        await consumeMagicLinkKeepingSession(token)
         redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
         return
       } else {
@@ -476,6 +470,25 @@ export async function verifyMagicLinkAction(
       redirect(`/${languageCode}/account`)
       return
     }
+  }
+}
+
+/**
+ * Scenarios 1 and 3: the browser already holds a valid session for the account
+ * the link was issued to, so the user stays logged in whatever happens here.
+ * The link is still sent to the backend so its single-use token is consumed
+ * server-side and cannot be replayed later (e.g. from a forwarded email). On
+ * success the SDK replaces the cookie with a fresh session for that same
+ * account; on failure (already used, expired, rate limited) the existing
+ * session is left untouched. Never throws, so the caller's redirect runs.
+ */
+async function consumeMagicLinkKeepingSession(token: string): Promise<void> {
+  try {
+    await sdk.customer.verifyMagicLink(token)
+  } catch {
+    console.warn(
+      "[Magic Link] Link could not be consumed (already used or expired) - keeping existing session"
+    )
   }
 }
 
