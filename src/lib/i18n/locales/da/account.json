@@ -235,5 +235,6 @@
   "price-missing-main-component": "Den valgte mulighed har ingen pris for den valgte stofkategori. Vælg et andet stof eller en anden mulighed.",
   "fabric-category-unavailable": "Ikke tilgængelig for de valgte moduler",
   "fabric-category-unavailable-options": "Ikke tilgængelig for de valgte muligheder",
-  "price-unavailable": "Ingen pris"
+  "price-unavailable": "Ingen pris",
+  "custom-integration": "Tilpasset integration"
 }

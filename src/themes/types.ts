@@ -114,6 +114,34 @@ export interface Theme {
    */
   demoMode: boolean
   /**
+   * Whether the configurator shows the per-module Vilmers AX configuration
+   * strings (e.g. `1.1 6BAAL-0008 AXXXXX...`) under the canvas (still only
+   * for debug / acting-customer / manager-impersonation sessions). The
+   * string is Vilmers-AX specific, so non-Vilmers brands set `false`, which
+   * also skips building it. Build-time constant like `demoMode`.
+   */
+  showErpConfigString: boolean
+  /**
+   * Whether the "Product photos" area (account overview card and the
+   * /account/product-photos pages) is available. When `false`, the overview
+   * shows the Fabric Palettes card in its slot and the product-photos routes
+   * redirect to the account overview. Build-time constant like `demoMode`.
+   */
+  showProductPhotos: boolean
+  /**
+   * Whether the "Claims" card is available on the account overview. When
+   * `false`, the overview shows a shortcut to the Pricelist export card in
+   * its slot instead (when the pricelistExport feature is on). Build-time
+   * constant like `demoMode`.
+   */
+  showClaims: boolean
+  /**
+   * Account-overview cards that are demo-only for this brand: rendered as
+   * non-interactive cards with a muted "Custom integration" label instead of
+   * the "Check" action. Build-time constant like `demoMode`.
+   */
+  demoAccountCards: Array<"pricelist-export" | "exposition-rules">
+  /**
    * Per-brand pricelist (XLSX) export configuration — resolved by
    * `src/lib/util/pricelist-theme.ts` (the ONLY module on the pricelist
    * path that imports `activeTheme`/this type) into a plain settings

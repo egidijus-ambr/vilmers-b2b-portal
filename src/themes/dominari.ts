@@ -160,6 +160,11 @@ export const dominari: Theme = {
     },
   },
   demoMode: true,
+  // Vilmers-AX configuration strings are meaningless for Dominari
+  showErpConfigString: false,
+  showProductPhotos: false,
+  showClaims: false,
+  demoAccountCards: ["pricelist-export", "exposition-rules"],
   // Pricelist (XLSX) export config (see src/themes/types.ts) — same values
   // as Vilmers today (starting point; not yet brand-differentiated on the
   // rounding/visibility fields). The group-header/border COLORS still

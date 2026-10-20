@@ -235,5 +235,6 @@
   "price-missing-main-component": "The selected option has no price for the selected fabric category. Choose another fabric or option.",
   "fabric-category-unavailable": "Not available for the selected modules",
   "fabric-category-unavailable-options": "Not available for the selected options",
-  "price-unavailable": "No price"
+  "price-unavailable": "No price",
+  "custom-integration": "Custom integration"
 }

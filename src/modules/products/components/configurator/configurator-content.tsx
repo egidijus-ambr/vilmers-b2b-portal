@@ -25,6 +25,7 @@ import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
 import { hasUnjoinedConnectableModules } from "@configurator/lib/sofa-connectivity"
+import { activeTheme } from "themes"
 import { useDebugMode } from "@lib/hooks/use-debug-mode"
 import { useTranslations } from "@lib/i18n"
 import { PaletteActionError } from "@lib/fabric-palettes/palette-error"
@@ -230,6 +231,7 @@ const ConfiguratorContent = ({
 
   // Build configuration strings for display below canvas
   const configStrings = useMemo(() => {
+    if (!activeTheme.showErpConfigString) return []
     const configs = buildIntegrationConfiguration(state, priceListId)
     const result: { setId: number; itemId: number; module: string; configString: string }[] = []
     configs?.forEach((set: any, setIndex: number) => {

@@ -150,6 +150,10 @@ export const vilmers: Theme = {
     },
   },
   demoMode: false,
+  showErpConfigString: true,
+  showProductPhotos: true,
+  showClaims: true,
+  demoAccountCards: [],
   // Pricelist (XLSX) export config (see src/themes/types.ts). These values
   // reproduce TODAY's hardcoded workbook defaults exactly (see
   // resolveRenderConfig in src/lib/util/pricelist-workbook.ts) — a visual

@@ -9,6 +9,9 @@ interface ActionCardProps {
   buttonText?: string
   height?: "auto" | "fixed"
   onClick?: () => void
+  /** Non-interactive demo card: no action, muted footer label instead of the button. */
+  demo?: boolean
+  footerLabel?: string
 }
 
 const ActionCard = ({
@@ -17,6 +20,8 @@ const ActionCard = ({
   buttonText = "Check",
   height = "fixed",
   onClick,
+  demo = false,
+  footerLabel,
 }: ActionCardProps) => {
   return (
     <div
@@ -34,6 +39,11 @@ const ActionCard = ({
           </p>
         </div>
         <div className="inline-flex justify-between items-center mt-4">
+          {demo ? (
+            <span className="inline-flex items-center rounded-full bg-dark-blue-70/10 px-3 py-1 text-xs sm:text-sm font-medium text-dark-blue-70 select-none">
+              {footerLabel}
+            </span>
+          ) : (
           <button
             onClick={onClick}
             className="inline-flex items-center hover:opacity-70 transition-opacity"
@@ -43,6 +53,7 @@ const ActionCard = ({
             </span>
             <ArrowRight color="dark-blue" />
           </button>
+          )}
         </div>
       </div>
     </div>

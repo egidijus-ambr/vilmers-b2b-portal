@@ -235,5 +235,6 @@
   "price-missing-main-component": "Pasirinktas variantas neturi kainos pasirinktai audinio kategorijai. Pasirinkite kitą audinį arba variantą.",
   "fabric-category-unavailable": "Nepasiekiama pasirinktiems moduliams",
   "fabric-category-unavailable-options": "Nepasiekiama pasirinktiems variantams",
-  "price-unavailable": "Nėra kainos"
+  "price-unavailable": "Nėra kainos",
+  "custom-integration": "Individuali integracija"
 }

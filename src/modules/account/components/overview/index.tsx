@@ -9,6 +9,7 @@ import { useCustomer } from "@lib/context/customer-context"
 import { isInternalDomain } from "@lib/utils/internal-domains"
 import PageHeader from "@modules/common/components/page-header"
 import PageContent from "@modules/common/components/page-content"
+import { activeTheme } from "themes"
 import ActionCard from "../action-card"
 import ManagerProfileCard from "../manager-profile-card"
 import OrdersTable from "../orders-table"
@@ -105,35 +106,78 @@ const Overview = (): JSX.Element => {
     }
   }
 
-  const actionCards = [
+  const isDemoCard = (id: "pricelist-export" | "exposition-rules") =>
+    activeTheme.demoAccountCards.includes(id)
+
+  const actionCards: Array<{
+    id: string
+    title: string
+    description: string
+    onClick?: () => void
+  }> = [
     ...(customer?.is_configurator_enabled
       ? [
           {
+            id: "place-an-order",
             title: t("place-an-order.title"),
             description: t("place-an-order.description"),
             onClick: () => router.push(`/${languageCode}/store`),
           },
         ]
       : []),
-    ...(customer?.is_claims_enabled
+    // Claims slot: brands without claims show a shortcut to the inline
+    // Pricelist export card instead (only when that feature is enabled, so
+    // the shortcut never points at a card that isn't rendered).
+    ...(!activeTheme.showClaims
+      ? isDemoCard("pricelist-export") || features.pricelistExport
+        ? [
+            {
+              id: "pricelist-export",
+              title: t("pricelist-export.title"),
+              description: t("pricelist-export.description"),
+              onClick: isDemoCard("pricelist-export")
+                ? undefined
+                : () =>
+                document
+                  .getElementById("pricelist-export")
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+            },
+          ]
+        : []
+      : customer?.is_claims_enabled
       ? [
           {
+            id: "claims",
             title: t("claims.title"),
             description: t("claims.description"),
             onClick: handleClaimsClick,
           },
         ]
       : []),
-    {
-      title: t("product-photos.title"),
-      description: t("product-photos.description"),
-      onClick: () => router.push(`/${languageCode}/account/product-photos`),
-    },
+    // Product photos slot: brands without product photos show the Fabric
+    // Palettes card here instead (and skip the standalone palettes card below).
+    activeTheme.showProductPhotos
+      ? {
+          id: "product-photos",
+          title: t("product-photos.title"),
+          description: t("product-photos.description"),
+          onClick: () => router.push(`/${languageCode}/account/product-photos`),
+        }
+      : {
+          id: "fabric-palettes",
+          title: t("fabric-palettes.title"),
+          description: t("fabric-palettes.description"),
+          onClick: () =>
+            router.push(`/${languageCode}/account/fabric-palettes`),
+        },
 
     {
+      id: "exposition-rules",
       title: t("exposition-rules.title"),
       description: t("exposition-rules.description"),
-      onClick: handleExpositionRulesClick,
+      onClick: isDemoCard("exposition-rules")
+        ? undefined
+        : handleExpositionRulesClick,
     },
   ]
 
@@ -162,11 +206,13 @@ const Overview = (): JSX.Element => {
           <div className="order-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
             {actionCards.map((card, index) => (
               <ActionCard
-                key={index}
+                key={card.id}
                 title={card.title}
                 description={card.description}
                 onClick={card.onClick}
                 buttonText={t("check")}
+                demo={isDemoCard(card.id as "pricelist-export")}
+                footerLabel={t("custom-integration")}
               />
             ))}
           </div>
@@ -193,7 +239,8 @@ const Overview = (): JSX.Element => {
             )}
           </div>
         </div>
-        {/* Fabric Palettes Card */}
+        {/* Fabric Palettes Card (brands without product photos show it in the grid above) */}
+        {activeTheme.showProductPhotos && (
         <div className="space-y-4">
           <div className="bg-white">
             <ActionCard
@@ -206,6 +253,7 @@ const Overview = (): JSX.Element => {
             />
           </div>
         </div>
+        )}
 
         {/* Customer Files Card — renders nothing when the company has no files */}
         <CustomerFilesCard />
@@ -217,7 +265,11 @@ const Overview = (): JSX.Element => {
             falls back to the group pricelist, so gating on price_listId
             alone would hide it from customers who are only priced via
             their group). */}
-        {features.pricelistExport && <PricelistExportCard />}
+        {features.pricelistExport && !isDemoCard("pricelist-export") && (
+          <div id="pricelist-export">
+            <PricelistExportCard />
+          </div>
+        )}
 
         {/* Orders Section */}
         <div className="space-y-10">
