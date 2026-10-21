@@ -18,7 +18,23 @@ const requiredEnvs = [
 // - VILMERS_AX_API_BASE_URL (default: https://furnisys.vilmers.com)
 // - VILMERS_AX_API_KEY     (no default; without it the stock check is disabled)
 
+// Optional server-only secret for the backend's trusted-BFF exception
+// (src/lib/furnisystems-sdk/client/index.ts sends x-bff-secret + x-client-ip).
+// Unset: no BFF headers, so the backend rate-limits every portal user under the
+// portal server's IP. The backend ignores values shorter than 32 characters, so
+// warn (without blocking boot) when one is set.
+const BFF_SECRET_MIN_LENGTH = 32
+
 function checkEnvVariables() {
+  const bffSecret = (process.env.BFF_SHARED_SECRET || "").trim()
+  if (bffSecret && bffSecret.length < BFF_SECRET_MIN_LENGTH) {
+    console.warn(
+      c.yellow(
+        `\nWarning: BFF_SHARED_SECRET is shorter than ${BFF_SECRET_MIN_LENGTH} characters; the backend will ignore it.\n`
+      )
+    )
+  }
+
   const missingEnvs = requiredEnvs.filter(function (env) {
     return !process.env[env.key]
   })

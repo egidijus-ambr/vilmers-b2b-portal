@@ -20,6 +20,7 @@ import {
   NotFoundError,
 } from "./errors"
 import { ClientConfig, AuthHeaders } from "./types"
+import { getClientIpFromHeaders } from "@lib/util/client-ip"
 
 // Helper function to safely access cookies in server context only
 async function getCookiesIfAvailable(): Promise<string | null> {
@@ -37,6 +38,51 @@ async function getCookiesIfAvailable(): Promise<string | null> {
     // If we can't access cookies (e.g., in client component during SSR), return null
     return null
   }
+}
+
+// Trusted-BFF headers, server only. The backend keys its auth rate limits on
+// the client IP; requests from server actions would otherwise all count
+// against this Next.js server's IP. It accepts `x-client-ip` only together
+// with `x-bff-secret` matching its own BFF_SHARED_SECRET. The secret must
+// never reach the browser: skipped client-side (non-NEXT_PUBLIC_ env vars
+// are not inlined there either), when the secret is unset, and wherever the
+// request headers are unavailable (outside request scope, inside
+// unstable_cache), mirroring getCookiesIfAvailable.
+async function getBffHeadersIfAvailable(): Promise<Record<string, string>> {
+  if (typeof window !== "undefined") {
+    return {}
+  }
+
+  const secret = process.env.BFF_SHARED_SECRET?.trim()
+  if (!secret) {
+    return {}
+  }
+
+  try {
+    const { headers } = await import("next/headers")
+    const clientIp = getClientIpFromHeaders(await headers())
+    if (!clientIp) {
+      return {}
+    }
+    return { "x-bff-secret": secret, "x-client-ip": clientIp }
+  } catch (error) {
+    return {}
+  }
+}
+
+// Variables never written to the debug log (magic-link tokens, passwords).
+const REDACTED_VARIABLE_KEYS = new Set(["token", "password"])
+
+function redactVariables(variables: Record<string, any> | undefined) {
+  if (!variables) {
+    return variables
+  }
+  return Object.fromEntries(
+    Object.entries(variables).map(([key, value]) => [
+      key,
+      REDACTED_VARIABLE_KEYS.has(key) ? "[redacted]" : value,
+    ])
+  )
 }
 
 export class ApolloGraphQLClient {
@@ -82,6 +128,7 @@ export class ApolloGraphQLClient {
         Accept: "*/*",
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
+        "x-client": "portal",
         ...this.config.defaultHeaders,
         ...this.authHeaders,
       }
@@ -96,6 +143,8 @@ export class ApolloGraphQLClient {
           )
         }
       }
+
+      Object.assign(authHeaders, await getBffHeadersIfAvailable())
 
       if (this.config.publishableKey) {
         authHeaders["x-publishable-api-key"] = this.config.publishableKey
@@ -135,7 +184,7 @@ export class ApolloGraphQLClient {
       if (this.config.debug) {
         console.log(`[Furnisystems SDK] GraphQL Operation:`, {
           operationName: operation.operationName,
-          variables: operation.variables,
+          variables: redactVariables(operation.variables),
           query: operation.query,
         })
       }

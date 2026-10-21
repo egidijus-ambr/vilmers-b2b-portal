@@ -108,6 +108,28 @@ export function getManagerIdFromToken(token: string): number | null {
 }
 
 /**
+ * Returns the claims of an admin impersonation token, or null when the token
+ * does not have that shape. The backend's impersonateB2BCustomer mints
+ * `{ customerId, customer_accountId: null, managerId: <staff User.id> }`.
+ * Decode only: the signature is NOT checked here - the caller must still
+ * validate the token with the backend before trusting it.
+ */
+export function getImpersonationClaims(
+  token: string
+): { customerId: number; managerId: number } | null {
+  const payload = decodeJWTPayload(token)
+  if (!payload || typeof payload !== "object") return null
+  if (payload.customer_accountId != null) return null
+  if (payload.managerId == null || payload.customerId == null) return null
+
+  const managerId = Number(payload.managerId)
+  const customerId = Number(payload.customerId)
+  if (!Number.isFinite(managerId) || !Number.isFinite(customerId)) return null
+
+  return { customerId, managerId }
+}
+
+/**
  * Extracts the customer role from a JWT token (e.g. 'admin', 'agent', or null).
  */
 export function getRoleFromToken(token: string): string | null {
