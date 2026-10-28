@@ -114,5 +114,6 @@
   "checkout-field-optional": "(optional)",
   "checkout-field-required": "{{field}} is required",
   "checkout-field-fill-in": "Please fill in: {{fields}}",
-  "checkout-field-select-address": "Please select a delivery address"
+  "checkout-field-select-address": "Please select a delivery address",
+  "new": "New"
 }

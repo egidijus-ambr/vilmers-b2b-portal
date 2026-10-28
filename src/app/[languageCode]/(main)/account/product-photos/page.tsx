@@ -4,17 +4,11 @@ import { useCustomer } from "@lib/context/customer-context"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { useTranslations } from "@lib/i18n"
+import NewBadge from "@modules/common/components/new-badge"
 import { useProductPhotos } from "@lib/context/product-photos-context"
 import Image from "next/image"
 import Link from "next/link"
 import SkeletonProductPhotosGrid from "@modules/skeletons/components/skeleton-product-photos-grid"
-
-const isNewPhoto = (dateStr?: string | null): boolean => {
-  if (!dateStr) return false
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  return new Date(dateStr) > thirtyDaysAgo
-}
 
 export default function ProductPhotosPage() {
   const { customer } = useCustomer()
@@ -79,14 +73,7 @@ export default function ProductPhotosPage() {
                             className="object-cover group-hover:scale-105 transition-transform duration-200"
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                           />
-                          {isNewPhoto(product.newest_photo_at) && (
-                            <span
-                              className="absolute top-2 right-2 text-white text-xs font-semibold px-2 py-0.5 rounded-full"
-                              style={{ backgroundColor: "#a3b19c" }}
-                            >
-                              New
-                            </span>
-                          )}
+                          <NewBadge createdAt={product.newest_photo_at} days={30} variant="card" className="absolute top-2 right-2" />
                         </div>
                         <div className="p-3">
                           <h3 className="font-medium text-ui-fg-base text-sm line-clamp-2 group-hover:text-ui-fg-interactive transition-colors">

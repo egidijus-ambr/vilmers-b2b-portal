@@ -13,6 +13,7 @@ import { useGoToConfigurator } from "@lib/context/go-to-configurator-context"
 import { getCustomerMarket } from "@lib/util/customer-market"
 import { features } from "@lib/features"
 import { activeTheme } from "themes"
+import NewBadge from "@modules/common/components/new-badge"
 
 function extractProductDisplayData(
   container: ProductContainer,
@@ -173,11 +174,14 @@ export default function B2BProductCard({
               No image
             </div>
           )}
-          {activeTheme.layout.productCard.showCategory && categoryName && (
-            <span className="absolute top-3 left-3 z-10 rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue ">
-              {categoryName}
-            </span>
-          )}
+          <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-2">
+            {activeTheme.layout.productCard.showCategory && categoryName && (
+              <span className="rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue ">
+                {categoryName}
+              </span>
+            )}
+            <NewBadge createdAt={container.createdAt} variant="card" />
+          </div>
           {inSelectionMode && marketCodes.length > 0 && (
             <div className="absolute bottom-3 left-3 z-10 flex flex-wrap gap-1">
               {marketCodes.map((code) => (

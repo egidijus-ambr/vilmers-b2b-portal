@@ -1,5 +1,6 @@
 "use client"
 
+import NewBadge from "@modules/common/components/new-badge"
 import React, { useMemo, useState, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { useConfigurator } from "@configurator/context/configurator-context"
@@ -214,6 +215,11 @@ const FabricDrawer = ({
                               }
                             >
                               {groupName}
+                              <NewBadge
+                                createdAt={fabricGroup.createdAt}
+                                variant="pill"
+                                className="ml-2 align-middle"
+                              />
                               {unavailable && (
                                 <span className="ml-2 text-xs font-normal text-red-700">
                                   {unavailableReason}

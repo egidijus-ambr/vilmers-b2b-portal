@@ -15,6 +15,7 @@ import type { ContentBlock } from "../shop-settings/types"
 const PRODUCT_CARD_FRAGMENT = gql`
   fragment ProductCardFields on ProductContainer {
     id
+    createdAt
     type
     reference
     discount {

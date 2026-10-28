@@ -439,9 +439,11 @@ const FABRIC_PALETTE_FRAGMENT = gql`
       fabric_group {
         id
         code
+        createdAt
         fabrics {
           id
           code
+          createdAt
           color_name
           order
           image {

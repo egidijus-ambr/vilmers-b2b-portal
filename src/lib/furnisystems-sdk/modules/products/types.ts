@@ -57,6 +57,7 @@ export interface ProductDiscount {
 
 export interface ProductContainer {
   id: number
+  createdAt?: string | null
   type: string
   reference?: string | null
   discount: ProductDiscount | null

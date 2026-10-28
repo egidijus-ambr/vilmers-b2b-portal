@@ -24,6 +24,8 @@ import {
 import { getGoToConfiguratorActive } from "@lib/data/go-to-configurator"
 import { GoToConfiguratorProvider } from "@lib/context/go-to-configurator-context"
 import { features } from "@lib/features"
+import { getNewBadgeDays } from "@lib/data/new-badge-days"
+import { NewBadgeProvider } from "@lib/context/new-badge-context"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -106,11 +108,16 @@ export default async function PageLayout({
   // Fetch menu categories for navigation
   const categories = chromeless ? [] : await listMenuCategories(validLanguage)
 
-  const [canShowAllProducts, showAllProductsActive, goToConfiguratorActive] =
-    await Promise.all([
+  const [
+    canShowAllProducts,
+    showAllProductsActive,
+    goToConfiguratorActive,
+    newBadgeDays,
+  ] = await Promise.all([
       canShowAllProductsToggle(),
       getShowAllProductsCookie(),
       getGoToConfiguratorActive(),
+      getNewBadgeDays(),
     ])
 
   const canShowGoToConfigurator = canShowAllProducts && features.configurator
@@ -120,6 +127,7 @@ export default async function PageLayout({
       <ActingCustomerProvider initialActingCustomer={acting} isImpersonatedByManager={impersonated}>
         <ShopSettingsProvider initialShopSettings={shopSettings}>
           <CartProvider>
+            <NewBadgeProvider days={newBadgeDays}>
             <GoToConfiguratorProvider initialActive={goToConfiguratorActive}>
               {chromeless ? (
                 <main className="min-h-screen">{children}</main>
@@ -138,6 +146,7 @@ export default async function PageLayout({
                 </div>
               )}
             </GoToConfiguratorProvider>
+            </NewBadgeProvider>
             {!chromeless && features.tawk && <TawkToChat />}
           </CartProvider>
         </ShopSettingsProvider>

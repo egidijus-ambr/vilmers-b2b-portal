@@ -30,6 +30,7 @@ import type { FabricCalloutSettings } from "@lib/data/fabric-callout-settings"
 import { Info } from 'lucide-react'
 import { activeTheme } from "themes"
 import { toast } from "@medusajs/ui"
+import NewBadge from "@modules/common/components/new-badge"
 
 export default function FabricPalettesPage() {
   const { customer } = useCustomer()
@@ -405,7 +406,13 @@ export default function FabricPalettesPage() {
                   return (
                     <div key={merged.fabric_group_id}>
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold">{groupName}</h2>
+                        <h2 className="flex items-center gap-2 text-lg font-semibold">
+                          {groupName}
+                          <NewBadge
+                            createdAt={merged.fabric_group.createdAt}
+                            variant="pill"
+                          />
+                        </h2>
                         <button
                           onClick={() =>
                             setInfoGroup({
@@ -450,6 +457,11 @@ export default function FabricPalettesPage() {
                                   loading="lazy"
                                 />
                               )}
+                              <NewBadge
+                                createdAt={fabric.createdAt}
+                                variant="pill"
+                                className="absolute top-2 left-2 z-10"
+                              />
                               {fabric.image && (
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                               )}
