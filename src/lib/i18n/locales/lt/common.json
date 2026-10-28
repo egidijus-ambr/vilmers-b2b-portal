@@ -77,5 +77,6 @@
   "fabric-not-in-palette-generic": "Viena ar kelios pasirinktos spalvos nepasiekiamos jūsų audinių paletėse. Pasirinkite kitą spalvą.",
   "checkout-select-customer-required": "Prieš pateikdami užsakymą pasirinkite klientą. Užsakymai turi būti pateikiami kliento, turinčio kliento kodą, vardu.",
   "checkout-select-customer-title": "Pirmiausia pasirinkite klientą",
-  "order-buyer-not-authorized": "Užsakymo pateikti nepavyko, nes nepasirinktas tinkamas klientas. Pasirinkite klientą, turintį kliento kodą, ir bandykite dar kartą."
+  "order-buyer-not-authorized": "Užsakymo pateikti nepavyko, nes nepasirinktas tinkamas klientas. Pasirinkite klientą, turintį kliento kodą, ir bandykite dar kartą.",
+  "new": "Naujiena"
 }

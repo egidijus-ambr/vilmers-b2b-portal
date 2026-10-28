@@ -124,6 +124,7 @@ export interface FabricGroup {
   id: number
   name: string
   code: string
+  createdAt?: string | null
   fabrics: Fabric[]
   fabric_group_profiles: { name: string; language: string }[]
   fabric_palettes?: FabricGroupPalette[]
@@ -140,6 +141,7 @@ export interface Fabric {
   color_name: string | null
   default_color_name?: string | null
   color_search_names?: string[]
+  createdAt?: string | null
   order: number
   image: { src: string; src_md: string | null; src_xs: string | null } | null
 }

@@ -314,6 +314,7 @@ export const GET_CONFIGURATOR_DATA = gql`
           fabric_groups(where: $fabricWhere) {
             id
             code
+            createdAt
             fabric_group_profiles(
               where: { language: { equals: $language } }
             ) {
@@ -334,6 +335,7 @@ export const GET_CONFIGURATOR_DATA = gql`
             fabrics {
               id
               code
+              createdAt
               color_name
               order
               image {

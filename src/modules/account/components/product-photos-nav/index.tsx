@@ -3,19 +3,13 @@
 import { useRouter, useParams, usePathname } from "next/navigation"
 import { useState, useMemo } from "react"
 import { useTranslations } from "@lib/i18n"
+import NewBadge from "@modules/common/components/new-badge"
 import { useProductPhotos } from "@lib/context/product-photos-context"
 import { ProductSummary } from "@lib/furnisystems-sdk/modules/product-photos/types"
 import SkeletonProductPhotosNav from "@modules/skeletons/components/skeleton-product-photos-nav"
 
 interface ProductPhotosNavProps {
   currentPath?: string
-}
-
-const isNewPhoto = (dateStr?: string | null): boolean => {
-  if (!dateStr) return false
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  return new Date(dateStr) > thirtyDaysAgo
 }
 
 const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
@@ -115,14 +109,7 @@ const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
                   <div className="flex flex-col">
                     <span className="text-base-regular inline-flex items-center gap-1">
                       {formatProductName(product.name)}
-                      {isNewPhoto(product.newest_photo_at) && (
-                        <span
-                          className="text-white text-[10px] font-semibold px-1.5 py-1 rounded-full leading-none"
-                          style={{ backgroundColor: "#a3b19c" }}
-                        >
-                          New
-                        </span>
-                      )}
+                      <NewBadge createdAt={product.newest_photo_at} days={30} variant="pill" />
                     </span>
                   </div>
                 </button>

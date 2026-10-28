@@ -17,6 +17,7 @@ export interface FabricDetail {
   color_name?: string
   default_color_name?: string | null
   color_search_names?: string[]
+  createdAt?: string | null
   order: number
   image: FabricImage
 }
@@ -52,6 +53,7 @@ export interface FabricGroupToFabricFeatureDetail {
 export interface FabricGroupDetail {
   id: number
   code?: string
+  createdAt?: string | null
   fabrics: FabricDetail[]
   fabric_group_profiles: FabricGroupProfileDetail[]
   fabric_features?: FabricGroupToFabricFeatureDetail[]

@@ -2,12 +2,14 @@
 
 import React from "react"
 import { clx } from "@medusajs/ui"
+import NewBadge from "@modules/common/components/new-badge"
 
 type FabricDrawerCardProps = {
   fabric: {
     id: number
     code: string
     color_name: string | null
+    createdAt?: string | null
     image: { src: string; src_md: string | null; src_xs: string | null } | null
   }
   isSelected: boolean
@@ -56,6 +58,12 @@ const FabricDrawerCard = ({
           </div>
         )}
       </div>
+
+      <NewBadge
+        createdAt={fabric.createdAt}
+        variant="pill"
+        className="absolute top-1.5 left-1.5"
+      />
 
       {/* Selected check */}
       {isSelected && (
