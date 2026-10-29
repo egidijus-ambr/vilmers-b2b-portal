@@ -7,12 +7,13 @@ import { isNewWithinDays } from "@lib/util/is-new"
 
 type NewBadgeProps = {
   /** "card": absolute-positioning-friendly larger chip; "pill": small inline chip */
-  variant?: "card" | "pill"
+  variant?: "card" | "cardLarge" | "pill"
   className?: string
 }
 
 const VARIANT_CLASSES = {
   card: "text-white text-xs font-semibold px-2 py-0.5 rounded-full",
+  cardLarge: "text-white text-sm font-semibold px-3 py-1 rounded-full",
   pill: "text-white text-[10px] font-semibold px-1.5 py-1 rounded-full leading-none",
 } as const
 
