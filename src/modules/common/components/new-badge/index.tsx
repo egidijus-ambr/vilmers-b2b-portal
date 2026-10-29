@@ -13,7 +13,10 @@ type NewBadgeProps = {
 
 const VARIANT_CLASSES = {
   card: "text-white text-xs font-semibold px-2 py-0.5 rounded-full",
-  cardLarge: "text-white text-sm font-semibold px-3 py-1 rounded-full",
+  // Matches the category chip on the product card (sizing + bg-gold-30), with
+  // theme gold text instead of the green fill.
+  cardLarge:
+    "bg-gold-30 text-gold text-sm font-semibold uppercase px-3 py-2 rounded-full",
   pill: "text-white text-[10px] font-semibold px-1.5 py-1 rounded-full leading-none",
 } as const
 
@@ -44,7 +47,7 @@ export default function NewBadge({
   return (
     <span
       className={`${VARIANT_CLASSES[variant]}${className ? ` ${className}` : ""}`}
-      style={BG_STYLE}
+      style={variant === "cardLarge" ? undefined : BG_STYLE}
     >
       {t("new")}
     </span>

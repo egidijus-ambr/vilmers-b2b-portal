@@ -174,16 +174,14 @@ export default function B2BProductCard({
               No image
             </div>
           )}
-          {activeTheme.layout.productCard.showCategory && categoryName && (
-            <span className="absolute top-3 left-3 z-10 rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue ">
-              {categoryName}
-            </span>
-          )}
-          <NewBadge
-            createdAt={container.createdAt}
-            variant="cardLarge"
-            className="absolute bottom-3 right-3 z-10"
-          />
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+            {activeTheme.layout.productCard.showCategory && categoryName && (
+              <span className="rounded-full bg-gold-30 px-3 py-2 text-sm text-dark-blue ">
+                {categoryName}
+              </span>
+            )}
+            <NewBadge createdAt={container.createdAt} variant="cardLarge" />
+          </div>
           {inSelectionMode && marketCodes.length > 0 && (
             <div className="absolute bottom-3 left-3 z-10 flex flex-wrap gap-1">
               {marketCodes.map((code) => (
