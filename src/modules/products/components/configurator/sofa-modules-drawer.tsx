@@ -241,7 +241,7 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
 
       {/* Info + action — pinned to bottom so names align across row */}
       <div className="mt-auto px-2 pt-1.5 pb-2 flex flex-col gap-0.5">
-        <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2">
+        <p className="text-[14px] font-bold text-gray-800 leading-tight line-clamp-2">
           {sofaForm.name}
         </p>
         {price != null && price > 0 && (() => {
