@@ -88,11 +88,17 @@ const FabricSelector = ({
           {selectedFabricObj ? (
             <>
               <p className="text-sm font-medium text-gray-900 truncate">
-                {selectedFabricObj.color_name ?? selectedFabricObj.code}
+                {groupName || selectedFabricObj.color_name || selectedFabricObj.code}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                {groupName}
-                {selectedFabricObj.code ? ` · ${selectedFabricObj.code}` : ""}
+                {[
+                  groupName
+                    ? (selectedFabricObj.color_name ?? null)
+                    : null,
+                  selectedFabricObj.code,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </>
           ) : (
