@@ -20,8 +20,10 @@ interface ProductFilterModalProps {
     clearAll: string
     showResults: string
     category: string
+    newOnly: string
   }
   currentCategoryId?: number
+  newFilterAvailable?: boolean
 }
 
 export default function ProductFilterModal({
@@ -29,6 +31,7 @@ export default function ProductFilterModal({
   language,
   labels,
   currentCategoryId,
+  newFilterAvailable = false,
 }: ProductFilterModalProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -49,12 +52,17 @@ export default function ProductFilterModal({
     return new Set(raw.split(",").map(Number).filter(Boolean))
   }, [searchParams])
 
+  const currentNew = newFilterAvailable && searchParams.get("new") === "1"
+
   // Local state for pending selections (before applying)
   const [pendingAttrs, setPendingAttrs] = useState<Set<number>>(new Set())
   const [pendingCats, setPendingCats] = useState<Set<number>>(new Set())
+  const [pendingNew, setPendingNew] = useState(false)
 
   // Facets data (initially from server, can be refreshed)
-  const [facets, setFacets] = useState(initialFacets)
+  const [facets, setFacets] = useState<
+    typeof initialFacets & { newCount?: number | null }
+  >(initialFacets)
 
   // Sync initial facets when they change (server re-render)
   useEffect(() => {
@@ -68,8 +76,9 @@ export default function ProductFilterModal({
       initialCats.add(currentCategoryId)
     }
     setPendingCats(initialCats)
+    setPendingNew(currentNew)
     setIsOpen(true)
-  }, [currentAttrs, currentCats, currentCategoryId])
+  }, [currentAttrs, currentCats, currentCategoryId, currentNew])
 
   const closeModal = useCallback(() => {
     setIsOpen(false)
@@ -96,6 +105,7 @@ export default function ProductFilterModal({
   const clearAll = useCallback(() => {
     setPendingAttrs(new Set())
     setPendingCats(new Set())
+    setPendingNew(false)
   }, [])
 
   const apply = useCallback(() => {
@@ -124,10 +134,16 @@ export default function ProductFilterModal({
       params.delete("cats")
     }
 
+    if (pendingNew && newFilterAvailable) {
+      params.set("new", "1")
+    } else {
+      params.delete("new")
+    }
+
     const qs = params.toString()
     router.push(qs ? `${pathname}?${qs}` : pathname)
     setIsOpen(false)
-  }, [pendingAttrs, pendingCats, searchParams, pathname, router])
+  }, [pendingAttrs, pendingCats, pendingNew, newFilterAvailable, searchParams, pathname, router])
 
   // Refresh facets when pending selection changes (for dynamic counts)
   useEffect(() => {
@@ -151,6 +167,7 @@ export default function ProductFilterModal({
           language,
           ...(selectedAttrIds.length > 0 && { attrs: selectedAttrIds.join(",") }),
           ...(selectedCatIds.length > 0 && { cats: selectedCatIds.join(",") }),
+          ...(pendingNew && newFilterAvailable && { new: "1" }),
         })
         const res = await fetch(`/api/filter-facets?${params}`, {
           signal: controller.signal,
@@ -170,13 +187,13 @@ export default function ProductFilterModal({
     return () => {
       controller.abort()
     }
-  }, [pendingAttrs, pendingCats, isOpen, language, pathname])
+  }, [pendingAttrs, pendingCats, pendingNew, newFilterAvailable, isOpen, language, pathname])
 
   // Exclude auto-seeded currentCategoryId from the count — it's page context, not a user filter
   const userSelectedCatCount = currentCategoryId && currentCats.has(currentCategoryId)
     ? currentCats.size - 1
     : currentCats.size
-  const activeFilterCount = currentAttrs.size + userSelectedCatCount
+  const activeFilterCount = currentAttrs.size + userSelectedCatCount + (currentNew ? 1 : 0)
 
   return (
     <>
@@ -238,6 +255,48 @@ export default function ProductFilterModal({
 
                   {/* Scrollable content */}
                   <div className="overflow-y-auto flex-1 px-8 py-2 bg-gold-10">
+                    {/* New products only */}
+                    {newFilterAvailable && (
+                      <div className="border-b border-gray-200 py-5">
+                        <div className="flex flex-wrap gap-2">
+                          {(() => {
+                            const count = facets.newCount
+                            const disabled = count === 0 && !pendingNew
+                            return (
+                              <button
+                                onClick={() => setPendingNew((v) => !v)}
+                                disabled={disabled}
+                                aria-pressed={pendingNew}
+                                data-testid="filter-new-only"
+                                className={clx(
+                                  "inline-flex items-center px-4 py-2 text-sm rounded-full transition-colors",
+                                  disabled
+                                    ? "bg-gold-10 text-gray-300 cursor-not-allowed border border-gray-200"
+                                    : pendingNew
+                                    ? "bg-dark-blue text-white"
+                                    : "bg-gold-20 text-dark-blue hover:bg-gold-200 border hover:border-gray-400"
+                                )}
+                              >
+                                {labels.newOnly}
+                                {typeof count === "number" && (
+                                  <span
+                                    className={clx(
+                                      "ml-1.5",
+                                      disabled || pendingNew
+                                        ? "text-gray-300"
+                                        : "text-gray-400"
+                                    )}
+                                  >
+                                    ({count})
+                                  </span>
+                                )}
+                              </button>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Category section */}
                     {facets.childCategories?.length > 0 && (
                       <div className="border-b border-gray-200 py-5">

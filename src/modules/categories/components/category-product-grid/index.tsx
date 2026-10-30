@@ -1,5 +1,6 @@
 import { getCategoryProducts } from "@lib/data/category-products"
 import { CategorySortOption } from "@lib/furnisystems-sdk/modules/products/types"
+import { getNewSinceCutoff } from "@lib/data/new-filter"
 import { SupportedLanguage, getServerT } from "@lib/i18n"
 import B2BProductCard from "@modules/categories/components/category-product-card"
 import CategorySortSelect from "@modules/categories/components/category-sort-select"
@@ -19,6 +20,7 @@ interface CategoryProductGridProps {
   sortBy?: CategorySortOption
   attrIds?: number[]
   catIds?: number[]
+  newOnly?: boolean
   filterFacets?: {
     attributeGroups: FilterFacetGroup[]
     childCategories: FilterFacetCategory[]
@@ -34,6 +36,7 @@ export default async function CategoryProductGrid({
   sortBy,
   attrIds,
   catIds,
+  newOnly = false,
   filterFacets,
   currentCategoryId,
 }: CategoryProductGridProps) {
@@ -44,8 +47,11 @@ export default async function CategoryProductGrid({
     page,
     sortBy,
     attrIds,
-    catIds
+    catIds,
+    newOnly
   )
+  // Only offer the filter when the "New" feature is enabled (days > 0)
+  const newFilterAvailable = (await getNewSinceCutoff()) !== null
 
   // Extract product container id + display name for the CatalogBuilderProvider.
   // Catalogues and selection are keyed by id; the name is display-only.
@@ -92,8 +98,10 @@ export default async function CategoryProductGrid({
                 clearAll: t("clear-filters"),
                 showResults: t("show-results"),
                 category: t("category"),
+                newOnly: t("new-products"),
               }}
               currentCategoryId={currentCategoryId}
+              newFilterAvailable={newFilterAvailable}
             />
             <CategorySortSelect
               labels={{
@@ -116,7 +124,7 @@ export default async function CategoryProductGrid({
       ) : (
         <CatalogBuilderWrapper
           products={productRefs}
-          filterKey={`${categoryPermalink}|${(attrIds ?? []).sort().join(",")}|${sortBy ?? ""}|${(catIds ?? []).sort().join(",")}`}
+          filterKey={`${categoryPermalink}|${(attrIds ?? []).sort().join(",")}|${sortBy ?? ""}|${(catIds ?? []).sort().join(",")}|${newOnly ? "new" : ""}`}
         >
           <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
             {products.map((container) => (

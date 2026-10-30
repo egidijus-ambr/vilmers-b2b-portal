@@ -1,5 +1,6 @@
 import { sdk } from "@lib/config"
 import { getCustomerFilterData } from "./customer"
+import { applyNewFilter, getNewSinceCutoff } from "./new-filter"
 import { CategorySortOption, SORT_OPTION_TO_GRAPHQL } from "@lib/furnisystems-sdk/modules/products/types"
 
 
@@ -9,7 +10,8 @@ export async function getCategoryProducts(
   page: number = 1,
   sortBy?: CategorySortOption,
   attrIds: number[] = [],
-  catIds: number[] = []
+  catIds: number[] = [],
+  newOnly: boolean = false
 ) {
   // Build filter based on customer tags and price lists
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
@@ -27,6 +29,11 @@ export async function getCategoryProducts(
         },
       })
     }
+  }
+
+  if (newOnly) {
+    const cutoff = await getNewSinceCutoff()
+    if (cutoff) applyNewFilter(where, cutoff)
   }
 
   const graphqlSortBy = SORT_OPTION_TO_GRAPHQL[sortBy ?? 'name_asc']
@@ -55,7 +62,8 @@ export async function getAllCategoryProductNames(
   language: string,
   sortBy: string,
   attrIds: number[],
-  catIds: number[]
+  catIds: number[],
+  newOnly: boolean = false
 ): Promise<{
   names: string[]
   products: { id: number; name: string }[]
@@ -77,6 +85,11 @@ export async function getAllCategoryProductNames(
         },
       })
     }
+  }
+
+  if (newOnly) {
+    const cutoff = await getNewSinceCutoff()
+    if (cutoff) applyNewFilter(where, cutoff)
   }
 
   const result = await sdk.products.getCategoryProductNames({

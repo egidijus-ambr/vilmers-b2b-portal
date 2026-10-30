@@ -229,13 +229,14 @@ export function CatalogBuilderProvider({
       if (products.length === 0) {
         setAllProductNamesLoading(true)
         try {
-          const [permalink, attrs, sort, cats] = filterKey.split("|")
+          const [permalink, attrs, sort, cats, newFlag] = filterKey.split("|")
           const params = new URLSearchParams()
           if (permalink) params.set("permalink", permalink)
           params.set("language", "en")
           if (sort) params.set("sort", sort)
           if (attrs) params.set("attrs", attrs)
           if (cats) params.set("cats", cats)
+          if (newFlag) params.set("new", "1")
 
           const langMatch = window.location.pathname.match(/^\/([a-z]{2})\//)
           if (langMatch) params.set("language", langMatch[1])

@@ -17,6 +17,7 @@ interface CategoryPageTemplateProps {
   sortBy?: CategorySortOption
   attrs?: string
   cats?: string
+  newOnly?: boolean
   menuCategories?: CategoryData[]
 }
 
@@ -99,6 +100,7 @@ export default async function CategoryPageTemplate({
   sortBy,
   attrs,
   cats,
+  newOnly = false,
   menuCategories,
 }: CategoryPageTemplateProps) {
   const name = getCategoryName(category)
@@ -113,7 +115,8 @@ export default async function CategoryPageTemplate({
     categoryPermalink,
     language,
     attrIds,
-    catIds
+    catIds,
+    newOnly
   )
 
   const contentBlocks = (category.content_blocks ?? [])
@@ -163,6 +166,7 @@ export default async function CategoryPageTemplate({
               sortBy={sortBy}
               attrIds={attrIds}
               catIds={catIds}
+              newOnly={newOnly}
               filterFacets={filterFacets}
               currentCategoryId={category.id}
             />

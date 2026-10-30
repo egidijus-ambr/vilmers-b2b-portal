@@ -4,13 +4,14 @@ import { notFound } from "next/navigation"
 import { getCategoryByPermalink, enrichContentBlocksWithTileCategories, listMenuCategories } from "@lib/data/categories"
 import { CategorySortOption, SORT_OPTION_TO_GRAPHQL } from "@lib/furnisystems-sdk/modules/products/types"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { isNewParam } from "@lib/data/new-filter"
 import CategoryPageTemplate from "@modules/categories/templates"
 
 const VALID_SORT_OPTIONS = Object.keys(SORT_OPTION_TO_GRAPHQL) as CategorySortOption[]
 
 type Props = {
   params: Promise<{ category: string[]; languageCode: string }>
-  searchParams: Promise<{ page?: string; sort?: string; attrs?: string; cats?: string }>
+  searchParams: Promise<{ page?: string; sort?: string; attrs?: string; cats?: string; new?: string }>
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -76,6 +77,7 @@ export default async function CategoryPage(props: Props) {
       sortBy={sortBy}
       attrs={searchParams.attrs}
       cats={searchParams.cats}
+      newOnly={isNewParam(searchParams.new)}
       menuCategories={menuCategories}
     />
   )

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { isNewParam } from "@lib/data/new-filter"
 import { getAllCategoryProductNames } from "@lib/data/category-products"
 
 export async function GET(request: NextRequest) {
@@ -8,6 +9,7 @@ export async function GET(request: NextRequest) {
   const sort = searchParams.get("sort") ?? "name_asc"
   const attrs = searchParams.get("attrs")
   const cats = searchParams.get("cats")
+  const newOnly = isNewParam(searchParams.get("new"))
 
   const attrIds = attrs ? attrs.split(",").map(Number).filter(Boolean) : []
   const catIds = cats ? cats.split(",").map(Number).filter(Boolean) : []
@@ -18,7 +20,8 @@ export async function GET(request: NextRequest) {
       language,
       sort,
       attrIds,
-      catIds
+      catIds,
+      newOnly
     )
     return NextResponse.json(result)
   } catch (error) {
