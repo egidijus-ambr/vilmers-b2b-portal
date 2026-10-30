@@ -216,7 +216,16 @@ export interface ThemeLayout {
   /** Whether the desktop-only Back button (left cluster, before the nav menu) renders. */
   backButton: { show: boolean }
   /** Whether the Search button (right cluster, either placement) renders. */
-  searchButton: { show: boolean }
+  searchButton: {
+    show: boolean
+    /**
+     * `"icon"` (default when omitted): magnifier icon that opens the
+     * full-width SearchModal. `"inline"`: an always-visible input in the
+     * header from the `small` (1024px) breakpoint up; below it the icon +
+     * modal is kept (no room for an input on mobile).
+     */
+    variant?: "icon" | "inline"
+  }
   /**
    * Whether the nav is transparent-over-hero at the top of the homepage
    * (animating to solid on scroll) or always solid. When `false`, the nav

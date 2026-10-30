@@ -128,7 +128,7 @@ export const vilmers: Theme = {
   layout: {
     topBar: { show: true },
     backButton: { show: true },
-    searchButton: { show: true },
+    searchButton: { show: true, variant: "inline" },
     homepageHeader: { transparent: true, showCta: true },
     languageSwitcher: { placement: "top-bar" },
     logo: {

@@ -13,6 +13,7 @@ import ActingCustomerCallout from "@modules/layout/components/acting-customer-ca
 import ShowAllProductsToggle from "@modules/layout/components/show-all-products-toggle"
 import GoToConfiguratorToggle from "@modules/layout/components/go-to-configurator-toggle"
 import SearchModal from "@modules/search/components/search-modal"
+import InlineSearch from "@modules/search/components/inline-search"
 import { getNavigationConfig, buildDynamicMenuItems } from "@modules/layout/config/navigation"
 import { buildNavigationFromSettings } from "@modules/layout/config/navigation-db"
 import type { MenuItem } from "@modules/layout/components/nav-menu-item"
@@ -194,10 +195,12 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   // Search button moves to sit right before the switcher (see below).
   const isNavbarSwitcher = languageSwitcher.placement === "navbar"
 
-  const searchButtonElement = (
+  const isInlineSearch = searchButton.variant === "inline"
+
+  const searchIconButton = (
     <button
       onClick={() => setIsSearchOpen(true)}
-      className={`flex items-center justify-center w-8 h-8 small:w-10 small:h-10 transition-colors ${
+      className={`${isInlineSearch ? "small:hidden " : ""}flex items-center justify-center w-8 h-8 small:w-10 small:h-10 transition-colors ${
         isTransparent ? "text-white hover:text-white/80" : "text-nav-foreground hover:text-nav-foreground/80"
       }`}
       aria-label="Search products"
@@ -217,6 +220,19 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
         />
       </svg>
     </button>
+  )
+
+  // "inline": always-visible input from `small` up, icon+modal below it.
+  const searchButtonElement = isInlineSearch ? (
+    <>
+      {searchIconButton}
+      <InlineSearch
+        isTransparent={isTransparent}
+        className="hidden small:block w-[280px]"
+      />
+    </>
+  ) : (
+    searchIconButton
   )
 
   return (
