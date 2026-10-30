@@ -31,17 +31,17 @@ export default function CustomerSelector() {
     : "Select customer"
 
   return (
-    <Popover className="relative">
+    <Popover className="relative min-w-0 max-w-full small:w-[36rem]">
       {({ close }) => (
         <>
           <PopoverButton
-            className={`flex items-center gap-2 rounded border px-3 py-1.5 text-sm transition-colors ${
+            className={`flex w-full items-center justify-between gap-2 rounded border px-3 py-1.5 text-sm transition-colors ${
               ac
                 ? "border-gray-300 text-dark-blue hover:bg-gray-50"
                 : "border-gold text-gold hover:bg-gold/10"
             }`}
           >
-            <span className="max-w-[240px] truncate">{labelTop}</span>
+            <span className="min-w-0 flex-1 truncate text-left">{labelTop}</span>
             <ChevronDown className="h-4 w-4" />
           </PopoverButton>
           <Transition
@@ -53,7 +53,7 @@ export default function CustomerSelector() {
             leaveFrom="opacity-100 translate-y-0"
             leaveTo="opacity-0 -translate-y-1"
           >
-            <PopoverPanel className="absolute right-0 z-30 mt-1 w-[calc(100vw-2rem)] xsmall:w-[460px] rounded border border-gray-200 bg-white shadow-lg">
+            <PopoverPanel className="absolute right-0 z-30 mt-1 w-[calc(100vw-2rem)] xsmall:w-[min(920px,calc(100vw-2rem))] rounded border border-gray-200 bg-white shadow-lg">
               <CustomerList onPick={() => close()} />
             </PopoverPanel>
           </Transition>
