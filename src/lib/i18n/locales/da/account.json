@@ -236,5 +236,12 @@
   "fabric-category-unavailable": "Ikke tilgængelig for de valgte moduler",
   "fabric-category-unavailable-options": "Ikke tilgængelig for de valgte muligheder",
   "price-unavailable": "Ingen pris",
-  "custom-integration": "Tilpasset integration"
+  "custom-integration": "Tilpasset integration",
+  "sofa-add-module-hint": "Tilføj mindst ét modul til sofaen.",
+  "no-price-modal-title": "Pris mangler",
+  "no-price-modal-none": "Dette produkt har ingen pris. Vil du alligevel lægge det i kurven?",
+  "no-price-modal-modules": "Disse moduler har ingen pris for den valgte stofkategori. Kurvens pris omfatter kun de poster, der har en pris. Læg i kurven alligevel?",
+  "no-price-modal-main": "Den valgte mulighed har ingen pris for den valgte stofkategori. Kurvens pris omfatter kun de poster, der har en pris. Læg i kurven alligevel?",
+  "no-price-modal-go-back": "Gå tilbage",
+  "no-price-modal-continue": "Tilføj alligevel"
 }

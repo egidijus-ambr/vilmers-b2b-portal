@@ -20,6 +20,15 @@ type PriceFooterProps = {
    * disabled and a helper line is rendered above the button.
    */
   missingRequiredGroupNames?: string[]
+  /**
+   * "All products" mode: a missing price no longer disables Add-to-Cart (the
+   * caller asks for confirmation instead), unless `priceOverrideBlocked`.
+   */
+  showAllProducts?: boolean
+  /** A sofa with no modules on the canvas: never addable, for everyone. */
+  emptySofa?: boolean
+  /** Price is missing for a reason the override must not relax (e.g. no fabric chosen). */
+  priceOverrideBlocked?: boolean
   onAddToCart: () => Promise<void>
 }
 
@@ -27,6 +36,9 @@ const PriceFooter = ({
   currency = "EUR",
   volume = 0,
   missingRequiredGroupNames = [],
+  showAllProducts = false,
+  emptySofa = false,
+  priceOverrideBlocked = false,
   onAddToCart,
 }: PriceFooterProps) => {
   const { state, dispatch } = useConfigurator()
@@ -61,19 +73,38 @@ const PriceFooter = ({
         ? t("price-missing-main-component")
         : null
   const hasPriceIssue = priceIssueMessage != null
+  // "All products" users may add despite a missing price (after a confirmation
+  // modal), but never past a non-relaxable reason such as a missing fabric.
+  const priceOverride = showAllProducts && !priceOverrideBlocked
+  const priceBlocks = (totalPrice == null || hasPriceIssue) && !priceOverride
+  const emptyMessage = emptySofa ? t("sofa-add-module-hint") : null
 
   const hasMissingRequired = missingRequiredGroupNames.length > 0
   const missingMessage = hasMissingRequired
     ? `Please select ${missingRequiredGroupNames.join(", ")}`
     : null
-  const blockReason = missingMessage ?? priceIssueMessage
+  const blockReason =
+    emptyMessage ?? missingMessage ?? (priceBlocks ? priceIssueMessage : null)
 
   return (
     <div className="sticky bottom-0 mt-4 border-t bg-configurator-surface pt-4 pb-4 px-6 flex flex-col gap-2">
-      {priceIssueMessage && (
+      {emptyMessage && (
         <p
           className="text-xs text-red-700 text-right"
           role="alert"
+          aria-live="polite"
+        >
+          {emptyMessage}
+        </p>
+      )}
+      {priceIssueMessage && (
+        <p
+          className={
+            priceOverride
+              ? "text-xs text-amber-700 text-right"
+              : "text-xs text-red-700 text-right"
+          }
+          role={priceOverride ? "status" : "alert"}
           aria-live="polite"
         >
           {priceIssueMessage}
@@ -151,16 +182,16 @@ const PriceFooter = ({
         {/* Add to cart */}
         <Button
           onClick={
-            blockedNoActingCustomer || hasMissingRequired || hasPriceIssue
+            blockedNoActingCustomer || hasMissingRequired || emptySofa || priceBlocks
               ? undefined
               : handleAddToCart
           }
           disabled={
-            totalPrice == null ||
             isAdding ||
             blockedNoActingCustomer ||
             hasMissingRequired ||
-            hasPriceIssue
+            emptySofa ||
+            priceBlocks
           }
           title={
             blockedNoActingCustomer

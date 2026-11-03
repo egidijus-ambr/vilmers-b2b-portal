@@ -236,5 +236,12 @@
   "fabric-category-unavailable": "Nepasiekiama pasirinktiems moduliams",
   "fabric-category-unavailable-options": "Nepasiekiama pasirinktiems variantams",
   "price-unavailable": "Nėra kainos",
-  "custom-integration": "Individuali integracija"
+  "custom-integration": "Individuali integracija",
+  "sofa-add-module-hint": "Pridėkite bent vieną modulį prie sofos.",
+  "no-price-modal-title": "Trūksta kainos",
+  "no-price-modal-none": "Šis gaminys neturi kainos. Ar vis tiek norite jį įdėti į krepšelį?",
+  "no-price-modal-modules": "Šie moduliai neturi kainos pasirinktai audinio kategorijai. Krepšelio kaina apims tik turinčius kainą elementus. Vis tiek įdėti į krepšelį?",
+  "no-price-modal-main": "Pasirinktas variantas neturi kainos pasirinktai audinio kategorijai. Krepšelio kaina apims tik turinčius kainą elementus. Vis tiek įdėti į krepšelį?",
+  "no-price-modal-go-back": "Grįžti",
+  "no-price-modal-continue": "Vis tiek pridėti"
 }

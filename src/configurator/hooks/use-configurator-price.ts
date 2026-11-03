@@ -51,6 +51,10 @@ export function useConfiguratorPrice(priceListId: number) {
       payload: {
         unpricedModuleIds: result.unpricedModuleIds,
         mainComponentMissing: result.mainComponentMissing,
+        unpricedModules: result.unpricedModules,
+        partialTotal: result.partialTotal,
+        moduleCount: result.moduleCount,
+        fabricMissing: result.fabricMissing,
       },
     })
   }, [

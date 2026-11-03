@@ -188,7 +188,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
 }
 
 // Disable SSR — Konva requires browser DOM
-const ModulePreview = dynamic<ModulePreviewProps>(
+export const ModulePreview = dynamic<ModulePreviewProps>(
   () => Promise.resolve(ModulePreviewInner),
   { ssr: false }
 )

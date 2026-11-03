@@ -236,5 +236,12 @@
   "fabric-category-unavailable": "Für die gewählten Module nicht verfügbar",
   "fabric-category-unavailable-options": "Für die gewählten Optionen nicht verfügbar",
   "price-unavailable": "Kein Preis",
-  "custom-integration": "Individuelle Integration"
+  "custom-integration": "Individuelle Integration",
+  "sofa-add-module-hint": "Fügen Sie dem Sofa mindestens ein Modul hinzu.",
+  "no-price-modal-title": "Preis fehlt",
+  "no-price-modal-none": "Für dieses Produkt gibt es keinen Preis. Möchten Sie es trotzdem in den Warenkorb legen?",
+  "no-price-modal-modules": "Diese Module haben keinen Preis für die gewählte Stoffkategorie. Der Warenkorbpreis enthält nur die Positionen mit Preis. Trotzdem in den Warenkorb legen?",
+  "no-price-modal-main": "Für die gewählte Option ist in der gewählten Stoffkategorie kein Preis verfügbar. Der Warenkorbpreis enthält nur die Positionen mit Preis. Trotzdem in den Warenkorb legen?",
+  "no-price-modal-go-back": "Zurück",
+  "no-price-modal-continue": "Trotzdem hinzufügen"
 }

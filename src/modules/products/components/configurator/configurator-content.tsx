@@ -33,6 +33,7 @@ import { paletteErrorMessage } from "@lib/fabric-palettes/palette-error-message"
 import ReferenceStep from "./reference-step"
 import { MissingReferenceModal } from "./missing-reference-modal"
 import { DisconnectedModulesModal } from "./disconnected-modules-modal"
+import { NoPriceModal } from "./no-price-modal"
 import FabricSection from "./fabric-section"
 import ComponentSection from "./component-section"
 import ConfiguratorStepper from "./configurator-stepper"
@@ -75,6 +76,7 @@ const ConfiguratorContent = ({
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const [showReferenceModal, setShowReferenceModal] = useState(false)
   const [showDisconnectWarning, setShowDisconnectWarning] = useState(false)
+  const [showNoPriceWarning, setShowNoPriceWarning] = useState(false)
   const { t } = useTranslations("account")
   const { t: tc } = useTranslations("common")
 
@@ -229,6 +231,27 @@ const ConfiguratorContent = ({
   const hasSofaModules = (state.sofaCombinations?.length ?? 0) > 0 &&
     state.sofaCombinations!.some((group) => group.length > 0)
 
+  // A sofa needs at least one module. Counted from the same nodes the price
+  // is computed from (state.moduleCount), not the debounced combination list.
+  const emptySofa =
+    (productData?.advanced_product?.sofa_forms?.length ?? 0) > 0 &&
+    state.moduleCount === 0
+
+  // "All products" price override: a missing/zero price may be added after a
+  // confirmation, but never when the fabric is not chosen yet. (Modules without
+  // a fabric already report fabricMissing; this also covers fabric products.)
+  const fabricNotChosen =
+    state.fabricMissing ||
+    (hasFabricSelection &&
+      !state.selectedFabric.fabricGroupObject &&
+      Object.keys(state.selectedFabric.combinationFabrics ?? {}).length === 0)
+  const priceOverrideBlocked = fabricNotChosen
+  const hasPriceProblem =
+    state.totalPrice == null ||
+    state.totalPrice === 0 ||
+    state.unpricedModuleIds.length > 0 ||
+    state.mainComponentMissing
+
   // Build configuration strings for display below canvas
   const configStrings = useMemo(() => {
     if (!activeTheme.showErpConfigString) return []
@@ -364,7 +387,10 @@ const ConfiguratorContent = ({
         product_type: productData.product_type || "SIMPLE_PRODUCT",
         advanced_product_type: productData.advanced_product?.advanced_product_type,
         quantity: state.quantity,
-        price: state.totalPrice ?? undefined,
+        // "All products" override: an unpriced configuration is added at the
+        // sum of what IS priced (the SDK/backend turn a 0 into "no price").
+        price:
+          state.totalPrice ?? (showAllProducts ? state.partialTotal : undefined),
         volume: totalVolume ?? undefined,
         fabricId: state.selectedFabric.fabricObject?.id,
         fabric_groupId: state.selectedFabric.fabricGroupObject?.id,
@@ -404,7 +430,7 @@ const ConfiguratorContent = ({
         type: "error",
       })
     }
-  }, [productData, state, totalVolume, addItem, tc])
+  }, [productData, state, totalVolume, addItem, tc, showAllProducts])
 
   const proceedToReferenceGate = async () => {
     if (!state.referenceText.trim()) {
@@ -414,9 +440,28 @@ const ConfiguratorContent = ({
     await handleAddToCart(state.referenceText.trim())
   }
 
+  // Disconnected-modules soft gate, then the reference gate.
+  const continueAfterPriceCheck = async () => {
+    if (hasUnjoinedConnectableModules(state.sofaCombinations.flat())) {
+      setShowDisconnectWarning(true)
+      return
+    }
+    await proceedToReferenceGate()
+  }
+
   const requestAddToCart = async () => {
-    // Defence in depth: the footer disables the button, but never submit an
-    // unpriced configuration (a missing price must not become a 0 line item).
+    // Defence in depth: the footer disables the button, but a sofa with no
+    // modules is never addable (managers included).
+    if (emptySofa) return
+
+    if (showAllProducts && hasPriceProblem) {
+      // Never past a non-relaxable reason (e.g. no fabric chosen).
+      if (priceOverrideBlocked) return
+      setShowNoPriceWarning(true)
+      return
+    }
+    // Regular customers: never submit an unpriced configuration (a missing
+    // price must not become a 0 line item).
     if (
       state.totalPrice == null ||
       state.unpricedModuleIds.length > 0 ||
@@ -424,11 +469,7 @@ const ConfiguratorContent = ({
     ) {
       return
     }
-    if (hasUnjoinedConnectableModules(state.sofaCombinations.flat())) {
-      setShowDisconnectWarning(true)
-      return
-    }
-    await proceedToReferenceGate()
+    await continueAfterPriceCheck()
   }
 
   const canNavigateToStep = useCallback(
@@ -693,6 +734,9 @@ const ConfiguratorContent = ({
           currency={productData.manufacturer?.currency ?? "EUR"}
           volume={totalVolume}
           missingRequiredGroupNames={missingRequiredGroupNames}
+          showAllProducts={showAllProducts}
+          emptySofa={emptySofa}
+          priceOverrideBlocked={priceOverrideBlocked}
           onAddToCart={requestAddToCart}
         />
       </div>
@@ -705,6 +749,18 @@ const ConfiguratorContent = ({
           await handleAddToCart(reference)
         }}
         onCancel={() => setShowReferenceModal(false)}
+      />
+
+      <NoPriceModal
+        isOpen={showNoPriceWarning}
+        wholeProductUnpriced={state.partialTotal <= 0}
+        mainComponentMissing={state.mainComponentMissing}
+        unpricedModules={state.unpricedModules}
+        onGoBack={() => setShowNoPriceWarning(false)}
+        onContinue={async () => {
+          setShowNoPriceWarning(false)
+          await continueAfterPriceCheck()
+        }}
       />
 
       <DisconnectedModulesModal

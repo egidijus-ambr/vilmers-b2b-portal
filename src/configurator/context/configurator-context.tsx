@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useReducer, useCallback } from "react"
+import type { UnpricedModule } from "../lib/price-utils"
 import type {
   ConfiguratorProductData,
   SofaFormExtended,
@@ -46,6 +47,14 @@ export interface ConfiguratorState {
   unpricedModuleIds: string[]
   /** Selected main-group option (e.g. bed Size) has no price for the selected fabric */
   mainComponentMissing: boolean
+  /** Unpriced modules resolved to sofa forms, deduped by form id (for the no-price confirmation) */
+  unpricedModules: UnpricedModule[]
+  /** Priced modules + components; what an "All products" override adds to the cart */
+  partialTotal: number
+  /** Modules on the canvas, counted from the same nodes the price is computed from */
+  moduleCount: number
+  /** Modules placed but no fabric chosen (never overridable) */
+  fabricMissing: boolean
   componentsPriceTotal: number | null
   pricesPerModule: Record<string, number> | null
   referenceText: string
@@ -79,6 +88,10 @@ const initialState: ConfiguratorState = {
   totalPrice: null,
   unpricedModuleIds: [],
   mainComponentMissing: false,
+  unpricedModules: [],
+  partialTotal: 0,
+  moduleCount: 0,
+  fabricMissing: false,
   componentsPriceTotal: null,
   pricesPerModule: null,
   referenceText: "",
@@ -88,6 +101,16 @@ const initialState: ConfiguratorState = {
 // =============================================
 // Actions
 // =============================================
+
+type PriceIssues = Pick<
+  ConfiguratorState,
+  | "unpricedModuleIds"
+  | "mainComponentMissing"
+  | "unpricedModules"
+  | "partialTotal"
+  | "moduleCount"
+  | "fabricMissing"
+>
 
 type ConfiguratorAction =
   | { type: "SET_PRODUCT_DATA"; payload: ConfiguratorProductData }
@@ -104,7 +127,7 @@ type ConfiguratorAction =
   | { type: "SET_ORIGINAL_COMPONENT_GROUPS"; payload: ComponentGroup[] }
   | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_TOTAL_PRICE"; payload: number | null }
-  | { type: "SET_PRICE_ISSUES"; payload: { unpricedModuleIds: string[]; mainComponentMissing: boolean } }
+  | { type: "SET_PRICE_ISSUES"; payload: PriceIssues }
   | { type: "SET_COMPONENTS_PRICE"; payload: number | null }
   | { type: "SET_PRICES_PER_MODULE"; payload: Record<string, number> | null }
   | { type: "SET_REFERENCE_TEXT"; payload: string }
@@ -148,7 +171,16 @@ function configuratorReducer(
       const same =
         state.mainComponentMissing === action.payload.mainComponentMissing &&
         state.unpricedModuleIds.length === action.payload.unpricedModuleIds.length &&
-        state.unpricedModuleIds.every((id, i) => id === action.payload.unpricedModuleIds[i])
+        state.unpricedModuleIds.every((id, i) => id === action.payload.unpricedModuleIds[i]) &&
+        state.partialTotal === action.payload.partialTotal &&
+        state.moduleCount === action.payload.moduleCount &&
+        state.fabricMissing === action.payload.fabricMissing &&
+        state.unpricedModules.length === action.payload.unpricedModules.length &&
+        state.unpricedModules.every(
+          (m, i) =>
+            m.sofaForm?.id === action.payload.unpricedModules[i].sofaForm?.id &&
+            m.count === action.payload.unpricedModules[i].count
+        )
       return same ? state : { ...state, ...action.payload }
     }
     case "SET_COMPONENTS_PRICE":

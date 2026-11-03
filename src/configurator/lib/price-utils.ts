@@ -170,6 +170,23 @@ export type AdvancedProductPriceResult = {
   unpricedModuleIds: string[]
   /** The selected main-group option (e.g. bed Size) has no price for the selected fabric category. */
   mainComponentMissing: boolean
+  /**
+   * Unpriced canvas modules resolved to their sofa form, deduped by form id
+   * with an occurrence count (same node list `unpricedModuleIds` came from).
+   */
+  unpricedModules: UnpricedModule[]
+  /** Sum of everything that IS priced (priced modules + base + components). Never null. */
+  partialTotal: number
+  /** Number of priced-capable modules (nodes with `originalSofaForm`) on the canvas. */
+  moduleCount: number
+  /** Modules are placed but no fabric is chosen: not relaxable, the price is simply unavailable. */
+  fabricMissing: boolean
+}
+
+export type UnpricedModule = {
+  /** The sofa form object (same shape as `attrs.originalSofaForm`). */
+  sofaForm: any
+  count: number
 }
 
 const moduleKey = (shape: any, index: number): string =>
@@ -199,6 +216,28 @@ export const getUnpricedModuleIds = (
 }
 
 /**
+ * Unpriced canvas modules resolved to their sofa form, deduped by form id.
+ */
+export const getUnpricedModules = (
+  groupNumbers: number[],
+  sofaCombinations: any[][]
+): UnpricedModule[] => {
+  const byId = new Map<string | number, UnpricedModule>()
+  for (const combination of sofaCombinations) {
+    for (const shape of combination) {
+      const item = shape.attrs?.originalSofaForm
+      if (!item) continue
+      if (getPriceForGroupNumbers(groupNumbers, item.form_price_fabric_category) != null) continue
+      const key = item.id ?? item.code ?? item.name
+      const existing = byId.get(key)
+      if (existing) existing.count += 1
+      else byId.set(key, { sofaForm: item, count: 1 })
+    }
+  }
+  return Array.from(byId.values())
+}
+
+/**
  * Calculate the total price for an advanced product based on:
  * - Sofa module prices (from form_price_fabric_category)
  * - Base price (when the product has one)
@@ -224,17 +263,33 @@ export const computeAdvancedProductPrice = (
 ): AdvancedProductPriceResult => {
   const fabricGroup = selectedFabric?.fabricGroupObject
   const groupNumbers = getSelectedGroupNumbers(selectedFabric)
-  const hasModules = sofaCombinations.some((c) => c.some((s) => s.attrs?.originalSofaForm))
+  let moduleCount = 0
+  for (const combination of sofaCombinations) {
+    for (const shape of combination) {
+      if (shape.attrs?.originalSofaForm) moduleCount++
+    }
+  }
+  const hasModules = moduleCount > 0
 
   // 1) Sofa modules
   let totalSofaModulesPrice = 0
   let unpricedModuleIds: string[] = []
+  let unpricedModules: UnpricedModule[] = []
   if (hasModules) {
     if (!fabricGroup) {
       // Fabric not chosen yet: price is simply not available (not "unpriced").
-      return { total: null, unpricedModuleIds: [], mainComponentMissing: false }
+      return {
+        total: null,
+        unpricedModuleIds: [],
+        mainComponentMissing: false,
+        unpricedModules: [],
+        partialTotal: 0,
+        moduleCount,
+        fabricMissing: true,
+      }
     }
     unpricedModuleIds = getUnpricedModuleIds(groupNumbers, sofaCombinations)
+    unpricedModules = getUnpricedModules(groupNumbers, sofaCombinations)
     for (const combination of sofaCombinations) {
       for (const shape of combination) {
         const item = shape.attrs?.originalSofaForm
@@ -278,6 +333,10 @@ export const computeAdvancedProductPrice = (
     total: unpriced ? null : totalPrice + totalSofaModulesPrice,
     unpricedModuleIds,
     mainComponentMissing,
+    unpricedModules,
+    partialTotal: totalPrice + totalSofaModulesPrice,
+    moduleCount,
+    fabricMissing: false,
   }
 }
 
