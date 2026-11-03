@@ -524,6 +524,150 @@ function fitInsideBox(
   }
 }
 
+// ---------------------------------------------------------------- cover sheet
+
+/**
+ * Optional inputs for the printable "Cover" sheet (first tab). Passing this
+ * object turns the sheet on; any image may be null (failed fetch / not
+ * configured) and the cover still renders date, terms and logo-less.
+ */
+export interface PricelistCover {
+  /** Uploaded cover artwork (contains the title + photo). Pre-resized. */
+  image: PricelistImage | null
+  /** e.g. "EXW, IT". Empty = omitted. */
+  terms: string
+  /** Brand logo, rasterised to PNG by the caller. */
+  logo: PricelistImage | null
+}
+
+const COVER_SHEET_NAME = "Cover"
+// Single-column layout on a uniform 20px row grid so every image anchor can
+// be computed as (row index, EMU offset) with plain px math. 698px = A4
+// portrait usable width (794px - 2 x 0.5in margins).
+const COVER_WIDTH_PX = 698
+const COVER_ROW_PX = 20
+const COVER_ROW_PT = (COVER_ROW_PX * 3) / 4
+const COVER_ROWS = 49 // 980px tall, ~A4 aspect once margins are applied
+const COVER_IMAGE_TOP_PX = 40
+const COVER_IMAGE_BOX: PhotoBox = { width: COVER_WIDTH_PX, height: 700 }
+const COVER_LOGO_BOX: PhotoBox = { width: 160, height: 48 }
+const COVER_FONT_NAME = "Calibri"
+
+function addCoverImage(
+  sheet: ExcelJS.Worksheet,
+  imageId: number,
+  xPx: number,
+  yPx: number,
+  ext: { width: number; height: number }
+): void {
+  sheet.addImage(imageId, {
+    tl: {
+      nativeCol: 0,
+      nativeColOff: Math.round(xPx * EMU_PER_PX),
+      nativeRow: Math.floor(yPx / COVER_ROW_PX),
+      nativeRowOff: Math.round((yPx % COVER_ROW_PX) * EMU_PER_PX),
+    } as any,
+    ext,
+  })
+}
+
+function formatCoverDate(date: Date): string {
+  const dd = String(date.getUTCDate()).padStart(2, "0")
+  const mm = String(date.getUTCMonth() + 1).padStart(2, "0")
+  return `${dd} ${mm} ${date.getUTCFullYear()}`
+}
+
+function addCoverSheet(
+  workbook: ExcelJS.Workbook,
+  meta: PricelistWorkbookMeta,
+  cover: PricelistCover
+): void {
+  const sheet = workbook.addWorksheet(COVER_SHEET_NAME, {
+    views: [{ showGridLines: false }],
+    pageSetup: {
+      paperSize: 9, // A4
+      orientation: "portrait",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 1,
+      horizontalCentered: true,
+      margins: {
+        left: 0.5,
+        right: 0.5,
+        top: 0.5,
+        bottom: 0.5,
+        header: 0.3,
+        footer: 0.3,
+      },
+    },
+  })
+  // Inverse of columnWidthToPx.
+  sheet.getColumn(1).width = (COVER_WIDTH_PX - 5) / 7
+  for (let r = 1; r <= COVER_ROWS; r++) sheet.getRow(r).height = COVER_ROW_PT
+
+  // Date, top-left.
+  const dateCell = sheet.getCell(1, 1)
+  dateCell.value = formatCoverDate(meta.generatedAt)
+  dateCell.font = { name: COVER_FONT_NAME, size: 10 }
+  dateCell.alignment = { horizontal: "left", vertical: "middle" }
+
+  // Cover artwork: fitted inside the page-wide box, aspect preserved,
+  // centred horizontally.
+  let contentBottomPx = COVER_IMAGE_TOP_PX
+  if (cover.image) {
+    const ext = cover.image.width && cover.image.height
+      ? fitInsideBox(cover.image.width, cover.image.height, COVER_IMAGE_BOX)
+      : null
+    if (ext) {
+      const id = workbook.addImage({
+        buffer: cover.image.buffer as any,
+        extension: cover.image.extension,
+      })
+      addCoverImage(
+        sheet,
+        id,
+        Math.max(0, (COVER_WIDTH_PX - ext.width) / 2),
+        COVER_IMAGE_TOP_PX,
+        ext
+      )
+      contentBottomPx = COVER_IMAGE_TOP_PX + ext.height
+    }
+  }
+
+  // Terms, below the image. Two merged grid rows keep the 20px grid intact
+  // while giving the larger font room.
+  const terms = cover.terms.trim()
+  if (terms) {
+    const startRow = Math.min(
+      COVER_ROWS - 6,
+      Math.ceil((contentBottomPx + 16) / COVER_ROW_PX) + 1
+    )
+    sheet.mergeCells(startRow, 1, startRow + 1, 1)
+    const cell = sheet.getCell(startRow, 1)
+    cell.value = terms
+    cell.font = { name: COVER_FONT_NAME, size: 18 }
+    cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true }
+  }
+
+  // Logo, bottom-right.
+  if (cover.logo && cover.logo.width && cover.logo.height) {
+    const ext = fitInsideBox(cover.logo.width, cover.logo.height, COVER_LOGO_BOX)
+    const id = workbook.addImage({
+      buffer: cover.logo.buffer as any,
+      extension: cover.logo.extension,
+    })
+    addCoverImage(
+      sheet,
+      id,
+      COVER_WIDTH_PX - ext.width,
+      COVER_ROWS * COVER_ROW_PX - ext.height - 8,
+      ext
+    )
+  }
+
+  sheet.pageSetup.printArea = `A1:A${COVER_ROWS}`
+}
+
 /**
  * Resolves the `{width, height}` an embedded photo's `ext` should use inside
  * `box`: `entry.width`/`height` when known (see PricelistImage —
@@ -2663,7 +2807,9 @@ export async function buildPricelistWorkbook(
   photoBuffers: Map<string, PricelistImage | null>,
   blueprintBuffers: Map<string, Buffer | null>,
   componentPhotoBuffers: Map<string, PricelistImage | null>,
-  settings?: PricelistWorkbookSettings
+  settings?: PricelistWorkbookSettings,
+  // When provided, a printable "Cover" sheet becomes the FIRST tab.
+  cover?: PricelistCover
 ): Promise<ExcelJS.Buffer> {
   // Resolved ONCE for the whole workbook (not per product) — mirrors the
   // SAME check pricelist-photos.ts's fetch pool makes, via the SAME
@@ -2746,7 +2892,10 @@ export async function buildPricelistWorkbook(
   workbook.creator = meta.companyName
   workbook.created = meta.generatedAt
 
-  // Added first so it renders as the leftmost/default tab. The trailing
+  // Cover (optional) is the very first tab; Info follows.
+  if (cover) addCoverSheet(workbook, meta, cover)
+
+  // Added first (after the optional cover) so it renders as the next tab. The trailing
   // blank row + product index are filled in after the product loop below,
   // once the index rows are known — but the metadata block above them
   // (including the master multiplier) is written right away, since every
@@ -2775,7 +2924,9 @@ export async function buildPricelistWorkbook(
   // Lowercased dedupe keys (see safeSheetName's doc comment) — "info"
   // reserves the Info tab's own name so no product can collide with it,
   // case-insensitively.
-  const usedSheetNames = new Set<string>(["info"])
+  const usedSheetNames = new Set<string>(
+    cover ? ["cover", "info"] : ["info"]
+  )
 
   // Dedupes embedded images by source URL: `workbook.addImage` is called at
   // most once per distinct URL, and every sheet sharing that photo reuses
@@ -3222,6 +3373,19 @@ export async function buildPricelistWorkbook(
       }
     }
   })
+
+  // Open on the first tab (the Cover when present).
+  workbook.views = [
+    {
+      x: 0,
+      y: 0,
+      width: 10000,
+      height: 20000,
+      firstSheet: 0,
+      activeTab: 0,
+      visibility: "visible",
+    },
+  ]
 
   return workbook.xlsx.writeBuffer()
 }

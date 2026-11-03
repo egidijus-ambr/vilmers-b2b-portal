@@ -13,6 +13,12 @@ import { fetchPricelistPhotos } from "@lib/util/pricelist-photos"
 import { fetchPricelistBlueprints } from "@lib/util/pricelist-blueprints"
 import { fetchPricelistComponentPhotos } from "@lib/util/pricelist-component-photos"
 import {
+  coverCacheParts,
+  fetchPricelistCover,
+  type CoverSettingsInput,
+} from "@lib/util/pricelist-cover"
+import { getPricelistSettings } from "@lib/data/pricelist-settings"
+import {
   createImageFetchReport,
   isImageFetchDegraded,
   TRANSIENT_FAILURE_TOLERANCE,
@@ -35,7 +41,7 @@ import {
 
 // Bump when pricelist-workbook.ts (or the image pools) change what a built
 // file looks like, so stale cached files are never served after a deploy.
-export const WORKBOOK_VERSION = "5"
+export const WORKBOOK_VERSION = "6"
 
 const COMPANY_NAME = "Vilmers"
 const CURRENCY = "EUR"
@@ -201,7 +207,7 @@ export function computeFingerprint(products: unknown, pricelistName: string) {
 }
 
 /** Everything in the cache key except the data fingerprint. */
-function comboBaseParts(combo: ExportCombo): unknown[] {
+function comboBaseParts(combo: ExportCombo, cover: CoverSettingsInput): unknown[] {
   return [
     process.env.NEXT_PUBLIC_THEME ?? "",
     WORKBOOK_VERSION,
@@ -210,16 +216,19 @@ function comboBaseParts(combo: ExportCombo): unknown[] {
     combo.priceListId,
     combo.tagIds,
     combo.language,
+    // Cover sheet settings (admin-editable): a change must miss the cache.
+    // The cover DATE is the build date; a cached file keeps its build date.
+    coverCacheParts(cover),
   ]
 }
 
-function computeBaseId(combo: ExportCombo) {
-  return JSON.stringify(comboBaseParts(combo))
+function computeBaseId(combo: ExportCombo, cover: CoverSettingsInput) {
+  return JSON.stringify(comboBaseParts(combo, cover))
 }
 
-function computeKey(combo: ExportCombo, fingerprint: string) {
+function computeKey(combo: ExportCombo, cover: CoverSettingsInput, fingerprint: string) {
   return createHash("sha256")
-    .update(JSON.stringify([...comboBaseParts(combo), fingerprint]))
+    .update(JSON.stringify([...comboBaseParts(combo, cover), fingerprint]))
     .digest("hex")
 }
 
@@ -366,7 +375,8 @@ async function runBuild(
   products: any,
   priceListName: string,
   nameLookupFailed: boolean,
-  fingerprint: string
+  fingerprint: string,
+  coverSettings: CoverSettingsInput
 ) {
   const startedAt = Date.now()
   await acquireBuildSlot(() => {})
@@ -391,10 +401,14 @@ async function runBuild(
     const report = createImageFetchReport()
     // Best-effort pools: never throw (image failure must not cost the
     // customer their price data).
-    const [photos, blueprints, componentPhotos] = await Promise.all([
+    const [photos, blueprints, componentPhotos, coverResult] = await Promise.all([
       fetchPricelistPhotos(products, report),
       fetchPricelistBlueprints(products, report),
       fetchPricelistComponentPhotos(products, report),
+      // Never throws; null when the cover sheet is off.
+      coverSettings.coverEnabled
+        ? fetchPricelistCover(coverSettings)
+        : Promise.resolve(null),
     ])
     job.stage = "building"
     const builtAt = new Date()
@@ -410,7 +424,8 @@ async function runBuild(
       photos,
       blueprints,
       componentPhotos,
-      resolvePricelistWorkbookSettings()
+      resolvePricelistWorkbookSettings(),
+      coverResult?.cover
     )
     if (job.aborted) return // watchdog already failed this job
     const buffer = new Uint8Array(raw as unknown as ArrayBuffer)
@@ -419,7 +434,10 @@ async function runBuild(
     // Cacheable only if: no deadline hit, price-list name resolved, and
     // transient image failures within TRANSIENT_FAILURE_TOLERANCE of the
     // images attempted (summed over all three pools).
-    const degraded = isImageFetchDegraded(report) || nameLookupFailed
+    // A configured cover image / logo that could not be loaded also blocks
+    // caching, so a transient failure is not frozen in for the cache lifetime.
+    const degraded =
+      isImageFetchDegraded(report) || nameLookupFailed || !!coverResult?.degraded
     const tolerated = Math.floor(report.attempted * TRANSIENT_FAILURE_TOLERANCE)
     if (degraded) {
       const p = path.join(jobsDir(), `${job.id}.xlsx`)
@@ -431,7 +449,7 @@ async function runBuild(
       job.filePath = filePathFor(job.key)
       job.temporary = false
       // Point the freshness memo at the freshly stored file.
-      state.fpMemo.set(computeBaseId(job.combo), {
+      state.fpMemo.set(computeBaseId(job.combo, coverSettings), {
         fingerprint,
         cacheKey: job.key,
         checkedAt: job.fpCheckedAt ?? Date.now(),
@@ -471,7 +489,8 @@ export interface StartResult {
  */
 async function computeFingerprintResult(
   combo: ExportCombo,
-  baseId: string
+  baseId: string,
+  coverSettings: CoverSettingsInput
 ): Promise<FingerprintResult> {
   const t0 = Date.now()
   let products: any
@@ -495,7 +514,7 @@ async function computeFingerprintResult(
   })
   const tFp = Date.now()
   const fingerprint = computeFingerprint(products, priceListName)
-  const key = computeKey(combo, fingerprint)
+  const key = computeKey(combo, coverSettings, fingerprint)
   const checkedAt = Date.now()
   console.log(
     `${LOG} fingerprint: product query ${tQuery}ms, hash ${Date.now() - tFp}ms ` +
@@ -532,7 +551,15 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   pruneJobs()
   sweepIfDue().catch(() => {})
 
-  const baseId = computeBaseId(combo)
+  // Read once per export request so the cache key and the build agree.
+  const pricelistSettings = await getPricelistSettings()
+  const coverSettings: CoverSettingsInput = {
+    coverEnabled: pricelistSettings.coverEnabled,
+    coverImageUrl: pricelistSettings.coverImageUrl,
+    coverTerms: pricelistSettings.coverTerms,
+    logoUrl: pricelistSettings.logoUrl,
+  }
+  const baseId = computeBaseId(combo, coverSettings)
   for (const [k, m] of Array.from(state.fpMemo.entries())) {
     if (Date.now() - m.checkedAt >= FINGERPRINT_TTL_MS) state.fpMemo.delete(k)
   }
@@ -558,7 +585,7 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   // Single-flight the query per combination.
   let pending = state.fpInFlight.get(baseId)
   if (!pending) {
-    pending = computeFingerprintResult(combo, baseId).finally(() => {
+    pending = computeFingerprintResult(combo, baseId, coverSettings).finally(() => {
       state.fpInFlight.delete(baseId)
     })
     state.fpInFlight.set(baseId, pending)
@@ -594,7 +621,7 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   state.inFlight.set(key, job)
   // Fire and forget; every rejection is caught here so an unhandled
   // rejection can never take the process down.
-  runBuild(job, products, priceListName, nameLookupFailed, fingerprint)
+  runBuild(job, products, priceListName, nameLookupFailed, fingerprint, coverSettings)
     .catch((error) => {
       console.error(`${LOG} build failed:`, error)
       job.aborted = true

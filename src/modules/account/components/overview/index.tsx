@@ -3,7 +3,8 @@
 import { HttpTypes } from "@medusajs/types"
 import { useTranslations } from "@lib/i18n"
 import { getClaimsLink } from "@lib/data/customer"
-import { features } from "@lib/features"
+import { useEffect, useState } from "react"
+import { getPricelistExportEnabled } from "@lib/data/pricelist-export-enabled"
 import { useParams, useRouter } from "next/navigation"
 import { useCustomer } from "@lib/context/customer-context"
 import { isInternalDomain } from "@lib/utils/internal-domains"
@@ -28,6 +29,21 @@ const Overview = (): JSX.Element => {
   const params = useParams()
   const router = useRouter()
   const languageCode = params.languageCode as string
+
+  // Admin setting (ShopSetting.pricelist_export_enabled); hidden until it
+  // resolves true. The export API routes enforce the same flag server-side.
+  const [pricelistExportEnabled, setPricelistExportEnabled] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    getPricelistExportEnabled()
+      .then((enabled) => {
+        if (!cancelled) setPricelistExportEnabled(enabled)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleClaimsClick = async () => {
     try {
@@ -129,7 +145,7 @@ const Overview = (): JSX.Element => {
     // Pricelist export card instead (only when that feature is enabled, so
     // the shortcut never points at a card that isn't rendered).
     ...(!activeTheme.showClaims
-      ? isDemoCard("pricelist-export") || features.pricelistExport
+      ? isDemoCard("pricelist-export") || pricelistExportEnabled
         ? [
             {
               id: "pricelist-export",
@@ -258,14 +274,14 @@ const Overview = (): JSX.Element => {
         {/* Customer Files Card — renders nothing when the company has no files */}
         <CustomerFilesCard />
 
-        {/* Pricelist Export Card — hidden behind the pricelistExport feature
-            flag (default off) until the feature ships. When enabled, it's
+        {/* Pricelist Export Card — hidden unless the admin setting
+            pricelist_export_enabled is on (default off). When enabled, it's
             always rendered; a missing pricelist is surfaced as an error
             toast on download, not by hiding the card (getPrimaryPriceListId
             falls back to the group pricelist, so gating on price_listId
             alone would hide it from customers who are only priced via
             their group). */}
-        {features.pricelistExport && !isDemoCard("pricelist-export") && (
+        {pricelistExportEnabled && !isDemoCard("pricelist-export") && (
           <div id="pricelist-export">
             <PricelistExportCard />
           </div>

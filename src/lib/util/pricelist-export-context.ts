@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 import { validateSession } from "@lib/util/session-validation"
 import { getActingCustomer } from "@lib/data/acting-customer"
 import { getPrimaryPriceListId } from "@configurator/lib/pricelist"
-import { features } from "@lib/features"
+import { getPricelistSettings } from "@lib/data/pricelist-settings"
 
 export interface ExportContext {
   priceListId: number
@@ -13,7 +13,7 @@ export interface ExportContext {
 }
 
 /**
- * Shared precondition chain for every pricelist-export route: feature flag,
+ * Shared precondition chain for every pricelist-export route: admin setting (ShopSetting.pricelist_export_enabled),
  * session, acting customer, effective price list, tag ids. The returned
  * (priceListId, tagIds) are ALWAYS derived server-side from the session --
  * nothing here (or in the routes) accepts them from the client.
@@ -30,7 +30,7 @@ export async function resolveExportContext(): Promise<
 
   // 404 (not 403) when off: do not confirm the resource exists. Checked
   // before validateSession() and any data access.
-  if (!features.pricelistExport) return fail("not_found", 404)
+  if (!(await getPricelistSettings()).exportEnabled) return fail("not_found", 404)
 
   const sessionValidation = await validateSession()
   if (!sessionValidation.isValid) return fail("unauthorized", 401)

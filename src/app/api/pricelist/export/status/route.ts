@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { features } from "@lib/features"
+import { getPricelistSettings } from "@lib/data/pricelist-settings"
 import { validateSession } from "@lib/util/session-validation"
 import { getJob } from "@lib/util/pricelist-export-jobs"
 
@@ -8,7 +8,7 @@ export const runtime = "nodejs"
 /** GET /api/pricelist/export/status?jobId= */
 export async function GET(request: NextRequest) {
   try {
-    if (!features.pricelistExport) {
+    if (!(await getPricelistSettings()).exportEnabled) {
       return NextResponse.json({ error: "not_found" }, { status: 404 })
     }
     const session = await validateSession()
