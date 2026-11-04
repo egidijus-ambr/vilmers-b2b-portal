@@ -10,9 +10,12 @@ import type { SearchCustomerResult } from "@lib/furnisystems-sdk/modules/custome
 
 const DEBOUNCE_MS = 250
 
-type Props = { onPick: () => void }
+type Props = { onPick: () => void; redirectOnPick?: boolean }
 
-export default function CustomerList({ onPick }: Props) {
+export default function CustomerList({
+  onPick,
+  redirectOnPick = true,
+}: Props) {
   const { actingCustomer, setActingCustomer, clearActingCustomer } =
     useActingCustomer()
   const acting = actingCustomer as SearchCustomerResult | null
@@ -105,7 +108,7 @@ export default function CustomerList({ onPick }: Props) {
                       isActing ? "hover:bg-gold/20" : "hover:bg-gray-50"
                     }`}
                     onClick={() => {
-                      setActingCustomer(c)
+                      setActingCustomer(c, { redirect: redirectOnPick })
                       onPick()
                     }}
                   >

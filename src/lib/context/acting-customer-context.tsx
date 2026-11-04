@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useCustomer } from "./customer-context"
 import { isAgentOrAdmin as roleIsAgentOrAdmin } from "@lib/util/roles"
 import {
@@ -23,7 +23,10 @@ type ActingCustomer =
 
 type ActingCustomerContextValue = {
   actingCustomer: ActingCustomer
-  setActingCustomer: (c: SearchCustomerResult | null) => void
+  setActingCustomer: (
+    c: SearchCustomerResult | null,
+    options?: { redirect?: boolean }
+  ) => void
   clearActingCustomer: () => void
   isAgentOrAdmin: boolean
   isImpersonatedByManager: boolean
@@ -35,16 +38,20 @@ const ActingCustomerContext =
 type ProviderProps = {
   initialActingCustomer: ActingCustomer
   isImpersonatedByManager?: boolean
+  /** Language-prefixed URL to land on after a customer is picked. */
+  landingHref?: string | null
   children: ReactNode
 }
 
 export function ActingCustomerProvider({
   initialActingCustomer,
   isImpersonatedByManager = false,
+  landingHref = null,
   children,
 }: ProviderProps) {
   const { customer } = useCustomer()
   const router = useRouter()
+  const pathname = usePathname()
   const isAgentOrAdmin = roleIsAgentOrAdmin(customer)
 
   // For non-agent/admin, the acting customer is always the logged-in customer.
@@ -54,7 +61,7 @@ export function ActingCustomerProvider({
   )
 
   const setActingCustomer = useCallback(
-    (c: SearchCustomerResult | null) => {
+    (c: SearchCustomerResult | null, options?: { redirect?: boolean }) => {
       if (!isAgentOrAdmin) return // no-op for end-customers
       if (c) {
         setActingCustomerCookie(typeof c.id === "string" ? Number(c.id) : c.id)
@@ -62,9 +69,18 @@ export function ActingCustomerProvider({
         clearActingCustomerCookie()
       }
       setActing(c as ActingCustomer)
+
+      // Picking (not clearing) a customer lands on the first Store category,
+      // unless the caller opts out (checkout must stay put).
+      const shouldRedirect = c && landingHref && options?.redirect !== false
+      if (shouldRedirect && pathname !== landingHref) {
+        router.push(landingHref)
+      }
+      // Always refresh: the new cookie must be reflected by the server
+      // render (filtered listings), not by a cached RSC payload.
       router.refresh()
     },
-    [isAgentOrAdmin, router]
+    [isAgentOrAdmin, router, pathname, landingHref]
   )
 
   const clearActingCustomer = useCallback(() => {

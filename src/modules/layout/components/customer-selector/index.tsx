@@ -11,7 +11,12 @@ import { Fragment } from "react"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import CustomerList from "./customer-list"
 
-export default function CustomerSelector() {
+export default function CustomerSelector({
+  redirectOnPick = true,
+}: {
+  /** Set false where picking a customer must not navigate (checkout). */
+  redirectOnPick?: boolean
+} = {}) {
   const { actingCustomer, isAgentOrAdmin } = useActingCustomer()
 
   if (!isAgentOrAdmin) return null
@@ -54,7 +59,10 @@ export default function CustomerSelector() {
             leaveTo="opacity-0 -translate-y-1"
           >
             <PopoverPanel className="absolute right-0 z-30 mt-1 w-[calc(100vw-2rem)] xsmall:w-[460px] small:left-0 small:w-full rounded border border-gray-200 bg-white shadow-lg">
-              <CustomerList onPick={() => close()} />
+              <CustomerList
+                onPick={() => close()}
+                redirectOnPick={redirectOnPick}
+              />
             </PopoverPanel>
           </Transition>
         </>

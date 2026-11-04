@@ -256,7 +256,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
             {tc("checkout-select-customer-required")}
           </p>
           <div>
-            <CustomerSelector />
+            <CustomerSelector redirectOnPick={false} />
           </div>
         </div>
       )}

@@ -2,6 +2,9 @@
 
 import { setAuthToken, setCacheId } from "@lib/data/cookies"
 import { sdk } from "@lib/config"
+import { getShopSettings } from "@lib/data/shop-settings"
+import { listMenuCategories } from "@lib/data/categories"
+import { getFirstCategoryUrl } from "@lib/util/first-category-href"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { getImpersonationClaims, isTokenExpired } from "@lib/util/jwt-utils"
@@ -91,6 +94,7 @@ export async function impersonateLoginAction(
     return
   }
 
+  let loggedIn = false
   try {
     // The token is a backend-verified impersonation session JWT;
     // store it as the session cookie
@@ -108,12 +112,32 @@ export async function impersonateLoginAction(
     // Clear Apollo cache
     sdk.clearCache()
 
+    loggedIn = true
     console.log(
-      "[Impersonate] Admin impersonation login successful, redirecting to account"
+      "[Impersonate] Admin impersonation login successful, redirecting to store"
     )
   } catch (error: any) {
     console.error("[Impersonate] Impersonation login failed:", error)
   }
 
-  redirect(`/${languageCode}/account`)
+  // Land on the first Store category; any failure degrades to /account so
+  // impersonation never breaks. redirect() throws, so it stays outside the try.
+  let target = `/${languageCode}/account`
+  if (loggedIn) {
+    try {
+      const [shopSettings, categories] = await Promise.all([
+        getShopSettings(),
+        listMenuCategories(languageCode),
+      ])
+      target = getFirstCategoryUrl(
+        shopSettings?.navigation_items,
+        categories,
+        languageCode
+      )
+    } catch (error) {
+      console.error("[Impersonate] Could not resolve landing category:", error)
+    }
+  }
+
+  redirect(target)
 }

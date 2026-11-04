@@ -16,6 +16,8 @@ import { ShopSettingsProvider } from "@lib/context/shop-settings-context"
 import { CartProvider } from "@lib/context/cart-context"
 import TawkToChat from "@modules/common/components/tawk-to-chat"
 import { listMenuCategories } from "@lib/data/categories"
+import { getFirstCategoryUrl } from "@lib/util/first-category-href"
+import { isAgentOrAdmin } from "@lib/util/roles"
 import { getActingCustomer, isImpersonatedByManager } from "@lib/data/acting-customer"
 import {
   canShowAllProductsToggle,
@@ -120,11 +122,21 @@ export default async function PageLayout({
       getNewBadgeDays(),
     ])
 
+  // Where the customer picker lands after a selection (agents/admins only).
+  // Chromeless pages skip the category fetch above, so fetch it here.
+  const landingHref = isAgentOrAdmin(customer)
+    ? getFirstCategoryUrl(
+        shopSettings?.navigation_items,
+        chromeless ? await listMenuCategories(validLanguage) : categories,
+        validLanguage
+      )
+    : null
+
   const canShowGoToConfigurator = canShowAllProducts && features.configurator
 
   return (
     <CustomerProvider customer={customer}>
-      <ActingCustomerProvider initialActingCustomer={acting} isImpersonatedByManager={impersonated}>
+      <ActingCustomerProvider initialActingCustomer={acting} isImpersonatedByManager={impersonated} landingHref={landingHref}>
         <ShopSettingsProvider initialShopSettings={shopSettings}>
           <CartProvider>
             <NewBadgeProvider days={newBadgeDays}>
