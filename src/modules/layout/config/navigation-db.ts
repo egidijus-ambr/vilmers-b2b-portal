@@ -297,6 +297,27 @@ function buildManualColumns(
   return chunkIntoColumns(megaLinks)
 }
 
+/**
+ * Click target for a top-level item that owns a panel: the first thing the
+ * panel renders, in display order. Columns are walked in order; a column's
+ * heading (when it has a resolvable href) comes before its links, matching
+ * what MegaMenuPanel draws. Null when the panel has no navigable entry, in
+ * which case the caller falls back to the item's own link target.
+ */
+function firstPanelTarget(
+  columns: MegaMenuColumn[]
+): { href: string; newTab: boolean } | null {
+  for (const column of columns) {
+    if (column.heading && column.href) {
+      return { href: column.href, newTab: false }
+    }
+    for (const link of column.links) {
+      if (link.href) return { href: link.href, newTab: !!link.newTab }
+    }
+  }
+  return null
+}
+
 /** Matches the width the legacy/category-driven single-column dropdowns use (see navigation.ts). */
 const SINGLE_COLUMN_DROPDOWN_WIDTH = "w-auto min-w-48 max-w-64"
 
@@ -420,6 +441,7 @@ export function buildNavigationFromSettings(
       }
 
       const featuredCard = buildFeaturedCard(item.featured_page, languageCode)
+      const firstTarget = firstPanelTarget(columns)
 
       // Nothing renderable in a manual or page-sourced panel: unlike the
       // category source, there is no tree to fall back to, so drop the
@@ -448,7 +470,10 @@ export function buildNavigationFromSettings(
         id: `db-${item.id}`,
         label,
         type: "dropdown",
-        href: resolveTargetHref(item, languageCode),
+        // A panel with entries navigates to its first entry; the item's own
+        // (often stale/unrelated) link target is only a fallback.
+        href: firstTarget?.href ?? resolveTargetHref(item, languageCode),
+        newTab: firstTarget?.newTab,
         isStoreLink,
         dropdown: {
           width: "w-auto",
@@ -481,7 +506,8 @@ export function buildNavigationFromSettings(
         id: `db-${item.id}`,
         label,
         type: "dropdown",
-        href: resolveTargetHref(item, languageCode),
+        href: dropdownItems[0].href ?? resolveTargetHref(item, languageCode),
+        newTab: dropdownItems[0].newTab,
         isStoreLink,
         dropdown: {
           width: SINGLE_COLUMN_DROPDOWN_WIDTH,
