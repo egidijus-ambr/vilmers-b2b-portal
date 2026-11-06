@@ -159,7 +159,7 @@ export interface Customer {
     additionalComponent: {
       id: number
       code?: string
-      additional_component_group?: { code?: string }
+      additional_component_group?: { id?: number; code?: string }
     }
   }[]
 }

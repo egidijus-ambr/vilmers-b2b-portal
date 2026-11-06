@@ -534,8 +534,8 @@ function fitInsideBox(
 export interface PricelistCover {
   /** Uploaded cover artwork (contains the title + photo). Pre-resized. */
   image: PricelistImage | null
-  /** e.g. "EXW, IT". Empty = omitted. */
-  terms: string
+  /** One printed line per entry (e.g. "EXW", "IT"). Empty = omitted. */
+  lines: string[]
   /** Brand logo, rasterised to PNG by the caller. */
   logo: PricelistImage | null
 }
@@ -634,19 +634,26 @@ function addCoverSheet(
     }
   }
 
-  // Terms, below the image. Two merged grid rows keep the 20px grid intact
-  // while giving the larger font room.
-  const terms = cover.terms.trim()
-  if (terms) {
+  // Lines, below the image, stacked. Each is two merged grid rows (keeps the
+  // 20px grid intact while giving the larger font room). The block ends no
+  // lower than row COVER_ROWS-5 so it stays above the logo; lines that do
+  // not fit are dropped (the first line is always kept).
+  const lines = cover.lines.map((l) => l.trim()).filter(Boolean)
+  if (lines.length > 0) {
+    const lastRow = COVER_ROWS - 5
     const startRow = Math.min(
       COVER_ROWS - 6,
       Math.ceil((contentBottomPx + 16) / COVER_ROW_PX) + 1
     )
-    sheet.mergeCells(startRow, 1, startRow + 1, 1)
-    const cell = sheet.getCell(startRow, 1)
-    cell.value = terms
-    cell.font = { name: COVER_FONT_NAME, size: 18 }
-    cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true }
+    const fit = Math.max(1, Math.floor((lastRow - startRow + 1) / 2))
+    lines.slice(0, fit).forEach((line, i) => {
+      const row = startRow + i * 2
+      sheet.mergeCells(row, 1, row + 1, 1)
+      const cell = sheet.getCell(row, 1)
+      cell.value = line
+      cell.font = { name: COVER_FONT_NAME, size: 18 }
+      cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true }
+    })
   }
 
   // Logo, bottom-right.

@@ -122,6 +122,7 @@ const GET_ME_QUERY = gql`
           id
           code
           additional_component_group {
+            id
             code
           }
         }
@@ -570,6 +571,7 @@ const SEARCH_CUSTOMERS_QUERY = gql`
           id
           code
           additional_component_group {
+            id
             code
           }
         }
@@ -640,8 +642,10 @@ type GetMeCustomerData = {
   }[]
   additional_components?: {
     additionalComponent: {
+      id: number
       code?: string
       additional_component_group?: {
+        id?: number
         code?: string
       }
     }

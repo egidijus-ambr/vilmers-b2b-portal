@@ -13,6 +13,7 @@ const GET_PRICELIST_SETTINGS = gql`
       pricelist_export_enabled
       pricelist_cover_enabled
       pricelist_cover_terms
+      pricelist_cover_component_group_ids
       pricelist_cover_image {
         id
         src
@@ -34,6 +35,8 @@ export interface PricelistSettings {
   coverEnabled: boolean
   coverImageUrl: string | null
   coverTerms: string
+  /** Ordered AdditionalComponentGroup ids whose customer values print on the cover. */
+  coverComponentGroupIds: number[]
   /** Brand logo (default manufacturer); falls back to the local logo.svg. */
   logoUrl: string
 }
@@ -46,6 +49,7 @@ export const PRICELIST_SETTINGS_DEFAULT: PricelistSettings = {
   coverEnabled: false,
   coverImageUrl: null,
   coverTerms: "",
+  coverComponentGroupIds: [],
   logoUrl: FALLBACK_LOGO_URL,
 }
 
@@ -59,6 +63,7 @@ async function fetchPricelistSettings(): Promise<PricelistSettings> {
         pricelist_export_enabled?: boolean | null
         pricelist_cover_enabled?: boolean | null
         pricelist_cover_terms?: string | null
+        pricelist_cover_component_group_ids?: number[] | null
         pricelist_cover_image?: { src?: string | null } | null
         default_manufacturer?: {
           logo_image?: { src?: string | null } | null
@@ -74,6 +79,7 @@ async function fetchPricelistSettings(): Promise<PricelistSettings> {
       coverEnabled: s?.pricelist_cover_enabled === true,
       coverImageUrl: s?.pricelist_cover_image?.src?.trim() || null,
       coverTerms: (s?.pricelist_cover_terms ?? "").trim(),
+      coverComponentGroupIds: s?.pricelist_cover_component_group_ids ?? [],
       logoUrl:
         s?.default_manufacturer?.logo_image?.src?.trim() || FALLBACK_LOGO_URL,
     }

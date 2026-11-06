@@ -19,7 +19,8 @@ const FETCH_TIMEOUT_MS = 15_000
 export interface CoverSettingsInput {
   coverEnabled: boolean
   coverImageUrl: string | null
-  coverTerms: string
+  /** Resolved per customer (see resolveCoverLines); part of the cache key. */
+  coverLines: string[]
   logoUrl: string
 }
 
@@ -30,7 +31,7 @@ export interface CoverSettingsInput {
  */
 export function coverCacheParts(s: CoverSettingsInput): unknown[] {
   return s.coverEnabled
-    ? [true, s.coverImageUrl ?? "", s.coverTerms, s.logoUrl]
+    ? [true, s.coverImageUrl ?? "", s.coverLines, s.logoUrl]
     : [false]
 }
 
@@ -125,7 +126,7 @@ export async function fetchPricelistCover(
     )
   }
   return {
-    cover: { image, terms: s.coverTerms, logo: logoResult.logo },
+    cover: { image, lines: s.coverLines, logo: logoResult.logo },
     degraded,
   }
 }

@@ -5,11 +5,18 @@ import { validateSession } from "@lib/util/session-validation"
 import { getActingCustomer } from "@lib/data/acting-customer"
 import { getPrimaryPriceListId } from "@configurator/lib/pricelist"
 import { getPricelistSettings } from "@lib/data/pricelist-settings"
+import { resolveCoverLines } from "@lib/util/pricelist-cover-components"
 
 export interface ExportContext {
   priceListId: number
   /** Sorted ascending, de-duplicated. */
   tagIds: number[]
+  /**
+   * Cover lines for the acting customer (component codes per configured
+   * group, or the legacy terms). Empty when the cover is off, so customers
+   * never fragment the cache for a cover that is not printed.
+   */
+  coverLines: string[]
 }
 
 /**
@@ -30,7 +37,8 @@ export async function resolveExportContext(): Promise<
 
   // 404 (not 403) when off: do not confirm the resource exists. Checked
   // before validateSession() and any data access.
-  if (!(await getPricelistSettings()).exportEnabled) return fail("not_found", 404)
+  const settings = await getPricelistSettings()
+  if (!settings.exportEnabled) return fail("not_found", 404)
 
   const sessionValidation = await validateSession()
   if (!sessionValidation.isValid) return fail("unauthorized", 401)
@@ -56,5 +64,13 @@ export async function resolveExportContext(): Promise<
     new Set<number>(customer?.tags?.map((t: { id: number }) => t.id) ?? [])
   ).sort((a, b) => a - b)
 
-  return { ok: true, context: { priceListId, tagIds } }
+  const coverLines = settings.coverEnabled
+    ? resolveCoverLines(
+        customer?.additional_components,
+        settings.coverComponentGroupIds,
+        settings.coverTerms
+      )
+    : []
+
+  return { ok: true, context: { priceListId, tagIds, coverLines } }
 }

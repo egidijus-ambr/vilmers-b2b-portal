@@ -41,7 +41,7 @@ import {
 
 // Bump when pricelist-workbook.ts (or the image pools) change what a built
 // file looks like, so stale cached files are never served after a deploy.
-export const WORKBOOK_VERSION = "6"
+export const WORKBOOK_VERSION = "7"
 
 const COMPANY_NAME = "Vilmers"
 const CURRENCY = "EUR"
@@ -83,6 +83,8 @@ export interface ExportCombo {
   /** Sorted ascending. */
   tagIds: number[]
   language: string
+  /** Cover lines resolved for the downloading customer; [] when cover is off. */
+  coverLines: string[]
 }
 
 interface ExportJob {
@@ -170,7 +172,7 @@ const filePathFor = (key: string) => path.join(cacheDir(), `${key}.xlsx`)
 const metaPathFor = (key: string) => path.join(cacheDir(), `${key}.json`)
 
 const comboId = (c: ExportCombo) =>
-  `${c.priceListId}|${c.tagIds.join(",")}|${c.language}`
+  `${c.priceListId}|${c.tagIds.join(",")}|${c.language}|${JSON.stringify(c.coverLines ?? [])}`
 
 export function combosEqual(a: ExportCombo, b: ExportCombo): boolean {
   return comboId(a) === comboId(b)
@@ -556,7 +558,7 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   const coverSettings: CoverSettingsInput = {
     coverEnabled: pricelistSettings.coverEnabled,
     coverImageUrl: pricelistSettings.coverImageUrl,
-    coverTerms: pricelistSettings.coverTerms,
+    coverLines: combo.coverLines,
     logoUrl: pricelistSettings.logoUrl,
   }
   const baseId = computeBaseId(combo, coverSettings)
