@@ -26,6 +26,9 @@ import {
 } from './constants'
 import { HorizontalMetric, VerticalMetric } from './MetricLines'
 import Konva from 'konva'
+import { ArrowComponent } from './ArrowComponent'
+import { DoubleArrowComponent } from './DoubleArrowComponent'
+import { MechanicAndElectricArrows } from './BackrestTypeIcons'
 
 import Gizmo from '../Gizmo'
 
@@ -46,6 +49,7 @@ export const getDefaultSettings = () => {
       // spread_of_big_pillows: true,
       size_of_big_pillow: true,
       corner_radius: true,
+      backrest_type: true,
     },
   }
 }
@@ -291,6 +295,27 @@ const OTTP1R = ({
         (conn, index) => (
           <Gizmo key={`gizmo-${index}`} settings={conn} />
         )
+      )}
+
+      {/* Backrest type icons, centred in the backrest strip */}
+      {backrestWidth > 0 && props.backrestType === 'MECHANIC' && (
+        <DoubleArrowComponent
+          x={shapeWidth - shapeBackrestWidth / 2}
+          y={shapeHeight / 1.6 / 2}
+        />
+      )}
+      {backrestWidth > 0 && props.backrestType === 'ELECTRIC' && (
+        <ArrowComponent
+          x={shapeWidth - shapeBackrestWidth / 2}
+          y={shapeHeight / 1.6 / 2}
+        />
+      )}
+      {backrestWidth > 0 && props.backrestType === 'MECHANIC_AND_ELECTRIC' && (
+        <MechanicAndElectricArrows
+          stacked
+          x={shapeWidth - shapeBackrestWidth / 2}
+          y={shapeHeight / 1.6 / 2}
+        />
       )}
 
       {/* VeERTICAL PILLOW */}

@@ -36,6 +36,7 @@ import Konva from 'konva'
 import Gizmo from '../Gizmo'
 import { DoubleArrowComponent } from './DoubleArrowComponent'
 import { ArrowComponent } from './ArrowComponent'
+import { MechanicAndElectricArrows } from './BackrestTypeIcons'
 
 export const getDefaultSettings = () => {
   return {
@@ -327,7 +328,8 @@ const LCHOUTERMANYPILLOW = ({
 
       {/* Double arrows for MECHANIC backrest type */}
       {(props.backrestType === 'MECHANIC' ||
-        props.backrestType === 'ELECTRIC') &&
+        props.backrestType === 'ELECTRIC' ||
+        props.backrestType === 'MECHANIC_AND_ELECTRIC') &&
         Array.from({ length: props.backrestSections ?? 1 }, (_, index) => {
           if (props.backrestType === 'MECHANIC') {
             return (
@@ -345,6 +347,19 @@ const LCHOUTERMANYPILLOW = ({
           } else if (props.backrestType === 'ELECTRIC') {
             return (
               <ArrowComponent
+                key={`backrest-arrow-${index}`}
+                x={
+                  shapeArmrestWidth +
+                  ((shapeWidth - shapeArmrestWidth) /
+                    (props.backrestSections ?? 1)) *
+                    (index + 0.5)
+                }
+                y={shapeBackrestWidth / 2}
+              />
+            )
+          } else if (props.backrestType === 'MECHANIC_AND_ELECTRIC') {
+            return (
+              <MechanicAndElectricArrows
                 key={`backrest-arrow-${index}`}
                 x={
                   shapeArmrestWidth +
