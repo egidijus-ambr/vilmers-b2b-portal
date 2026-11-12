@@ -70,9 +70,9 @@ export class ProductCataloguesModule {
       const query = productContainerIds.map((id) => String(id)).join(",")
       return mapV1BatchCatalogues(
         await v1GetJson(
-          `${v1BaseUrl(this.restApiUrl)}/catalog/catalogues?ids=${encodeURIComponent(
-            query
-          )}`,
+          `${v1BaseUrl(
+            this.restApiUrl
+          )}/catalog/catalogues?ids=${encodeURIComponent(query)}`,
           "Failed to fetch batch product catalogues"
         )
       )

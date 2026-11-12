@@ -68,10 +68,10 @@ import type {
   ProductCataloguesResponse,
 } from "../modules/product-catalogues/types"
 
-
-export function mapV1ProductsSummary(
-  v1: { products: Array<Record<string, any>>; timestamp: string }
-): ProductsSummaryResponse {
+export function mapV1ProductsSummary(v1: {
+  products: Array<Record<string, any>>
+  timestamp: string
+}): ProductsSummaryResponse {
   // Legacy returns the same service result ({products, timestamp}); the typed
   // `summary` block is not sent by either endpoint, so it is not invented here.
   return {
@@ -86,14 +86,12 @@ export function mapV1ProductsSummary(
   } as ProductsSummaryResponse
 }
 
-export function mapV1ProductPhotos(
-  v1: {
-    productName: string
-    photos: Array<Record<string, any>>
-    count?: number
-    fromCache?: boolean
-  }
-): ProductPhotosResponse {
+export function mapV1ProductPhotos(v1: {
+  productName: string
+  photos: Array<Record<string, any>>
+  count?: number
+  fromCache?: boolean
+}): ProductPhotosResponse {
   // categoryCode / count / fromCache are not in the typed shape but the legacy
   // endpoint sends them too, so they are kept for exact parity.
   return {
