@@ -1,6 +1,7 @@
 // Ported from furnibay-frontend-shop/src/utilityFunctions/priceUtils/index.ts
 // Pure functions — all dependencies passed as parameters.
 
+import { getFabricGroupNumber } from "../../lib/fabric-palettes/fabric-category"
 import type {
   SelectedFabricState,
   SelectedComponent,
@@ -34,6 +35,7 @@ export const priceFormatter = (
 
 /**
  * Group numbers (price categories) implied by a fabric selection.
+ * Each colour's effective category (palette override, else group default).
  * Combination mode: the unique categories of all option fabrics.
  */
 export const getSelectedGroupNumbers = (
@@ -41,11 +43,19 @@ export const getSelectedGroupNumbers = (
 ): number[] => {
   if (selectedFabric.combinationFabrics) {
     const nums = Object.values(selectedFabric.combinationFabrics)
-      .map((o) => o.fabricGroupObject?.form_price_fabric_category?.group_number)
+      .map((o) =>
+        getFabricGroupNumber(
+          o.fabricObject,
+          o.fabricGroupObject?.form_price_fabric_category?.group_number
+        )
+      )
       .filter((n): n is number => n != null)
     return nums.filter((v, i, self) => self.indexOf(v) === i)
   }
-  const n = selectedFabric.fabricGroupObject?.form_price_fabric_category?.group_number
+  const n = getFabricGroupNumber(
+    selectedFabric.fabricObject,
+    selectedFabric.fabricGroupObject?.form_price_fabric_category?.group_number
+  )
   return n != null ? [n] : []
 }
 

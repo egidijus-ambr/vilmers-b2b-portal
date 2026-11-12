@@ -75,7 +75,7 @@ export default function FabricImageModal({
 }: FabricImageModalProps) {
   const { t } = useTranslations("account")
   const { priceCategory, featuresWithPhoto, featureGroups } =
-    useFabricGroupDetails(groupData, languageCode)
+    useFabricGroupDetails(groupData, languageCode, configId)
 
   const [stock, setStock] = useState<StockState>(INITIAL_STOCK_STATE)
   const requestIdRef = useRef(0)

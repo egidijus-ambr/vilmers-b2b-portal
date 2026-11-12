@@ -486,6 +486,12 @@ const FABRIC_PALETTE_FRAGMENT = gql`
           id
           group_number
         }
+        manufacturer {
+          id
+          fabric_price_category {
+            group_number
+          }
+        }
       }
     }
   }

@@ -10,7 +10,12 @@ import type {
   FabricFeatureDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
 import { groupSelectedFeatures, matchesFeatureSelection } from "../../utils/feature-filter-logic"
-import { resolveFeatureName, resolveFeatureGroupName } from "../../utils/fabric-profile-helpers"
+import {
+  resolveFeatureName,
+  resolveFeatureGroupName,
+  mergeFabricGroupsAcrossPalettes,
+  resolveGroupEffectiveCategories,
+} from "../../utils/fabric-profile-helpers"
 
 interface FabricFeatureFilterModalProps {
   palettes: FabricPaletteDetail[]
@@ -77,24 +82,14 @@ export default function FabricFeatureFilterModal({
   // Collect all unique fabric groups across all palettes (dedup by fabric_group.id)
   const allFabricGroups = useMemo(() => {
     const seen = new Map<number, { featureIds: Set<number>; priceCategoryGroupNumbers: Set<number> }>()
-    palettes.forEach((palette) => {
-      palette.fabric_groups.forEach((entry) => {
-        const group = entry.fabric_group
-        if (!seen.has(group.id)) {
-          const featureIds = new Set<number>()
-          if (group.fabric_features) {
-            group.fabric_features.forEach((fgf) => {
-              featureIds.add(fgf.fabric_feature.id)
-            })
-          }
-          const priceCategoryGroupNumbers = new Set<number>()
-          if (group.fabric_price_category) {
-            group.fabric_price_category.forEach((pc) => {
-              priceCategoryGroupNumbers.add(pc.group_number)
-            })
-          }
-          seen.set(group.id, { featureIds, priceCategoryGroupNumbers })
-        }
+    // Merged (colour-resolved) groups, so categories are the effective
+    // per-colour ones and match the page's own filter.
+    mergeFabricGroupsAcrossPalettes(palettes).forEach(({ fabric_group: group }) => {
+      const featureIds = new Set<number>()
+      group.fabric_features?.forEach((fgf) => featureIds.add(fgf.fabric_feature.id))
+      seen.set(group.id, {
+        featureIds,
+        priceCategoryGroupNumbers: new Set(resolveGroupEffectiveCategories(group)),
       })
     })
     return seen

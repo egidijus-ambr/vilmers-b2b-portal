@@ -1,4 +1,8 @@
 import { resolvePaletteFabrics } from "../../../lib/fabric-palettes/palette-colors"
+import {
+  getGroupDisplayCategory,
+  getGroupEffectiveCategories,
+} from "../../../lib/fabric-palettes/fabric-category"
 import type {
   FabricFeatureDetail,
   FabricGroupDetail,
@@ -118,8 +122,15 @@ export function mergeFabricGroupsAcrossPalettes(
   // Apply per-palette colour selections / override names. `entries` are in
   // priority order (direct palettes first). A row is dropped only when an
   // explicit selection leaves it with zero colours.
+  // Category overrides must point at a category of the group's own
+  // manufacturer (same rule as the configurator); fall back to the group's
+  // own categories if the manufacturer wasn't loaded.
   return merged.flatMap((row) => {
-    const fabrics = resolvePaletteFabrics(row.fabric_group.fabrics, row.entries)
+    const g = row.fabric_group
+    const validNumbers = (
+      g.manufacturer?.fabric_price_category ?? g.fabric_price_category ?? []
+    ).map((c) => c.group_number)
+    const fabrics = resolvePaletteFabrics(g.fabrics, row.entries, { validNumbers })
     if (fabrics.length === 0) return []
     return [{ ...row, fabric_group: { ...row.fabric_group, fabrics } }]
   })
@@ -176,4 +187,20 @@ export function resolveFeatureGroupName(
   const profile = resolveProfile(group.fabric_feature_group_profiles, languageCode)
   if (profile) return profile.name
   return group.code ?? String(group.id)
+}
+
+/** Default (group-level) price category of a fabric group: lowest of its categories. */
+export function resolveGroupDefaultCategory(group: FabricGroupDetail): number | null {
+  const nums = (group.fabric_price_category ?? []).map((c) => c.group_number)
+  return nums.length > 0 ? Math.min(...nums) : null
+}
+
+/** Category shown for a (merged) group: first colour's effective category. */
+export function resolveGroupDisplayCategory(group: FabricGroupDetail): number | null {
+  return getGroupDisplayCategory(group.fabrics, resolveGroupDefaultCategory(group))
+}
+
+/** Every effective category among a (merged) group's visible colours. */
+export function resolveGroupEffectiveCategories(group: FabricGroupDetail): number[] {
+  return getGroupEffectiveCategories(group.fabrics, resolveGroupDefaultCategory(group))
 }

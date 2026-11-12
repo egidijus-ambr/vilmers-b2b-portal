@@ -1,11 +1,17 @@
 "use client"
 
+import { getFabricGroupNumber } from "../../../lib/fabric-palettes/fabric-category"
 import { useMemo } from "react"
 import type {
   FabricGroupDetail,
   FabricFeatureDetail,
 } from "@lib/furnisystems-sdk/modules/customer/types"
-import { resolveProfile, resolveFeatureGroupName } from "../utils/fabric-profile-helpers"
+import {
+  resolveProfile,
+  resolveFeatureGroupName,
+  resolveGroupDisplayCategory,
+  resolveGroupDefaultCategory,
+} from "../utils/fabric-profile-helpers"
 
 export interface FeatureGroupEntry {
   groupId: number | null
@@ -15,20 +21,20 @@ export interface FeatureGroupEntry {
 
 export function useFabricGroupDetails(
   groupData: FabricGroupDetail,
-  languageCode: string
+  languageCode: string,
+  /** When set, show that single colour's effective category instead of the group's. */
+  fabricCode?: string | null
 ) {
   const priceCategory = useMemo(() => {
-    const categories = (groupData as any)?.fabric_price_category
-    if (Array.isArray(categories) && categories.length > 0) {
-      const first = categories[0]
-      const groupNumber =
-        first?.group_number ?? first?.number ?? first?.name ?? null
-      if (groupNumber !== null && groupNumber !== undefined) {
-        return `CAT ${groupNumber}`
-      }
-    }
-    return null
-  }, [groupData])
+    // Shared with the filter: first colour's effective category.
+    const fabric = fabricCode
+      ? groupData.fabrics.find((f) => f.code === fabricCode)
+      : undefined
+    const groupNumber = fabric
+      ? getFabricGroupNumber(fabric, resolveGroupDefaultCategory(groupData))
+      : resolveGroupDisplayCategory(groupData)
+    return groupNumber !== null ? `CAT ${groupNumber}` : null
+  }, [groupData, fabricCode])
 
   const description = useMemo(() => {
     const profile = resolveProfile(groupData.fabric_group_profiles, languageCode)

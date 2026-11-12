@@ -41,6 +41,7 @@ import PriceFooter from "./price-footer"
 import ConfigurationSummary from "./configuration-summary"
 import ProductPreviewSection from "./product-preview-section"
 import Toast from "@modules/common/components/toast"
+import { getFabricGroupNumber } from "../../../../lib/fabric-palettes/fabric-category"
 
 // Konva requires browser DOM — must be loaded client-only
 const SofaShapeSection = dynamic(() => import("./sofa-shape-section"), {
@@ -584,7 +585,10 @@ const ConfiguratorContent = ({
               <div>
                 <span className="text-gray-400">Selected fabric:</span>{" "}
                 {state.selectedFabric.fabricGroupObject
-                  ? `CAT ${state.selectedFabric.fabricGroupObject.form_price_fabric_category?.group_number}`
+                  ? `CAT ${getFabricGroupNumber(
+                      state.selectedFabric.fabricObject,
+                      state.selectedFabric.fabricGroupObject.form_price_fabric_category?.group_number
+                    )}`
                   : <span className="text-red-400">none</span>}
                 {state.selectedFabric.fabricObject && (
                   <span className="text-gray-400"> ({state.selectedFabric.fabricObject.code})</span>

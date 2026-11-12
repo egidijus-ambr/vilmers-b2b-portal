@@ -1,7 +1,7 @@
 import { resolvePaletteFabrics } from "../../lib/fabric-palettes/palette-colors"
 
 /**
- * Applies the customer's palette colour selections / override names to the
+ * Applies the customer's palette colour selections / override names / price categories to the
  * manufacturer fabric groups returned by the configurator query. Groups left
  * with no colours are dropped. Returns new objects (no mutation).
  */
@@ -11,6 +11,10 @@ export function applyPaletteColors<T extends Record<string, any>>(
 ): T | null {
   const priceCategories = productContainer?.manufacturer?.fabric_price_category
   if (!productContainer || !Array.isArray(priceCategories)) return productContainer
+
+  const validNumbers = priceCategories
+    .map((c: any) => c?.group_number)
+    .filter((n: unknown): n is number => typeof n === "number")
 
   return {
     ...productContainer,
@@ -27,7 +31,10 @@ export function applyPaletteColors<T extends Record<string, any>>(
                 )
               )
               .filter(Boolean)
-            return { ...g, fabrics: resolvePaletteFabrics(g.fabrics ?? [], rows) }
+            return {
+              ...g,
+              fabrics: resolvePaletteFabrics(g.fabrics ?? [], rows, { validNumbers }),
+            }
           })
           .filter((g: any) => g.fabrics.length > 0),
       })),

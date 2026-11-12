@@ -23,6 +23,7 @@ import {
   mergeFabricGroupsAcrossPalettes,
   resolveMergedGroupDisplayName,
   resolveMergedGroupSearchNames,
+  resolveGroupEffectiveCategories,
   type MergedFabricGroupEntry,
 } from "@modules/fabric-palettes/utils/fabric-profile-helpers"
 import { getFabricCalloutSettings } from "@lib/data/fabric-callout-settings"
@@ -123,6 +124,15 @@ export default function FabricPalettesPage() {
     [palettes]
   )
 
+  // Modals must see the whole group: `paginatedGroups` rows are narrowed by
+  // the search, which would change the CAT shown.
+  const fullGroup = useCallback(
+    (merged: MergedFabricGroupEntry) =>
+      mergedGroups.find((m) => m.fabric_group_id === merged.fabric_group_id)
+        ?.fabric_group ?? merged.fabric_group,
+    [mergedGroups]
+  )
+
   // Display name: which palette's override wins is only partly ordered —
   // direct memberships outrank group memberships, but ties within either
   // are arbitrary (see the caveat on MergedFabricGroupEntry in
@@ -195,10 +205,9 @@ export default function FabricPalettesPage() {
       }
       // Price category filter (OR logic) - unchanged
       if (selectedPriceCategories.size > 0) {
+        // Any visible colour's effective category matches.
         const groupPriceCats = new Set(
-          (merged.fabric_group.fabric_price_category ?? []).map(
-            (pc) => pc.group_number
-          )
+          resolveGroupEffectiveCategories(merged.fabric_group)
         )
         if (
           !Array.from(selectedPriceCategories).some((gn) =>
@@ -417,7 +426,7 @@ export default function FabricPalettesPage() {
                           onClick={() =>
                             setInfoGroup({
                               name: groupName,
-                              data: merged.fabric_group,
+                              data: fullGroup(merged),
                             })
                           }
                           className="flex items-center justify-center w-8 h-8 rounded-full bg-gold hover:bg-gold/90 text-white transition-colors flex-shrink-0"
@@ -437,7 +446,7 @@ export default function FabricPalettesPage() {
                                     name: fabric.color_name || fabric.code,
                                     imageSrc: fabric.image.src || fabric.image.src_md || fabric.image.src_thumbnail || '',
                                     groupName,
-                                    groupData: merged.fabric_group,
+                                    groupData: fullGroup(merged),
                                     itemId: merged.fabric_group.code,
                                     configId: fabric.code,
                                   })

@@ -1,5 +1,5 @@
-// Run: pnpm exec sucrase-node scripts/verify-palette-colors.ts
-import { resolvePaletteFabrics } from "../src/lib/fabric-palettes/palette-colors"
+// Run: pnpm verify:palette-colors
+import { resolvePaletteFabrics, parseCategory } from "../src/lib/fabric-palettes/palette-colors"
 import { applyPaletteColors } from "../src/configurator/lib/apply-palette-colors"
 
 let failed = 0
@@ -41,7 +41,7 @@ check("row not selecting code does not contribute override", nameOf(r, "009") ==
 r = resolvePaletteFabrics(F, [{ color_codes: ["009"], color_overrides: [{ code: "009", name: "   " }] }])
 check("blank override ignored", nameOf(r, "009") === "ecru")
 r = resolvePaletteFabrics(F, [{ color_codes: ["009"], color_overrides: [{ code: "009", name: "w", category: "Z", category_source: "pim", name_source: "pim" } as any] }])
-check("category/sources ignored", nameOf(r, "009") === "w" && !("category" in r[0]))
+check("sources ignored, unresolved category -> default", nameOf(r, "009") === "w" && (r[0] as any).price_group_number === null)
 
 const warn = console.warn; let warned = 0; console.warn = () => { warned++ }
 r = resolvePaletteFabrics(F, [{ color_codes: "oops" as any, color_overrides: "bad" }])
@@ -71,6 +71,62 @@ const gs = out.manufacturer.fabric_price_category[0].fabric_groups
 check("adapter: other palettes' rows ignored, group emptied dropped", gs.length === 1 && codes(gs[0].fabrics) === "002,009")
 check("adapter: override name applied", nameOf(gs[0].fabrics, "009") === "white")
 check("adapter: input not mutated", pc.manufacturer.fabric_price_category[0].fabric_groups.length === 2)
+
+// --- category overrides ---
+const warnings: string[] = []
+console.warn = (...a: any[]) => { warnings.push(String(a[0])) }
+const VALID = { validNumbers: [1, 2, 3, 4] }
+const catOf = (rows: any[], c = "009", opts: any = VALID) =>
+  (resolvePaletteFabrics(F, rows, opts).find((x) => x.code === c) as any)?.price_group_number
+const row = (id: number, category: unknown, codes: string[] | null = null) => ({
+  fabric_palette: { id },
+  color_codes: codes,
+  color_overrides: [{ code: "009", category }],
+})
+check("digits", catOf([row(1, "1")]) === 1)
+check("CAT 3", catOf([row(2, "CAT 3")]) === 3)
+check("cat3 lowercase, padded", catOf([row(3, " cat 2 ")]) === 2)
+check("no rows -> null (group default)", catOf([]) === null)
+warnings.length = 0
+check("letter A unresolved", catOf([row(4, "A")]) === null)
+check("letter A warned once", warnings.length === 1)
+catOf([row(4, "A")])
+check("warn deduped per (palette, code)", warnings.length === 1)
+check("garbage unresolved", catOf([row(5, "1x2")]) === null && catOf([row(6, "")]) === null)
+warnings.length = 0
+check("unknown number ignored", catOf([row(7, "9")]) === null && warnings.length === 1)
+check("no validNumbers -> not validated", catOf([row(8, "9")], "009", {}) === 9)
+check("override equal to default still resolves", catOf([row(9, "3")]) === 3)
+check("conflict: first palette wins", catOf([row(10, "1"), row(11, "2")]) === 1)
+check("conflict: unresolvable first falls to second", catOf([row(12, "B"), row(13, "2")]) === 2)
+check("palette not selecting colour does not contribute", catOf([row(14, "1", ["002"]), row(15, "2", ["009"])]) === 2)
+check("color_codes null selects colour", catOf([row(16, "4", null)]) === 4)
+check("malformed overrides Json", catOf([{ fabric_palette: { id: 17 }, color_overrides: { a: 1 } }]) === null)
+check("malformed overrides items", catOf([{ fabric_palette: { id: 18 }, color_overrides: [null, 5, { code: 9 }, { category: "1" }] }]) === null)
+check("other colours untouched", catOf([row(19, "1")], "002") === null)
+r = resolvePaletteFabrics(F, [{ fabric_palette: { id: 20 }, color_codes: null, color_overrides: [{ code: "009", name: "N", category: "2" }] },
+  { fabric_palette: { id: 21 }, color_codes: null, color_overrides: [{ code: "009", name: "M", category: "1" }] }], VALID)
+check("name and category resolved per field", nameOf(r, "009") === "N" && (r.find((x) => x.code === "009") as any).price_group_number === 2)
+r = resolvePaletteFabrics(F, [{ fabric_palette: { id: 22 }, color_codes: null, color_overrides: [{ code: "009", name: "N" }] },
+  { fabric_palette: { id: 23 }, color_codes: null, color_overrides: [{ code: "009", category: "1" }] }], VALID)
+check("name from one palette, category from another", nameOf(r, "009") === "N" && (r.find((x) => x.code === "009") as any).price_group_number === 1)
+const pc2: any = { manufacturer: { fabric_price_category: [{ id: 1, group_number: 3, fabric_groups: [
+  { id: 1, fabrics: F, fabric_palettes: [{ fabric_palette: { id: 30 }, color_codes: null, color_overrides: [{ code: "009", category: "1" }, { code: "002", category: "7" }] }] }] },
+  { id: 2, group_number: 1, fabric_groups: [] }] } }
+const o2: any = applyPaletteColors(pc2, [30])
+const fs2 = o2.manufacturer.fabric_price_category[0].fabric_groups[0].fabrics
+check("adapter: category resolved against manufacturer numbers", fs2.find((x: any) => x.code === "009").price_group_number === 1 && fs2.find((x: any) => x.code === "002").price_group_number === null)
+
+// --- letter categories (A->11, B->12) ---
+const V2 = { validNumbers: [1, 2, 3, 11, 12] }
+check("parseCategory A/B/CAT b", parseCategory("A") === 11 && parseCategory("b") === 12 && parseCategory("CAT B") === 12)
+check("parseCategory other letters null", parseCategory("C") === null && parseCategory("AB") === null && parseCategory("Z") === null)
+check("letter A resolves when 11 valid", catOf([row(40, "A")], "009", V2) === 11)
+check("letter B resolves when 12 valid", catOf([row(41, "B")], "009", V2) === 12)
+warnings.length = 0
+check("letter A ignored when 11 not a valid number + warned", catOf([row(42, "A")]) === null && warnings.length === 1)
+warnings.length = 0
+check("letter C unresolved + warned", catOf([row(43, "C")], "009", V2) === null && warnings.length === 1)
 
 if (failed) { console.log(`\n${failed} FAILED`); process.exit(1) }
 console.log("\nAll checks passed")

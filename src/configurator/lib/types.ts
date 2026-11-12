@@ -141,6 +141,8 @@ export interface Fabric {
   color_name: string | null
   default_color_name?: string | null
   color_search_names?: string[]
+  /** Palette category override (resolved); null/absent = group default. */
+  price_group_number?: number | null
   createdAt?: string | null
   order: number
   image: { src: string; src_md: string | null; src_xs: string | null } | null

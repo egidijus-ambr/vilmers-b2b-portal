@@ -5,10 +5,16 @@ import React, { useMemo, useState, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import FabricDrawerCard from "./fabric-drawer-card"
-import type { FabricGroupWithPrice, FabricCombinationOption } from "@configurator/lib/types"
+import type { Fabric, FabricGroupWithPrice, FabricCombinationOption } from "@configurator/lib/types"
 import { useFabricCategoryAvailability } from "@configurator/hooks/use-fabric-category-availability"
+import type { FabricCategoryAvailability } from "@configurator/lib/price-utils"
 import { useTranslations } from "@lib/i18n"
 import { useCustomerPaletteIds, getGroupName } from "@configurator/lib/palette-utils"
+import {
+  compareFabricsForDisplay,
+  getFabricGroupNumber,
+  getGroupDisplayCategory,
+} from "../../../../lib/fabric-palettes/fabric-category"
 
 type FabricDrawerProps = {
   isOpen: boolean
@@ -51,15 +57,49 @@ const FabricDrawer = ({
     ? selectedFabric.combinationFabrics?.[option.id]?.fabricObject?.id ?? null
     : selectedFabric.fabricObject?.id ?? null
 
-  // Drop groups whose price category is hidden (unpriced for every module).
-  // Done before search so hidden fabrics are never shown or matched.
-  const visibleGroups = useMemo(
-    () =>
-      fabricGroups.filter(
-        (g) => getCategoryAvailability(g.form_price_fabric_category?.group_number) !== "hidden"
-      ),
-    [fabricGroups, getCategoryAvailability]
-  )
+  // Effective (per-colour) category: palette override, else the group default.
+  const fabricNumber = (fabric: Fabric, group: FabricGroupWithPrice) =>
+    getFabricGroupNumber(fabric, group.form_price_fabric_category?.group_number)
+
+  // Availability once per distinct effective category (it is expensive and
+  // identical for every colour sharing a category).
+  const availabilityByNumber = useMemo(() => {
+    const map = new Map<number, FabricCategoryAvailability>()
+    for (const g of fabricGroups) {
+      for (const f of g.fabrics) {
+        const n = getFabricGroupNumber(f, g.form_price_fabric_category?.group_number)
+        if (n != null && !map.has(n)) map.set(n, getCategoryAvailability(n))
+      }
+    }
+    return map
+  }, [fabricGroups, getCategoryAvailability])
+  const availabilityOf = (n: number | null): FabricCategoryAvailability =>
+    n == null ? "available" : availabilityByNumber.get(n) ?? "available"
+
+  // Drop colours whose price category is hidden (unpriced for every module),
+  // then groups left empty. Done before search so hidden fabrics are never
+  // shown or matched. The header category is taken from these colours, and the
+  // groups are ordered by that header category.
+  const { visibleGroups, headerCategories } = useMemo(() => {
+    const map = new Map<number, number | null>()
+    const groups = fabricGroups
+      .map((g) => ({
+        ...g,
+        fabrics: g.fabrics.filter((f) => {
+          const n = getFabricGroupNumber(f, g.form_price_fabric_category?.group_number)
+          return (n == null ? "available" : availabilityByNumber.get(n)) !== "hidden"
+        }),
+      }))
+      .filter((g) => g.fabrics.length > 0)
+    groups.forEach((g) =>
+      map.set(
+        g.id,
+        getGroupDisplayCategory(g.fabrics, g.form_price_fabric_category?.group_number)
+      )
+    )
+    groups.sort((a, b) => (map.get(a.id) ?? 0) - (map.get(b.id) ?? 0))
+    return { visibleGroups: groups, headerCategories: map }
+  }, [fabricGroups, availabilityByNumber])
 
   // Filter fabric groups by search
   const filteredGroups = useMemo(() => {
@@ -97,7 +137,7 @@ const FabricDrawer = ({
   }, [visibleGroups, searchValue, languageCode, customerPaletteIds])
 
   const handleFabricSelect = (fabric: any, fabricGroup: FabricGroupWithPrice) => {
-    if (getCategoryAvailability(fabricGroup.form_price_fabric_category?.group_number) !== "available") return
+    if (availabilityOf(fabricNumber(fabric, fabricGroup)) !== "available") return
     if (option) {
       // Combination mode
       dispatch({
@@ -192,13 +232,14 @@ const FabricDrawer = ({
                   <div className="flex-1 overflow-y-auto px-6 pb-6">
                     {filteredGroups.map((fabricGroup) => {
                       const groupName = getGroupName(fabricGroup, languageCode, customerPaletteIds)
-                      const catNumber = fabricGroup.form_price_fabric_category?.group_number
-                      const unavailable = getCategoryAvailability(catNumber) === "disabled"
+                      const catNumber = headerCategories.get(fabricGroup.id)
+                      const isDisabled = (f: Fabric) =>
+                        availabilityOf(fabricNumber(f, fabricGroup)) === "disabled"
+                      // Group-level notice only when no colour is selectable.
+                      const unavailable = fabricGroup.fabrics.every(isDisabled)
 
                       // Sort fabrics by color_name
-                      const sortedFabrics = [...fabricGroup.fabrics].sort((a, b) =>
-                        (a.color_name ?? a.code).localeCompare(b.color_name ?? b.code)
-                      )
+                      const sortedFabrics = [...fabricGroup.fabrics].sort(compareFabricsForDisplay)
 
                       return (
                         <div key={fabricGroup.id} className="mb-4">
@@ -240,7 +281,7 @@ const FabricDrawer = ({
                                 key={fabric.id}
                                 fabric={fabric}
                                 isSelected={selectedFabricId === fabric.id}
-                                disabled={unavailable}
+                                disabled={isDisabled(fabric)}
                                 disabledReason={unavailableReason}
                                 onClick={() => handleFabricSelect(fabric, fabricGroup)}
                               />

@@ -8,6 +8,7 @@ import {
   resolveMainGroup,
   getSelectedGroupNumbers,
 } from "@configurator/lib/price-utils"
+import { getFabricGroupNumber } from "../../lib/fabric-palettes/fabric-category"
 
 /**
  * Returns a function giving the availability (available | disabled | hidden) of
@@ -44,10 +45,13 @@ export function useFabricCategoryAvailability(optionId: number | string | null) 
 
       // The category of the fabric currently selected (for this option in
       // combination mode) must never vanish: hidden degrades to disabled.
-      const currentGroup = optionId != null
-        ? selectedFabric.combinationFabrics?.[optionId as any]?.fabricGroupObject
-        : selectedFabric.fabricGroupObject
-      const currentGroupNumber = currentGroup?.form_price_fabric_category?.group_number
+      const current = optionId != null
+        ? selectedFabric.combinationFabrics?.[optionId as any]
+        : selectedFabric
+      const currentGroupNumber = getFabricGroupNumber(
+        current?.fabricObject,
+        current?.fabricGroupObject?.form_price_fabric_category?.group_number
+      )
 
       const result = getFabricCategoryAvailability({
         candidate: groupNumber,

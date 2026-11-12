@@ -17,6 +17,7 @@ export interface FabricDetail {
   color_name?: string
   default_color_name?: string | null
   color_search_names?: string[]
+  price_group_number?: number | null
   createdAt?: string | null
   order: number
   image: FabricImage
@@ -58,6 +59,7 @@ export interface FabricGroupDetail {
   fabric_group_profiles: FabricGroupProfileDetail[]
   fabric_features?: FabricGroupToFabricFeatureDetail[]
   fabric_price_category?: { id: number; group_number: number }[]
+  manufacturer?: { id: number; fabric_price_category?: { group_number: number }[] } | null
 }
 
 export interface FabricGroupToPaletteEntry {

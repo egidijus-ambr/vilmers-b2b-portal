@@ -2,7 +2,8 @@
 
 import React, { useEffect, useMemo } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
-import { buildSortedFabricGroups } from "@configurator/lib/group-logic"
+import { buildSortedFabricGroups, pickDefaultFabric } from "@configurator/lib/group-logic"
+import { useFabricCategoryAvailability } from "@configurator/hooks/use-fabric-category-availability"
 import FabricSelector from "./fabric-selector"
 import FabricCombinationSelector from "./fabric-combination-selector"
 import type {
@@ -32,6 +33,8 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
     return buildSortedFabricGroups(categories)
   }, [productData?.manufacturer?.fabric_price_category])
 
+  const getCategoryAvailability = useFabricCategoryAvailability(null)
+
   // Get fabric combinations from product data
   const fabricCombinations: FabricCombination[] = useMemo(() => {
     const combos = productData?.advanced_product?.fabricCombinations ?? []
@@ -48,6 +51,12 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
   // --- Default selection: auto-select first combination + initialize fabrics ---
   useEffect(() => {
     if (fabricGroups.length === 0) return
+
+    // First colour that is priced for this product (not blindly fabrics[0]).
+    const defaultPick = pickDefaultFabric(
+      fabricGroups,
+      (n) => getCategoryAvailability(n)
+    )
 
     if (hasCombinations) {
       // Auto-select first combination if none selected
@@ -73,8 +82,8 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
         })
 
         // Initialize combination fabrics: each option gets the first fabric of the first group
-        const defaultGroup = fabricGroups[0]
-        const defaultFabric = defaultGroup?.fabrics?.[0] ?? null
+        const defaultGroup = defaultPick?.group ?? fabricGroups[0]
+        const defaultFabric = defaultPick?.fabric ?? null
         const options = defaultCombination.fabricCombinationOptions ?? []
 
         const initialCombinationFabrics: Record<string, any> = {}
@@ -98,8 +107,8 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
     } else {
       // No combinations: auto-select first fabric if none selected
       if (!selectedFabric.fabricGroupObject || !selectedFabric.fabricObject) {
-        const defaultGroup = fabricGroups[0]
-        const defaultFabric = defaultGroup?.fabrics?.[0] ?? null
+        const defaultGroup = defaultPick?.group ?? fabricGroups[0]
+        const defaultFabric = defaultPick?.fabric ?? null
 
         if (defaultGroup && defaultFabric) {
           dispatch({

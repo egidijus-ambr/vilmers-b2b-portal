@@ -4,7 +4,8 @@ import { useEffect } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { getConfiguratorDataAction } from "@lib/data/configurator"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
-import { buildSortedFabricGroups } from "@configurator/lib/group-logic"
+import { buildSortedFabricGroups, pickDefaultFabric } from "@configurator/lib/group-logic"
+import { getFabricCategoryAvailability, resolveMainGroup } from "@configurator/lib/price-utils"
 import { useCustomerPaletteIds } from "../lib/palette-utils"
 import type { SelectedComponent } from "@configurator/lib/types"
 
@@ -67,6 +68,7 @@ export function useConfiguratorData(
 
         // Initialize additional component groups from product-scoped join tables.
         // Both arrays are already filtered to enabled=true by the query WHERE clause.
+        let componentGroupsForDefaults: any[] = []
         const groupAssociations = data.advanced_product?.additional_component_group_to_advanced_product ?? []
         const componentAssociations = data.advanced_product?.additional_component_to_advanced_product ?? []
 
@@ -76,6 +78,7 @@ export function useConfiguratorData(
             componentAssociations,
             priceListId
           )
+          componentGroupsForDefaults = mergedGroups
           dispatch({ type: "SET_COMPONENT_GROUPS", payload: mergedGroups })
           dispatch({ type: "SET_ORIGINAL_COMPONENT_GROUPS", payload: mergedGroups })
 
@@ -127,6 +130,20 @@ export function useConfiguratorData(
         )
 
         if (fabricGroups.length > 0) {
+          // Default = first colour that is priced for this product (not blindly fabrics[0]).
+          const mainGroup = resolveMainGroup(data.advanced_product, componentGroupsForDefaults, [])
+          const defaultPick = pickDefaultFabric(
+            fabricGroups,
+            (n) =>
+              n == null
+                ? "available"
+                : getFabricCategoryAvailability({
+                    candidate: n,
+                    sofaCombinations: [],
+                    sofaForms,
+                    mainGroup,
+                  })
+          )
           const fabricCombinations = data.advanced_product?.fabricCombinations ?? []
 
           if (fabricCombinations.length > 0) {
@@ -144,8 +161,8 @@ export function useConfiguratorData(
               payload: { fabricCombination: defaultCombination },
             })
 
-            const defaultGroup = fabricGroups[0]
-            const defaultFabric = defaultGroup?.fabrics?.[0] ?? null
+            const defaultGroup = defaultPick?.group ?? fabricGroups[0]
+            const defaultFabric = defaultPick?.fabric ?? null
             const options = defaultCombination.fabricCombinationOptions ?? []
             const initialCombinationFabrics: Record<string, any> = {}
             for (const option of options) {
@@ -164,8 +181,8 @@ export function useConfiguratorData(
               },
             })
           } else {
-            const defaultGroup = fabricGroups[0]
-            const defaultFabric = defaultGroup?.fabrics?.[0] ?? null
+            const defaultGroup = defaultPick?.group ?? fabricGroups[0]
+            const defaultFabric = defaultPick?.fabric ?? null
             if (defaultGroup && defaultFabric) {
               dispatch({
                 type: "SET_FABRIC",

@@ -7,6 +7,11 @@ import type {
   SelectedComponent,
   SelectedFabricState,
 } from "./types"
+import {
+  compareFabricsForDisplay,
+  getFabricGroupNumber,
+  getGroupDisplayCategory,
+} from "../../lib/fabric-palettes/fabric-category"
 import { getValidComponents, type ValidComponentsOptions } from "./component-utils"
 
 /** Extract leg codes from metadata.legs which can be objects or strings */
@@ -456,7 +461,11 @@ export function buildSortedFabricGroups(
 ): any[] {
   const seen = new Map<number, any>()
 
-  for (const priceCategory of manufacturerFabricPriceCategories) {
+  // Ascending, so a group listed under several categories gets a deterministic default.
+  const categories = [...manufacturerFabricPriceCategories].sort(
+    (a, b) => (a.group_number ?? 0) - (b.group_number ?? 0)
+  )
+  for (const priceCategory of categories) {
     for (const group of priceCategory.fabric_groups) {
       if (seen.has(group.id)) continue
 
@@ -475,11 +484,35 @@ export function buildSortedFabricGroups(
     }
   }
 
-  return Array.from(seen.values()).sort(
-    (a, b) =>
-      a.form_price_fabric_category.group_number -
-      b.form_price_fabric_category.group_number
-  )
+  // Sort by the category shown in the drawer header (first colour's effective
+  // category), not the group default.
+  const displayed = (g: any): number =>
+    getGroupDisplayCategory(g.fabrics, g.form_price_fabric_category.group_number) ?? 0
+  return Array.from(seen.values()).sort((a, b) => displayed(a) - displayed(b))
+}
+
+/**
+ * Default fabric: walking groups in order and colours in drawer order, the
+ * first "available" colour, else the first non-hidden one, else fabrics[0].
+ */
+export function pickDefaultFabric(
+  fabricGroups: any[],
+  getAvailability: (groupNumber: number | null) => "available" | "disabled" | "hidden"
+): { group: any; fabric: any } | null {
+  let nonHidden: { group: any; fabric: any } | null = null
+  for (const group of fabricGroups) {
+    const sorted = [...(group.fabrics ?? [])].sort(compareFabricsForDisplay)
+    for (const fabric of sorted) {
+      const n = getFabricGroupNumber(fabric, group.form_price_fabric_category?.group_number)
+      const a = getAvailability(n)
+      if (a === "available") return { group, fabric }
+      if (a !== "hidden" && !nonHidden) nonHidden = { group, fabric }
+    }
+  }
+  if (nonHidden) return nonHidden
+  const group = fabricGroups[0]
+  const fabric = group?.fabrics?.[0]
+  return group && fabric ? { group, fabric } : null
 }
 
 /**
