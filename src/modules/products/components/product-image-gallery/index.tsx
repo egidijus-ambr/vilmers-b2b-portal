@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { productPhotosUrl } from "@lib/furnisystems-sdk/client/catalog-v1"
 import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Dialog,
@@ -194,9 +195,7 @@ const ProductImageGallery = ({
     const fetchPhotos = async () => {
       setIsLoadingPhotos(true)
       try {
-        const apiUrl = `${restApiUrl}/s3/product-photos/${encodeURIComponent(
-          productName
-        )}?categoryCodes=${encodeURIComponent(categoryCodesParam)}`
+        const apiUrl = productPhotosUrl(restApiUrl, productName, categoryCodesParam)
         const response = await fetch(apiUrl, { signal: controller.signal })
         if (response.ok) {
           const data = await response.json()

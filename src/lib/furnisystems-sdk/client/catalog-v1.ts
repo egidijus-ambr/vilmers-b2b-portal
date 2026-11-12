@@ -12,6 +12,7 @@
  * + `/v1`, i.e. never a hardcoded host.
  */
 import { NetworkError } from "./errors"
+import { getBffHeadersIfAvailable } from "./index"
 
 export type CatalogApiMode = "v1" | "legacy"
 
@@ -21,6 +22,25 @@ export function getCatalogApiMode(): CatalogApiMode {
       ? process.env.PORTAL_API_MODE_CATALOG
       : process.env.NEXT_PUBLIC_PORTAL_API_MODE_CATALOG
   return raw?.trim().toLowerCase() === "v1" ? "v1" : "legacy"
+}
+
+/**
+ * URL for the product-photos endpoint in the active mode, for call sites that
+ * fetch directly (PDP galleries). `categoryCodes` is the comma-joined list;
+ * present-but-empty matches nothing on both endpoints (strict scope).
+ */
+export function productPhotosUrl(
+  restApiUrl: string,
+  productName: string,
+  categoryCodes: string
+): string {
+  const path =
+    getCatalogApiMode() === "v1"
+      ? `${v1BaseUrl(restApiUrl)}/catalog/products/${encodeURIComponent(
+          productName
+        )}/photos`
+      : `${restApiUrl}/s3/product-photos/${encodeURIComponent(productName)}`
+  return `${path}?categoryCodes=${encodeURIComponent(categoryCodes)}`
 }
 
 export function v1BaseUrl(restApiUrl: string): string {
@@ -37,9 +57,18 @@ export async function v1GetJson<T>(
   failureLabel: string,
   init?: RequestInit
 ): Promise<T> {
+  // Server-side only: forward the trusted-BFF headers so the v1 per-IP limiter
+  // (600/min) keys on the end user's IP, not this server's. Skipped for
+  // revalidate-cached fetches: Next keys its data cache on request headers, so
+  // a per-user x-client-ip would fragment the cache; those calls are rare
+  // enough to share the server IP's budget. Never sent from the browser.
+  const bff = (init as { next?: { revalidate?: number } } | undefined)?.next
+    ?.revalidate
+    ? {}
+    : await getBffHeadersIfAvailable()
   const response = await fetch(url, {
     ...init,
-    headers: { Accept: "application/json", ...(init?.headers ?? {}) },
+    headers: { Accept: "application/json", ...bff, ...(init?.headers ?? {}) },
   })
   if (!response.ok) {
     throw new NetworkError(
@@ -60,7 +89,6 @@ import type {
   ProductCataloguesResponse,
 } from "../modules/product-catalogues/types"
 
-const nn = <T>(v: T | null | undefined): T | undefined => v ?? undefined
 
 export function mapV1ProductsSummary(
   v1: { products: Array<Record<string, any>>; timestamp: string }
@@ -103,9 +131,9 @@ export function mapV1ProductPhotos(
         mediaType: p.mediaType,
         created_at: p.created_at,
       }
-      // Optional in the legacy shape: absent rather than null.
-      if (nn(p.combination) !== undefined) out.combination = p.combination
-      if (nn(p.fabric) !== undefined) out.fabric = p.fabric
+      // Legacy (photoFromKey) keeps explicit null; only omit when undefined.
+      if (p.combination !== undefined) out.combination = p.combination
+      if (p.fabric !== undefined) out.fabric = p.fabric
       return out
     }),
   } as unknown as ProductPhotosResponse

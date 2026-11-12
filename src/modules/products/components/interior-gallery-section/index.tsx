@@ -1,4 +1,5 @@
 import type { Photo } from "./types"
+import { productPhotosUrl } from "@lib/furnisystems-sdk/client/catalog-v1"
 import GalleryClient from "./gallery-client"
 
 type InteriorGallerySectionProps = {
@@ -22,9 +23,7 @@ const InteriorGallerySection = async ({
   let photos: Photo[] = []
 
   try {
-    const apiUrl = `${restApiUrl}/s3/product-photos/${encodeURIComponent(
-      productName
-    )}?categoryCodes=${encodeURIComponent(categoryCodes.join(","))}`
+    const apiUrl = productPhotosUrl(restApiUrl, productName, categoryCodes.join(","))
     const response = await fetch(apiUrl, { next: { revalidate: 300 } })
     if (response.ok) {
       const data = await response.json()
