@@ -48,7 +48,7 @@ async function getCookiesIfAvailable(): Promise<string | null> {
 // are not inlined there either), when the secret is unset, and wherever the
 // request headers are unavailable (outside request scope, inside
 // unstable_cache), mirroring getCookiesIfAvailable.
-async function getBffHeadersIfAvailable(): Promise<Record<string, string>> {
+export async function getBffHeadersIfAvailable(): Promise<Record<string, string>> {
   if (typeof window !== "undefined") {
     return {}
   }
