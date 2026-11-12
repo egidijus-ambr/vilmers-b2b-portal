@@ -1,5 +1,12 @@
 import { ProductsSummaryResponse, ProductPhotosResponse } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
+import {
+  getCatalogApiMode,
+  mapV1ProductPhotos,
+  mapV1ProductsSummary,
+  v1BaseUrl,
+  v1GetJson,
+} from "../../client/catalog-v1"
 
 export class ProductPhotosModule {
   private restApiUrl: string
@@ -13,6 +20,14 @@ export class ProductPhotosModule {
    */
   async getProductsSummary(): Promise<ProductsSummaryResponse> {
     try {
+      if (getCatalogApiMode() === "v1") {
+        return mapV1ProductsSummary(
+          await v1GetJson(
+            `${v1BaseUrl(this.restApiUrl)}/catalog/products/summary`,
+            "Failed to fetch products summary"
+          )
+        )
+      }
       const response = await fetch(`${this.restApiUrl}/s3/products-summary`)
 
       if (!response.ok) {
@@ -40,6 +55,16 @@ export class ProductPhotosModule {
    */
   async getProductPhotos(productName: string): Promise<ProductPhotosResponse> {
     try {
+      if (getCatalogApiMode() === "v1") {
+        return mapV1ProductPhotos(
+          await v1GetJson(
+            `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
+              productName
+            )}/photos`,
+            "Failed to fetch product photos"
+          )
+        )
+      }
       const response = await fetch(
         `${this.restApiUrl}/s3/product-photos/${encodeURIComponent(
           productName

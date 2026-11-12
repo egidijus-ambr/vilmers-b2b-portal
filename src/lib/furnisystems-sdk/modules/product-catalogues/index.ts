@@ -4,6 +4,13 @@ import {
   MergeCataloguesRequest,
 } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
+import {
+  getCatalogApiMode,
+  mapV1BatchCatalogues,
+  mapV1ProductCatalogues,
+  v1BaseUrl,
+  v1GetJson,
+} from "../../client/catalog-v1"
 
 // Mode-specific product caps enforced by the backend. Keep these in sync
 // with MAX_PRODUCTS_PER_MERGE / MAX_PRODUCTS_PER_SPLIT in
@@ -16,8 +23,10 @@ export const MAX_PRODUCTS_PER_SPLIT = 500
 export class ProductCataloguesModule {
   /** Base URL of the backend catalogue routes (ProductFile-backed). */
   private cataloguesUrl: string
+  private restApiUrl: string
 
   constructor(restApiUrl: string) {
+    this.restApiUrl = restApiUrl
     this.cataloguesUrl = `${restApiUrl}/product-files/catalogues`
   }
 
@@ -28,6 +37,17 @@ export class ProductCataloguesModule {
     productContainerId: number
   ): Promise<ProductCataloguesResponse> {
     try {
+      if (getCatalogApiMode() === "v1") {
+        return mapV1ProductCatalogues(
+          await v1GetJson(
+            `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
+              String(productContainerId)
+            )}/catalogues`,
+            "Failed to fetch product catalogues",
+            { next: { revalidate: 3600 } }
+          )
+        )
+      }
       const response = await fetch(
         `${this.cataloguesUrl}/product/${encodeURIComponent(
           String(productContainerId)
@@ -68,6 +88,16 @@ export class ProductCataloguesModule {
   ): Promise<BatchProductCataloguesResponse> {
     try {
       const query = productContainerIds.map((id) => String(id)).join(",")
+      if (getCatalogApiMode() === "v1") {
+        return mapV1BatchCatalogues(
+          await v1GetJson(
+            `${v1BaseUrl(this.restApiUrl)}/catalog/catalogues?ids=${encodeURIComponent(
+              query
+            )}`,
+            "Failed to fetch batch product catalogues"
+          )
+        )
+      }
       const response = await fetch(
         `${this.cataloguesUrl}?ids=${encodeURIComponent(query)}`
       )
