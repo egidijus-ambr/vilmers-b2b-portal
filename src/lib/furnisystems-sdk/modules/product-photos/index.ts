@@ -1,7 +1,6 @@
 import { ProductsSummaryResponse, ProductPhotosResponse } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
 import {
-  getCatalogApiMode,
   mapV1ProductPhotos,
   mapV1ProductsSummary,
   v1BaseUrl,
@@ -20,24 +19,12 @@ export class ProductPhotosModule {
    */
   async getProductsSummary(): Promise<ProductsSummaryResponse> {
     try {
-      if (getCatalogApiMode() === "v1") {
-        return mapV1ProductsSummary(
-          await v1GetJson(
-            `${v1BaseUrl(this.restApiUrl)}/catalog/products/summary`,
-            "Failed to fetch products summary"
-          )
+      return mapV1ProductsSummary(
+        await v1GetJson(
+          `${v1BaseUrl(this.restApiUrl)}/catalog/products/summary`,
+          "Failed to fetch products summary"
         )
-      }
-      const response = await fetch(`${this.restApiUrl}/s3/products-summary`)
-
-      if (!response.ok) {
-        throw new NetworkError(
-          `Failed to fetch products summary: ${response.status} ${response.statusText}`
-        )
-      }
-
-      const data: ProductsSummaryResponse = await response.json()
-      return data
+      )
     } catch (error) {
       if (error instanceof FurnisystemsError) {
         throw error
@@ -55,30 +42,14 @@ export class ProductPhotosModule {
    */
   async getProductPhotos(productName: string): Promise<ProductPhotosResponse> {
     try {
-      if (getCatalogApiMode() === "v1") {
-        return mapV1ProductPhotos(
-          await v1GetJson(
-            `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
-              productName
-            )}/photos`,
-            "Failed to fetch product photos"
-          )
+      return mapV1ProductPhotos(
+        await v1GetJson(
+          `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
+            productName
+          )}/photos`,
+          "Failed to fetch product photos"
         )
-      }
-      const response = await fetch(
-        `${this.restApiUrl}/s3/product-photos/${encodeURIComponent(
-          productName
-        )}`
       )
-
-      if (!response.ok) {
-        throw new NetworkError(
-          `Failed to fetch product photos: ${response.status} ${response.statusText}`
-        )
-      }
-
-      const data: ProductPhotosResponse = await response.json()
-      return data
     } catch (error) {
       if (error instanceof FurnisystemsError) {
         throw error

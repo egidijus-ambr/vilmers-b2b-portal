@@ -5,7 +5,6 @@ import {
 } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
 import {
-  getCatalogApiMode,
   mapV1BatchCatalogues,
   mapV1ProductCatalogues,
   v1BaseUrl,
@@ -37,36 +36,17 @@ export class ProductCataloguesModule {
     productContainerId: number
   ): Promise<ProductCataloguesResponse> {
     try {
-      if (getCatalogApiMode() === "v1") {
-        return mapV1ProductCatalogues(
-          await v1GetJson(
-            `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
-              String(productContainerId)
-            )}/catalogues`,
-            "Failed to fetch product catalogues",
-            { next: { revalidate: 3600 } }
-          )
-        )
-      }
-      const response = await fetch(
-        `${this.cataloguesUrl}/product/${encodeURIComponent(
-          String(productContainerId)
-        )}`,
-        {
+      return mapV1ProductCatalogues(
+        await v1GetJson(
+          `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
+            String(productContainerId)
+          )}/catalogues`,
+          "Failed to fetch product catalogues",
           // Catalogue attachments change rarely — avoid an uncached fetch on
           // every product page request.
-          next: { revalidate: 3600 },
-        }
-      )
-
-      if (!response.ok) {
-        throw new NetworkError(
-          `Failed to fetch product catalogues: ${response.status} ${response.statusText}`
+          { next: { revalidate: 3600 } }
         )
-      }
-
-      const data: ProductCataloguesResponse = await response.json()
-      return data
+      )
     } catch (error) {
       if (error instanceof FurnisystemsError) {
         throw error
@@ -88,28 +68,14 @@ export class ProductCataloguesModule {
   ): Promise<BatchProductCataloguesResponse> {
     try {
       const query = productContainerIds.map((id) => String(id)).join(",")
-      if (getCatalogApiMode() === "v1") {
-        return mapV1BatchCatalogues(
-          await v1GetJson(
-            `${v1BaseUrl(this.restApiUrl)}/catalog/catalogues?ids=${encodeURIComponent(
-              query
-            )}`,
-            "Failed to fetch batch product catalogues"
-          )
+      return mapV1BatchCatalogues(
+        await v1GetJson(
+          `${v1BaseUrl(this.restApiUrl)}/catalog/catalogues?ids=${encodeURIComponent(
+            query
+          )}`,
+          "Failed to fetch batch product catalogues"
         )
-      }
-      const response = await fetch(
-        `${this.cataloguesUrl}?ids=${encodeURIComponent(query)}`
       )
-
-      if (!response.ok) {
-        throw new NetworkError(
-          `Failed to fetch batch product catalogues: ${response.status} ${response.statusText}`
-        )
-      }
-
-      const data: BatchProductCataloguesResponse = await response.json()
-      return data
     } catch (error) {
       if (error instanceof FurnisystemsError) {
         throw error

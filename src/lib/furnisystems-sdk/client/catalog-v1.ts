@@ -1,31 +1,17 @@
 /**
- * Opt-in REST v1 transport for the anonymous catalog reads (product photos,
- * products summary, product catalogues).
- *
- * Switch: PORTAL_API_MODE_CATALOG=v1|legacy (default `legacy`).
- *  - Server runtime (RSC, route handlers): read from process.env at request
- *    time, so flipping the env + restarting is enough.
- *  - Browser: only NEXT_PUBLIC_PORTAL_API_MODE_CATALOG exists there and it is
- *    inlined at BUILD time. Set both to the same value to move server and
- *    browser calls together.
- * Base URL: the legacy REST base (NEXT_PUBLIC_BACKEND_REST_API, ends in /api)
- * + `/v1`, i.e. never a hardcoded host.
+ * REST v1 transport for the anonymous catalog reads (product photos, products
+ * summary, product catalogues). Base URL: the REST base
+ * (NEXT_PUBLIC_BACKEND_REST_API, ends in /api) + `/v1`; no hardcoded host.
  */
 import { NetworkError } from "./errors"
 import { getBffHeadersIfAvailable } from "./index"
 
-export type CatalogApiMode = "v1" | "legacy"
-
-export function getCatalogApiMode(): CatalogApiMode {
-  const raw =
-    typeof window === "undefined"
-      ? process.env.PORTAL_API_MODE_CATALOG
-      : process.env.NEXT_PUBLIC_PORTAL_API_MODE_CATALOG
-  return raw?.trim().toLowerCase() === "v1" ? "v1" : "legacy"
+export function v1BaseUrl(restApiUrl: string): string {
+  return `${restApiUrl.replace(/\/+$/, "")}/v1`
 }
 
 /**
- * URL for the product-photos endpoint in the active mode, for call sites that
+ * URL for the v1 product-photos endpoint, for call sites that
  * fetch directly (PDP galleries). `categoryCodes` is the comma-joined list;
  * present-but-empty matches nothing on both endpoints (strict scope).
  */
@@ -34,17 +20,10 @@ export function productPhotosUrl(
   productName: string,
   categoryCodes: string
 ): string {
-  const path =
-    getCatalogApiMode() === "v1"
-      ? `${v1BaseUrl(restApiUrl)}/catalog/products/${encodeURIComponent(
-          productName
-        )}/photos`
-      : `${restApiUrl}/s3/product-photos/${encodeURIComponent(productName)}`
+  const path = `${v1BaseUrl(restApiUrl)}/catalog/products/${encodeURIComponent(
+    productName
+  )}/photos`
   return `${path}?categoryCodes=${encodeURIComponent(categoryCodes)}`
-}
-
-export function v1BaseUrl(restApiUrl: string): string {
-  return `${restApiUrl.replace(/\/+$/, "")}/v1`
 }
 
 /**
