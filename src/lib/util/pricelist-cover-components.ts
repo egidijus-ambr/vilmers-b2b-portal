@@ -12,6 +12,12 @@ export interface CoverComponentInput {
   } | null
 }
 
+/**
+ * Reserved id in ShopSetting.pricelist_cover_component_group_ids meaning
+ * "print the customer's delivery terms here". Never a real component group.
+ */
+export const COVER_DELIVERY_TERMS_GROUP_ID = -1
+
 /** Placeholder "no market" codes that count as no value (compared case-insensitively). */
 const PLACEHOLDER_CODES = ["be rinkos"]
 
@@ -21,19 +27,27 @@ const isPlaceholder = (code: string) =>
 /**
  * One line per group id, in the configured order: the customer's component
  * codes in that group joined with ", " (sorted by component id). Groups with
- * no value are skipped. When nothing resolves, falls back to the legacy
- * free-text terms as a single line (or [] when that is empty too).
+ * no value are skipped. The reserved COVER_DELIVERY_TERMS_GROUP_ID prints the
+ * customer's delivery terms (value only) at that position. When nothing
+ * resolves, falls back to the legacy free-text terms as a single line (or []
+ * when that is empty too).
  */
 export function resolveCoverLines(
   components: CoverComponentInput[] | null | undefined,
   groupIds: number[] | null | undefined,
-  legacyTerms: string | null | undefined
+  legacyTerms: string | null | undefined,
+  deliveryTerms?: string | null
 ): string[] {
   const lines: string[] = []
   const seenGroups = new Set<number>()
   for (const groupId of groupIds ?? []) {
     if (seenGroups.has(groupId)) continue
     seenGroups.add(groupId)
+    if (groupId === COVER_DELIVERY_TERMS_GROUP_ID) {
+      const terms = (deliveryTerms ?? "").trim()
+      if (terms) lines.push(terms)
+      continue
+    }
     const codes = (components ?? [])
       .map((c) => c?.additionalComponent)
       .filter(

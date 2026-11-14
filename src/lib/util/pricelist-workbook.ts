@@ -552,6 +552,12 @@ const COVER_IMAGE_TOP_PX = 40
 const COVER_IMAGE_BOX: PhotoBox = { width: COVER_WIDTH_PX, height: 700 }
 const COVER_LOGO_BOX: PhotoBox = { width: 160, height: 48 }
 const COVER_FONT_NAME = "Calibri"
+// Empty margin around the content: a narrow column A and one blank grid row
+// on top. All content-relative px/row math above stays unchanged; the offset
+// is applied when anchoring images (addCoverImage) and writing cells.
+const COVER_GUTTER_COL_PX = 20
+const COVER_GUTTER_ROWS = 1
+const COVER_CONTENT_COL = 2 // column B
 
 function addCoverImage(
   sheet: ExcelJS.Worksheet,
@@ -562,9 +568,9 @@ function addCoverImage(
 ): void {
   sheet.addImage(imageId, {
     tl: {
-      nativeCol: 0,
+      nativeCol: COVER_CONTENT_COL - 1,
       nativeColOff: Math.round(xPx * EMU_PER_PX),
-      nativeRow: Math.floor(yPx / COVER_ROW_PX),
+      nativeRow: Math.floor(yPx / COVER_ROW_PX) + COVER_GUTTER_ROWS,
       nativeRowOff: Math.round((yPx % COVER_ROW_PX) * EMU_PER_PX),
     } as any,
     ext,
@@ -602,11 +608,14 @@ function addCoverSheet(
     },
   })
   // Inverse of columnWidthToPx.
-  sheet.getColumn(1).width = (COVER_WIDTH_PX - 5) / 7
-  for (let r = 1; r <= COVER_ROWS; r++) sheet.getRow(r).height = COVER_ROW_PT
+  sheet.getColumn(1).width = (COVER_GUTTER_COL_PX - 5) / 7
+  sheet.getColumn(COVER_CONTENT_COL).width = (COVER_WIDTH_PX - 5) / 7
+  for (let r = 1; r <= COVER_ROWS + COVER_GUTTER_ROWS; r++) {
+    sheet.getRow(r).height = COVER_ROW_PT
+  }
 
-  // Date, top-left.
-  const dateCell = sheet.getCell(1, 1)
+  // Date, top-left of the content area.
+  const dateCell = sheet.getCell(1 + COVER_GUTTER_ROWS, COVER_CONTENT_COL)
   dateCell.value = formatCoverDate(meta.generatedAt)
   dateCell.font = { name: COVER_FONT_NAME, size: 10 }
   dateCell.alignment = { horizontal: "left", vertical: "middle" }
@@ -647,9 +656,9 @@ function addCoverSheet(
     )
     const fit = Math.max(1, Math.floor((lastRow - startRow + 1) / 2))
     lines.slice(0, fit).forEach((line, i) => {
-      const row = startRow + i * 2
-      sheet.mergeCells(row, 1, row + 1, 1)
-      const cell = sheet.getCell(row, 1)
+      const row = startRow + COVER_GUTTER_ROWS + i * 2
+      sheet.mergeCells(row, COVER_CONTENT_COL, row + 1, COVER_CONTENT_COL)
+      const cell = sheet.getCell(row, COVER_CONTENT_COL)
       cell.value = line
       cell.font = { name: COVER_FONT_NAME, size: 18 }
       cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true }
@@ -672,7 +681,8 @@ function addCoverSheet(
     )
   }
 
-  sheet.pageSetup.printArea = `A1:A${COVER_ROWS}`
+  // Includes the gutter column/row so the margin also shows in print/PDF.
+  sheet.pageSetup.printArea = `A1:B${COVER_ROWS + COVER_GUTTER_ROWS}`
 }
 
 /**

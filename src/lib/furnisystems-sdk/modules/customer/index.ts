@@ -63,6 +63,7 @@ const GET_ME_QUERY = gql`
       account_code
       price_listId
       b2b_customer_discount
+      delivery_terms
       tags {
         id
         tag_profiles {
@@ -547,6 +548,7 @@ const SEARCH_CUSTOMERS_QUERY = gql`
       b2b_company_name
       price_listId
       role
+      delivery_terms
       tags {
         id
         tag_profiles {
@@ -595,6 +597,7 @@ type GetMeCustomerData = {
   account_code: string
   price_listId: string
   b2b_customer_discount: number | null
+  delivery_terms?: string | null
   tags: {
     id: number
     tag_profiles?: { name: string; language: string }[]
@@ -671,6 +674,7 @@ function mapGetMeResponseToCustomer(customerData: GetMeCustomerData): Customer {
     price_listId: customerData.price_listId,
     group_price_listId: customerData.customer_group?.price_listId ?? null,
     b2b_customer_discount: customerData.b2b_customer_discount,
+    delivery_terms: customerData.delivery_terms ?? null,
     tags: customerData.tags,
     fabric_palettes: customerData.fabric_palettes,
     files: customerData.files ?? [],
