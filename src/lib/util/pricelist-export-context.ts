@@ -68,7 +68,8 @@ export async function resolveExportContext(): Promise<
     ? resolveCoverLines(
         customer?.additional_components,
         settings.coverComponentGroupIds,
-        settings.coverTerms
+        settings.coverTerms,
+        customer?.delivery_terms
       )
     : []
 

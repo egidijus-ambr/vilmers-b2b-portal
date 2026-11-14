@@ -131,6 +131,7 @@ export interface Customer {
   account_code?: string
   price_listId?: string
   b2b_customer_discount?: number | null
+  delivery_terms?: string | null
   group_price_listId?: string | null
   tags?: CustomerTag[]
   fabric_palettes?: FabricPalette[]
@@ -520,6 +521,7 @@ export type SearchCustomerResult = {
   price_listId: number | null
   group_price_listId?: string | null
   role: string | null
+  delivery_terms?: string | null
   tags?: CustomerTag[]
   fabric_palettes?: Customer["fabric_palettes"]
   files?: CustomerFile[]
