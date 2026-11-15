@@ -191,7 +191,12 @@ export class ApolloGraphQLClient {
 
       return forward(operation).map((response) => {
         if (this.config.debug) {
-          console.log(`[Furnisystems SDK] GraphQL Response:`, response)
+          // Never the payload: auth mutations return the bearer JWT and
+          // getMe returns the full customer.
+          console.log(`[Furnisystems SDK] GraphQL Response:`, {
+            operationName: operation.operationName,
+            errors: response.errors?.length ?? 0,
+          })
         }
         return response
       })

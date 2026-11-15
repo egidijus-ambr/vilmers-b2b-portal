@@ -144,15 +144,11 @@ export async function login(_currentState: unknown, formData: FormData) {
       | null
   )
 
-  console.log("Logging in with email:", email)
-
   try {
-    const result = await sdk.customer.login({
+    await sdk.customer.login({
       email,
       password,
     })
-
-    console.log("Login result:", result)
 
     // SDK handles token storage internally, just manage cache
     const newCacheId = `${Date.now()}-${Math.random()
@@ -341,13 +337,12 @@ export async function requestMagicLink(
     console.log("Magic link request from IP:", ipAddress)
 
     try {
-      const result = await sdk.customer.getMagicLinkForB2BCustomer(
+      await sdk.customer.getMagicLinkForB2BCustomer(
         email,
         language,
         ipAddress
       )
 
-      console.log("Magic link request successful:", result)
       return { success: true, message: "Magic link sent successfully" }
     } catch (sdkError: any) {
       // For security reasons, if user doesn't exist, we still show success message

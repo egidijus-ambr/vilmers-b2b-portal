@@ -6,24 +6,13 @@ export const getAuthHeaders = async (): Promise<
   { authorization: string } | {}
 > => {
   try {
-    console.log("[getAuthHeaders] Starting to retrieve auth headers...")
     const cookies = await nextCookies()
-    console.log("[getAuthHeaders] Cookies object retrieved")
-
     const token = cookies.get("_furni_jwt")?.value
-    console.log(
-      "[getAuthHeaders] JWT token from cookies:",
-      token ? "present" : "missing"
-    )
 
     if (!token) {
-      console.log("[getAuthHeaders] No JWT token found, returning empty object")
       return {}
     }
 
-    console.log(
-      "[getAuthHeaders] JWT token found, returning authorization header"
-    )
     return { authorization: `Bearer ${token}` }
   } catch (error) {
     console.error("[getAuthHeaders] Error retrieving auth headers:", error)

@@ -131,8 +131,6 @@ const TawkToChat = () => {
         loginData["account-code"] = customer.account_code
       }
 
-      console.log("[TawkToChat] Login data:", loginData)
-
       window.Tawk_API.login(
         loginData,
         function (error: any) {
