@@ -63,10 +63,6 @@ import type {
   ProductPhotosResponse,
   ProductsSummaryResponse,
 } from "../modules/product-photos/types"
-import type {
-  BatchProductCataloguesResponse,
-  ProductCataloguesResponse,
-} from "../modules/product-catalogues/types"
 
 export function mapV1ProductsSummary(v1: {
   products: Array<Record<string, any>>
@@ -114,37 +110,4 @@ export function mapV1ProductPhotos(v1: {
       return out
     }),
   } as unknown as ProductPhotosResponse
-}
-
-export function mapV1ProductCatalogues(
-  v1: ProductCataloguesResponse
-): ProductCataloguesResponse {
-  return {
-    productContainerId: v1.productContainerId,
-    catalogues: v1.catalogues.map((c) => ({
-      url: c.url,
-      filename: c.filename,
-      market: c.market,
-      category: c.category,
-    })),
-    count: v1.count,
-  }
-}
-
-export function mapV1BatchCatalogues(
-  v1: BatchProductCataloguesResponse
-): BatchProductCataloguesResponse {
-  const products: BatchProductCataloguesResponse["products"] = {}
-  for (const [id, entry] of Object.entries(v1.products)) {
-    products[id] = {
-      catalogues: entry.catalogues.map((c) => ({
-        url: c.url,
-        filename: c.filename,
-        market: c.market,
-        category: c.category,
-      })),
-      count: entry.count,
-    }
-  }
-  return { products, totalCount: v1.totalCount }
 }

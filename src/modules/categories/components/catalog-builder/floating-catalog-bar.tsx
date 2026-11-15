@@ -115,15 +115,16 @@ export default function FloatingCatalogBar() {
       URL.revokeObjectURL(url)
     } catch (err) {
       console.error("Catalog download failed:", err)
-      // Prefer the backend's own error string (e.g. the over-cap message)
-      // when it sent one; otherwise fall back to a generic, translated
-      // message. `details` is only populated by the SDK when the backend
-      // returned a JSON body with an `error` field — a technical NetworkError
-      // (bad connection, non-JSON body, etc.) has no `details.error`.
+      // Prefer the backend's own message (problem+json `detail`, e.g. "no
+      // catalogues found" or the over-cap message) when it sent one;
+      // otherwise fall back to a generic, translated message. `details` is
+      // only populated by the SDK when the backend returned a problem with a
+      // `detail` — a technical NetworkError (bad connection, non-JSON body,
+      // a 500 without detail) has no `details.detail`.
       const backendMessage =
         err instanceof FurnisystemsError &&
-        typeof err.details?.error === "string"
-          ? err.details.error
+        typeof err.details?.detail === "string"
+          ? err.details.detail
           : null
       toast.error(backendMessage ?? t("merge-error-generic"))
     } finally {
