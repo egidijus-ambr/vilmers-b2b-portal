@@ -31,9 +31,6 @@ export async function GET(
     }
 
     const apiKey = process.env.VILMERS_PIM_API_KEY
-    console.log("[palette-pdf-debug] route apiKey presence", {
-      hasKey: !!process.env.VILMERS_PIM_API_KEY,
-    })
     if (!apiKey) {
       console.error("VILMERS_PIM_API_KEY is not configured")
       return NextResponse.json(
@@ -47,17 +44,8 @@ export async function GET(
       process.env.VILMERS_PIM_BASE_URL ?? "https://portal.vilmers.com"
 
     const upstreamUrl = `${baseUrl}/api/v1/fabric/pallets/${paletteCode}/download`
-    console.log("[palette-pdf-debug] route upstream request", {
-      paletteCode,
-      upstreamUrl,
-    })
     const upstream = await fetch(upstreamUrl, {
       headers: { Authorization: `Bearer ${apiKey}` },
-    })
-    console.log("[palette-pdf-debug] route upstream response", {
-      paletteCode,
-      status: upstream.status,
-      ok: upstream.ok,
     })
 
     if (upstream.status === 200) {

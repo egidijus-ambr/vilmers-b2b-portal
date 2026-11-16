@@ -4,29 +4,34 @@ import {
   MergeCataloguesRequest,
 } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
-import {
-  mapV1BatchCatalogues,
-  mapV1ProductCatalogues,
-  v1BaseUrl,
-  v1GetJson,
-} from "../../client/catalog-v1"
+import { v1BaseUrl, v1GetJson } from "../../client/catalog-v1"
+import { problemMessage } from "./problem"
 
 // Mode-specific product caps enforced by the backend. Keep these in sync
 // with MAX_PRODUCTS_PER_MERGE / MAX_PRODUCTS_PER_SPLIT in
-// furnisystems-backend/src/rest-api/routes/productFileCatalogues.ts — that file is
-// the source of truth; a request over these caps is rejected there
-// regardless of what the client sends.
+// furnisystems-backend/src/services/catalog.service.ts — that file is the
+// source of truth; a request over these caps is rejected there regardless of
+// what the client sends.
 export const MAX_PRODUCTS_PER_MERGE = 100
 export const MAX_PRODUCTS_PER_SPLIT = 500
 
+/** RFC 9457 problem+json body returned by /api/v1 on every non-2xx. */
+interface V1Problem {
+  type?: string
+  title?: string
+  status?: number
+  detail?: string
+  code?: string
+  errors?: Array<{ path?: string; message?: string }>
+  requestId?: string
+  [key: string]: unknown
+}
+
 export class ProductCataloguesModule {
-  /** Base URL of the backend catalogue routes (ProductFile-backed). */
-  private cataloguesUrl: string
   private restApiUrl: string
 
   constructor(restApiUrl: string) {
     this.restApiUrl = restApiUrl
-    this.cataloguesUrl = `${restApiUrl}/product-files/catalogues`
   }
 
   /**
@@ -36,16 +41,15 @@ export class ProductCataloguesModule {
     productContainerId: number
   ): Promise<ProductCataloguesResponse> {
     try {
-      return mapV1ProductCatalogues(
-        await v1GetJson(
-          `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
-            String(productContainerId)
-          )}/catalogues`,
-          "Failed to fetch product catalogues",
-          // Catalogue attachments change rarely — avoid an uncached fetch on
-          // every product page request.
-          { next: { revalidate: 3600 } }
-        )
+      // The v1 response schema is strict and identical to the portal type.
+      return await v1GetJson<ProductCataloguesResponse>(
+        `${v1BaseUrl(this.restApiUrl)}/catalog/products/${encodeURIComponent(
+          String(productContainerId)
+        )}/catalogues`,
+        "Failed to fetch product catalogues",
+        // Catalogue attachments change rarely — avoid an uncached fetch on
+        // every product page request.
+        { next: { revalidate: 3600 } }
       )
     } catch (error) {
       if (error instanceof FurnisystemsError) {
@@ -68,13 +72,12 @@ export class ProductCataloguesModule {
   ): Promise<BatchProductCataloguesResponse> {
     try {
       const query = productContainerIds.map((id) => String(id)).join(",")
-      return mapV1BatchCatalogues(
-        await v1GetJson(
-          `${v1BaseUrl(
-            this.restApiUrl
-          )}/catalog/catalogues?ids=${encodeURIComponent(query)}`,
-          "Failed to fetch batch product catalogues"
-        )
+      // The v1 response schema is strict and identical to the portal type.
+      return await v1GetJson<BatchProductCataloguesResponse>(
+        `${v1BaseUrl(
+          this.restApiUrl
+        )}/catalog/catalogues?ids=${encodeURIComponent(query)}`,
+        "Failed to fetch batch product catalogues"
       )
     } catch (error) {
       if (error instanceof FurnisystemsError) {
@@ -89,35 +92,58 @@ export class ProductCataloguesModule {
   }
 
   /**
-   * Merge catalogues for multiple products into a single PDF
+   * Merge catalogues for multiple products: one PDF (`merge`) or a ZIP of the
+   * individual PDFs (`split`). POST /api/v1/catalog/catalogues/merge, called
+   * from the browser (anonymous; the app-level CORS allow-list applies).
+   *
+   * Errors: a backend problem with a usable message throws a
+   * FurnisystemsError whose `message` is safe to show to the user; anything
+   * else throws a NetworkError (technical message, not for display).
    */
   async mergeCatalogues(params: MergeCataloguesRequest): Promise<Blob> {
     try {
-      const response = await fetch(`${this.cataloguesUrl}/merge`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      })
+      // The v1 body schema is strict: send exactly the declared keys.
+      const body: MergeCataloguesRequest = {
+        productIds: params.productIds,
+        market: params.market,
+        ...(params.mode !== undefined && { mode: params.mode }),
+        ...(params.compressed !== undefined && {
+          compressed: params.compressed,
+        }),
+      }
+      const response = await fetch(
+        `${v1BaseUrl(this.restApiUrl)}/catalog/catalogues/merge`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/pdf, application/zip, application/problem+json",
+          },
+          body: JSON.stringify(body),
+        }
+      )
 
       if (!response.ok) {
-        // The backend returns a JSON body with a human-readable `error`
-        // string for deliberate failures (e.g. over the per-mode product
-        // cap — see MAX_PRODUCTS_PER_MERGE/SPLIT above). Preserve it on
-        // `details` so callers can show it instead of a generic status
-        // line; fall back to NetworkError when the body isn't JSON or
-        // doesn't carry an `error` string.
-        let data: { error?: string; [key: string]: unknown } | undefined
+        // v1 answers every failure with problem+json. Service errors carry a
+        // human-readable `detail` (e.g. "No catalogues found for the requested
+        // products and market", or the per-mode cap); validation failures
+        // carry `errors[]` instead. The chosen message becomes the error
+        // message of a FurnisystemsError (the problem stays on `details`);
+        // a non-JSON body or a problem with neither (e.g. a 500) becomes a
+        // NetworkError, for which callers show a generic message.
+        let problem: V1Problem | undefined
         try {
-          data = await response.json()
+          problem = (await response.json()) as V1Problem
         } catch {
           // Non-JSON error body — handled by the NetworkError fallback below.
         }
-        if (data && typeof data.error === "string" && data.error.length > 0) {
+        const message = problemMessage(problem)
+        if (problem && message) {
           throw new FurnisystemsError(
-            data.error,
-            undefined,
+            message,
+            typeof problem.code === "string" ? problem.code : undefined,
             response.status,
-            data
+            problem
           )
         }
         throw new NetworkError(

@@ -1,6 +1,6 @@
 /**
  * One catalogue PDF attached to a product container (a ProductFile row on the
- * backend). Served by /product-files/catalogues, keyed by product container id.
+ * backend). Served by /api/v1/catalog/*, keyed by product container id.
  */
 export interface CatalogueFile {
   url: string

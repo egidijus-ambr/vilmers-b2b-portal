@@ -30,7 +30,6 @@ export function ProductPhotosProvider({
       setError(null)
       const data = await sdk.productPhotos.getProductsSummary()
       setProducts(data.products)
-      console.log("ProductPhotosProvider: Fetched products summary:", data)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch products")
       console.error("ProductPhotosProvider: Error fetching products:", err)

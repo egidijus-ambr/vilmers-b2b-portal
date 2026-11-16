@@ -12,6 +12,7 @@ import {
   FurnisystemsError,
   MAX_PRODUCTS_PER_MERGE,
   MAX_PRODUCTS_PER_SPLIT,
+  NetworkError,
 } from "@lib/furnisystems-sdk"
 import Spinner from "@modules/common/icons/spinner"
 
@@ -115,15 +116,13 @@ export default function FloatingCatalogBar() {
       URL.revokeObjectURL(url)
     } catch (err) {
       console.error("Catalog download failed:", err)
-      // Prefer the backend's own error string (e.g. the over-cap message)
-      // when it sent one; otherwise fall back to a generic, translated
-      // message. `details` is only populated by the SDK when the backend
-      // returned a JSON body with an `error` field — a technical NetworkError
-      // (bad connection, non-JSON body, etc.) has no `details.error`.
+      // The SDK puts the backend's own message (problem `detail`, else the
+      // first validation error) on a FurnisystemsError; a NetworkError (bad
+      // connection, non-JSON body, a 500 without a message) is technical, so
+      // show the generic, translated message for it.
       const backendMessage =
-        err instanceof FurnisystemsError &&
-        typeof err.details?.error === "string"
-          ? err.details.error
+        err instanceof FurnisystemsError && !(err instanceof NetworkError)
+          ? err.message
           : null
       toast.error(backendMessage ?? t("merge-error-generic"))
     } finally {
