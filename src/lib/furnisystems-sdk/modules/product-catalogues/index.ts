@@ -5,6 +5,7 @@ import {
 } from "./types"
 import { FurnisystemsError, NetworkError } from "../../client/errors"
 import { v1BaseUrl, v1GetJson } from "../../client/catalog-v1"
+import { problemMessage } from "./problem"
 
 // Mode-specific product caps enforced by the backend. Keep these in sync
 // with MAX_PRODUCTS_PER_MERGE / MAX_PRODUCTS_PER_SPLIT in
@@ -15,12 +16,13 @@ export const MAX_PRODUCTS_PER_MERGE = 100
 export const MAX_PRODUCTS_PER_SPLIT = 500
 
 /** RFC 9457 problem+json body returned by /api/v1 on every non-2xx. */
-export interface V1Problem {
+interface V1Problem {
   type?: string
   title?: string
   status?: number
   detail?: string
   code?: string
+  errors?: Array<{ path?: string; message?: string }>
   requestId?: string
   [key: string]: unknown
 }
@@ -93,6 +95,10 @@ export class ProductCataloguesModule {
    * Merge catalogues for multiple products: one PDF (`merge`) or a ZIP of the
    * individual PDFs (`split`). POST /api/v1/catalog/catalogues/merge, called
    * from the browser (anonymous; the app-level CORS allow-list applies).
+   *
+   * Errors: a backend problem with a usable message throws a
+   * FurnisystemsError whose `message` is safe to show to the user; anything
+   * else throws a NetworkError (technical message, not for display).
    */
   async mergeCatalogues(params: MergeCataloguesRequest): Promise<Blob> {
     try {
@@ -118,25 +124,23 @@ export class ProductCataloguesModule {
       )
 
       if (!response.ok) {
-        // v1 answers every failure with problem+json. Its `detail` is a
-        // human-readable message written by the backend (e.g. "No catalogues
-        // found for the requested products and market", or the per-mode cap).
-        // Keep the problem on `details` so callers can show `detail` instead
-        // of a generic status line; fall back to NetworkError when the body
-        // isn't JSON or carries no `detail` (e.g. a 500).
+        // v1 answers every failure with problem+json. Service errors carry a
+        // human-readable `detail` (e.g. "No catalogues found for the requested
+        // products and market", or the per-mode cap); validation failures
+        // carry `errors[]` instead. The chosen message becomes the error
+        // message of a FurnisystemsError (the problem stays on `details`);
+        // a non-JSON body or a problem with neither (e.g. a 500) becomes a
+        // NetworkError, for which callers show a generic message.
         let problem: V1Problem | undefined
         try {
           problem = (await response.json()) as V1Problem
         } catch {
           // Non-JSON error body — handled by the NetworkError fallback below.
         }
-        if (
-          problem &&
-          typeof problem.detail === "string" &&
-          problem.detail.length > 0
-        ) {
+        const message = problemMessage(problem)
+        if (problem && message) {
           throw new FurnisystemsError(
-            problem.detail,
+            message,
             typeof problem.code === "string" ? problem.code : undefined,
             response.status,
             problem
