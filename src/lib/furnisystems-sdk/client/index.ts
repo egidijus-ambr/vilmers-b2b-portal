@@ -20,6 +20,7 @@ import {
   NotFoundError,
 } from "./errors"
 import { ClientConfig, AuthHeaders } from "./types"
+import { redactVariables } from "./redact"
 import { getClientIpFromHeaders } from "@lib/util/client-ip"
 
 // Helper function to safely access cookies in server context only
@@ -68,21 +69,6 @@ export async function getBffHeadersIfAvailable(): Promise<Record<string, string>
   } catch (error) {
     return {}
   }
-}
-
-// Variables never written to the debug log (magic-link tokens, passwords).
-const REDACTED_VARIABLE_KEYS = new Set(["token", "password"])
-
-function redactVariables(variables: Record<string, any> | undefined) {
-  if (!variables) {
-    return variables
-  }
-  return Object.fromEntries(
-    Object.entries(variables).map(([key, value]) => [
-      key,
-      REDACTED_VARIABLE_KEYS.has(key) ? "[redacted]" : value,
-    ])
-  )
 }
 
 export class ApolloGraphQLClient {
