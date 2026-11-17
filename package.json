@@ -17,7 +17,8 @@
     "verify:discount": "sucrase-node scripts/verify-apply-discount.ts",
     "verify:fabric-conditions": "sucrase-node scripts/verify-fabric-conditions.ts",
     "verify:palette-colors": "sucrase-node scripts/verify-palette-colors.ts",
-    "verify:price-overrides": "sucrase-node scripts/verify-price-overrides.ts"
+    "verify:price-overrides": "sucrase-node scripts/verify-price-overrides.ts",
+    "verify:v1-session": "node --conditions=react-server -r sucrase/register scripts/verify-v1-session.ts"
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",

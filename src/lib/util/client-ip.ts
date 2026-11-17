@@ -71,3 +71,19 @@ function isPrivateIp(ip: string): boolean {
     /^fe[89ab][0-9a-f]?:/.test(lower)
   )
 }
+
+/**
+ * Strict variant for the v1 auth BFF headers (stage 2c-2): ONLY the
+ * proxy-set `x-real-ip` (nginx `proxy_set_header X-Real-IP $remote_addr`),
+ * never X-Forwarded-For or any other client-influenced header. Returns null
+ * when it is absent or does not look like an IP address; callers then send
+ * no BFF headers at all. `getClientIpFromHeaders` above is unchanged for
+ * its existing callers.
+ */
+export function getProxyClientIpFromHeaders(headersList: {
+  get(name: string): string | null
+}): string | null {
+  const value = headersList.get("x-real-ip")?.trim()
+  if (!value || value.length > 45) return null
+  return /^[0-9A-Fa-f:.]+$/.test(value) && /[.:]/.test(value) ? value : null
+}
