@@ -9,18 +9,23 @@ import "server-only"
  * actions / route handlers (node). The Next.js bindings live in ./server.ts
  * and ./middleware-binding.ts.
  *
- * Contract (furnisystems-backend, branch develop):
+ * Contract (furnisystems-backend, develop + fix/refresh-superseded 32c55c7):
  *   POST /api/v1/auth/refresh   src/api/v1/modules/auth/routes.ts refreshRoute,
  *                               controller.ts `refresh`, common.ts `mapSessionError`
  *     body  `{ "refreshToken": "<opaque>" }`, Content-Type: application/json,
  *           no Origin (server-side), + x-bff-secret / x-client-ip, user-agent
  *     200   `{ accessToken, expiresIn, session: { sid, realm, expiresAt } }`
  *           + Set-Cookie with the ROTATED refresh token (only place it is sent)
- *     401   UNAUTHENTICATED (problem+json) for EVERY RefreshRejectedError —
- *           unknown, inactive, reuse-revoked AND "retired < 30 s ago, grace
- *           already used, NOT revoked" (sessions.ts retiredTokenPresented).
- *           So a refresh 401 is AMBIGUOUS today: it may only mean "a sibling
- *           request already rotated this token and holds the new pair".
+ *     409   REFRESH_SUPERSEDED (problem+json), Retry-After: 1, no Set-Cookie,
+ *           nothing revoked: this live session rotated away from the token
+ *           < 30 s ago and the grace is used, or this request lost a parallel
+ *           rotation (sessions.ts retiredTokenPresented / the !committed
+ *           branch, common.ts mapSessionError). A sibling response holds the
+ *           newer pair. Re-presenting THIS token >= 30 s after its rotation
+ *           revokes the session, so it is never re-sent.
+ *     401   UNAUTHENTICATED (problem+json): definitive — unknown / garbage
+ *           token, another session's token, inactive / revoked / expired
+ *           session, or reuse >= 30 s (which has just revoked the session).
  *     403   Origin not allowed; 415 wrong content type (csrfGuard)
  *     503   SERVICE_UNAVAILABLE (session store down / lock busy), Retry-After
  *     500   any other failure (e.g. the rotation transaction failed; nothing
@@ -30,7 +35,7 @@ import "server-only"
  *
  * Rotation rules (src/auth/sessions.ts): every refresh rotates; the old token
  * is accepted ONCE more within 30 s and returns the SAME pair (grace); a
- * retired token presented again < 30 s after rotation is the ambiguous 401
+ * retired token presented again < 30 s after rotation is 409 REFRESH_SUPERSEDED
  * (not revoked); presented >= 30 s after rotation it REVOKES the session; the
  * backend waits up to 5 s for the per-session lock (then 503).
  *
@@ -45,10 +50,15 @@ import "server-only"
  *     lost response after a committed rotation is rescued by the grace pair;
  *   - a caller that stops waiting does NOT abort the request: when it
  *     completes, the memo still gets the pair for the next request;
+ *   - superseded (409): NOT retried with the same token (another 409 at best,
+ *     a revocation once 30 s have passed); the memo / chain is consulted
+ *     first, else the caller gets a retryable `unavailable` with Retry-After
+ *     and the token is negative-cached for the memo lifetime so this process
+ *     never re-presents it;
  *   - negative cache: a refresh 401 costs at most one backend call per token
  *     per REJECTED_NEGATIVE_TTL_MS, an outage at most one per few seconds;
- *   - a refresh 401 never deletes the refresh cookie (see
- *     UNAUTHENTICATED_IS_DEFINITIVE); it can only clear the access cookie.
+ *   - a refresh 401 UNAUTHENTICATED is definitive and clears both cookies;
+ *     every other failure leaves them untouched.
  */
 import {
   V1_ACCESS_COOKIE,
@@ -64,16 +74,21 @@ import { findBackendRefreshCookie, setCookieValues } from "./set-cookie"
 // ---- tunables ----------------------------------------------------------------------
 
 /**
- * false until the backend answers the "superseded" case (retired < 30 s, not
- * revoked) with its own signal (SUPERSEDED_STATUS / SUPERSEDED_PROBLEM_CODES).
- * Then a remaining 401 UNAUTHENTICATED is definitive: flip this to true and
- * a refresh 401 also deletes the refresh cookie. One-line change.
+ * true since the backend answers the benign "superseded" case with its own
+ * 409 REFRESH_SUPERSEDED (fix/refresh-superseded 32c55c7): every remaining
+ * refresh 401 UNAUTHENTICATED is definitive and clears both cookies. Set to
+ * false only to run against a backend without that change (a refresh 401 then
+ * clears just the access cookie).
  */
-export const UNAUTHENTICATED_IS_DEFINITIVE = false
+export const UNAUTHENTICATED_IS_DEFINITIVE = true
 
-/** Backend signals meaning "a sibling already rotated this token": transient. */
+/**
+ * "A sibling already rotated this token": BOTH the status and the code must
+ * match. A 409 without the code (or the code on another status) is a contract
+ * error: not retried, cookies kept.
+ */
 export const SUPERSEDED_STATUS = 409
-export const SUPERSEDED_PROBLEM_CODES = ["REFRESH_SUPERSEDED"]
+export const SUPERSEDED_PROBLEM_CODE = "REFRESH_SUPERSEDED"
 
 /** Backend grace window (src/auth/sessions.ts REFRESH_GRACE_SECONDS). */
 export const BACKEND_GRACE_MS = 30_000
@@ -90,6 +105,12 @@ export const REFRESH_MEMO_TTL_MS = 60_000
 /** Memo lifetime while no caller has received the pair (every waiter gave up). */
 export const UNDELIVERED_MEMO_TTL_MS = 10 * 60_000
 export const REJECTED_NEGATIVE_TTL_MS = 30_000
+/**
+ * A superseded token is never re-sent from this process while a re-send
+ * could revoke the session (>= 30 s after its rotation): same lifetime as the
+ * success memo.
+ */
+export const SUPERSEDED_NEGATIVE_TTL_MS = REFRESH_MEMO_TTL_MS
 export const TRANSIENT_NEGATIVE_TTL_MS = 3_000
 const MAX_NEGATIVE_TTL_MS = 30_000
 
@@ -157,10 +178,7 @@ export interface V1TransientFailure {
 
 export type V1RefreshOutcome =
   | { kind: "refreshed"; tokens: V1Tokens }
-  /**
-   * 401 UNAUTHENTICATED on refresh: the session is probably gone, but today
-   * it may also be the benign "superseded" case (see header).
-   */
+  /** 401 UNAUTHENTICATED on refresh: definitive, the session is gone. */
   | { kind: "rejected"; status: 401; requestId?: string }
   /** Locally decided: the cookie can never be a valid token (> 512 chars). */
   | { kind: "invalid"; local: true }
@@ -242,12 +260,17 @@ function retryAfter(response: Response): number | undefined {
 
 /**
  * The exact rule:
- *   409, or a problem code in SUPERSEDED_PROBLEM_CODES -> "superseded" (transient)
- *   401 + problem+json `code: "UNAUTHENTICATED"`     -> "rejected"
- *   401 without that body (a proxy)                  -> transient, retryable
- *   429, 5xx                                         -> transient, retryable
- *   400 / 403 / 415 / other 4xx                      -> transient, NOT retryable
- *                                                       (a BFF or config bug)
+ *   409 + problem code REFRESH_SUPERSEDED         -> "superseded": transient,
+ *                                                    retryable by the CALLER
+ *                                                    (never with this token)
+ *   409 without it / REFRESH_SUPERSEDED elsewhere -> "protocol": contract
+ *                                                    error, NOT retryable
+ *   401 + problem+json `code: "UNAUTHENTICATED"`  -> "rejected" (definitive)
+ *   401 without that body (a proxy)               -> transient, retryable
+ *   429, 5xx                                      -> transient, retryable
+ *   400 / 403 / 415 / other 4xx                   -> transient, NOT retryable
+ *                                                    (a BFF or config bug)
+ * Cookies are kept for everything except "rejected".
  */
 export async function classifyFailure(
   response: Response
@@ -258,11 +281,20 @@ export async function classifyFailure(
     (typeof problem?.requestId === "string" && problem.requestId) ||
     response.headers.get("x-request-id") ||
     undefined
-  if (
-    response.status === SUPERSEDED_STATUS ||
-    (code !== undefined && SUPERSEDED_PROBLEM_CODES.indexOf(code) !== -1)
-  ) {
-    return { kind: "error", reason: "superseded", retryable: true, status: response.status, code, requestId }
+  const superseded = code === SUPERSEDED_PROBLEM_CODE
+  if (response.status === SUPERSEDED_STATUS && superseded) {
+    return {
+      kind: "error",
+      reason: "superseded",
+      retryable: true,
+      status: response.status,
+      code,
+      retryAfterSeconds: retryAfter(response) ?? 1,
+      requestId,
+    }
+  }
+  if (response.status === SUPERSEDED_STATUS || superseded) {
+    return { kind: "error", reason: "protocol", retryable: false, status: response.status, code, requestId }
   }
   if (response.status === 401 && code === "UNAUTHENTICATED") {
     return { kind: "rejected", status: 401, requestId }
@@ -613,6 +645,8 @@ export function createV1SessionClient(config: V1SessionClientConfig): V1SessionC
           })
         } else if (outcome.kind === "rejected") {
           negative.set(token, { outcome, expiresAtMs: t + REJECTED_NEGATIVE_TTL_MS })
+        } else if (outcome.kind === "error" && outcome.reason === "superseded") {
+          negative.set(token, { outcome, expiresAtMs: t + SUPERSEDED_NEGATIVE_TTL_MS })
         } else if (outcome.kind === "error" && outcome.reason !== "config") {
           const ttl =
             outcome.retryAfterSeconds !== undefined
@@ -658,6 +692,14 @@ export function createV1SessionClient(config: V1SessionClientConfig): V1SessionC
     if (winner.kind === "refreshed") {
       const entry = memo.get(refreshToken)
       if (entry) markDelivered(entry)
+    }
+    if (winner.kind === "error" && winner.reason === "superseded") {
+      // The newer pair lives in a sibling response. If that sibling ran in
+      // this process, the memo has it (possibly further down the chain).
+      // Otherwise: retryable `unavailable` — the browser already holds (or is
+      // about to receive) the newer cookie and its next request uses it.
+      const hit = memoHit(refreshToken)
+      if (hit) return { kind: "refreshed", tokens: hit }
     }
     return winner
   }
@@ -747,13 +789,19 @@ export type V1EnsureResult =
   | { kind: "ok"; accessToken: string; refreshed: boolean }
   /**
    * Not authenticated on v1 for this request. `cleared`: which cookies were
-   * deleted — "none" (no session, or nothing to delete), "access" (refresh
-   * 401: the refresh cookie is KEPT, see UNAUTHENTICATED_IS_DEFINITIVE), "all".
+   * deleted — "none" (no session cookie at all), "all" (definitive refresh
+   * 401, or a locally invalid token), "access" (only with
+   * UNAUTHENTICATED_IS_DEFINITIVE = false: refresh cookie kept).
    */
   | { kind: "anonymous"; cleared: "none" | "access" | "all" }
   /** Middleware only: refresh skipped for a prefetch request. */
   | { kind: "deferred" }
-  /** Transient: cookies untouched; treat this request as unauthenticated and retry later. */
+  /**
+   * Transient (incl. 409 superseded): cookies untouched; treat this request as
+   * unauthenticated on v1 — never redirect to login for it — and retry later
+   * (failure.retryAfterSeconds). For superseded, the browser's next request
+   * carries the newer cookie a sibling response set.
+   */
   | { kind: "unavailable"; failure: V1TransientFailure }
 
 /**
@@ -766,9 +814,10 @@ export type V1EnsureResult =
  * V1CookiesNotWritableError and the backend is never called — otherwise the
  * backend would commit a rotation whose new token can never be stored.
  *
- * Cookies: transient failures leave them exactly as they were; a refresh 401
- * clears at most the access cookie (the refresh cookie only once
- * UNAUTHENTICATED_IS_DEFINITIVE); a locally invalid token clears both.
+ * Cookies: only a definitive refresh 401 UNAUTHENTICATED (or a locally
+ * invalid token) clears them — both. Everything else, including 409
+ * REFRESH_SUPERSEDED, 503, timeouts and network errors, leaves them exactly
+ * as they were.
  */
 export async function ensureFreshV1Session(
   client: V1SessionClient,

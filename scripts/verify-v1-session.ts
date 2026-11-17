@@ -4,8 +4,10 @@
 //    the react-server condition resolves `server-only` to its empty module.)
 // No backend, no network: fetch is a stub or FakeBackend, which models the
 // backend's rotation rules (furnisystems-backend src/auth/sessions.ts):
-// rotate, grace once within 30 s, retired < 30 s -> benign 401, retired
-// >= 30 s -> reuse revokes the session. Exits 0 when every case passes.
+// (fix/refresh-superseded 32c55c7): rotate, grace once within 30 s, retired
+// < 30 s of a live session -> 409 REFRESH_SUPERSEDED (Retry-After: 1, nothing
+// revoked), retired >= 30 s -> reuse revokes the session and answers 401,
+// unknown / revoked -> 401. Exits 0 when every case passes.
 import { readFileSync } from "fs"
 import { join } from "path"
 import {
@@ -94,7 +96,7 @@ class FakeBackend {
   n = 0
   refreshCalls = 0
   logoutCalls = 0
-  benign401 = 0
+  superseded409 = 0
   revocations = 0
   plan: Step[] = []
   headersSeen: Array<Record<string, string>> = []
@@ -150,8 +152,8 @@ class FakeBackend {
       return this.pairResponse(g.pair.token, g.pair.access)
     }
     if (this.now() - info.retiredAt < 30_000) {
-      this.benign401++
-      return unauth()
+      this.superseded409++
+      return problem(409, "REFRESH_SUPERSEDED", { "retry-after": "1" })
     }
     session.revoked = true
     this.revocations++
@@ -315,21 +317,49 @@ async function main() {
     eq(be.revocations, 0, "nothing revoked")
   })
 
-  await test("third presentation (third instance) gets the benign 401: refresh cookie KEPT, session alive", async () => {
+  await test("third presentation (edge + node + third instance) gets 409 superseded: cookies intact, session alive, next request works", async () => {
+    const be = new FakeBackend(() => clock)
+    const t0 = be.login()
+    const edge = makeClient(be.fetch)
+    const node = makeClient(be.fetch)
+    const sibling = memoryJar({ [V1_REFRESH_COOKIE]: t0 })
+    await Promise.all([
+      ensureFreshV1Session(edge, sibling.jar, ctx, opts()),
+      ensureFreshV1Session(node, memoryJar({ [V1_REFRESH_COOKIE]: t0 }).jar, ctx, opts()), // grace used
+    ])
+    const third = makeClient(be.fetch)
+    const m = memoryJar({ [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: t0 })
+    const r = await ensureFreshV1Session(third, m.jar, ctx, opts())
+    ok(r.kind === "unavailable" && r.failure.reason === "superseded" && r.failure.retryable, `result ${JSON.stringify(r)}`)
+    eq(r.kind === "unavailable" && r.failure.retryAfterSeconds, 1, "Retry-After honoured")
+    eq([be.superseded409, be.revocations, be.refreshCalls], [1, 0, 3], "409 once, nothing revoked, superseded NOT retried")
+    eq(sleeps, [], "no backoff retry of the superseded token")
+    eq(m.writes.length, 0, "no cookie written or deleted")
+    eq([m.store[V1_REFRESH_COOKIE].value, m.store[V1_ACCESS_COOKIE].value], [t0, A_OLD], "cookies intact")
+    // The browser's next request carries the newer cookie the sibling set:
+    const nextRequest = memoryJar({ [V1_REFRESH_COOKIE]: sibling.store[V1_REFRESH_COOKIE].value })
+    eq((await ensureFreshV1Session(third, nextRequest.jar, ctx, opts())).kind, "ok", "session alive with the newer token")
+  })
+
+  await test("superseded token is never re-sent from this process within the memo lifetime", async () => {
     const be = new FakeBackend(() => clock)
     const t0 = be.login()
     await makeClient(be.fetch).refresh(t0, ctx)
     await makeClient(be.fetch).refresh(t0, ctx) // grace used
-    const third = makeClient(be.fetch)
-    const m = memoryJar({ [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: t0 })
-    const r = await ensureFreshV1Session(third, m.jar, ctx, opts())
-    eq(UNAUTHENTICATED_IS_DEFINITIVE, false, "401 not definitive yet")
-    eq(r, { kind: "anonymous", cleared: "access" }, "result")
-    eq(be.benign401, 1, "backend answered the benign 401")
-    eq(be.revocations, 0, "session not revoked")
-    ok(!m.writes.some((w) => w.name === V1_REFRESH_COOKIE), "no refresh-cookie deletion emitted")
-    eq(m.store[V1_REFRESH_COOKIE].value, t0, "refresh cookie intact")
-    eq(m.writes.map((w) => [w.name, w.value, w.options.maxAge]), [[V1_ACCESS_COOKIE, "", 0]], "only the access cookie cleared")
+    const client = makeClient(be.fetch)
+    eq((await client.refresh(t0, ctx)).kind, "error", "409")
+    clock += 35_000 // a re-send now would REVOKE the session
+    const again = await client.refresh(t0, ctx)
+    ok(again.kind === "error" && again.reason === "superseded", "served from the negative cache")
+    eq([be.superseded409, be.revocations], [1, 0], "no re-send, no revocation")
+  })
+
+  await test("definitive 401 UNAUTHENTICATED clears BOTH cookies", async () => {
+    const be = new FakeBackend(() => clock)
+    eq(UNAUTHENTICATED_IS_DEFINITIVE, true, "401 is definitive")
+    const m = memoryJar({ [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: "G".repeat(43) })
+    eq(await ensureFreshV1Session(makeClient(be.fetch), m.jar, ctx, opts()), { kind: "anonymous", cleared: "all" }, "result")
+    eq(m.writes.map((w) => [w.name, w.value, w.options.maxAge, w.options.path]), [[V1_ACCESS_COOKIE, "", 0, "/"], [V1_REFRESH_COOKIE, "", 0, "/"]], "both deleted")
   })
 
   await test("refresh 401 is negative-cached: a dead cookie costs one backend call per TTL", async () => {
@@ -357,20 +387,32 @@ async function main() {
       await ensureFreshV1Session(client, m.jar, ctx, opts())
       eq(m.store[V1_REFRESH_COOKIE].value, t1, `straggler at ${at / 1000}s`)
     }
-    eq([be.refreshCalls, be.revocations, be.benign401], [1, 0, 0], "no second presentation")
+    eq([be.refreshCalls, be.revocations, be.superseded409], [1, 0, 0], "no second presentation")
     ok(REFRESH_MEMO_TTL_MS >= 60_000, "memo outlives the grace window with margin")
   })
 
-  await test("straggler after the memo (> 60 s): backend reuse detection revokes, cookie still not deleted", async () => {
+  await test("reuse after 30 s (straggler past the memo): backend revokes, 401, both cookies cleared", async () => {
     const be = new FakeBackend(() => clock)
     const t0 = be.login()
     const client = makeClient(be.fetch)
     await ensureFreshV1Session(client, memoryJar({ [V1_REFRESH_COOKIE]: t0 }).jar, ctx, opts())
     clock = NOW + REFRESH_MEMO_TTL_MS + 1
+    const m = memoryJar({ [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: t0 })
+    eq(await ensureFreshV1Session(client, m.jar, ctx, opts()), { kind: "anonymous", cleared: "all" }, "result")
+    eq(be.revocations, 1, "documented limit: reuse after the memo revokes — the session really is dead")
+    eq(m.jar.get(V1_REFRESH_COOKIE), undefined, "refresh cookie cleared (correct: session revoked)")
+  })
+
+  await test("lost response, grace already used by a sibling: the retry gets 409 -> unavailable, cookies kept, session alive", async () => {
+    const be = new FakeBackend(() => clock)
+    const t0 = be.login()
+    await makeClient(be.fetch).refresh(t0, ctx) // sibling rotates
+    be.plan = ["lose-after-commit"] // this attempt consumes the grace, response lost
     const m = memoryJar({ [V1_REFRESH_COOKIE]: t0 })
-    eq((await ensureFreshV1Session(client, m.jar, ctx, opts())).kind, "anonymous", "result")
-    eq(be.revocations, 1, "documented limit: reuse after the memo revokes")
-    eq(m.store[V1_REFRESH_COOKIE].value, t0, "refresh cookie not deleted by the client")
+    const r = await ensureFreshV1Session(makeClient(be.fetch), m.jar, ctx, opts())
+    ok(r.kind === "unavailable" && r.failure.reason === "superseded", `result ${r.kind}`)
+    eq([be.refreshCalls, be.superseded409, be.revocations], [3, 1, 0], "one retry, then stop on 409")
+    eq(m.writes.length, 0, "cookies untouched")
   })
 
   await test("chain T0 -> T1 -> T2: a T0 straggler gets the newest pair", async () => {
@@ -448,8 +490,8 @@ async function main() {
     ["network x3", ["network-before", "network-before", "network-before"], { reason: "network", retryable: true }],
     ["403 FORBIDDEN (BFF bug, no retry)", [{ status: 403, code: "FORBIDDEN" }], { reason: "status", retryable: false, status: 403 }],
     ["415 (BFF bug, no retry)", [{ status: 415, code: "UNSUPPORTED_MEDIA_TYPE" }], { reason: "status", retryable: false, status: 415 }],
-    ["409 superseded (future backend signal)", [{ status: 409, code: "CONFLICT" }], { reason: "superseded", retryable: true, status: 409 }],
-    ["REFRESH_SUPERSEDED code (future backend signal)", [{ status: 401, code: "REFRESH_SUPERSEDED" }], { reason: "superseded", retryable: true, status: 401 }],
+    ["409 without REFRESH_SUPERSEDED (contract error)", [{ status: 409, code: "CONFLICT" }], { reason: "protocol", retryable: false, status: 409 }],
+    ["REFRESH_SUPERSEDED on a non-409 (contract error)", [{ status: 401, code: "REFRESH_SUPERSEDED" }], { reason: "protocol", retryable: false, status: 401 }],
   ]
   for (const [name, plan, expected] of transientCases) {
     await test(`transient: ${name} -> cookies untouched, error surfaced, briefly negative-cached`, async () => {

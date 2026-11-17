@@ -10,12 +10,28 @@ import "server-only"
  *
  *   export async function middleware(request: NextRequest) {
  *     return withV1Session(request, ({ result, next }) => {
- *       if (needsLogin && result.kind !== "ok") {
+ *       if (needsLogin && result.kind === "anonymous") {
  *         return NextResponse.redirect(loginUrl)   // cookies are applied too
  *       }
  *       return next()                              // forwards the new cookies downstream
  *     })
  *   }
+ *
+ * What 2c-3 must respect when wiring this:
+ *   - redirect to login ONLY on `anonymous` (no session cookie, or a
+ *     definitive refresh 401 — both cookies are then already cleared). Never
+ *     on `unavailable` (503 / timeout / network / 409 REFRESH_SUPERSEDED: the
+ *     session is alive, the browser's next request carries the newer cookie)
+ *     and never on `deferred` (a prefetch; a redirect could be cached by the
+ *     router for that link);
+ *   - this is the single place refresh happens on the paths that need v1; a
+ *     route handler outside the matcher calling ensureV1SessionInAction is a
+ *     second presentation of the same token;
+ *   - after login, verify via postAuth -> parseTokenResponse ->
+ *     storeV1TokensInAction (+ setAuthToken(legacyToken) for GraphQL);
+ *   - check on a real `next build` that BFF_SHARED_SECRET reaches this bundle
+ *     at runtime; the "stop waiting without aborting" design relies on a
+ *     long-lived process (pm2 + next start), not serverless edge.
  *
  * Every response the handler returns — next(), NextResponse.redirect(),
  * NextResponse.rewrite(), a plain NextResponse — gets the cookie writes.
