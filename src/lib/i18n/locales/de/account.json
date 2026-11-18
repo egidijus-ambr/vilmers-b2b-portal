@@ -88,6 +88,7 @@
     "button": "Herunterladen",
     "no-customer": "Kein Kunde ausgewählt. Bitte wählen Sie einen Kunden aus und versuchen Sie es erneut.",
     "no-pricelist": "Ihrem Konto ist keine Preisliste zugewiesen. Bitte wenden Sie sich an Ihren Kundenbetreuer.",
+    "no-prices": "Für Ihre Preisliste konnten keine Preise geladen werden. Bitte wenden Sie sich an Ihren Kundenbetreuer.",
     "download-failed": "Die Preisliste konnte nicht erstellt werden. Bitte versuchen Sie es später erneut.",
     "unauthorized": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
     "fetch-failed": "Ihre Preislistendaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",

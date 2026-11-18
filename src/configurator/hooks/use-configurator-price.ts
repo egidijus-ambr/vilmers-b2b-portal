@@ -10,8 +10,11 @@ import {
 /**
  * Hook that recalculates the total price whenever configurator selections change.
  * Updates the totalPrice in context.
+ *
+ * `priceListId` is the server-resolved list the product data was fetched for
+ * (see useConfiguratorData); nothing is priced until it is known.
  */
-export function useConfiguratorPrice(priceListId: number) {
+export function useConfiguratorPrice(priceListId: number | null) {
   const { state, dispatch } = useConfigurator()
 
   const {
@@ -22,7 +25,7 @@ export function useConfiguratorPrice(priceListId: number) {
   } = state
 
   useEffect(() => {
-    if (!productData) return
+    if (!productData || priceListId == null) return
 
     const product = {
       advanced_product: {

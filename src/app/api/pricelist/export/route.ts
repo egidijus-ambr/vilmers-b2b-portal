@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { normalizeLanguage } from "@lib/i18n/config"
 import { resolveExportContext } from "@lib/util/pricelist-export-context"
-import { ExportFetchError, startExport } from "@lib/util/pricelist-export-jobs"
+import {
+  ExportFetchError,
+  ExportNoPricesError,
+  startExport,
+} from "@lib/util/pricelist-export-jobs"
 
 export const runtime = "nodejs"
 
@@ -39,6 +43,11 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       if (error instanceof ExportFetchError) {
         return NextResponse.json({ error: "fetch_failed" }, { status: 502 })
+      }
+      // No price rows for the caller's list: fail loudly instead of
+      // delivering a workbook with blank prices.
+      if (error instanceof ExportNoPricesError) {
+        return NextResponse.json({ error: "no_prices" }, { status: 409 })
       }
       throw error
     }

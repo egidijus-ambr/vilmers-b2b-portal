@@ -42,7 +42,6 @@ export interface AdvancedProduct {
   id: number
   advanced_product_type?: string | null
   price_from: number
-  base_prices: BasePrice[]
   category_photo: ProductCardImage | null
   advanced_product_profiles: AdvancedProductProfile[]
 }

@@ -268,7 +268,7 @@ export const computeAdvancedProductPrice = (
   sofaCombinations: any[][],
   selectedAdditionalComponents: SelectedComponent[],
   selectedFabric: SelectedFabricState,
-  priceListId: number = 1,
+  priceListId: number,
   mainGroupCode: string | null = null
 ): AdvancedProductPriceResult => {
   const fabricGroup = selectedFabric?.fabricGroupObject
@@ -358,7 +358,7 @@ export const getAdvancedProductPrice = (
   sofaCombinations: any[][],
   selectedAdditionalComponents: SelectedComponent[],
   selectedFabric: SelectedFabricState,
-  priceListId: number = 1,
+  priceListId: number,
   mainGroupCode: string | null = null
 ): number | null =>
   computeAdvancedProductPrice(

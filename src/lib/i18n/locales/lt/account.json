@@ -88,6 +88,7 @@
     "button": "Atsisiųsti",
     "no-customer": "Nepasirinktas klientas. Pasirinkite klientą ir bandykite dar kartą.",
     "no-pricelist": "Jūsų paskyrai nepriskirtas joks kainoraštis. Susisiekite su savo paskyros vadybininku.",
+    "no-prices": "Nepavyko įkelti jūsų kainoraščio kainų. Susisiekite su savo paskyros vadybininku.",
     "download-failed": "Nepavyko sugeneruoti kainoraščio. Bandykite dar kartą vėliau.",
     "unauthorized": "Jūsų sesija baigėsi. Prisijunkite iš naujo.",
     "fetch-failed": "Nepavyko įkelti jūsų kainoraščio duomenų. Bandykite dar kartą vėliau.",

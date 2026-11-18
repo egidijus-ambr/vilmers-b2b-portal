@@ -56,7 +56,6 @@ const SofaShapeSection = dynamic(() => import("./sofa-shape-section"), {
 type ConfiguratorContentProps = {
   productContainerId: number
   languageCode: string
-  priceListId: number
   isOpen: boolean
   showAllProducts?: boolean
   embedded?: boolean
@@ -65,7 +64,6 @@ type ConfiguratorContentProps = {
 const ConfiguratorContent = ({
   productContainerId,
   languageCode,
-  priceListId: priceListIdProp,
   isOpen,
   showAllProducts = false,
   embedded = false,
@@ -81,20 +79,26 @@ const ConfiguratorContent = ({
   const { t } = useTranslations("account")
   const { t: tc } = useTranslations("common")
 
-  // Use the customer's effective pricelist (direct wins over group). The
-  // configurator data layer needs a single ID; charges always come from the
-  // direct pricelist when set, falling back to the group's, then the prop.
-  const customerPriceListIds = useMemo(
-    () => getCustomerPriceListIds(customer),
-    [customer]
-  )
-  const priceListId =
-    getPrimaryPriceListId(customer) ?? priceListIdProp
+  // The single pricelist the data is fetched and charged for is resolved
+  // SERVER-side (acting customer's direct list, else group, else the shop
+  // default) and returned by the data load; the client never chooses it.
+  // The key refetches when the acting customer (or their list) changes.
+  const actingCustomerKey = `${customer?.id ?? ""}:${getPrimaryPriceListId(customer) ?? ""}`
 
   // Load data on-demand when modal opens.
   // Pass customer.additional_components so mandatory picks are pre-seeded into
   // state before useDynamicGroups runs its default-selection logic.
-  useConfiguratorData(productContainerId, priceListId, languageCode, isOpen, customer?.additional_components)
+  const priceListId = useConfiguratorData(productContainerId, actingCustomerKey, languageCode, isOpen, customer?.additional_components)
+
+  // "Is this component priced for the customer" matches any of the
+  // customer's lists (direct + group). With no assigned list the server fell
+  // back to the default list, so match that one — an empty set would hide
+  // every fabric-priced component in hide_components_without_price groups.
+  const customerPriceListIds = useMemo(() => {
+    const ids = getCustomerPriceListIds(customer)
+    if (ids.length > 0) return ids
+    return priceListId != null ? [priceListId] : []
+  }, [customer, priceListId])
 
   // Recalculate price when selections change
   useConfiguratorPrice(priceListId)
@@ -256,6 +260,7 @@ const ConfiguratorContent = ({
   // Build configuration strings for display below canvas
   const configStrings = useMemo(() => {
     if (!activeTheme.showErpConfigString) return []
+    if (priceListId == null) return []
     const configs = buildIntegrationConfiguration(state, priceListId)
     const result: { setId: number; itemId: number; module: string; configString: string }[] = []
     configs?.forEach((set: any, setIndex: number) => {

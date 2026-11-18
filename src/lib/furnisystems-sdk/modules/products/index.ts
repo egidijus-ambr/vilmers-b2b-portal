@@ -48,11 +48,6 @@ const PRODUCT_CARD_FRAGMENT = gql`
     advanced_product {
       id
       price_from
-      base_prices {
-        price_from
-        price
-        price_listId
-      }
       category_photo {
         id
         src

@@ -9,6 +9,7 @@ import { toast } from "@medusajs/ui"
 const ERROR_MESSAGE_KEYS: Record<string, string> = {
   no_customer: "pricelist-export.no-customer",
   no_pricelist: "pricelist-export.no-pricelist",
+  no_prices: "pricelist-export.no-prices",
   unauthorized: "pricelist-export.unauthorized",
   fetch_failed: "pricelist-export.fetch-failed",
   unexpected: "pricelist-export.unexpected",

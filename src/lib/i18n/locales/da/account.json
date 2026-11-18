@@ -88,6 +88,7 @@
     "button": "Download",
     "no-customer": "Ingen kunde valgt. Vælg en kunde, og prøv igen.",
     "no-pricelist": "Der er ikke tildelt nogen prisliste til din konto. Kontakt venligst din account manager.",
+    "no-prices": "Der kunne ikke indlæses nogen priser for din prisliste. Kontakt venligst din account manager.",
     "download-failed": "Prislisten kunne ikke genereres. Prøv igen senere.",
     "unauthorized": "Din session er udløbet. Log ind igen.",
     "fetch-failed": "Dine prislistedata kunne ikke indlæses. Prøv igen senere.",

@@ -88,6 +88,7 @@
     "button": "Download",
     "no-customer": "No customer selected. Please select a customer and try again.",
     "no-pricelist": "No pricelist is assigned to your account. Please contact your account manager.",
+    "no-prices": "No prices could be loaded for your pricelist. Please contact your account manager.",
     "download-failed": "Could not generate the pricelist. Please try again later.",
     "unauthorized": "Your session has expired. Please sign in again.",
     "fetch-failed": "Could not load your pricelist data. Please try again later.",

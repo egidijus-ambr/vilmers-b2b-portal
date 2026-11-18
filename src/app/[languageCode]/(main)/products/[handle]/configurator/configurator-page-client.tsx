@@ -9,7 +9,6 @@ import ConfiguratorContent from "@modules/products/components/configurator/confi
 type ConfiguratorPageClientProps = {
   productContainerId: number
   languageCode: string
-  priceListId: number
   showAllProducts: boolean
   handle: string
 }
@@ -17,7 +16,6 @@ type ConfiguratorPageClientProps = {
 const ConfiguratorPageClient = ({
   productContainerId,
   languageCode,
-  priceListId,
   showAllProducts,
   handle,
 }: ConfiguratorPageClientProps) => {
@@ -40,7 +38,6 @@ const ConfiguratorPageClient = ({
         <ConfiguratorContent
           productContainerId={productContainerId}
           languageCode={languageCode}
-          priceListId={priceListId}
           isOpen={true}
           showAllProducts={showAllProducts}
           embedded={true}

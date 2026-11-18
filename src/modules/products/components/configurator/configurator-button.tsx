@@ -16,7 +16,6 @@ type ConfiguratorButtonProps = {
   productContainerId: number
   isAdvancedProduct: boolean
   languageCode: string
-  priceListId?: number
   showAllProducts?: boolean
   handle: string
 }
@@ -25,7 +24,6 @@ const ConfiguratorButton = ({
   productContainerId,
   isAdvancedProduct,
   languageCode,
-  priceListId = 1,
   showAllProducts = false,
   handle,
 }: ConfiguratorButtonProps) => {
@@ -62,7 +60,6 @@ const ConfiguratorButton = ({
           productContainerId={productContainerId}
           isAdvancedProduct={isAdvancedProduct}
           languageCode={languageCode}
-          priceListId={priceListId}
           showAllProducts={showAllProducts}
         />
       )}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { getConfiguratorDataAction } from "@lib/data/configurator"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
@@ -20,6 +20,14 @@ type CustomerAdditionalComponent = {
  * Hook to lazy-load configurator data when the modal opens.
  * Fetches product configurator data and dispatches it to context.
  *
+ * The price list is resolved SERVER-side from the session's acting customer
+ * (falling back to the shop default list); the id actually used is returned
+ * so pricing reads the same list the rows were fetched for. It is null until
+ * the first load completes.
+ *
+ * @param actingCustomerKey - Changes whenever the acting customer changes
+ *   (e.g. an agent switches customer) so the data — and the server-derived
+ *   price list — is refetched.
  * @param customerAdditionalComponents - The customer's mandatory additional component
  *   selections (from customer.additional_components). When provided, these are
  *   pre-seeded into state BEFORE useDynamicGroups runs default-component selection,
@@ -27,12 +35,13 @@ type CustomerAdditionalComponent = {
  */
 export function useConfiguratorData(
   productContainerId: number | null,
-  priceListId: number,
+  actingCustomerKey: string,
   language: string,
   isOpen: boolean,
   customerAdditionalComponents?: CustomerAdditionalComponent[]
-) {
+): number | null {
   const { dispatch } = useConfigurator()
+  const [priceListId, setPriceListId] = useState<number | null>(null)
   const paletteIds = useCustomerPaletteIds()
   const paletteKey = paletteIds.join(",")
 
@@ -50,20 +59,23 @@ export function useConfiguratorData(
       dispatch({ type: "SET_LOADING", payload: true })
 
       try {
-        const data = await getConfiguratorDataAction(
+        const result = await getConfiguratorDataAction(
           productContainerId!,
-          priceListId,
           language,
           paletteIds
         )
 
         if (cancelled) return
 
-        if (!data) {
+        if (!result) {
           dispatch({ type: "SET_ERROR", payload: "Failed to load configurator data" })
           return
         }
 
+        const { data, priceListId } = result
+        // Same batch as SET_PRODUCT_DATA, so productData and the list it was
+        // fetched for never disagree.
+        setPriceListId(priceListId)
         dispatch({ type: "SET_PRODUCT_DATA", payload: data })
 
         // Initialize additional component groups from product-scoped join tables.
@@ -210,5 +222,7 @@ export function useConfiguratorData(
     return () => {
       cancelled = true
     }
-  }, [isOpen, productContainerId, priceListId, language, dispatch, paletteKey, customerMandatesKey])
+  }, [isOpen, productContainerId, actingCustomerKey, language, dispatch, paletteKey, customerMandatesKey])
+
+  return priceListId
 }

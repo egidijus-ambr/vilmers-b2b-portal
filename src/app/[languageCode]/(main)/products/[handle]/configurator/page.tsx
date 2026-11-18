@@ -99,7 +99,6 @@ export default async function ConfiguratorPage({ params }: Props) {
         <ConfiguratorPageClient
           productContainerId={product.id}
           languageCode={languageCode}
-          priceListId={1}
           showAllProducts={showAllProducts}
           handle={handle}
         />

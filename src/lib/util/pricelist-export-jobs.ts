@@ -18,6 +18,7 @@ import {
   type CoverSettingsInput,
 } from "@lib/util/pricelist-cover"
 import { getPricelistSettings } from "@lib/data/pricelist-settings"
+import { countExportPriceRows } from "@lib/util/pricelist-export-price-rows"
 import {
   createImageFetchReport,
   isImageFetchDegraded,
@@ -62,6 +63,16 @@ const LOG = "[pricelist-export]"
 
 /** Thrown when the product query itself fails (route maps to fetch_failed). */
 export class ExportFetchError extends Error {}
+
+/**
+ * Thrown when the product query succeeded but carried no price rows for the
+ * requested list (route maps to no_prices). The backend scopes price rows to
+ * the caller, so this is what a caller not entitled to the list gets back; it
+ * is also what a list pricing nothing visible looks like. Never memoized,
+ * stored or served: a cached build made from it would hand blank/fallback
+ * prices to every later caller of the same combination.
+ */
+export class ExportNoPricesError extends Error {}
 
 let cachedBuildId: string | null = null
 function readBuildId(): string {
@@ -508,6 +519,15 @@ async function computeFingerprintResult(
     throw new ExportFetchError("product query failed")
   }
   const tQuery = Date.now() - t0
+  // Checked BEFORE the fingerprint/memo/cache lookup: an empty payload has a
+  // deterministic fingerprint, so it must not even be looked up on disk.
+  if (countExportPriceRows(products) === 0) {
+    console.warn(
+      `${LOG} no price rows for priceListId=${combo.priceListId} ` +
+        `(${Array.isArray(products) ? products.length : 0} products) - not building`
+    )
+    throw new ExportNoPricesError("no price rows for the requested price list")
+  }
   let nameLookupFailed = false
   const priceListName = await getPriceListName(combo.priceListId).catch((error) => {
     console.error(`${LOG} Failed to fetch pricelist name:`, error)
@@ -585,15 +605,28 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   }
 
   // Single-flight the query per combination.
+  const ownFetch = () => computeFingerprintResult(combo, baseId, coverSettings)
   let pending = state.fpInFlight.get(baseId)
+  const joinedFetch = !!pending
   if (!pending) {
-    pending = computeFingerprintResult(combo, baseId, coverSettings).finally(() => {
+    pending = ownFetch().finally(() => {
       state.fpInFlight.delete(baseId)
     })
     state.fpInFlight.set(baseId, pending)
   }
+  let result: FingerprintResult
+  try {
+    result = await pending
+  } catch (error) {
+    // The shared fetch ran under ANOTHER caller's token. If it came back
+    // without prices (that caller not entitled), this caller must not inherit
+    // the verdict: re-query under its own token. Not single-flighted, so a
+    // joiner never reuses someone else's denied response.
+    if (!(joinedFetch && error instanceof ExportNoPricesError)) throw error
+    result = await ownFetch()
+  }
   const { products, priceListName, nameLookupFailed, fingerprint, key, checkedAt } =
-    await pending
+    result
 
   const joined = state.inFlight.get(key)
   if (joined) return { jobId: joined.id, status: "pending" }

@@ -88,6 +88,7 @@
     "button": "Télécharger",
     "no-customer": "Aucun client sélectionné. Veuillez sélectionner un client et réessayer.",
     "no-pricelist": "Aucun tarif n'est associé à votre compte. Veuillez contacter votre gestionnaire de compte.",
+    "no-prices": "Aucun prix n'a pu être chargé pour votre tarif. Veuillez contacter votre gestionnaire de compte.",
     "download-failed": "Impossible de générer le tarif. Veuillez réessayer plus tard.",
     "unauthorized": "Votre session a expiré. Veuillez vous reconnecter.",
     "fetch-failed": "Impossible de charger les données de votre tarif. Veuillez réessayer plus tard.",
