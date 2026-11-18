@@ -17,6 +17,7 @@ import {
   fetchPricelistCover,
   type CoverSettingsInput,
 } from "@lib/util/pricelist-cover"
+import { fetchFabricCategoryLabels, type FabricCategoryLabels } from "@lib/fabric-category-labels"
 import { getPricelistSettings } from "@lib/data/pricelist-settings"
 import { countExportPriceRows } from "@lib/util/pricelist-export-price-rows"
 import {
@@ -220,7 +221,11 @@ export function computeFingerprint(products: unknown, pricelistName: string) {
 }
 
 /** Everything in the cache key except the data fingerprint. */
-function comboBaseParts(combo: ExportCombo, cover: CoverSettingsInput): unknown[] {
+function comboBaseParts(
+  combo: ExportCombo,
+  cover: CoverSettingsInput,
+  fabricLabels: FabricCategoryLabels
+): unknown[] {
   return [
     process.env.NEXT_PUBLIC_THEME ?? "",
     WORKBOOK_VERSION,
@@ -232,16 +237,27 @@ function comboBaseParts(combo: ExportCombo, cover: CoverSettingsInput): unknown[
     // Cover sheet settings (admin-editable): a change must miss the cache.
     // The cover DATE is the build date; a cached file keeps its build date.
     coverCacheParts(cover),
+    // Backend-served fabric category headers: a rename must miss the cache.
+    stableStringify(fabricLabels),
   ]
 }
 
-function computeBaseId(combo: ExportCombo, cover: CoverSettingsInput) {
-  return JSON.stringify(comboBaseParts(combo, cover))
+function computeBaseId(
+  combo: ExportCombo,
+  cover: CoverSettingsInput,
+  fabricLabels: FabricCategoryLabels
+) {
+  return JSON.stringify(comboBaseParts(combo, cover, fabricLabels))
 }
 
-function computeKey(combo: ExportCombo, cover: CoverSettingsInput, fingerprint: string) {
+function computeKey(
+  combo: ExportCombo,
+  cover: CoverSettingsInput,
+  fabricLabels: FabricCategoryLabels,
+  fingerprint: string
+) {
   return createHash("sha256")
-    .update(JSON.stringify([...comboBaseParts(combo, cover), fingerprint]))
+    .update(JSON.stringify([...comboBaseParts(combo, cover, fabricLabels), fingerprint]))
     .digest("hex")
 }
 
@@ -389,7 +405,9 @@ async function runBuild(
   priceListName: string,
   nameLookupFailed: boolean,
   fingerprint: string,
-  coverSettings: CoverSettingsInput
+  coverSettings: CoverSettingsInput,
+  fabricLabels: FabricCategoryLabels,
+  labelsFailed: boolean
 ) {
   const startedAt = Date.now()
   await acquireBuildSlot(() => {})
@@ -437,7 +455,7 @@ async function runBuild(
       photos,
       blueprints,
       componentPhotos,
-      resolvePricelistWorkbookSettings(),
+      { ...resolvePricelistWorkbookSettings(), fabricCategoryLabels: fabricLabels },
       coverResult?.cover
     )
     if (job.aborted) return // watchdog already failed this job
@@ -450,7 +468,10 @@ async function runBuild(
     // A configured cover image / logo that could not be loaded also blocks
     // caching, so a transient failure is not frozen in for the cache lifetime.
     const degraded =
-      isImageFetchDegraded(report) || nameLookupFailed || !!coverResult?.degraded
+      isImageFetchDegraded(report) ||
+      nameLookupFailed ||
+      labelsFailed ||
+      !!coverResult?.degraded
     const tolerated = Math.floor(report.attempted * TRANSIENT_FAILURE_TOLERANCE)
     if (degraded) {
       const p = path.join(jobsDir(), `${job.id}.xlsx`)
@@ -462,7 +483,7 @@ async function runBuild(
       job.filePath = filePathFor(job.key)
       job.temporary = false
       // Point the freshness memo at the freshly stored file.
-      state.fpMemo.set(computeBaseId(job.combo, coverSettings), {
+      state.fpMemo.set(computeBaseId(job.combo, coverSettings, fabricLabels), {
         fingerprint,
         cacheKey: job.key,
         checkedAt: job.fpCheckedAt ?? Date.now(),
@@ -475,7 +496,7 @@ async function runBuild(
         `(${buffer.length} bytes, ${degraded ? "DEGRADED - not cached" : "cached"}; ` +
         `deadlineHit=${report.deadlineHit} capHit=${report.capHit} ` +
         `transient=${report.transientFailures}/${report.attempted} ` +
-        `(${report.transientFailures <= tolerated ? "tolerated" : "over tolerance"}) nameLookupFailed=${nameLookupFailed}) ` +
+        `(${report.transientFailures <= tolerated ? "tolerated" : "over tolerance"}) nameLookupFailed=${nameLookupFailed} labelsFailed=${labelsFailed}) ` +
         `key=${job.key.slice(0, 12)}`
     )
   }
@@ -503,7 +524,9 @@ export interface StartResult {
 async function computeFingerprintResult(
   combo: ExportCombo,
   baseId: string,
-  coverSettings: CoverSettingsInput
+  coverSettings: CoverSettingsInput,
+  fabricLabels: FabricCategoryLabels,
+  labelsFailed: boolean
 ): Promise<FingerprintResult> {
   const t0 = Date.now()
   let products: any
@@ -536,14 +559,15 @@ async function computeFingerprintResult(
   })
   const tFp = Date.now()
   const fingerprint = computeFingerprint(products, priceListName)
-  const key = computeKey(combo, coverSettings, fingerprint)
+  const key = computeKey(combo, coverSettings, fabricLabels, fingerprint)
   const checkedAt = Date.now()
   console.log(
     `${LOG} fingerprint: product query ${tQuery}ms, hash ${Date.now() - tFp}ms ` +
       `(total ${Date.now() - t0}ms) key=${key.slice(0, 12)}`
   )
-  // A fingerprint built on a fallback price list name is not trustworthy.
-  if (!nameLookupFailed) {
+  // A fingerprint built on a fallback price list name or fallback fabric
+  // labels is not trustworthy.
+  if (!nameLookupFailed && !labelsFailed) {
     state.fpMemo.set(baseId, { fingerprint, cacheKey: key, checkedAt })
   }
   return { products, priceListName, nameLookupFailed, fingerprint, key, checkedAt }
@@ -581,7 +605,11 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
     coverLines: combo.coverLines,
     logoUrl: pricelistSettings.logoUrl,
   }
-  const baseId = computeBaseId(combo, coverSettings)
+  // Fetched (Next-cached 5 min) before the key is derived so a backend rename
+  // changes the key; never throws. A fallback marks the build degraded.
+  const { labels: fabricLabels, degraded: labelsFailed } =
+    await fetchFabricCategoryLabels(combo.language)
+  const baseId = computeBaseId(combo, coverSettings, fabricLabels)
   for (const [k, m] of Array.from(state.fpMemo.entries())) {
     if (Date.now() - m.checkedAt >= FINGERPRINT_TTL_MS) state.fpMemo.delete(k)
   }
@@ -605,7 +633,8 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   }
 
   // Single-flight the query per combination.
-  const ownFetch = () => computeFingerprintResult(combo, baseId, coverSettings)
+  const ownFetch = () =>
+    computeFingerprintResult(combo, baseId, coverSettings, fabricLabels, labelsFailed)
   let pending = state.fpInFlight.get(baseId)
   const joinedFetch = !!pending
   if (!pending) {
@@ -656,7 +685,16 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   state.inFlight.set(key, job)
   // Fire and forget; every rejection is caught here so an unhandled
   // rejection can never take the process down.
-  runBuild(job, products, priceListName, nameLookupFailed, fingerprint, coverSettings)
+  runBuild(
+    job,
+    products,
+    priceListName,
+    nameLookupFailed,
+    fingerprint,
+    coverSettings,
+    fabricLabels,
+    labelsFailed
+  )
     .catch((error) => {
       console.error(`${LOG} build failed:`, error)
       job.aborted = true

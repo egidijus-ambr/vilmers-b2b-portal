@@ -28,6 +28,7 @@ import { hasUnjoinedConnectableModules } from "@configurator/lib/sofa-connectivi
 import { activeTheme } from "themes"
 import { useDebugMode } from "@lib/hooks/use-debug-mode"
 import { useTranslations } from "@lib/i18n"
+import { useFabricCategoryLabel } from "@lib/context/fabric-category-labels-context"
 import { PaletteActionError } from "@lib/fabric-palettes/palette-error"
 import { paletteErrorMessage } from "@lib/fabric-palettes/palette-error-message"
 import ReferenceStep from "./reference-step"
@@ -78,6 +79,7 @@ const ConfiguratorContent = ({
   const [showNoPriceWarning, setShowNoPriceWarning] = useState(false)
   const { t } = useTranslations("account")
   const { t: tc } = useTranslations("common")
+  const fabricCategoryLabel = useFabricCategoryLabel()
 
   // The single pricelist the data is fetched and charged for is resolved
   // SERVER-side (acting customer's direct list, else group, else the shop
@@ -590,10 +592,10 @@ const ConfiguratorContent = ({
               <div>
                 <span className="text-gray-400">Selected fabric:</span>{" "}
                 {state.selectedFabric.fabricGroupObject
-                  ? `CAT ${getFabricGroupNumber(
+                  ? fabricCategoryLabel(getFabricGroupNumber(
                       state.selectedFabric.fabricObject,
                       state.selectedFabric.fabricGroupObject.form_price_fabric_category?.group_number
-                    )}`
+                    ))
                   : <span className="text-red-400">none</span>}
                 {state.selectedFabric.fabricObject && (
                   <span className="text-gray-400"> ({state.selectedFabric.fabricObject.code})</span>

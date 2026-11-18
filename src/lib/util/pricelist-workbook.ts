@@ -14,6 +14,10 @@ import type {
 import type { PricelistImage } from "./image-resize"
 import { isSharpAvailable } from "./image-resize"
 import { latestValidFrom } from "./pricelist-valid-from"
+import {
+  defaultFabricCategoryLabel,
+  type FabricCategoryLabels,
+} from "../fabric-category-labels"
 
 const INVALID_SHEET_NAME_CHARS = /[\[\]:*?/\\]/g
 const MAX_SHEET_NAME_LENGTH = 31
@@ -99,7 +103,7 @@ export interface PricelistWorkbookMeta {
 }
 
 // Sentinel `group_number` reserving exactly one price column, labeled
-// "PRICE" (see GROUP_LABELS below), for the edge case where a workbook's
+// "PRICE" (see getGroupLabel below), for the edge case where a workbook's
 // combined `sortedGroupNumbers` pool (computed once, from every admitted
 // product's fabric-category prices — see buildPricelistWorkbook) is EMPTY:
 // every admitted product is flat-priced only (e.g. an OTHER/OTHER_WITH_FABRICS
@@ -107,34 +111,31 @@ export interface PricelistWorkbookMeta {
 // price columns would exist and flat prices would silently never render —
 // writeComponentDataRow's flat-price branch only ever writes at
 // `sortedGroupNumbers[0]`. Real DB `group_number`s are always positive (see
-// GROUP_LABELS's doc comment on the values actually seen), so -1 can never
+// getGroupLabel's doc comment), so -1 can never
 // collide with one.
 const PRICE_ONLY_GROUP_NUMBER = -1
+const PRICE_ONLY_LABEL = "PRICE"
 
 /**
  * Fabric-price-category `group_number` -> the label its price column shows
- * in row GROUP_HEADER_ROW. Verified against the DB — labels are NOT
- * uniformly "CATn" (11/12 are leather grades, not categories). Anything not
- * listed here (e.g. groups 6, 7, 10, 14 seen on some assigned pricelists)
- * falls back to `CAT${n}` via getGroupLabel below. To add/rename a label,
- * edit ONLY this constant — no other label logic exists in this file.
+ * in row GROUP_HEADER_ROW. Labels are served by the backend
+ * (translations/fabric_price_category) and injected per workbook through
+ * `PricelistWorkbookSettings.fabricCategoryLabels` (this function stays pure:
+ * no fetching here). Anything the injected map lacks falls back to the
+ * backend-mirroring defaults in `fabric-category-labels.ts` (CAT1-5,
+ * Leather A/B, `CAT${n}`).
  *
- * `PRICE_ONLY_GROUP_NUMBER`'s entry is the one exception to "real DB
- * group_number": see that constant's own doc comment just above.
+ * `PRICE_ONLY_GROUP_NUMBER` is the one exception: a local sentinel label,
+ * never served by the backend and never overridable (see its doc comment).
  */
-export const GROUP_LABELS: Record<number, string> = {
-  1: "CAT1",
-  2: "CAT2",
-  3: "CAT3",
-  4: "CAT4",
-  5: "CAT5",
-  11: "Leather A",
-  12: "Leather B",
-  [PRICE_ONLY_GROUP_NUMBER]: "PRICE",
-}
-
-function getGroupLabel(groupNumber: number): string {
-  return GROUP_LABELS[groupNumber] ?? `CAT${groupNumber}`
+function getGroupLabel(
+  groupNumber: number,
+  labels?: Record<string, string>
+): string {
+  if (groupNumber === PRICE_ONLY_GROUP_NUMBER) return PRICE_ONLY_LABEL
+  const hit = labels?.[String(groupNumber)]
+  if (typeof hit === "string" && hit.trim() !== "") return hit
+  return defaultFabricCategoryLabel(groupNumber)
 }
 
 // Price cells display as whole numbers (no cents) — "184", not "184.00".
@@ -240,7 +241,7 @@ const COLUMN_WIDTHS = [12.5, 34, 18, 10] // matches FIXED_COLUMN_COUNT; ART.CODE
 // fitting the digit-width character-capacity model this file already uses
 // for column sizing (see columnWidthToPx above; capacity in "0"-digit-width
 // slots ≈ floor(width)): floor(9.5) = 9, matching the 9 characters in
-// "Leather A"/"Leather B" (GROUP_LABELS' widest labels, rendered bold via
+// "Leather A"/"Leather B" (the widest default labels; backend-served names may be wider and are NOT auto-fitted, rendered bold via
 // GROUP_HEADER_FONT), with a bit of headroom over floor(9)'s zero slack to
 // absorb the bold weight. The max DB price (3641, 4 digits) plus the $C$9
 // multiplier (still only 5-6 digits after a realistic multiplier) fits with
@@ -963,6 +964,13 @@ export interface PricelistWorkbookSettings {
   bedCombinedSection?: boolean
   /** Whether the M³ (volume) column renders at all. Default true. Setting this false shifts every price column one index earlier — see resolveRenderConfig. */
   showVolumeColumn?: boolean
+  /**
+   * Backend-served fabric price category labels (group_number as string ->
+   * label) for the price-column headers. Absent/partial: backend-mirroring
+   * defaults apply. Not part of the theme: injected by the export job, which
+   * must also fold these into its cache key.
+   */
+  fabricCategoryLabels?: Record<string, string>
   colors?: {
     /** GROUP_HEADER_ROW fill. Default "FF23394D" (GROUP_HEADER_FILL). */
     groupHeaderFill?: string
@@ -1026,6 +1034,7 @@ interface RenderConfig {
   showMultiplierRow: boolean
   bedCombinedSection: boolean
   showVolumeColumn: boolean
+  fabricCategoryLabels: Record<string, string>
   /** FIXED_COLUMN_COUNT (4) when showVolumeColumn, FIXED_COLUMN_COUNT - 1 (3) when not — see writeHeaderRows/writeDataRow for how this shifts price-column indices left by one. Column C (ART.CODE, index 3) is unaffected either way, so the C9 multiplier cell (MULTIPLIER_VALUE_COL, an independent constant) never moves. */
   fixedColumnCount: number
   /** Matches fixedColumnCount in length. */
@@ -1068,6 +1077,7 @@ function resolveRenderConfig(settings?: PricelistWorkbookSettings): RenderConfig
     showMultiplierRow,
     bedCombinedSection: settings?.bedCombinedSection ?? false,
     showVolumeColumn,
+    fabricCategoryLabels: settings?.fabricCategoryLabels ?? {},
     fixedColumnCount: showVolumeColumn
       ? FIXED_COLUMN_COUNT
       : FIXED_COLUMN_COUNT - 1,
@@ -1135,7 +1145,8 @@ function writeHeaderRows(
   groupRow.getCell(1).value = firstBarLabel
   sortedGroupNumbers.forEach((groupNumber, i) => {
     groupRow.getCell(cfg.fixedColumnCount + 1 + i).value = getGroupLabel(
-      groupNumber
+      groupNumber,
+      cfg.fabricCategoryLabels
     )
   })
 
@@ -2304,7 +2315,8 @@ function writeSectionLabelRow(
   if (hasCategoryPrices) {
     sortedGroupNumbers.forEach((groupNumber, i) => {
       row.getCell(cfg.fixedColumnCount + 1 + i).value = getGroupLabel(
-        groupNumber
+        groupNumber,
+        cfg.fabricCategoryLabels
       )
     })
   }
@@ -2872,7 +2884,7 @@ interface RenderableProduct {
  * `group_number`s that actually have a price row anywhere in `products`
  * (group numbers are sparse/non-contiguous — see callers), so every product
  * sheet shares the same column layout and headers use the real group
- * number's label (see GROUP_LABELS/getGroupLabel), never a positional index.
+ * number's label (see getGroupLabel), never a positional index.
  */
 export async function buildPricelistWorkbook(
   products: PricelistExportProduct[],
@@ -2907,7 +2919,7 @@ export async function buildPricelistWorkbook(
   // OTHER component now adds a (blank, for every sofa) CAT column to every
   // sofa sheet too. In practice this is expected to be a no-op: FabricPriceCategory
   // is one shared taxonomy across the whole catalog (the same CAT1-5/Leather
-  // A/B groups from GROUP_LABELS), not a per-product-type one, so component
+  // A/B groups, backend-served defaults), not a per-product-type one, so component
   // group_numbers are expected to already be a subset of the sofa ones. This
   // is NOT verified against production data by this change, though — if that
   // assumption is ever wrong, a real (not merely theoretical) sofa-sheet

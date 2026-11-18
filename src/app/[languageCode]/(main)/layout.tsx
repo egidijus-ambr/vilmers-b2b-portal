@@ -28,6 +28,8 @@ import { GoToConfiguratorProvider } from "@lib/context/go-to-configurator-contex
 import { features } from "@lib/features"
 import { getNewBadgeDays } from "@lib/data/new-badge-days"
 import { NewBadgeProvider } from "@lib/context/new-badge-context"
+import { FabricCategoryLabelsProvider } from "@lib/context/fabric-category-labels-context"
+import { getFabricCategoryLabels } from "@lib/fabric-category-labels"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -115,11 +117,13 @@ export default async function PageLayout({
     showAllProductsActive,
     goToConfiguratorActive,
     newBadgeDays,
+    fabricCategoryLabels,
   ] = await Promise.all([
       canShowAllProductsToggle(),
       getShowAllProductsCookie(),
       getGoToConfiguratorActive(),
       getNewBadgeDays(),
+      getFabricCategoryLabels(validLanguage),
     ])
 
   // Where the customer picker lands after a selection (agents/admins only).
@@ -140,6 +144,7 @@ export default async function PageLayout({
         <ShopSettingsProvider initialShopSettings={shopSettings}>
           <CartProvider>
             <NewBadgeProvider days={newBadgeDays}>
+            <FabricCategoryLabelsProvider labels={fabricCategoryLabels}>
             <GoToConfiguratorProvider initialActive={goToConfiguratorActive}>
               {chromeless ? (
                 <main className="min-h-screen">{children}</main>
@@ -158,6 +163,7 @@ export default async function PageLayout({
                 </div>
               )}
             </GoToConfiguratorProvider>
+            </FabricCategoryLabelsProvider>
             </NewBadgeProvider>
             {!chromeless && features.tawk && <TawkToChat />}
           </CartProvider>

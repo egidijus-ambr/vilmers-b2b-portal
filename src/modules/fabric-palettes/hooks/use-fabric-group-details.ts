@@ -2,6 +2,7 @@
 
 import { getFabricGroupNumber } from "../../../lib/fabric-palettes/fabric-category"
 import { useMemo } from "react"
+import { useFabricCategoryLabel } from "@lib/context/fabric-category-labels-context"
 import type {
   FabricGroupDetail,
   FabricFeatureDetail,
@@ -25,6 +26,7 @@ export function useFabricGroupDetails(
   /** When set, show that single colour's effective category instead of the group's. */
   fabricCode?: string | null
 ) {
+  const fabricCategoryLabel = useFabricCategoryLabel()
   const priceCategory = useMemo(() => {
     // Shared with the filter: first colour's effective category.
     const fabric = fabricCode
@@ -33,8 +35,8 @@ export function useFabricGroupDetails(
     const groupNumber = fabric
       ? getFabricGroupNumber(fabric, resolveGroupDefaultCategory(groupData))
       : resolveGroupDisplayCategory(groupData)
-    return groupNumber !== null ? `CAT ${groupNumber}` : null
-  }, [groupData, fabricCode])
+    return groupNumber !== null ? fabricCategoryLabel(groupNumber) : null
+  }, [groupData, fabricCode, fabricCategoryLabel])
 
   const description = useMemo(() => {
     const profile = resolveProfile(groupData.fabric_group_profiles, languageCode)
