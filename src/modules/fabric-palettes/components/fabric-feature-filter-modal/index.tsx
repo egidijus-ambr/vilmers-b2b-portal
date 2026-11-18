@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { clx } from "@medusajs/ui"
 import X from "@modules/common/icons/x"
+import { useFabricCategoryLabel } from "@lib/context/fabric-category-labels-context"
 import Button from "@modules/common/components/button"
 import type {
   FabricPaletteDetail,
@@ -34,6 +35,7 @@ export default function FabricFeatureFilterModal({
   language,
   labels,
 }: FabricFeatureFilterModalProps) {
+  const fabricCategoryLabel = useFabricCategoryLabel()
   const [isOpen, setIsOpen] = useState(false)
   const [pendingFeatures, setPendingFeatures] = useState<Set<number>>(new Set())
   const [pendingPriceCategories, setPendingPriceCategories] = useState<Set<number>>(new Set())
@@ -314,7 +316,7 @@ export default function FabricFeatureFilterModal({
                                       : "bg-gold-20 text-dark-blue hover:bg-gold-200 border hover:border-gray-400"
                                 )}
                               >
-                                CAT {groupNumber}
+                                {fabricCategoryLabel(groupNumber)}
                                 <span className={clx("ml-1.5", disabled ? "text-gray-300" : selected ? "text-gray-300" : "text-gray-400")}>
                                   ({count})
                                 </span>

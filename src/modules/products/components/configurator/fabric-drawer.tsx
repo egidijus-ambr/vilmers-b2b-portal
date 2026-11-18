@@ -9,6 +9,7 @@ import type { Fabric, FabricGroupWithPrice, FabricCombinationOption } from "@con
 import { useFabricCategoryAvailability } from "@configurator/hooks/use-fabric-category-availability"
 import type { FabricCategoryAvailability } from "@configurator/lib/price-utils"
 import { useTranslations } from "@lib/i18n"
+import { useFabricCategoryLabel } from "@lib/context/fabric-category-labels-context"
 import { useCustomerPaletteIds, getGroupName } from "@configurator/lib/palette-utils"
 import {
   compareFabricsForDisplay,
@@ -45,6 +46,7 @@ const FabricDrawer = ({
 
   const customerPaletteIds = useCustomerPaletteIds()
   const { t } = useTranslations("account")
+  const fabricCategoryLabel = useFabricCategoryLabel()
   const getCategoryAvailability = useFabricCategoryAvailability(option?.id ?? null)
   const unavailableReason = t(
     state.sofaForms.length > 0
@@ -269,7 +271,7 @@ const FabricDrawer = ({
                             </span>
                             {catNumber != null && (
                               <span className="text-xs text-gray-500">
-                                CAT {catNumber}
+                                {fabricCategoryLabel(catNumber)}
                               </span>
                             )}
                           </div>
