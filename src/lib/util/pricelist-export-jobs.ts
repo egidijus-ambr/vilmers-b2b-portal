@@ -41,7 +41,7 @@ import {
 
 // Bump when pricelist-workbook.ts (or the image pools) change what a built
 // file looks like, so stale cached files are never served after a deploy.
-export const WORKBOOK_VERSION = "7"
+export const WORKBOOK_VERSION = "8"
 
 const COMPANY_NAME = "Vilmers"
 const CURRENCY = "EUR"

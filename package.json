@@ -18,6 +18,7 @@
     "verify:fabric-conditions": "sucrase-node scripts/verify-fabric-conditions.ts",
     "verify:palette-colors": "sucrase-node scripts/verify-palette-colors.ts",
     "verify:price-overrides": "sucrase-node scripts/verify-price-overrides.ts",
+    "verify:pricelist-valid-from": "sucrase-node scripts/verify-pricelist-valid-from.ts",
     "verify:v1-session": "node --conditions=react-server -r sucrase/register scripts/verify-v1-session.ts"
   },
   "dependencies": {

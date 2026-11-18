@@ -646,6 +646,7 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
             where: { price_listId: { equals: $priceListId } }
           ) {
             price
+            valid_from
             fabrice_price_category {
               group_number
             }
@@ -661,6 +662,7 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
           where: { price_listId: { equals: $priceListId } }
         ) {
           price
+          valid_from
           fabrice_price_category {
             group_number
           }
@@ -671,11 +673,13 @@ const GET_SOFA_PRICELIST_EXPORT_PRODUCTS = gql`
           extra_price
           extra_prices(where: { price_listId: { equals: $priceListId } }) {
             price
+            valid_from
           }
           price_fabric_category(
             where: { price_listId: { equals: $priceListId } }
           ) {
             price
+            valid_from
             fabrice_price_category {
               group_number
             }

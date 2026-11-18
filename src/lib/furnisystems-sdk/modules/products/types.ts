@@ -294,6 +294,9 @@ export interface LinkedProductData {
 // this is a dedicated bulk query, not a reuse of the product-card fragment.
 export interface PricelistExportPriceRow {
   price: number
+  // DB date (null = open start), serialized as an ISO string at UTC
+  // midnight. Optional so hand-built fixtures without it still typecheck.
+  valid_from?: string | null
   fabrice_price_category: {
     group_number: number
   }
@@ -396,6 +399,8 @@ export interface PricelistExportComponent {
 
 export interface PricelistExportComponentExtraPrice {
   price: number
+  // See PricelistExportPriceRow.valid_from.
+  valid_from?: string | null
 }
 
 export interface PricelistExportComponentAssociation {

@@ -13,6 +13,7 @@ import type {
 } from "@lib/furnisystems-sdk/modules/products/types"
 import type { PricelistImage } from "./image-resize"
 import { isSharpAvailable } from "./image-resize"
+import { latestValidFrom } from "./pricelist-valid-from"
 
 const INVALID_SHEET_NAME_CHARS = /[\[\]:*?/\\]/g
 const MAX_SHEET_NAME_LENGTH = 31
@@ -585,7 +586,8 @@ function formatCoverDate(date: Date): string {
 
 function addCoverSheet(
   workbook: ExcelJS.Workbook,
-  meta: PricelistWorkbookMeta,
+  // Shown top-left; see buildPricelistWorkbook's `priceDate`.
+  priceDate: Date,
   cover: PricelistCover
 ): void {
   const sheet = workbook.addWorksheet(COVER_SHEET_NAME, {
@@ -616,7 +618,7 @@ function addCoverSheet(
 
   // Date, top-left of the content area.
   const dateCell = sheet.getCell(1 + COVER_GUTTER_ROWS, COVER_CONTENT_COL)
-  dateCell.value = formatCoverDate(meta.generatedAt)
+  dateCell.value = formatCoverDate(priceDate)
   dateCell.font = { name: COVER_FONT_NAME, size: 10 }
   dateCell.alignment = { horizontal: "left", vertical: "middle" }
 
@@ -1593,6 +1595,10 @@ interface ComponentDataRow {
   // other category cells blank.
   priceByGroup: Map<number, number> | null
   flatPrice: number | null
+  // Latest `valid_from` among the price rows whose values this row renders
+  // (null when none carries one) — feeds the workbook's "prices valid from"
+  // date (see buildPricelistWorkbook's priceDate).
+  validFrom: Date | null
   // The component's own src_facebook URL (see PricelistExportComponentImage),
   // or `null` when the component has no image at all. Threaded straight from
   // buildComponentDataRow rather than re-read from the association at embed
@@ -1622,6 +1628,27 @@ function buildPriceByGroupMap(rows: PricelistExportPriceRow[]): Map<number, numb
 }
 
 /**
+ * Latest `valid_from` among the rows that WIN the max-per-group_number pivot
+ * (same rule — and same strict `>` tie-break — as buildPriceByGroupMap and
+ * writeDataRow's own pivot), i.e. only the rows whose price is rendered.
+ * `@@unique([..., fabrice_price_categoryId, price_listId])` means there is
+ * normally one row per group anyway; this just stays exact if not.
+ */
+function latestWinningValidFrom(rows: PricelistExportPriceRow[]): Date | null {
+  const winnerByGroup = new Map<number, PricelistExportPriceRow>()
+  for (const row of rows) {
+    const groupNumber = row.fabrice_price_category.group_number
+    const existing = winnerByGroup.get(groupNumber)
+    if (existing === undefined || row.price > existing.price) {
+      winnerByGroup.set(groupNumber, row)
+    }
+  }
+  return latestValidFrom(
+    Array.from(winnerByGroup.values(), (row) => row.valid_from)
+  )
+}
+
+/**
  * Flat (non-fabric-category) price for one component association, or `null`
  * if it has none for this pricelist. Prefers `extra_prices[0].price` (the
  * query already filters this to the export's pricelist — see
@@ -1632,14 +1659,20 @@ function buildPriceByGroupMap(rows: PricelistExportPriceRow[]): Map<number, numb
  * of a product's ~50+ components carry — a real 0 there means "no price",
  * not "priced at zero", so it's excluded (`> 0`), unlike a genuine
  * `extra_prices`/`price_fabric_category` row of 0, which IS a real price.
+ *
+ * Also returns the `valid_from` of the row the price came from: the
+ * pricelist-scoped `extra_prices[0]` carries one; the legacy `extra_price`
+ * scalar has no validity date, so it contributes `null`.
  */
 function resolveComponentFlatPrice(
   assoc: PricelistExportComponentAssociation
-): number | null {
-  const listPrice = assoc.extra_prices[0]?.price
-  if (typeof listPrice === "number") return listPrice
-  if (assoc.extra_price > 0) return assoc.extra_price
-  return null
+): { price: number | null; validFrom: Date | null } {
+  const listRow = assoc.extra_prices[0]
+  if (typeof listRow?.price === "number") {
+    return { price: listRow.price, validFrom: latestValidFrom([listRow.valid_from]) }
+  }
+  if (assoc.extra_price > 0) return { price: assoc.extra_price, validFrom: null }
+  return { price: null, validFrom: null }
 }
 
 /**
@@ -1712,6 +1745,7 @@ function buildComponentDataRow(
   assoc: PricelistExportComponentAssociation,
   priceByGroup: Map<number, number> | null,
   flatPrice: number | null,
+  validFrom: Date | null,
   dimensionDecimals: number
 ): ComponentDataRow {
   const component = assoc.additional_component
@@ -1733,6 +1767,7 @@ function buildComponentDataRow(
     volume,
     priceByGroup,
     flatPrice,
+    validFrom,
     photoUrl: component.image?.src_facebook ?? null,
   }
 }
@@ -1788,6 +1823,8 @@ interface PricedComponentEntry {
   assoc: PricelistExportComponentAssociation
   priceByGroup: Map<number, number> | null
   flatPrice: number | null
+  // See ComponentDataRow.validFrom.
+  validFrom: Date | null
 }
 
 interface ParsedBedEntry {
@@ -1940,6 +1977,13 @@ function buildBedCombinedRows(
       volume: volume > 0 ? Math.round(volume * 1e6) / 1e6 : null,
       priceByGroup,
       flatPrice,
+      // Sum of these three entries' prices; each of them is also rendered in
+      // its own regular section below, so this adds no new date.
+      validFrom: latestValidFrom([
+        frame.entry.validFrom,
+        cover.entry.validFrom,
+        mattress.entry.entry.validFrom,
+      ]),
       photoUrl: frameComponent.image?.src_facebook ?? null,
     })
   }
@@ -2016,6 +2060,9 @@ function buildComponentRows(
         advancedProduct.advanced_product_price_fabric_category
       ),
       flatPrice: null,
+      validFrom: latestWinningValidFrom(
+        advancedProduct.advanced_product_price_fabric_category
+      ),
       // The advanced-product level, not a single component — there's no
       // AdditionalComponent.image to read here at all.
       photoUrl: null,
@@ -2027,10 +2074,7 @@ function buildComponentRows(
   // are dropped here, before grouping, so an all-unpriced group never makes
   // it into `groupsById` and therefore never gets a section label either.
   const groupsById = new Map<number, PricelistExportComponentGroup>()
-  const pricedByGroupId = new Map<
-    number,
-    { assoc: PricelistExportComponentAssociation; priceByGroup: Map<number, number> | null; flatPrice: number | null }[]
-  >()
+  const pricedByGroupId = new Map<number, PricedComponentEntry[]>()
 
   for (const assoc of advancedProduct.additional_component_to_advanced_product) {
     const component = assoc.additional_component
@@ -2045,6 +2089,7 @@ function buildComponentRows(
 
     let priceByGroup: Map<number, number> | null = null
     let flatPrice: number | null = null
+    let validFrom: Date | null = null
 
     if (group.use_fabric_prices_for_components === false) {
       // The group has opted OUT of per-fabric-category pricing (mirrors the
@@ -2055,7 +2100,8 @@ function buildComponentRows(
       // price rows happen to be present. So price_fabric_category rows are
       // ignored here even when they exist, and the flat price is
       // authoritative.
-      flatPrice = resolveComponentFlatPrice(assoc)
+      ;({ price: flatPrice, validFrom } =
+        resolveComponentFlatPrice(assoc))
 
       if (flatPrice === null && assoc.price_fabric_category.length > 0) {
         // Data-inconsistency fallback: the group says "single price" but
@@ -2068,18 +2114,26 @@ function buildComponentRows(
         const byGroup = buildPriceByGroupMap(assoc.price_fabric_category)
         const lowestGroupNumber = Math.min(...Array.from(byGroup.keys()))
         flatPrice = byGroup.get(lowestGroupNumber) ?? null
+        // Only the lowest group's winning row is rendered.
+        validFrom = latestWinningValidFrom(
+          assoc.price_fabric_category.filter(
+            (row) => row.fabrice_price_category.group_number === lowestGroupNumber
+          )
+        )
       }
     } else if (assoc.price_fabric_category.length > 0) {
       priceByGroup = buildPriceByGroupMap(assoc.price_fabric_category)
+      validFrom = latestWinningValidFrom(assoc.price_fabric_category)
     } else {
-      flatPrice = resolveComponentFlatPrice(assoc)
+      ;({ price: flatPrice, validFrom } =
+        resolveComponentFlatPrice(assoc))
     }
 
     if (priceByGroup === null && flatPrice === null) continue // unpriced — skip
 
     groupsById.set(group.id, group)
     const entries = pricedByGroupId.get(group.id) ?? []
-    entries.push({ assoc, priceByGroup, flatPrice })
+    entries.push({ assoc, priceByGroup, flatPrice, validFrom })
     pricedByGroupId.set(group.id, entries)
   }
 
@@ -2101,6 +2155,7 @@ function buildComponentRows(
         entry.assoc,
         entry.priceByGroup,
         entry.flatPrice,
+        entry.validFrom,
         dimensionDecimals
       )
     )
@@ -2130,6 +2185,7 @@ function buildComponentRows(
         entry.assoc,
         entry.priceByGroup,
         entry.flatPrice,
+        entry.validFrom,
         dimensionDecimals
       )
     )
@@ -2905,66 +2961,6 @@ export async function buildPricelistWorkbook(
       ? Array.from(groupNumbers).sort((a, b) => a - b)
       : [PRICE_ONLY_GROUP_NUMBER]
 
-  const workbook = new ExcelJS.Workbook()
-  workbook.creator = meta.companyName
-  workbook.created = meta.generatedAt
-
-  // Cover (optional) is the very first tab; Info follows.
-  if (cover) addCoverSheet(workbook, meta, cover)
-
-  // Added first (after the optional cover) so it renders as the next tab. The trailing
-  // blank row + product index are filled in after the product loop below,
-  // once the index rows are known — but the metadata block above them
-  // (including the master multiplier) is written right away, since every
-  // product sheet's C9 formula needs to reference the multiplier row number.
-  const infoSheet = workbook.addWorksheet(INFO_SHEET_NAME, {
-    views: [{ showGridLines: false }],
-  })
-
-  infoSheet.columns = [{ width: 20 }, { width: 50 }]
-  infoSheet.addRow(["Company", meta.companyName])
-  infoSheet.addRow(["Pricelist", meta.pricelistName])
-  infoSheet.addRow([
-    "Prices as of",
-    meta.generatedAt.toISOString().slice(0, 10),
-  ])
-  infoSheet.addRow(["Currency", `All prices are in ${meta.currency}.`])
-  // Master multiplier: every product sheet's C9 defaults to a formula
-  // pointing back at this cell (see writeMultiplierCell). The row number is
-  // captured from `addRow`'s own return value — NEVER hardcoded — so
-  // inserting another metadata row above/below this one can't silently break
-  // every sheet's formula.
-  const multiplierRow = infoSheet.addRow(["Price multiplier", 1])
-  const masterMultiplierRow = multiplierRow.number
-  multiplierRow.getCell(1).font = MULTIPLIER_LABEL_FONT
-
-  // Lowercased dedupe keys (see safeSheetName's doc comment) — "info"
-  // reserves the Info tab's own name so no product can collide with it,
-  // case-insensitively.
-  const usedSheetNames = new Set<string>(
-    cover ? ["cover", "info"] : ["info"]
-  )
-
-  // Dedupes embedded images by source URL: `workbook.addImage` is called at
-  // most once per distinct URL, and every sheet sharing that photo reuses
-  // the same returned id — otherwise a photo shared by N products would be
-  // embedded N times.
-  const imageIdByUrl = new Map<string, number>()
-
-  // Same dedupe pattern as imageIdByUrl, kept SEPARATE (see this function's
-  // doc comment above) — module blueprints and category photos never share
-  // a URL, but even if they somehow did, sharing one map would wrongly reuse
-  // a JPEG-typed embed id for a PNG buffer or vice versa.
-  const blueprintIdByUrl = new Map<string, number>()
-
-  // Same dedupe pattern again, kept SEPARATE from both maps above (see
-  // ComponentPhotoEmbedContext's doc comment) — a component photo and a
-  // category photo are both JPEGs but never share a URL in practice (one is
-  // AdvancedProduct.category_photo, the other AdditionalComponent.image),
-  // and keeping every image set on its own map means a future change to one
-  // can never accidentally corrupt another's dedupe.
-  const componentPhotoIdByUrl = new Map<string, number>()
-
   // Resolves the FINAL admitted/renderable set that will produce a sheet —
   // the same skip-checks the sheet-writing loop used to run inline, moved
   // out front so groupProductsByCategory can group them BEFORE any sheet
@@ -3049,6 +3045,85 @@ export async function buildPricelistWorkbook(
       sheetName: "",
     })
   }
+
+  // "Prices valid from" date shown on the cover and the Info sheet: the
+  // latest `valid_from` among the price values actually rendered (only
+  // renderableProducts, and per product only the rows its sheet writes —
+  // see ComponentDataRow.validFrom / latestWinningValidFrom). Falls back to
+  // the export time when no rendered price carries a date. `workbook.created`
+  // and the caller's file naming keep using `meta.generatedAt`.
+  const renderedValidFroms: (Date | null)[] = []
+  for (const { advancedProduct, isSofa, componentRows } of renderableProducts) {
+    if (isSofa) {
+      for (const form of advancedProduct.sofa_forms) {
+        renderedValidFroms.push(
+          latestWinningValidFrom(form.form_price_fabric_category)
+        )
+      }
+    } else {
+      for (const row of componentRows) {
+        if (row.kind === "data") renderedValidFroms.push(row.validFrom)
+      }
+    }
+  }
+  const priceDate = latestValidFrom(renderedValidFroms) ?? meta.generatedAt
+
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = meta.companyName
+  workbook.created = meta.generatedAt
+
+  // Cover (optional) is the very first tab; Info follows.
+  if (cover) addCoverSheet(workbook, priceDate, cover)
+
+  // Added first (after the optional cover) so it renders as the next tab. The trailing
+  // blank row + product index are filled in after the product loop below,
+  // once the index rows are known — but the metadata block above them
+  // (including the master multiplier) is written right away, since every
+  // product sheet's C9 formula needs to reference the multiplier row number.
+  const infoSheet = workbook.addWorksheet(INFO_SHEET_NAME, {
+    views: [{ showGridLines: false }],
+  })
+
+  infoSheet.columns = [{ width: 20 }, { width: 50 }]
+  infoSheet.addRow(["Company", meta.companyName])
+  infoSheet.addRow(["Pricelist", meta.pricelistName])
+  infoSheet.addRow(["Prices as of", priceDate.toISOString().slice(0, 10)])
+  infoSheet.addRow(["Currency", `All prices are in ${meta.currency}.`])
+  // Master multiplier: every product sheet's C9 defaults to a formula
+  // pointing back at this cell (see writeMultiplierCell). The row number is
+  // captured from `addRow`'s own return value — NEVER hardcoded — so
+  // inserting another metadata row above/below this one can't silently break
+  // every sheet's formula.
+  const multiplierRow = infoSheet.addRow(["Price multiplier", 1])
+  const masterMultiplierRow = multiplierRow.number
+  multiplierRow.getCell(1).font = MULTIPLIER_LABEL_FONT
+
+  // Lowercased dedupe keys (see safeSheetName's doc comment) — "info"
+  // reserves the Info tab's own name so no product can collide with it,
+  // case-insensitively.
+  const usedSheetNames = new Set<string>(
+    cover ? ["cover", "info"] : ["info"]
+  )
+
+  // Dedupes embedded images by source URL: `workbook.addImage` is called at
+  // most once per distinct URL, and every sheet sharing that photo reuses
+  // the same returned id — otherwise a photo shared by N products would be
+  // embedded N times.
+  const imageIdByUrl = new Map<string, number>()
+
+  // Same dedupe pattern as imageIdByUrl, kept SEPARATE (see this function's
+  // doc comment above) — module blueprints and category photos never share
+  // a URL, but even if they somehow did, sharing one map would wrongly reuse
+  // a JPEG-typed embed id for a PNG buffer or vice versa.
+  const blueprintIdByUrl = new Map<string, number>()
+
+  // Same dedupe pattern again, kept SEPARATE from both maps above (see
+  // ComponentPhotoEmbedContext's doc comment) — a component photo and a
+  // category photo are both JPEGs but never share a URL in practice (one is
+  // AdvancedProduct.category_photo, the other AdditionalComponent.image),
+  // and keeping every image set on its own map means a future change to one
+  // can never accidentally corrupt another's dedupe.
+  const componentPhotoIdByUrl = new Map<string, number>()
 
   // Ordered by category — see groupProductsByCategory's doc comment for the
   // single-tree invariant this establishes (both the sheet loop below and
