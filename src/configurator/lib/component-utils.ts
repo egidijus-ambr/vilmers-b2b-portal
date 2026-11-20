@@ -247,9 +247,6 @@ export function categorizeStep(groupCode: string): StepId {
   if (groupCode.startsWith("armrest") || groupCode.startsWith("legs")) {
     return "armrest-legs"
   }
-  if (groupCode === "headboard") {
-    return "headboard"
-  }
   if (groupCode.startsWith("threads")) {
     return "threads"
   }
@@ -268,7 +265,6 @@ const STEP_ORDER: StepId[] = [
   "fabric",
   "threads",
   "armrest-legs",
-  "headboard",
   "design",
   "other",
 ]
@@ -277,7 +273,6 @@ const STEP_LABELS: Record<StepId, string> = {
   fabric: "Fabrics",
   threads: "Threads",
   "armrest-legs": "Armrest & Legs",
-  headboard: "Headboard",
   design: "Design & Comfort",
   logo: "Logo",
   other: "Other",
@@ -297,8 +292,7 @@ export function getStepsForProduct(
   hasFabricSelection?: boolean,
   customerComponentGroupCodes?: Set<string>,
   options?: ValidComponentsOptions,
-  multiEntryCustomerComponentCodesByGroup?: Map<string, Set<string>>,
-  translateFn?: (key: string) => string
+  multiEntryCustomerComponentCodesByGroup?: Map<string, Set<string>>
 ): StepDefinition[] {
   // Categorize groups into steps
   const stepGroups = new Map<StepId, ComponentGroup[]>()
@@ -338,8 +332,8 @@ export function getStepsForProduct(
   // For sofa products: sofa-modules → fabric → threads → armrest-legs → design → logo
   // For non-sofa products: design → armrest-legs → logo (fabric/threads only if hasFabricSelection)
   const baseStepIds: StepId[] = isSofa
-    ? ["sofa-modules", "fabric", "threads", "armrest-legs", "headboard", "design", "other"]
-    : ["design", "fabric", "threads", "headboard", "armrest-legs", "other"]
+    ? ["sofa-modules", "fabric", "threads", "armrest-legs", "design", "other"]
+    : ["design", "fabric", "threads", "armrest-legs", "other"]
 
   // Filter out fabric and threads steps when hasFabricSelection is false
   const orderedStepIds =
@@ -366,9 +360,17 @@ export function getStepsForProduct(
         const aIsModel = a.code.startsWith("model") ? 0 : 1
         const bIsModel = b.code.startsWith("model") ? 0 : 1
         if (aIsModel !== bIsModel) return aIsModel - bIsModel
+        // Beds: the headboard sits directly below the model/size group,
+        // ahead of mattress / top-mattress / cover (they share the design step).
+        const aIsHead = a.code === "headboard" ? 0 : 1
+        const bIsHead = b.code === "headboard" ? 0 : 1
+        if (aIsHead !== bIsHead) return aIsHead - bIsHead
         return (a.order ?? 0) - (b.order ?? 0)
       })
+      // The headboard group is left out of the composed step label so the
+      // first step keeps its existing "Size & Top mattress & ..." name.
       const groupNames = sortedGroups
+        .filter((g) => g.code !== "headboard")
         .map((g) => g.additional_component_group_profiles?.[0]?.name)
         .filter(Boolean)
       let label: string
@@ -377,10 +379,7 @@ export function getStepsForProduct(
       } else if (groupNames.length > 0) {
         label = [...new Set(groupNames)].join(" & ")
       } else {
-        label =
-          stepId === "headboard" && translateFn
-            ? translateFn("headboard")
-            : STEP_LABELS[stepId]
+        label = STEP_LABELS[stepId]
       }
       steps.push({ id: stepId, label, groups: sortedGroups })
     }

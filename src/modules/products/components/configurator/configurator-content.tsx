@@ -224,8 +224,7 @@ const ConfiguratorContent = ({
         hasFabricSelection,
         singleEntryGroupCodes,
         { priceListIds: customerPriceListIds, showAllProducts, fabricGroupCodes },
-        multiEntryCustomerComponentCodesByGroup,
-        t
+        multiEntryCustomerComponentCodesByGroup
       ),
       { id: "reference" as any, label: t("customer-reference"), groups: [] },
     ],
