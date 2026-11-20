@@ -247,6 +247,9 @@ export function categorizeStep(groupCode: string): StepId {
   if (groupCode.startsWith("armrest") || groupCode.startsWith("legs")) {
     return "armrest-legs"
   }
+  if (groupCode === "headboard") {
+    return "headboard"
+  }
   if (groupCode.startsWith("threads")) {
     return "threads"
   }
@@ -265,6 +268,7 @@ const STEP_ORDER: StepId[] = [
   "fabric",
   "threads",
   "armrest-legs",
+  "headboard",
   "design",
   "other",
 ]
@@ -273,6 +277,7 @@ const STEP_LABELS: Record<StepId, string> = {
   fabric: "Fabrics",
   threads: "Threads",
   "armrest-legs": "Armrest & Legs",
+  headboard: "Headboard",
   design: "Design & Comfort",
   logo: "Logo",
   other: "Other",
@@ -292,7 +297,8 @@ export function getStepsForProduct(
   hasFabricSelection?: boolean,
   customerComponentGroupCodes?: Set<string>,
   options?: ValidComponentsOptions,
-  multiEntryCustomerComponentCodesByGroup?: Map<string, Set<string>>
+  multiEntryCustomerComponentCodesByGroup?: Map<string, Set<string>>,
+  translateFn?: (key: string) => string
 ): StepDefinition[] {
   // Categorize groups into steps
   const stepGroups = new Map<StepId, ComponentGroup[]>()
@@ -332,8 +338,8 @@ export function getStepsForProduct(
   // For sofa products: sofa-modules → fabric → threads → armrest-legs → design → logo
   // For non-sofa products: design → armrest-legs → logo (fabric/threads only if hasFabricSelection)
   const baseStepIds: StepId[] = isSofa
-    ? ["sofa-modules", "fabric", "threads", "armrest-legs", "design", "other"]
-    : ["design", "fabric", "threads", "armrest-legs", "other"]
+    ? ["sofa-modules", "fabric", "threads", "armrest-legs", "headboard", "design", "other"]
+    : ["design", "fabric", "threads", "headboard", "armrest-legs", "other"]
 
   // Filter out fabric and threads steps when hasFabricSelection is false
   const orderedStepIds =
@@ -371,7 +377,10 @@ export function getStepsForProduct(
       } else if (groupNames.length > 0) {
         label = [...new Set(groupNames)].join(" & ")
       } else {
-        label = STEP_LABELS[stepId]
+        label =
+          stepId === "headboard" && translateFn
+            ? translateFn("headboard")
+            : STEP_LABELS[stepId]
       }
       steps.push({ id: stepId, label, groups: sortedGroups })
     }

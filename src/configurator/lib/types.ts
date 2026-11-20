@@ -284,7 +284,7 @@ export interface LinkedComponent {
   }
 }
 
-export type StepId = 'sofa-modules' | 'fabric' | 'armrest-legs' | 'design' | 'threads' | 'logo' | 'other'
+export type StepId = 'sofa-modules' | 'fabric' | 'armrest-legs' | 'headboard' | 'design' | 'threads' | 'logo' | 'other'
 
 export interface StepDefinition {
   id: StepId

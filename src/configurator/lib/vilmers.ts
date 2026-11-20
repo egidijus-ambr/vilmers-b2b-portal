@@ -16,6 +16,17 @@ export const SITTING_CUSHION_COMFORT_CODE = "sitting-cushion-comfort"
 export const BACK_CUSHION_COMFORT_CODE = "back-cushion-comfort"
 export const ARMREST_CODE = "armrest"
 export const LEGS_CODE = "legs"
+export const HEADBOARD_CODE = "headboard"
+
+/**
+ * Extracts the AX frame-module id from a headboard component code. Codes are
+ * expected to look like armrest ones (`<MODEL>:<A001>`); the id is the part
+ * after ":". Single place to adjust if the ERP's final code format differs.
+ */
+export const getHeadboardModuleId = (code?: string | null): string => {
+  if (!code || code === "0") return ""
+  return code.includes(":") ? code.split(":")[1] : code
+}
 export const THREADS_CODE = "threads-type"
 export const THREADS_COLOR_CODE = "threads-colors"
 export const LOGOS_CODE = "logos"
@@ -79,6 +90,19 @@ const getSingleComponentConfigString = (
     armrestConfig = `${armRestLeft}${armRestRight}`
   }
 
+  // Headboard (beds): a separate `headboard` group, not an armrest. Slot
+  // choice CONFIRMED by the user: AX stores "Hedbord" in the PK frame slot
+  // (A001X1), so it is sent as armRestLeft; right stays empty.
+  const headboard = !armrests
+    ? additionalComponents?.find(
+        (c: any) => c.groupCode === HEADBOARD_CODE && c.code !== "0"
+      )
+    : undefined
+  if (headboard) {
+    armRestLeft = getHeadboardModuleId(headboard.code) + "X1"
+    armrestConfig = armRestLeft
+  }
+
   // baldam turintiems abu porankius (baigiasi penketu) reikia paduoti abu defaultinius porankiu id
   if (armrestConfig.length === 0) {
     if (item.code?.[item.code?.length - 1] === "5") {
@@ -92,7 +116,10 @@ const getSingleComponentConfigString = (
   let frameDesign = "XX"
 
   try {
-    frameDesign = armrests?.metadata?.frame_design ?? "XX"
+    frameDesign =
+      armrests?.metadata?.frame_design ??
+      headboard?.metadata?.frame_design ??
+      "XX"
   } catch (e) {
     console.error("Error parsing armrest metadata", e)
   }
@@ -519,10 +546,13 @@ export const getConfigString = ({
       const mattressCoverConfig = getSingleComponentConfigString(
         product,
         fabrics,
-        additionalComponents.map((component: any) => ({
-          ...component,
-          code: component.groupCode === LEGS_CODE ? "000" : component.code,
-        })),
+        additionalComponents
+          // headboard belongs to the main bed line only, not mattress lines
+          .filter((component: any) => component.groupCode !== HEADBOARD_CODE)
+          .map((component: any) => ({
+            ...component,
+            code: component.groupCode === LEGS_CODE ? "000" : component.code,
+          })),
         fabricCombination,
         setId,
         2,
@@ -542,10 +572,13 @@ export const getConfigString = ({
       const mattressConfig = getSingleComponentConfigString(
         product,
         fabrics,
-        additionalComponents.map((component: any) => ({
-          ...component,
-          code: component.groupCode === LEGS_CODE ? "000" : component.code,
-        })),
+        additionalComponents
+          // headboard belongs to the main bed line only, not mattress lines
+          .filter((component: any) => component.groupCode !== HEADBOARD_CODE)
+          .map((component: any) => ({
+            ...component,
+            code: component.groupCode === LEGS_CODE ? "000" : component.code,
+          })),
         fabricCombination,
         setId,
         1,
@@ -565,10 +598,13 @@ export const getConfigString = ({
       const topMattressConfig = getSingleComponentConfigString(
         product,
         fabrics,
-        additionalComponents.map((component: any) => ({
-          ...component,
-          code: component.groupCode === LEGS_CODE ? "000" : component.code,
-        })),
+        additionalComponents
+          // headboard belongs to the main bed line only, not mattress lines
+          .filter((component: any) => component.groupCode !== HEADBOARD_CODE)
+          .map((component: any) => ({
+            ...component,
+            code: component.groupCode === LEGS_CODE ? "000" : component.code,
+          })),
         fabricCombination,
         setId,
         1,
