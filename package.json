@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev --turbopack -p 8090",
     "build": "next build",
-    "start": "next start -p 8090",
+    "start": "next start -H 127.0.0.1 -p 8090",
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
     "translations:download": "node scripts/download-translations.js",
