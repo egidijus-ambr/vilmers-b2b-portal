@@ -10,8 +10,6 @@ import {
   UpdateCustomerInput,
   CreateAddressInput,
   UpdateAddressInput,
-  AuthCredentials,
-  RegisterInput,
   OrdersQueryOptions,
   OrdersQueryResult,
   FabricPaletteDetail,
@@ -40,18 +38,6 @@ async function setCookieIfAvailable(
     console.warn("Could not set cookie:", error)
   }
 }
-
-const LOGIN_MUTATION = gql`
-  mutation Login($email: String!, $password: String!) {
-    authenticateB2BCustomer(email: $email, password: $password)
-  }
-`
-
-const LOGIN_TO_STORE_WITH_TOKEN_MUTATION = gql`
-  mutation LoginToStoreWithToken {
-    loginToStoreWithToken
-  }
-`
 
 const GET_ME_QUERY = gql`
   query GetMe {
@@ -397,20 +383,6 @@ const GET_CUSTOMER_ORDER_BY_ID_QUERY = gql`
   }
 `
 
-const GET_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
-  mutation GetMagicLinkForB2BCustomer(
-    $email: String!
-    $language: Language
-    $ipAddress: String
-  ) {
-    getMagicLinkForB2BCustomer(
-      email: $email
-      language: $language
-      ipAddress: $ipAddress
-    )
-  }
-`
-
 const VERIFY_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION = gql`
   mutation VerifyMagicLinkForB2BCustomer($token: String!) {
     verifyMagicLinkForB2BCustomer(token: $token)
@@ -743,66 +715,6 @@ function isAuthGraphQLError(error: {
 
 export class CustomerModule {
   constructor(private client: GraphQLClient) {}
-
-  // TODO: Implement GraphQL queries and mutations for customer operations
-  // This will include:
-  // - getCustomer(): Promise<Customer | null>
-  // - login(credentials: AuthCredentials): Promise<{ token: string; customer: Customer }>
-  // - register(input: RegisterInput): Promise<{ token: string; customer: Customer }>
-  // - logout(): Promise<void>
-  // - createCustomer(input: CreateCustomerInput): Promise<Customer>
-  // - updateCustomer(input: UpdateCustomerInput): Promise<Customer>
-  // - createAddress(input: CreateAddressInput): Promise<Address>
-  // - updateAddress(id: string, input: UpdateAddressInput): Promise<Address>
-  // - deleteAddress(id: string): Promise<void>
-
-  async login(
-    credentials: AuthCredentials
-  ): Promise<{ token: string; customer: Customer }> {
-    try {
-      const response = await this.client.mutate<{
-        authenticateB2BCustomer: string
-      }>(LOGIN_MUTATION, {
-        variables: {
-          email: credentials.email,
-          password: credentials.password,
-        },
-      })
-
-      const token = response.authenticateB2BCustomer
-
-      if (!token) {
-        throw new Error("Authentication failed: No token received")
-      }
-
-      // Store token in cookies internally within the SDK
-      await setCookieIfAvailable("_furni_jwt", token, {
-        maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
-        httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
-      })
-
-      // TODO: Fetch customer data after successful authentication
-      // For now, we'll return a placeholder customer object
-      // This should be replaced with an actual customer query
-      const customer: Customer = {
-        id: "", // Will be populated from actual customer query
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        email: credentials.email,
-        full_name: "",
-        has_account: true,
-      }
-
-      return {
-        token,
-        customer,
-      }
-    } catch (error) {
-      throw error
-    }
-  }
 
   async getMe(): Promise<Customer | null> {
     // getMe() is queried with errorPolicy: "all" so that a partial GraphQL response (valid
@@ -1162,53 +1074,11 @@ export class CustomerModule {
     }
   }
 
-  async getStoreLoginLink(): Promise<string> {
-    try {
-      const response = await this.client.mutate<{
-        loginToStoreWithToken: string
-      }>(LOGIN_TO_STORE_WITH_TOKEN_MUTATION, {})
-
-      const resultToken = response.loginToStoreWithToken
-
-      if (!resultToken) {
-        throw new Error("Login with token failed: No token received")
-      }
-
-      const storeUrl = `${process.env.NEXT_PUBLIC_SHOP_URL}/login?token=${resultToken}`
-
-      return storeUrl
-    } catch (error) {
-      throw error
-    }
-  }
-
-  async getMagicLinkForB2BCustomer(
-    email: string,
-    language?: string,
-    ipAddress?: string
-  ): Promise<string> {
-    try {
-      const response = await this.client.mutate<{
-        getMagicLinkForB2BCustomer: string
-      }>(GET_MAGIC_LINK_FOR_B2B_CUSTOMER_MUTATION, {
-        variables: {
-          email,
-          language: language || null,
-          ipAddress: ipAddress || null,
-        },
-      })
-      // console.log("Magic link response:", response)
-      const result = response.getMagicLinkForB2BCustomer
-
-      if (!result) {
-        throw new Error("Failed to get magic link")
-      }
-      return result
-    } catch (error) {
-      throw error
-    }
-  }
-
+  /**
+   * Legacy (GraphQL) magic-link verify: only for JWT-shaped links mailed
+   * before stage 2c-3 (src/lib/data/customer.ts verifyMagicLinkAction).
+   * Requests go through v1 (src/lib/v1-session/magic-link.ts).
+   */
   async verifyMagicLink(token: string): Promise<string> {
     try {
       const response = await this.client.mutate<{
@@ -1225,12 +1095,14 @@ export class CustomerModule {
         throw new Error("Magic link verification failed: No token received")
       }
 
-      // Store token in cookies internally within the SDK
+      // Store token in cookies internally within the SDK. SameSite=Lax and
+      // Path=/ like setAuthToken (src/lib/data/cookies.ts, stage 2c-3).
       await setCookieIfAvailable("_furni_jwt", authToken, {
         maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
         httpOnly: true,
-        sameSite: "strict",
+        sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
+        path: "/",
       })
 
       return authToken
@@ -1357,6 +1229,10 @@ export class CustomerModule {
       // Clear JWT token from cookies
       await setCookieIfAvailable("_furni_jwt", "", {
         maxAge: -1,
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
       })
 
       console.log("Customer logged out successfully")

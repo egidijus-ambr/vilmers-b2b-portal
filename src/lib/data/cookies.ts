@@ -51,13 +51,19 @@ export const getCacheOptions = async (
   return { tags: [`${cacheTag}`] }
 }
 
+// `_furni_jwt` is SameSite=Lax (stage 2c-3), like the v1 session cookies
+// (src/lib/v1-session/cookies.ts): the magic-link click from an email is a
+// cross-site top-level GET and both sessions must behave the same on it; the
+// middleware's orphan rule (v1 cookies without `_furni_jwt` = ended login)
+// depends on that. Every writer and every deletion uses Path=/.
 export const setAuthToken = async (token: string) => {
   const cookies = await nextCookies()
   cookies.set("_furni_jwt", token, {
     maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
     httpOnly: true,
-    sameSite: "strict",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+    path: "/",
   })
 }
 
@@ -65,6 +71,10 @@ export const removeAuthToken = async () => {
   const cookies = await nextCookies()
   cookies.set("_furni_jwt", "", {
     maxAge: -1,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
   })
 }
 

@@ -1,4 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
+import { withV1Session } from "@lib/v1-session/middleware-binding"
+
+/** The GraphQL (legacy) session cookie; the source of truth for "logged in" until 2c-10. */
+const LEGACY_SESSION_COOKIE = "_furni_jwt"
+
+/**
+ * The magic-link landing (`/<lang>/auth/magic-link?token=...`, and the
+ * locale-less URL the email links to). The token is in the URL: never send it
+ * as a Referer, never cache the page (plan §3.3).
+ */
+const MAGIC_LINK_PATH = /^(?:\/[a-z]{2}(?:-[a-zA-Z]{2})?)?\/auth\/magic-link\/?$/
+
+function setMagicLinkHeaders(response: NextResponse) {
+  response.headers.set("Referrer-Policy", "no-referrer")
+  response.headers.set("Cache-Control", "no-store")
+}
 
 // Supported languages
 const supportedLanguages = ["en", "fr", "de"] as const
@@ -52,7 +68,21 @@ function detectLanguage(request: NextRequest): SupportedLanguage {
 }
 
 /**
- * Middleware to handle language-based routing
+ * Middleware: language-based routing, plus (stage 2c-3) the v1 session.
+ *
+ * v1 session (src/lib/v1-session/middleware-binding.ts withV1Session), only on
+ * URLs that already carry a supported locale (the locale redirect below
+ * stays as it is; the redirected request runs it). API routes and static
+ * files are outside it. In 2c-3 it ONLY refreshes and forwards:
+ *   - ok / deferred / unavailable: continue, touch no cookie, never redirect;
+ *   - anonymous + cleared "all" (definitive refresh 401): also delete
+ *     `_furni_jwt` (D5), forwarded into this request so its render already
+ *     shows the logged-out state;
+ *   - anonymous + cleared "none" (no v1 cookie: every pre-2c-3 and every
+ *     legacy-link login): nothing;
+ *   - orphan (v1 cookies without `_furni_jwt`): the binding logs the v1
+ *     session out best-effort and clears both v1 cookies, never refreshes it.
+ *     Requires `_furni_jwt` to be SameSite=Lax like the v1 cookies.
  */
 export async function middleware(request: NextRequest) {
   // Skip static assets
@@ -73,35 +103,49 @@ export async function middleware(request: NextRequest) {
 
   // If URL already has a valid language code, continue
   if (hasLanguageInUrl) {
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set("x-pathname", request.nextUrl.pathname)
-    const response = NextResponse.next({ request: { headers: requestHeaders } })
-    response.headers.set("x-pathname", request.nextUrl.pathname)
-    response.headers.set("x-language", urlLanguage)
+    return withV1Session(
+      request,
+      ({ result, next, deleteCookie }) => {
+        if (result.kind === "anonymous" && result.cleared === "all") {
+          deleteCookie(LEGACY_SESSION_COOKIE)
+        }
 
-    // Check if this is an account route and add no-cache headers
-    const isAccountRoute = request.nextUrl.pathname.includes("/account")
-    if (isAccountRoute) {
-      // Set comprehensive no-cache headers for account pages
-      response.headers.set(
-        "Cache-Control",
-        "no-cache, no-store, must-revalidate, private"
-      )
-      response.headers.set("Pragma", "no-cache")
-      response.headers.set("Expires", "0")
-      response.headers.set("X-Accel-Expires", "0")
-      response.headers.set("Surrogate-Control", "no-store")
-    }
+        const requestHeaders = new Headers(request.headers)
+        requestHeaders.set("x-pathname", request.nextUrl.pathname)
+        const response = next({ requestHeaders })
+        response.headers.set("x-pathname", request.nextUrl.pathname)
+        response.headers.set("x-language", urlLanguage)
 
-    // Update language preference cookie
-    response.cookies.set("preferred-language", urlLanguage, {
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    })
+        // Check if this is an account route and add no-cache headers
+        const isAccountRoute = request.nextUrl.pathname.includes("/account")
+        if (isAccountRoute) {
+          // Set comprehensive no-cache headers for account pages
+          response.headers.set(
+            "Cache-Control",
+            "no-cache, no-store, must-revalidate, private"
+          )
+          response.headers.set("Pragma", "no-cache")
+          response.headers.set("Expires", "0")
+          response.headers.set("X-Accel-Expires", "0")
+          response.headers.set("Surrogate-Control", "no-store")
+        }
 
-    return response
+        if (MAGIC_LINK_PATH.test(request.nextUrl.pathname)) {
+          setMagicLinkHeaders(response)
+        }
+
+        // Update language preference cookie
+        response.cookies.set("preferred-language", urlLanguage, {
+          maxAge: 60 * 60 * 24 * 30, // 30 days
+          httpOnly: true,
+          sameSite: "strict",
+          secure: process.env.NODE_ENV === "production",
+        })
+
+        return response
+      },
+      { companionCookie: LEGACY_SESSION_COOKIE }
+    )
   }
 
   // Detect preferred language and redirect immediately
@@ -153,6 +197,12 @@ export async function middleware(request: NextRequest) {
   response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
   response.headers.set("Pragma", "no-cache")
   response.headers.set("Expires", "0")
+
+  // The locale-less magic-link URL from the email: the redirect's Location
+  // carries the token too.
+  if (MAGIC_LINK_PATH.test(request.nextUrl.pathname)) {
+    setMagicLinkHeaders(response)
+  }
 
   return response
 }
