@@ -1,3 +1,5 @@
+// Neutral spinner only: since stage 2c-3 nothing is verified until the user
+// presses Continue on the page itself.
 export default function MagicLinkLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -25,12 +27,6 @@ export default function MagicLinkLoading() {
               ></path>
             </svg>
           </div>
-          <h2 className="mt-6 text-center font-extrabold text-gray-900">
-            Verifying your login
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Please wait while we log you in...
-          </p>
         </div>
       </div>
     </div>
