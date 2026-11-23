@@ -11,6 +11,8 @@ import "server-only"
  */
 import { createV1SessionClient, type V1SessionClient } from "./refresh"
 
+export { v1CookiesSecure } from "./cookies"
+
 let singleton: V1SessionClient | null = null
 
 export function v1SessionClient(): V1SessionClient {
@@ -29,7 +31,3 @@ export function resetV1SessionClientForTests(): void {
   singleton = null
 }
 
-/** Secure cookie attribute: same rule as setAuthToken (src/lib/data/cookies.ts). */
-export function v1CookiesSecure(): boolean {
-  return process.env.NODE_ENV === "production"
-}

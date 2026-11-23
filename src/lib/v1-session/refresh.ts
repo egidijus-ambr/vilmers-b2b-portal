@@ -1,8 +1,8 @@
 import "server-only"
 
 /**
- * v1 session client core (stage 2c-2, DORMANT: not imported by any live code
- * path). Server-side BFF client for furnisystems-backend /api/v1/auth/*.
+ * v1 session client core (stage 2c-2; live since 2c-3: the middleware refreshes
+ * through it, the magic-link / logout server actions store and end sessions). Server-side BFF client for furnisystems-backend /api/v1/auth/*.
  *
  * Pure and edge-safe (fetch + timers only; no next/*, no Buffer, no
  * node:crypto), so the same code runs in middleware (edge) and in server
@@ -61,8 +61,7 @@ import "server-only"
  *     every other failure leaves them untouched.
  */
 import {
-  V1_ACCESS_COOKIE,
-  V1_REFRESH_COOKIE,
+  v1CookieNames,
   V1_REFRESH_MAX_AGE_CAP_SECONDS,
   accessCookieMaxAge,
   v1CookieOptions,
@@ -775,14 +774,16 @@ export function writeV1SessionCookies(
       (isNaN(sessionRemaining) ? V1_REFRESH_MAX_AGE_CAP_SECONDS : sessionRemaining),
     V1_REFRESH_MAX_AGE_CAP_SECONDS
   )
-  jar.set(V1_REFRESH_COOKIE, tokens.refreshToken, v1CookieOptions(options.secure, Math.max(1, refreshMaxAge)))
-  jar.set(V1_ACCESS_COOKIE, tokens.accessToken, v1CookieOptions(options.secure, accessCookieMaxAge(tokens.expiresIn)))
+  const names = v1CookieNames(options.secure)
+  jar.set(names.refresh, tokens.refreshToken, v1CookieOptions(options.secure, Math.max(1, refreshMaxAge)))
+  jar.set(names.access, tokens.accessToken, v1CookieOptions(options.secure, accessCookieMaxAge(tokens.expiresIn)))
 }
 
 /** Deletes both v1 cookies (same path, so the browser actually drops them). */
 export function clearV1SessionCookies(jar: WritableCookieJar, options: { secure: boolean }): void {
-  jar.set(V1_ACCESS_COOKIE, "", v1CookieOptions(options.secure, 0))
-  jar.set(V1_REFRESH_COOKIE, "", v1CookieOptions(options.secure, 0))
+  const names = v1CookieNames(options.secure)
+  jar.set(names.access, "", v1CookieOptions(options.secure, 0))
+  jar.set(names.refresh, "", v1CookieOptions(options.secure, 0))
 }
 
 export type V1EnsureResult =
@@ -826,11 +827,12 @@ export async function ensureFreshV1Session(
   options: V1CookieWriteOptions & { force?: boolean; waitMs?: number }
 ): Promise<V1EnsureResult> {
   const nowMs = options.nowMs ?? Date.now()
-  const read = readV1Session(jar, nowMs)
+  const names = v1CookieNames(options.secure)
+  const read = readV1Session(jar, options.secure, nowMs)
   if (read.status === "ok" && !options.force) {
     return { kind: "ok", accessToken: read.accessToken, refreshed: false }
   }
-  const refreshToken = jar.get(V1_REFRESH_COOKIE)
+  const refreshToken = jar.get(names.refresh)
   if (!refreshToken) return { kind: "anonymous", cleared: "none" }
 
   jar.assertWritable()
@@ -844,8 +846,8 @@ export async function ensureFreshV1Session(
     return { kind: "anonymous", cleared: "all" }
   }
   if (outcome.kind === "rejected") {
-    if (!jar.get(V1_ACCESS_COOKIE)) return { kind: "anonymous", cleared: "none" }
-    jar.set(V1_ACCESS_COOKIE, "", v1CookieOptions(options.secure, 0))
+    if (!jar.get(names.access)) return { kind: "anonymous", cleared: "none" }
+    jar.set(names.access, "", v1CookieOptions(options.secure, 0))
     return { kind: "anonymous", cleared: "access" }
   }
   return { kind: "unavailable", failure: outcome }
@@ -856,19 +858,35 @@ export async function ensureFreshV1Session(
  * cookies (the user asked to leave). `acknowledged: true` = the backend
  * answered 204 (it does so even when it found nothing to revoke); `false` =
  * unreachable / failed, so the backend session may outlive the local logout.
+ * `waitMs`: stop waiting for the backend after this long (the request keeps
+ * running; the result is then not acknowledged, reason "timeout").
  */
 export async function logoutV1Session(
   client: V1SessionClient,
   jar: WritableCookieJar,
   ctx: V1RequestContext,
-  options: { secure: boolean }
+  options: { secure: boolean; waitMs?: number }
 ): Promise<{ acknowledged: boolean; failure?: V1TransientFailure }> {
   jar.assertWritable()
-  const refreshToken = jar.get(V1_REFRESH_COOKIE)
-  const accessToken = jar.get(V1_ACCESS_COOKIE)
+  const names = v1CookieNames(options.secure)
+  const refreshToken = jar.get(names.refresh)
+  const accessToken = jar.get(names.access)
   let result: { acknowledged: boolean; failure?: V1TransientFailure } = { acknowledged: true }
   if (refreshToken) {
-    const outcome = await client.logout(refreshToken, ctx, accessToken)
+    const pending = client.logout(refreshToken, ctx, accessToken)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const outcome =
+      options.waitMs === undefined
+        ? await pending
+        : await Promise.race([
+            pending,
+            new Promise<V1TransientFailure>((resolve) => {
+              timer = setTimeout(
+                () => resolve({ kind: "error", reason: "timeout", retryable: true }),
+                options.waitMs
+              )
+            }),
+          ]).finally(() => timer && clearTimeout(timer))
     if (outcome.kind !== "logged-out") result = { acknowledged: false, failure: outcome }
   }
   clearV1SessionCookies(jar, options)

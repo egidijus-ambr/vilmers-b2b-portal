@@ -12,8 +12,7 @@ import "server-only"
  */
 import {
   ACCESS_EXP_MARGIN_SECONDS,
-  V1_ACCESS_COOKIE,
-  V1_REFRESH_COOKIE,
+  v1CookieNames,
   type ReadonlyCookieJar,
 } from "./cookies"
 
@@ -28,12 +27,15 @@ export type V1SessionRead =
   /** Neither cookie: no v1 session. */
   | { status: "anonymous" }
 
+/** `secure` selects the cookie names (see ./cookies v1CookieNames). */
 export function readV1Session(
   jar: ReadonlyCookieJar,
+  secure: boolean,
   nowMs: number = Date.now()
 ): V1SessionRead {
-  const accessToken = jar.get(V1_ACCESS_COOKIE) || undefined
-  const refreshToken = jar.get(V1_REFRESH_COOKIE) || undefined
+  const names = v1CookieNames(secure)
+  const accessToken = jar.get(names.access) || undefined
+  const refreshToken = jar.get(names.refresh) || undefined
 
   if (accessToken) {
     const expMs = jwtExpiryMs(accessToken)

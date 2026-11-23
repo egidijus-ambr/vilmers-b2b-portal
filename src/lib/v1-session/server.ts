@@ -2,8 +2,14 @@ import "server-only"
 
 /**
  * Next.js bindings of the v1 session client for server actions and route
- * handlers (stage 2c-2, DORMANT: nothing in the running portal imports this
- * module yet; 2c-3 / 2c-4 / 2c-10 switch callers over one at a time).
+ * handlers (stage 2c-2; live since 2c-3: magic-link request / verify, logout,
+ * /api/clear-session and the GraphQL impersonation landing use it).
+ *
+ * 2c-3 rule: server actions and route handlers only STORE a pair
+ * (storeV1TokensInAction, after verify) or LOG OUT (logoutV1SessionInAction).
+ * None calls ensureV1SessionInAction: the middleware (./middleware-binding.ts)
+ * is the single refresh site, and a route handler outside its matcher
+ * (/api/*) would present the same refresh token a second time.
  *
  * Which function is safe where:
  *
@@ -25,7 +31,7 @@ import { cookies, headers } from "next/headers"
 import { getProxyClientIpFromHeaders } from "../util/client-ip"
 import {
   V1CookiesNotWritableError,
-  V1_WRITE_PROBE_COOKIE,
+  v1CookieNames,
   v1CookieOptions,
   type WritableCookieJar,
 } from "./cookies"
@@ -49,7 +55,7 @@ async function nextCookieJar(): Promise<WritableCookieJar> {
     },
     assertWritable: () => {
       try {
-        store.set(V1_WRITE_PROBE_COOKIE, "", v1CookieOptions(secure(), 0))
+        store.set(v1CookieNames(secure()).probe, "", v1CookieOptions(secure(), 0))
       } catch {
         throw new V1CookiesNotWritableError()
       }
@@ -83,10 +89,16 @@ export async function storeV1TokensInAction(tokens: V1Tokens): Promise<void> {
   writeV1SessionCookies(jar, tokens, { secure: secure() })
 }
 
-/** Server actions / route handlers: explicit logout (always clears locally). */
+/**
+ * Server actions / route handlers: explicit logout of THIS session only
+ * (POST /auth/logout, never logout-all; D5). Always clears both v1 cookies
+ * locally; waits at most ACTION_WAIT_MS for the backend. A no-op towards the
+ * backend when there is no v1 refresh cookie.
+ */
 export async function logoutV1SessionInAction() {
   return logoutV1Session(client(), await nextCookieJar(), await requestContext(), {
     secure: secure(),
+    waitMs: ACTION_WAIT_MS,
   })
 }
 
