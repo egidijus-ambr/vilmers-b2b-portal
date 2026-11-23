@@ -12,6 +12,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Layer, Stage } from 'react-konva'
 import * as SofaElements from './SofaElements'
+import { getShapeComponent } from './shapeAlias'
 import { drawMetricLinesForGroups } from './utils'
 import { METRIC_SIZE, LABEL_GAP } from './SofaElements/constants'
 
@@ -257,7 +258,7 @@ const SofaDrawingPreview = ({
           ? item.rotation()
           : item.attrs.rotation || 0
 
-        const SofaElement = SofaElements[item.attrs.type]
+        const SofaElement = getShapeComponent(SofaElements, item.attrs.type)
         if (!SofaElement) {
           n++
           continue

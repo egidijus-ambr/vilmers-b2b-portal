@@ -1,5 +1,6 @@
 "use client"
 
+import { getShapeComponent } from "@configurator/SofaDrawingElements/shapeAlias"
 import React, { useState } from "react"
 import dynamic from "next/dynamic"
 import type { SofaFormExtended } from "@configurator/lib/types"
@@ -35,7 +36,7 @@ function SelectorPreviewInner({
       string,
       React.ComponentType<any>
     >
-  const SofaElement = SofaElements[sofaForm.type]
+  const SofaElement = getShapeComponent(SofaElements, sofaForm.type)
 
   const dims = sofaForm.dimensions
   const rawW = dims.width ?? 100

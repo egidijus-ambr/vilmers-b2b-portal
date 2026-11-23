@@ -15,12 +15,13 @@ import {
   MAIN_SHAPE_COLOR,
   TABLE_COLOR,
 } from "@configurator/SofaDrawingElements/SofaElements/constants"
+import { getShapeComponent } from "@configurator/SofaDrawingElements/shapeAlias"
 import type { SofaFormExtended } from "@configurator/lib/types"
 import { useConfigurator } from "@configurator/context/configurator-context"
 
 import {
   A2L, A2R, A3L, A3R,
-  CORNERL, CORNERR,
+  CORNERCUTR,
   COMPOSITE,
   E,
   LCHL, LCHR,
@@ -1185,7 +1186,7 @@ const SofaDrawingStage = ({
 
     for (const item of modifiedSofaShapes) {
       if (item.sofaForm == null) continue
-      const SofaElement = sofaShapeElements[item.sofaForm.type]
+      const SofaElement = getShapeComponent(sofaShapeElements, item.sofaForm.type)
       if (!SofaElement) continue
 
       const dims = item.sofaForm.dimensions

@@ -1,5 +1,6 @@
 "use client"
 
+import { getShapeComponent } from "@configurator/SofaDrawingElements/shapeAlias"
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import { Dialog, Transition } from "@headlessui/react"
@@ -87,7 +88,7 @@ function ModulePreviewInner({ sofaForm, armrestWidthOverride }: ModulePreviewPro
       drawMetricLinesForGroups: (groupOfGroups: any[], layer: any, scale: number, params?: any, fontSize?: number, labelBackground?: string) => import("@configurator/SofaDrawingElements/utils").GroupMeasurement
     }
 
-  const SofaElement = SofaElements[sofaForm.type]
+  const SofaElement = getShapeComponent(SofaElements, sofaForm.type)
 
   const dims = sofaForm.dimensions
   const scale = 0.65

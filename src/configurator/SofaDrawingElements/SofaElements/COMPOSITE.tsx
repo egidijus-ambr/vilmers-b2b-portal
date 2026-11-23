@@ -28,9 +28,26 @@ import { HorizontalMetric, VerticalMetric } from './MetricLines'
 import Konva from 'konva'
 
 import Gizmo from '../Gizmo'
+import {
+  isAliasedShape,
+  resolveShapeType,
+  withLegacyShapeAlias,
+} from '../shapeAlias'
 
 // Dynamic import function for sofa elements
-const loadSofaElement = async (type: string) => {
+const loadSofaElement = async (requestedType: string) => {
+  const type = resolveShapeType(requestedType)
+  const result = await loadSofaElementRaw(type)
+  if (result && isAliasedShape(requestedType)) {
+    return {
+      ...result,
+      default: withLegacyShapeAlias(requestedType, result.default),
+    }
+  }
+  return result
+}
+
+const loadSofaElementRaw = async (type: string) => {
   // Try require first (synchronous - for Node.js or environments where it's available)
   if (typeof require !== 'undefined') {
     try {

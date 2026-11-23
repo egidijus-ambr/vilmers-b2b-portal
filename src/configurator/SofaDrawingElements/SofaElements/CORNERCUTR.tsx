@@ -17,6 +17,7 @@ import {
 import { haveIntersection } from '../utils'
 import {
   ARMS_REST_WIDTH,
+  ANGLE_RADIUS,
   BACK_REST_WIDTH,
   BACKREST_PILLOW_SIZE,
   MAIN_SHAPE_COLOR,
@@ -44,6 +45,7 @@ export const getDefaultSettings = () => {
       width: 100,
       length: 100,
       armrestPosition: '',
+      backrest_width: BACK_REST_WIDTH,
       corner_radius: 0,
 
       number_of_big_pillows: 1,
@@ -62,6 +64,7 @@ export const getDefaultSettings = () => {
       // seat_depth: false,
       armrest_width: false,
       backrest_width: true,
+      corner_part_length: true,
 
       number_of_big_pillows: true,
       //number_of_small_pillows: true,
@@ -97,7 +100,7 @@ export const getDimensions = ({ shapeWidth, shapeHeight, angle }) => {
   }
 }
 
-const CORNERR = ({
+const CORNERCUTR = ({
   id,
   width,
   height,
@@ -135,6 +138,14 @@ const CORNERR = ({
   const shapeHeight = height
 
   const shapeBackrestWidth = backrestWidth ?? BACK_REST_WIDTH
+
+  // === CORNER PART ====
+  // Mirror of CORNERCUTL: the cut sits on the bottom-left corner. With
+  // cornerPartLength = min(width, height) the outline is the full rectangle.
+  const cornerPartLength = Math.max(
+    props.cornerPartLength ?? width,
+    backrestWidth ?? BACK_REST_WIDTH
+  )
 
   let backPillowSize = sizeOfBigPillow ?? BACKREST_PILLOW_SIZE
 
@@ -195,7 +206,7 @@ const CORNERR = ({
     const pillows: PillowPoint[] = []
     const margin = pillowSize * 0.3 // Small margin from edges
 
-    // Define key positions (mirrored for CORNERR)
+    // Define key positions (mirrored for CORNERCUTR)
     const cornerX = shapeWidth - shapeBackrestWidth - margin
     const cornerY = shapeBackrestWidth + margin
 
@@ -280,7 +291,7 @@ const CORNERR = ({
       name={'sofa_shape_group'}
       width={groupWidth}
       height={groupHeight}
-      type="CORNERR"
+      type="CORNERCUTR"
       x={xOffset}
       y={yOffset}
       originalWidth={width}
@@ -319,7 +330,19 @@ const CORNERR = ({
           ctx.lineTo(shapeWidth - shapeBackrestWidth, shapeHeight)
           ctx.moveTo(shapeWidth - shapeBackrestWidth, shapeBackrestWidth)
           ctx.lineTo(0, shapeBackrestWidth)
-          ctx.rect(0, 0, shapeWidth, shapeHeight)
+
+          // Rectangle itself (cut corner at bottom-left, mirror of CORNERCUTL)
+          ctx.moveTo(shapeWidth, 0)
+          ctx.lineTo(0, 0)
+          if (cornerPartLength) {
+            ctx.lineTo(0, cornerPartLength)
+            ctx.lineTo(shapeWidth - cornerPartLength, shapeHeight)
+          } else {
+            ctx.lineTo(0, shapeHeight * (1 - ANGLE_RADIUS))
+            ctx.lineTo(shapeWidth * ANGLE_RADIUS, shapeHeight)
+          }
+          ctx.lineTo(shapeWidth, shapeHeight)
+          ctx.closePath()
           ctx.fillStrokeShape(shape)
         }}
         stroke="black"
@@ -338,7 +361,7 @@ const CORNERR = ({
         fill={MAIN_SHAPE_COLOR}
         sceneFunc={(ctx, shape) => {
           ctx.beginPath()
-          // Draw shadow (mirrored for CORNERR)
+          // Draw shadow (mirrored for CORNERCUTR)
           ctx.moveTo(
             shapeWidth - shapeBackrestWidth - SHADOW_WIDTH + 2,
             shapeBackrestWidth + SHADOW_WIDTH - 2
@@ -384,4 +407,4 @@ const CORNERR = ({
   )
 }
 
-export default CORNERR
+export default CORNERCUTR

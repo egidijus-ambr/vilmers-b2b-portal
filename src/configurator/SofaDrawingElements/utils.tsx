@@ -2,6 +2,11 @@
 //===============================================================
 
 import { METRIC_SIZE } from './SofaElements/constants'
+import {
+  isAliasedShape,
+  resolveShapeType,
+  withLegacyShapeAlias,
+} from './shapeAlias'
 
 // Repel Two Groups
 export function intersectionBetweenAllGroups(allGroupsOfGroups) {
@@ -447,9 +452,11 @@ export const dragBound = (
 
 export const getSofaShape = shapeType => {
   try {
-    const ShapeImport = require(`./SofaElements/${shapeType}`)
+    const ShapeImport = require(`./SofaElements/${resolveShapeType(shapeType)}`)
     const SofaElement = ShapeImport.default
-    return SofaElement
+    return isAliasedShape(shapeType)
+      ? withLegacyShapeAlias(shapeType, SofaElement)
+      : SofaElement
   } catch (error: any) {
     console.warn(`Sofa shape "${shapeType}" not found:`, error?.message)
     return null
