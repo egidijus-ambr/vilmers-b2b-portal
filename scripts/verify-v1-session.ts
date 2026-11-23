@@ -48,6 +48,7 @@ import {
   requestV1MagicLink,
   verifyV1MagicLink,
 } from "../src/lib/v1-session/magic-link"
+import { isTokenUrlPath, thirdPartyScriptsAllowed } from "../src/lib/util/token-url-paths"
 
 // ---- fixtures ----------------------------------------------------------------------
 
@@ -822,6 +823,30 @@ async function main() {
     eq((await verifyV1MagicLink(status(400, "VALIDATION_FAILED"), LINK, ctx)).kind, "error", "400")
     const down = makeClient((async () => { throw new TypeError("fetch failed") }) as unknown as typeof fetch)
     eq((await verifyV1MagicLink(down, LINK, ctx)).kind, "unavailable", "network")
+  })
+
+  await test("token landings: matched with/without locale, any case, percent-encoded; others not", () => {
+    const yes = [
+      "/auth/magic-link", "/en/auth/magic-link", "/EN/auth/magic-link", "/en/auth/magic-link/", "/en/Auth/Magic-Link",
+      "/fr/auth/impersonate", "/de/auth/impersonation", "/en/auth/impersonation/x", "/en/%61uth/magic-link", "/en/auth/magic%2Dlink", "/en/%E0%A4%A",
+    ]
+    const no = ["/en", "/en/account", "/en/auth", "/en/auth/magic-links", "/en/products/auth/magic-link", "/en/authx/magic-link"]
+    yes.forEach((p) => ok(isTokenUrlPath(p) && !thirdPartyScriptsAllowed(p), `token landing ${p}`))
+    no.forEach((p) => ok(!isTokenUrlPath(p) && thirdPartyScriptsAllowed(p), `not a token landing ${p}`))
+    eq([thirdPartyScriptsAllowed(null), thirdPartyScriptsAllowed(""), thirdPartyScriptsAllowed(undefined)], [false, false, false], "no pathname: fail closed")
+  })
+
+  await test("Tawk.to is gated server-side in both layouts; middleware headers use the same rule", () => {
+    const read = (f: string) => readFileSync(join(__dirname, "..", f), "utf8")
+    const root = read("src/app/layout.tsx")
+    ok(/const tawkAllowed =\s*features\.tawk && thirdPartyScriptsAllowed\(\(await headers\(\)\)\.get\("x-pathname"\)\)/.test(root), "root layout computes tawkAllowed from x-pathname")
+    ok(/\{tawkAllowed && \(\s*<Script\s+id="tawk-to"/.test(root), "root <Script id=tawk-to> rendered only when allowed")
+    ok(!/\{features\.tawk && \(\s*<Script/.test(root), "no ungated tawk Script left")
+    const main = read("src/app/[languageCode]/(main)/layout.tsx")
+    ok(/features\.tawk && thirdPartyScriptsAllowed\(rawPathname\) && <TawkToChat \/>/.test(main), "main layout gates <TawkToChat />")
+    eq((main.match(/<TawkToChat/g) || []).length, 1, "one TawkToChat render")
+    const mw = read("src/middleware.ts")
+    eq((mw.match(/if \(isTokenUrlPath\(request\.nextUrl\.pathname\)\) \{\s*setTokenUrlHeaders\(response\)/g) || []).length, 2, "both middleware branches set the token-URL headers")
   })
 
   // ---- Next.js bindings (next/headers mocked; next/server real) -------------------------

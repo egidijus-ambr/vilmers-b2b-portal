@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withV1Session } from "@lib/v1-session/middleware-binding"
+import { isTokenUrlPath } from "@lib/util/token-url-paths"
 
 /** The GraphQL (legacy) session cookie; the source of truth for "logged in" until 2c-10. */
 const LEGACY_SESSION_COOKIE = "_furni_jwt"
 
-/**
- * The magic-link landing (`/<lang>/auth/magic-link?token=...`, and the
- * locale-less URL the email links to). The token is in the URL: never send it
- * as a Referer, never cache the page (plan §3.3).
- */
-const MAGIC_LINK_PATH = /^(?:\/[a-z]{2}(?:-[a-zA-Z]{2})?)?\/auth\/magic-link\/?$/
-
-function setMagicLinkHeaders(response: NextResponse) {
+// Token landings (/auth/magic-link?token=, /auth/impersonate?token=, ...):
+// the credential is in the URL, so never send it as a Referer and never
+// cache the page (plan §3.3). See src/lib/util/token-url-paths.ts.
+function setTokenUrlHeaders(response: NextResponse) {
   response.headers.set("Referrer-Policy", "no-referrer")
   response.headers.set("Cache-Control", "no-store")
 }
@@ -130,8 +127,8 @@ export async function middleware(request: NextRequest) {
           response.headers.set("Surrogate-Control", "no-store")
         }
 
-        if (MAGIC_LINK_PATH.test(request.nextUrl.pathname)) {
-          setMagicLinkHeaders(response)
+        if (isTokenUrlPath(request.nextUrl.pathname)) {
+          setTokenUrlHeaders(response)
         }
 
         // Update language preference cookie
@@ -198,10 +195,10 @@ export async function middleware(request: NextRequest) {
   response.headers.set("Pragma", "no-cache")
   response.headers.set("Expires", "0")
 
-  // The locale-less magic-link URL from the email: the redirect's Location
-  // carries the token too.
-  if (MAGIC_LINK_PATH.test(request.nextUrl.pathname)) {
-    setMagicLinkHeaders(response)
+  // A locale-less token URL (the emailed magic link): the redirect's
+  // Location carries the token too.
+  if (isTokenUrlPath(request.nextUrl.pathname)) {
+    setTokenUrlHeaders(response)
   }
 
   return response
