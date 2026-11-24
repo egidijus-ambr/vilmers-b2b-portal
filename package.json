@@ -14,6 +14,7 @@
     "lint": "next lint",
     "analyze": "ANALYZE=true next build",
     "translations:download": "node scripts/download-translations.js",
+    "verify:i18n-overrides": "sucrase-node scripts/verify-i18n-overrides.ts",
     "verify:discount": "sucrase-node scripts/verify-apply-discount.ts",
     "verify:fabric-conditions": "sucrase-node scripts/verify-fabric-conditions.ts",
     "verify:palette-colors": "sucrase-node scripts/verify-palette-colors.ts",

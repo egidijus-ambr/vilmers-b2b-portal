@@ -323,6 +323,19 @@ Check the browser console for missing key warnings when `NODE_ENV=development`.
 
 The language preference is stored in localStorage. Make sure you're not clearing it.
 
+## Admin-editable overrides
+
+UI strings can be edited from the admin. The bundled JSON in `locales/` stays the complete fallback; overrides are deep-merged over it.
+
+- **Source:** `GET {NEXT_PUBLIC_BACKEND_REST_API}/v1/translations/<ns>?language=<en|fr|de>&overridesOnly=true` (public, `Cache-Control: max-age=300`). `overridesOnly=true` is always sent. Responses whose `language` differs from the requested one are ignored.
+- **Namespaces:** portal `common` -> backend `b2b_common`; portal `account` -> backend `b2b_account` (dotted keys such as `claims.title` are unflattened). Other namespaces/languages are never fetched.
+- **Delivery (server render -> browser, no client fetch):** the `[languageCode]/(main)` layout calls `getOverridesPayload(lang)` (`overrides.ts`: `en` + URL language x both namespaces, in parallel, 3s timeout, Next data cache `revalidate: 300`, tag `ui-translations`) and passes it to `<I18nOverridesProvider>` (`overrides-provider.tsx`). That client component calls `applyOverridesPayload` (`overrides-store.ts`) during render, on the server render and the client first render, before descendants render, so SSR HTML and hydration use the identical payload. `en` is included because client components always render in `en` first and switch language in an effect.
+- **Store:** the payload fills a module-level store; the singleton's loader (`loadFromStore` in `unified-config.ts`) returns bundled JSON deep-merged with the store (read after the chunk import resolves). If the bundle is already loaded, it is replaced (bundled + overrides, so removed overrides revert) in one synchronous tick. Unchanged payloads are a cheap no-op. Per-call server instances (`getServerT`) have no payload and fetch directly (same helper, same cache).
+- **Shape guard / safety:** see `overrides-core.ts` (string vs object branch mismatches, empty/non-string values, prototype keys are ignored).
+- **Failures:** a failed fetch yields an "unknown" marker (`null`) in the payload; the client keeps whatever it already has (first load: bundled only). 404/non-OK/timeout/bad JSON/missing env all count as unknown.
+- **Propagation:** up to about 5 min (backend max-age) + 5 min (Next data cache) unless the backend calls `/api/revalidate?tag=ui-translations&secret=...`, which flushes the tag and the layout cache immediately. Browsers pick the new payload on the next server render of the layout (hard load, or soft navigation to another language). Soft navigation within the same language does not re-render the layout: stale but consistent.
+- **Tests:** `pnpm verify:i18n-overrides`.
+
 ## 📚 Resources
 
 - [react-i18next Documentation](https://react.i18next.com/)

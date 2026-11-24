@@ -31,6 +31,8 @@ import { NewBadgeProvider } from "@lib/context/new-badge-context"
 import { FabricCategoryLabelsProvider } from "@lib/context/fabric-category-labels-context"
 import { getFabricCategoryLabels } from "@lib/fabric-category-labels"
 import { thirdPartyScriptsAllowed } from "@lib/util/token-url-paths"
+import { getOverridesPayload } from "@lib/i18n/overrides"
+import { I18nOverridesProvider } from "@lib/i18n/overrides-provider"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -119,12 +121,14 @@ export default async function PageLayout({
     goToConfiguratorActive,
     newBadgeDays,
     fabricCategoryLabels,
+    overridesPayload,
   ] = await Promise.all([
       canShowAllProductsToggle(),
       getShowAllProductsCookie(),
       getGoToConfiguratorActive(),
       getNewBadgeDays(),
       getFabricCategoryLabels(validLanguage),
+      getOverridesPayload(validLanguage),
     ])
 
   // Where the customer picker lands after a selection (agents/admins only).
@@ -140,6 +144,7 @@ export default async function PageLayout({
   const canShowGoToConfigurator = canShowAllProducts && features.configurator
 
   return (
+    <I18nOverridesProvider payload={overridesPayload}>
     <CustomerProvider customer={customer}>
       <ActingCustomerProvider initialActingCustomer={acting} isImpersonatedByManager={impersonated} landingHref={landingHref}>
         <ShopSettingsProvider initialShopSettings={shopSettings}>
@@ -172,5 +177,6 @@ export default async function PageLayout({
         </ShopSettingsProvider>
       </ActingCustomerProvider>
     </CustomerProvider>
+    </I18nOverridesProvider>
   )
 }

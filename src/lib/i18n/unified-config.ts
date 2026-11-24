@@ -6,6 +6,9 @@ import {
   defaultLanguage,
   supportedLanguages,
 } from "./config"
+import { deepMerge, isOverrideNamespace } from "./overrides-core"
+import { fetchTranslationOverrides } from "./overrides"
+import { getStoredOverrides, rememberBundled } from "./overrides-store"
 
 // Unified i18next configuration factory
 export interface I18nInstanceOptions {
@@ -15,12 +18,11 @@ export interface I18nInstanceOptions {
   initialLanguage?: string
 }
 
-// Local resource loader function
-const loadLocalResource = async (language: string, namespace: string) => {
+const importBundled = async (language: string, namespace: string) => {
   try {
     // Dynamic import of translation files
     const resource = await import(`./locales/${language}/${namespace}.json`)
-    return resource.default || resource
+    return (resource.default || resource) as any
   } catch (error) {
     console.warn(
       `Failed to load translation file: ${language}/${namespace}`,
@@ -28,6 +30,31 @@ const loadLocalResource = async (language: string, namespace: string) => {
     )
     return null
   }
+}
+
+// Loader for the shared singleton (browser + SSR of client components): bundled
+// JSON deep-merged with whatever the overrides store holds. No network here;
+// the store is filled from the server-rendered payload (overrides-provider).
+// The store is read AFTER the import resolves so a payload applied while the
+// chunk was loading is not missed (i18next's connector then does a shallow
+// addResourceBundle with our result, which therefore already contains it).
+const loadFromStore = async (language: string, namespace: string) => {
+  const bundled = await importBundled(language, namespace)
+  if (!bundled) return null
+  rememberBundled(language, namespace, bundled)
+  return deepMerge(bundled, getStoredOverrides(language, namespace)) ?? bundled
+}
+
+// Loader for per-call server instances (getServerT / getServerTranslations):
+// there is no payload on that path, so fetch overrides directly (Next data
+// cache, never throws).
+const loadWithDirectFetch = async (language: string, namespace: string) => {
+  const bundled = await importBundled(language, namespace)
+  if (!bundled) return null
+  const overrides = isOverrideNamespace(namespace)
+    ? await fetchTranslationOverrides(language, namespace)
+    : {}
+  return deepMerge(bundled, overrides) ?? bundled
 }
 
 export const createI18nInstance = (options: I18nInstanceOptions = {}) => {
@@ -82,7 +109,9 @@ export const createI18nInstance = (options: I18nInstanceOptions = {}) => {
   }
 
   // Initialize with local resources backend
-  instance.use(resourcesToBackend(loadLocalResource))
+  instance.use(
+    resourcesToBackend(isServer ? loadWithDirectFetch : loadFromStore)
+  )
 
   return { instance, config }
 }
@@ -158,7 +187,7 @@ export const preloadTranslations = async () => {
     for (const uiLang of supportedLanguages) {
       const backendLang = getBackendLanguageCode(uiLang)
       for (const namespace of i18nConfig.ns) {
-        preloadPromises.push(loadLocalResource(backendLang, namespace))
+        preloadPromises.push(loadFromStore(backendLang, namespace))
       }
     }
 
