@@ -115,20 +115,6 @@ export const ErrorHandlers = {
   },
 
   /**
-   * Handle errors specific to login operations
-   */
-  login: (error: any): string => {
-    if (
-      error.status === 401 ||
-      error.message?.includes("invalid credentials")
-    ) {
-      return "Invalid email or password. Please try again."
-    }
-
-    return handleError(error, "login")
-  },
-
-  /**
    * Handle errors specific to data fetching operations
    */
   dataFetch: (error: any): string => {

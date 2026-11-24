@@ -1,4 +1,6 @@
-// Unit checks for the dormant v1 session client (src/lib/v1-session, stage 2c-2).
+// Unit checks for the v1 session client (src/lib/v1-session, stage 2c-2; wired
+// in 2c-3: cookie names per Secure flag, middleware binding, magic-link
+// request / verify, token-shape classifier).
 // Run with: pnpm verify:v1-session
 //   (= node --conditions=react-server -r sucrase/register scripts/verify-v1-session.ts;
 //    the react-server condition resolves `server-only` to its empty module.)
@@ -11,12 +13,11 @@
 import { readFileSync } from "fs"
 import { join } from "path"
 import {
-  V1_ACCESS_COOKIE,
-  V1_REFRESH_COOKIE,
   V1_REFRESH_MAX_AGE_CAP_SECONDS,
-  V1_WRITE_PROBE_COOKIE,
   V1CookiesNotWritableError,
   accessCookieMaxAge,
+  v1CookieNames,
+  v1CookieOptions,
   type V1CookieOptions,
   type WritableCookieJar,
 } from "../src/lib/v1-session/cookies"
@@ -30,6 +31,7 @@ import {
   createV1SessionClient,
   ensureFreshV1Session,
   logoutV1Session,
+  writeV1SessionCookies,
   type V1Logger,
   type V1SessionClientConfig,
 } from "../src/lib/v1-session/refresh"
@@ -40,8 +42,22 @@ import {
   isPrefetchRequest,
 } from "../src/lib/v1-session/middleware-jar"
 import { getClientIpFromHeaders, getProxyClientIpFromHeaders } from "../src/lib/util/client-ip"
+import {
+  classifyMagicLinkToken,
+  magicLinkRequestLanguage,
+  requestV1MagicLink,
+  verifyV1MagicLink,
+} from "../src/lib/v1-session/magic-link"
+import { isTokenUrlPath, thirdPartyScriptsAllowed } from "../src/lib/util/token-url-paths"
 
 // ---- fixtures ----------------------------------------------------------------------
+
+// The pure cases run with `secure: true` (production names); the Next.js
+// binding cases run outside NODE_ENV=production (local names).
+const SEC = v1CookieNames(true)
+const LOC = v1CookieNames(false)
+const V1_ACCESS_COOKIE = SEC.access
+const V1_REFRESH_COOKIE = SEC.refresh
 
 const SECRET = "bff-secret-0123456789-0123456789-abcdef"
 const CLIENT_IP = "203.0.113.77"
@@ -247,8 +263,8 @@ async function main() {
     const r = await ensureFreshV1Session(makeClient(be.fetch), jar, ctx, opts())
     ok(r.kind === "ok" && r.refreshed, `result ${r.kind}`)
     ok(store[V1_REFRESH_COOKIE].value !== t0, "refresh cookie rotated")
-    eq(store[V1_REFRESH_COOKIE].options, { httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: V1_REFRESH_MAX_AGE_CAP_SECONDS }, "refresh cookie options (14 d cap)")
-    eq(store[V1_ACCESS_COOKIE].options, { httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 3540 }, "access cookie options")
+    eq(store[V1_REFRESH_COOKIE].options, { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: V1_REFRESH_MAX_AGE_CAP_SECONDS }, "refresh cookie options (14 d cap)")
+    eq(store[V1_ACCESS_COOKIE].options, { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 3540 }, "access cookie options")
     const h = be.headersSeen[0]
     eq(h["Content-Type"], "application/json", "JSON content type")
     ok(!("Origin" in h) && !("origin" in h), "no Origin")
@@ -573,10 +589,10 @@ async function main() {
     }) as typeof fetch
     try {
       const jar = { get: (n: string) => ({ [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: "T".repeat(43) } as Record<string, string>)[n] }
-      eq(readV1Session(jar, NOW), { status: "needs-refresh" }, "expired access")
-      eq(readV1Session({ get: (n) => (n === V1_ACCESS_COOKIE ? jwt(NOW + 3600_000, "f") : undefined) }, NOW).status, "ok", "fresh access")
-      eq(readV1Session({ get: (n) => (n === V1_ACCESS_COOKIE ? jwt(NOW + 2_000, "s") : "T") }, NOW).status, "needs-refresh", "within 5 s of exp")
-      eq(readV1Session({ get: () => undefined }, NOW), { status: "anonymous" }, "nothing")
+      eq(readV1Session(jar, true, NOW), { status: "needs-refresh" }, "expired access")
+      eq(readV1Session({ get: (n) => (n === V1_ACCESS_COOKIE ? jwt(NOW + 3600_000, "f") : undefined) }, true, NOW).status, "ok", "fresh access")
+      eq(readV1Session({ get: (n) => (n === V1_ACCESS_COOKIE ? jwt(NOW + 2_000, "s") : "T") }, true, NOW).status, "needs-refresh", "within 5 s of exp")
+      eq(readV1Session({ get: () => undefined }, true, NOW), { status: "anonymous" }, "nothing")
       eq(calls, 0, "no fetch")
     } finally {
       globalThis.fetch = realFetch
@@ -632,8 +648,8 @@ async function main() {
     const T = "M".repeat(43)
     const jar = createRecordingCookieJar(() => T)
     jar.assertWritable()
-    jar.set(V1_REFRESH_COOKIE, "N".repeat(43), { httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 10 })
-    jar.set(V1_ACCESS_COOKIE, "", { httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 0 })
+    jar.set(V1_REFRESH_COOKIE, "N".repeat(43), { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 10 })
+    jar.set(V1_ACCESS_COOKIE, "", { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 0 })
     eq(jar.get(V1_REFRESH_COOKIE), "N".repeat(43), "overlay read")
     eq(forwardedCookieHeader(`lang=en; ${V1_REFRESH_COOKIE}=${T}; ${V1_ACCESS_COOKIE}=a`, jar.writes()), `lang=en; ${V1_REFRESH_COOKIE}=${"N".repeat(43)}`, "forwarded")
     const h = (o: Record<string, string>) => ({ get: (n: string) => o[n] ?? null })
@@ -675,6 +691,164 @@ async function main() {
     ok(!straggler.writes.some((w) => w.name === V1_REFRESH_COOKIE && w.value), "no dead pair written back")
   })
 
+  // ---- 2c-3: cookie names / attributes ------------------------------------------------
+
+  await test("cookie names follow the Secure flag; Lax, Path=/, no Domain", () => {
+    eq(v1CookieNames(true), { access: "__Host-furni_v1_access", refresh: "__Host-furni_v1_refresh", probe: "__Host-furni_v1_probe" }, "secure names")
+    eq(v1CookieNames(false), { access: "_furni_v1_access", refresh: "_furni_v1_refresh", probe: "_furni_v1_probe" }, "local names")
+    ;[true, false].forEach((secure) => {
+      const o = v1CookieOptions(secure, 10)
+      eq(o, { httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: 10 }, `options (secure=${secure})`)
+      ok(!("domain" in o), "no domain key")
+    })
+  })
+
+  await test("no __Host- cookie is ever written without Secure (pair, clear, logout, both flags)", async () => {
+    const tokens = { accessToken: jwt(NOW + 3600_000, "w"), expiresIn: 3600, refreshToken: "W".repeat(43), refreshMaxAgeSeconds: 100, session: { sid: "s", realm: "portal" as const, expiresAt: "2026-12-01T10:00:00.000Z" } }
+    for (const secure of [true, false]) {
+      const m = memoryJar({})
+      writeV1SessionCookies(m.jar, tokens, { secure, nowMs: NOW })
+      const be = new FakeBackend(() => clock)
+      await logoutV1Session(makeClient(be.fetch), m.jar, ctx, { secure })
+      eq(m.writes.map((w) => w.name), secure ? ["__Host-furni_v1_refresh", "__Host-furni_v1_access", "__Host-furni_v1_access", "__Host-furni_v1_refresh"] : ["_furni_v1_refresh", "_furni_v1_access", "_furni_v1_access", "_furni_v1_refresh"], `names (secure=${secure})`)
+      m.writes.forEach((w) => {
+        ok(!w.name.startsWith("__Host-") || w.options.secure === true, `${w.name} without Secure`)
+        ok(w.options.path === "/" && w.options.sameSite === "lax" && !("domain" in w.options), `${w.name} attributes`)
+      })
+    }
+  })
+
+  await test("readV1Session reads the names of its flag only", () => {
+    const fresh = jwt(NOW + 3600_000, "r")
+    eq(readV1Session({ get: (n) => (n === LOC.access ? fresh : undefined) }, true, NOW).status, "anonymous", "local name ignored when secure")
+    eq(readV1Session({ get: (n) => (n === LOC.access ? fresh : undefined) }, false, NOW).status, "ok", "local name read when not secure")
+  })
+
+  await test("logout waitMs: a hung backend stops the wait, cookies are cleared anyway", async () => {
+    const hung = makeClient((() => new Promise(() => undefined)) as unknown as typeof fetch)
+    const m = memoryJar({ [V1_REFRESH_COOKIE]: "H".repeat(43) })
+    const started = Date.now()
+    const r = await logoutV1Session(hung, m.jar, ctx, { secure: true, waitMs: 30 })
+    ok(Date.now() - started < 1000, "returned promptly")
+    eq([r.acknowledged, r.failure?.reason], [false, "timeout"], "not acknowledged, timeout")
+    eq(m.jar.get(V1_REFRESH_COOKIE), undefined, "cleared")
+  })
+
+  // ---- 2c-3: magic link --------------------------------------------------------------
+
+  await test("token shape: 43-char base64url -> v1, JWS -> legacy, anything else -> invalid", () => {
+    const v1 = "Ab0_-".repeat(8) + "xyz"
+    eq(v1.length, 43, "fixture length")
+    const cases: Array<[unknown, string]> = [
+      [v1, "v1"],
+      [v1.slice(1), "invalid"],
+      [v1 + "a", "invalid"],
+      [v1.slice(0, 42) + "=", "invalid"],
+      [v1.slice(0, 42) + "+", "invalid"],
+      [v1.slice(0, 42) + "/", "invalid"],
+      ["eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MX0.c2ln-_", "legacy"],
+      ["a.b.c", "legacy"],
+      ["a.b", "invalid"],
+      ["a.b.c.d", "invalid"],
+      ["a..c", "invalid"],
+      ["eyJ.eyJ.sig=", "invalid"],
+      ["", "invalid"],
+      [`${"a".repeat(300)}.${"b".repeat(300)}.c`, "invalid"],
+      [undefined, "invalid"],
+      [null, "invalid"],
+      [42, "invalid"],
+      [" " + v1, "invalid"],
+    ]
+    cases.forEach(([token, kind]) => eq(classifyMagicLinkToken(token), kind, `classify ${JSON.stringify(token)?.slice(0, 20)}`))
+  })
+
+  await test("request language: Language enum values pass, da -> dk, others omitted", () => {
+    eq(["en", "fr", "de", "EN", " de ", "da", "dk", "lt", "xx", "", null, undefined, 5].map(magicLinkRequestLanguage), ["en", "fr", "de", "en", "de", "dk", "dk", "lt", undefined, undefined, undefined, undefined, undefined], "mapped")
+  })
+
+  const EMAIL = "someone.private@example.test"
+  sensitive.push(EMAIL)
+  function stubFetch(answer: (url: string, body: Record<string, unknown>) => Response | Promise<Response>) {
+    const seen: Array<{ url: string; body: Record<string, unknown>; headers: Record<string, string> }> = []
+    const fn = (async (url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body || "{}"))
+      seen.push({ url: String(url), body, headers: { ...(init.headers as Record<string, string>) } })
+      return answer(String(url), body)
+    }) as unknown as typeof fetch
+    return { fn, seen }
+  }
+
+  await test("request: 202 -> sent, body {email, language}, BFF headers; unknown language omitted", async () => {
+    const s1 = stubFetch(() => new Response(JSON.stringify({}), { status: 202, headers: { "content-type": "application/json" } }))
+    eq(await requestV1MagicLink(makeClient(s1.fn), { email: EMAIL, language: "fr" }, ctx), "sent", "outcome")
+    eq(s1.seen[0].url, "http://backend.test/api/v1/auth/magic-link/request", "url")
+    eq(s1.seen[0].body, { email: EMAIL, language: "fr" }, "body")
+    eq([s1.seen[0].headers["x-bff-secret"], s1.seen[0].headers["x-client-ip"]], [SECRET, CLIENT_IP], "BFF headers")
+    await requestV1MagicLink(makeClient(s1.fn), { email: EMAIL, language: "xx" }, ctx)
+    eq(s1.seen[1].body, { email: EMAIL }, "language omitted")
+  })
+
+  await test("request: 429 -> rate-limited, 400 -> error, 503 / network -> unavailable", async () => {
+    const status = (n: number, code: string) => makeClient(stubFetch(() => problem(n, code)).fn)
+    eq(await requestV1MagicLink(status(429, "RATE_LIMITED"), { email: EMAIL }, ctx), "rate-limited", "429")
+    eq(await requestV1MagicLink(status(400, "VALIDATION_FAILED"), { email: EMAIL }, ctx), "error", "400")
+    eq(await requestV1MagicLink(status(503, "SERVICE_UNAVAILABLE"), { email: EMAIL }, ctx), "unavailable", "503")
+    const down = makeClient((async () => { throw new TypeError("fetch failed") }) as unknown as typeof fetch)
+    eq(await requestV1MagicLink(down, { email: EMAIL }, ctx), "unavailable", "network")
+  })
+
+  const LINK = "L1nk_".repeat(8) + "abc"
+  const LEGACY_JWT = jwt(NOW + 3600_000, "legacy")
+  sensitive.push(LINK, LEGACY_JWT)
+  function verifyAnswer(extra: Record<string, unknown>, cookie = true) {
+    const headers = new Headers({ "content-type": "application/json", "x-request-id": "req-9" })
+    if (cookie) headers.append("set-cookie", `furni_refresh=${"V".repeat(43)}; Max-Age=1209600; Path=/api/v1/auth; HttpOnly`)
+    return new Response(JSON.stringify({ accessToken: jwt(NOW + 3600_000, "va"), expiresIn: 3600, session: { sid: "s9", realm: "portal", expiresAt: "2026-12-07T10:00:00.000Z" }, ...extra }), { status: 200, headers })
+  }
+
+  await test("verify: 200 with pair + legacyToken -> ok; no legacyToken / no cookie -> error", async () => {
+    const s1 = stubFetch(() => verifyAnswer({ legacyToken: LEGACY_JWT }))
+    const r = await verifyV1MagicLink(makeClient(s1.fn), LINK, ctx)
+    ok(r.kind === "ok" && r.tokens.legacyToken === LEGACY_JWT && r.tokens.refreshToken === "V".repeat(43) && r.tokens.refreshMaxAgeSeconds === 1209600, `ok (${r.kind})`)
+    eq([s1.seen[0].url, s1.seen[0].body], ["http://backend.test/api/v1/auth/magic-link/verify", { token: LINK }], "request")
+    eq((await verifyV1MagicLink(makeClient(stubFetch(() => verifyAnswer({})).fn), LINK, ctx)).kind, "error", "no legacyToken")
+    eq((await verifyV1MagicLink(makeClient(stubFetch(() => verifyAnswer({ legacyToken: LEGACY_JWT }, false)).fn), LINK, ctx)).kind, "error", "no refresh cookie")
+  })
+
+  await test("verify: 401 -> expired; 429 / 500 / network -> unavailable; 400 -> error", async () => {
+    const status = (n: number, code: string) => makeClient(stubFetch(() => problem(n, code)).fn)
+    eq((await verifyV1MagicLink(status(401, "UNAUTHENTICATED"), LINK, ctx)).kind, "expired", "401")
+    eq((await verifyV1MagicLink(status(429, "RATE_LIMITED"), LINK, ctx)).kind, "unavailable", "429")
+    eq((await verifyV1MagicLink(status(500, "INTERNAL"), LINK, ctx)).kind, "unavailable", "500")
+    eq((await verifyV1MagicLink(status(400, "VALIDATION_FAILED"), LINK, ctx)).kind, "error", "400")
+    const down = makeClient((async () => { throw new TypeError("fetch failed") }) as unknown as typeof fetch)
+    eq((await verifyV1MagicLink(down, LINK, ctx)).kind, "unavailable", "network")
+  })
+
+  await test("token landings: matched with/without locale, any case, percent-encoded; others not", () => {
+    const yes = [
+      "/auth/magic-link", "/en/auth/magic-link", "/EN/auth/magic-link", "/en/auth/magic-link/", "/en/Auth/Magic-Link",
+      "/fr/auth/impersonate", "/de/auth/impersonation", "/en/auth/impersonation/x", "/en/%61uth/magic-link", "/en/auth/magic%2Dlink", "/en/%E0%A4%A",
+    ]
+    const no = ["/en", "/en/account", "/en/auth", "/en/auth/magic-links", "/en/products/auth/magic-link", "/en/authx/magic-link"]
+    yes.forEach((p) => ok(isTokenUrlPath(p) && !thirdPartyScriptsAllowed(p), `token landing ${p}`))
+    no.forEach((p) => ok(!isTokenUrlPath(p) && thirdPartyScriptsAllowed(p), `not a token landing ${p}`))
+    eq([thirdPartyScriptsAllowed(null), thirdPartyScriptsAllowed(""), thirdPartyScriptsAllowed(undefined)], [false, false, false], "no pathname: fail closed")
+  })
+
+  await test("Tawk.to is gated server-side in both layouts; middleware headers use the same rule", () => {
+    const read = (f: string) => readFileSync(join(__dirname, "..", f), "utf8")
+    const root = read("src/app/layout.tsx")
+    ok(/const tawkAllowed =\s*features\.tawk && thirdPartyScriptsAllowed\(\(await headers\(\)\)\.get\("x-pathname"\)\)/.test(root), "root layout computes tawkAllowed from x-pathname")
+    ok(/\{tawkAllowed && \(\s*<Script\s+id="tawk-to"/.test(root), "root <Script id=tawk-to> rendered only when allowed")
+    ok(!/\{features\.tawk && \(\s*<Script/.test(root), "no ungated tawk Script left")
+    const main = read("src/app/[languageCode]/(main)/layout.tsx")
+    ok(/features\.tawk && thirdPartyScriptsAllowed\(rawPathname\) && <TawkToChat \/>/.test(main), "main layout gates <TawkToChat />")
+    eq((main.match(/<TawkToChat/g) || []).length, 1, "one TawkToChat render")
+    const mw = read("src/middleware.ts")
+    eq((mw.match(/if \(isTokenUrlPath\(request\.nextUrl\.pathname\)\) \{\s*setTokenUrlHeaders\(response\)/g) || []).length, 2, "both middleware branches set the token-URL headers")
+  })
+
   // ---- Next.js bindings (next/headers mocked; next/server real) -------------------------
 
   const env = process.env as Record<string, string | undefined>
@@ -708,19 +882,19 @@ async function main() {
 
   await test("server binding: action refresh writes cookies + probe; strict IP + user-agent forwarded", async () => {
     const t0 = bindingBackend.login()
-    store[V1_REFRESH_COOKIE] = t0
+    store[LOC.refresh] = t0
     const r = await server.ensureV1SessionInAction()
     eq(r.kind, "ok", "refreshed")
-    ok(store[V1_REFRESH_COOKIE] !== t0, "rotated cookie stored")
-    ok(V1_WRITE_PROBE_COOKIE in store, "write probe ran")
+    ok(store[LOC.refresh] !== t0, "rotated cookie stored")
+    ok(LOC.probe in store, "write probe ran")
     const h = bindingBackend.headersSeen[bindingBackend.headersSeen.length - 1]
     eq([h["x-client-ip"], h["user-agent"]], [CLIENT_IP, UA], "x-real-ip used, XFF ignored")
   })
 
   await test("server binding: called from a render, it throws before the backend is called", async () => {
     const before = bindingBackend.refreshCalls
-    store[V1_ACCESS_COOKIE] = ""
-    store[V1_REFRESH_COOKIE] = bindingBackend.login()
+    store[LOC.access] = ""
+    store[LOC.refresh] = bindingBackend.login()
     renderMode = true
     let thrown: unknown
     try {
@@ -740,7 +914,7 @@ async function main() {
   await test("middleware binding: next() forwards rotated cookies downstream AND sets them on the response", async () => {
     const t0 = bindingBackend.login()
     const request = new NextRequest("http://portal.test/en/account", {
-      headers: { cookie: `lang=en; ${V1_REFRESH_COOKIE}=${t0}`, "x-real-ip": CLIENT_IP, "user-agent": UA },
+      headers: { cookie: `lang=en; ${LOC.refresh}=${t0}`, "x-real-ip": CLIENT_IP, "user-agent": UA },
     })
     let seen = ""
     const response = await mw.withV1Session(request, ({ result, next }) => {
@@ -748,24 +922,24 @@ async function main() {
       return next()
     })
     eq(seen, "ok", "result")
-    const t1 = response.cookies.get(V1_REFRESH_COOKIE)?.value
+    const t1 = response.cookies.get(LOC.refresh)?.value
     ok(t1 && t1 !== t0, "Set-Cookie with the rotated token")
-    ok(response.cookies.get(V1_ACCESS_COOKIE)?.value, "access cookie set")
+    ok(response.cookies.get(LOC.access)?.value, "access cookie set")
     const forwarded = response.headers.get("x-middleware-request-cookie") || ""
-    ok(forwarded.includes(`${V1_REFRESH_COOKIE}=${t1}`) && forwarded.includes("lang=en"), "downstream cookie header rewritten")
+    ok(forwarded.includes(`${LOC.refresh}=${t1}`) && forwarded.includes("lang=en"), "downstream cookie header rewritten")
   })
 
   await test("middleware binding: a redirect also carries the rotated cookies", async () => {
-    const request = new NextRequest("http://portal.test/en/account", { headers: { cookie: `${V1_REFRESH_COOKIE}=${bindingBackend.login()}` } })
+    const request = new NextRequest("http://portal.test/en/account", { headers: { cookie: `${LOC.refresh}=${bindingBackend.login()}` } })
     const response = await mw.withV1Session(request, () => NextResponse.redirect("http://portal.test/en/login"))
     eq(response.status, 307, "redirect")
-    ok(response.cookies.get(V1_REFRESH_COOKIE)?.value, "cookies applied to the redirect")
+    ok(response.cookies.get(LOC.refresh)?.value, "cookies applied to the redirect")
   })
 
   await test("middleware binding: a prefetch never refreshes", async () => {
     const before = bindingBackend.refreshCalls
     const request = new NextRequest("http://portal.test/en/account", {
-      headers: { cookie: `${V1_REFRESH_COOKIE}=${bindingBackend.login()}`, "next-router-prefetch": "1" },
+      headers: { cookie: `${LOC.refresh}=${bindingBackend.login()}`, "next-router-prefetch": "1" },
     })
     let kind = ""
     const response = await mw.withV1Session(request, ({ result, next }) => {
@@ -775,6 +949,127 @@ async function main() {
     eq(kind, "deferred", "deferred")
     eq(bindingBackend.refreshCalls, before, "no backend call")
     eq(response.cookies.getAll().length, 0, "no cookies written")
+  })
+
+  // ---- 2c-3: middleware wiring -----------------------------------------------------------
+
+  const JWT_COOKIE = "_furni_jwt"
+  const LEGACY = jwt(Date.now() + 3600_000, "jwtcookie")
+  sensitive.push(LEGACY)
+  const forwardedOf = (response: Response) => response.headers.get("x-middleware-request-cookie")
+  const withPath = (request: InstanceType<typeof NextRequest>) => {
+    const h = new Headers(request.headers)
+    h.set("x-pathname", request.nextUrl.pathname)
+    return h
+  }
+
+  await test("middleware: next({ requestHeaders }) keeps x-pathname, with and without cookie writes", async () => {
+    const plain = new NextRequest("http://portal.test/en/products", { headers: { cookie: "lang=en" } })
+    const r1 = await mw.withV1Session(plain, ({ next }) => next({ requestHeaders: withPath(plain) }), { companionCookie: JWT_COOKIE })
+    eq(r1.headers.get("x-middleware-request-x-pathname"), "/en/products", "no writes: x-pathname forwarded")
+    eq(r1.cookies.getAll().length, 0, "no writes: no cookie")
+    const rotating = new NextRequest("http://portal.test/en/account", {
+      headers: { cookie: `${JWT_COOKIE}=${LEGACY}; ${LOC.refresh}=${bindingBackend.login()}`, "x-real-ip": CLIENT_IP },
+    })
+    const r2 = await mw.withV1Session(rotating, ({ next }) => next({ requestHeaders: withPath(rotating) }), { companionCookie: JWT_COOKIE })
+    eq(r2.headers.get("x-middleware-request-x-pathname"), "/en/account", "writes: x-pathname forwarded")
+    const t1 = r2.cookies.get(LOC.refresh)?.value
+    ok(t1 && (forwardedOf(r2) || "").includes(`${LOC.refresh}=${t1}`) && (forwardedOf(r2) || "").includes(`${JWT_COOKIE}=`), "writes: rotated cookie + _furni_jwt forwarded")
+  })
+
+  await test("middleware: definitive 401 -> v1 cookies AND _furni_jwt deleted, on the response and downstream", async () => {
+    const request = new NextRequest("http://portal.test/en/account", {
+      headers: { cookie: `lang=en; ${JWT_COOKIE}=${LEGACY}; ${LOC.refresh}=${"U".repeat(43)}` },
+    })
+    let kind = ""
+    const response = await mw.withV1Session(request, ({ result, next, deleteCookie }) => {
+      kind = `${result.kind}/${result.kind === "anonymous" ? result.cleared : ""}`
+      if (result.kind === "anonymous" && result.cleared === "all") deleteCookie(JWT_COOKIE)
+      return next({ requestHeaders: withPath(request) })
+    }, { companionCookie: JWT_COOKIE })
+    eq(kind, "anonymous/all", "result")
+    eq([LOC.access, LOC.refresh, JWT_COOKIE].map((n) => response.cookies.get(n)?.value), ["", "", ""], "deleted on the response")
+    const jwtCookie = response.cookies.get(JWT_COOKIE) as unknown as { path?: string; sameSite?: string; maxAge?: number; expires?: Date }
+    eq([jwtCookie.path, jwtCookie.sameSite, jwtCookie.maxAge, new Date(jwtCookie.expires as Date).getTime()], ["/", "lax", 0, 0], "_furni_jwt deletion attributes (Max-Age=0 + Expires=epoch)")
+    // Next re-parses middleware Set-Cookies for the render (x-middleware-set-cookie) and
+    // drops Max-Age=0 on the way: a deletion must survive that round-trip as a deletion.
+    const { ResponseCookies } = require("next/dist/compiled/@edge-runtime/cookies") as { ResponseCookies: new (h: Headers) => { getAll(): Array<{ name: string; value: string; expires?: unknown; maxAge?: number }> } }
+    const internal = new Headers()
+    splitJoinedSetCookie(response.headers.get("x-middleware-set-cookie") || "").forEach((c) => internal.append("set-cookie", c))
+    const reparsed = new ResponseCookies(internal)
+      .getAll()
+      .filter((c) => c.name === JWT_COOKIE || c.name === LOC.refresh)
+    eq(reparsed.length, 2, "re-parsed deletions present")
+    reparsed.forEach((c) => ok(c.expires !== undefined && new Date(c.expires as string).getTime() === 0, `${c.name} still expired after the round-trip`))
+    eq(forwardedOf(response), "lang=en", "downstream sees none of them")
+    eq(response.headers.get("x-middleware-request-x-pathname"), "/en/account", "x-pathname kept")
+  })
+
+  await test("middleware: orphan (v1 cookies, no _furni_jwt) -> logout once, both cleared, no refresh", async () => {
+    const t0 = bindingBackend.login()
+    const [refreshBefore, logoutBefore] = [bindingBackend.refreshCalls, bindingBackend.logoutCalls]
+    const request = new NextRequest("http://portal.test/en/products", { headers: { cookie: `${LOC.refresh}=${t0}; ${LOC.access}=${A_OLD}` } })
+    let ended = false
+    const response = await mw.withV1Session(request, ({ orphanEnded, next }) => {
+      ended = orphanEnded
+      return next()
+    }, { companionCookie: JWT_COOKIE })
+    ok(ended, "orphanEnded")
+    eq([bindingBackend.refreshCalls - refreshBefore, bindingBackend.logoutCalls - logoutBefore], [0, 1], "no refresh, one logout")
+    eq([response.cookies.get(LOC.access)?.value, response.cookies.get(LOC.refresh)?.value], ["", ""], "both cleared")
+    eq(forwardedOf(response), "", "nothing forwarded")
+  })
+
+  await test("middleware: orphan with a hung backend -> bounded wait, cleared anyway", async () => {
+    globalThis.fetch = (() => new Promise(() => undefined)) as unknown as typeof fetch
+    try {
+      const request = new NextRequest("http://portal.test/en/products", { headers: { cookie: `${LOC.refresh}=${"G".repeat(43)}` } })
+      const started = Date.now()
+      const response = await mw.withV1Session(request, ({ next }) => next(), { companionCookie: JWT_COOKIE, orphanLogoutWaitMs: 30 })
+      ok(Date.now() - started < 1000, "bounded")
+      eq(response.cookies.get(LOC.refresh)?.value, "", "cleared")
+    } finally {
+      globalThis.fetch = bindingBackend.fetch
+    }
+  })
+
+  await test("middleware: no v1 cookie (cleared none) and 409 unavailable touch no cookie", async () => {
+    const legacyOnly = new NextRequest("http://portal.test/en/account", { headers: { cookie: `${JWT_COOKIE}=${LEGACY}` } })
+    let kind = ""
+    const r1 = await mw.withV1Session(legacyOnly, ({ result, next, deleteCookie }) => {
+      kind = `${result.kind}/${result.kind === "anonymous" ? result.cleared : ""}`
+      if (result.kind === "anonymous" && result.cleared === "all") deleteCookie(JWT_COOKIE)
+      return next()
+    }, { companionCookie: JWT_COOKIE })
+    eq(kind, "anonymous/none", "legacy-only login")
+    eq(r1.cookies.getAll().length, 0, "nothing written")
+
+    // A token rotated < 30 s ago with its grace used: 409 REFRESH_SUPERSEDED.
+    const t0 = bindingBackend.login()
+    bindingBackend.rotate(t0)
+    bindingBackend.rotate(t0)
+    const superseded = new NextRequest("http://portal.test/en/account", { headers: { cookie: `${JWT_COOKIE}=${LEGACY}; ${LOC.refresh}=${t0}` } })
+    const r2 = await mw.withV1Session(superseded, ({ result, next, deleteCookie }) => {
+      kind = result.kind
+      if (result.kind === "anonymous" && result.cleared === "all") deleteCookie(JWT_COOKIE)
+      return next()
+    }, { companionCookie: JWT_COOKIE })
+    eq(kind, "unavailable", "409 -> unavailable")
+    eq(r2.cookies.getAll().length, 0, "nothing written, _furni_jwt kept")
+  })
+
+  await test("middleware: ten parallel navigations without the access cookie -> one refresh", async () => {
+    const t0 = bindingBackend.login()
+    const before = bindingBackend.refreshCalls
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        mw.withV1Session(new NextRequest("http://portal.test/en/account", { headers: { cookie: `${JWT_COOKIE}=${LEGACY}; ${LOC.refresh}=${t0}` } }), ({ next }) => next(), { companionCookie: JWT_COOKIE })
+      )
+    )
+    eq(bindingBackend.refreshCalls - before, 1, "one backend refresh")
+    const tokens = responses.map((r) => r.cookies.get(LOC.refresh)?.value)
+    ok(tokens.every((t) => t && t === tokens[0]), "every response carries the same rotated token")
+    eq(bindingBackend.revocations, 0, "nothing revoked")
   })
 
   globalThis.fetch = realFetch

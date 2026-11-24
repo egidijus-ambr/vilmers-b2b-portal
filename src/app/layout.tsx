@@ -9,6 +9,8 @@ import { activeTheme, activeThemeName, themeToCssVars } from "themes"
 import { brandFont } from "themes/fonts"
 import { features } from "@lib/features"
 import { getShopSettings } from "@lib/data/shop-settings"
+import { thirdPartyScriptsAllowed } from "@lib/util/token-url-paths"
+import { headers } from "next/headers"
 import "styles/globals.css"
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -80,7 +82,15 @@ export const viewport: Viewport = {
   ],
 }
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+export default async function RootLayout(props: { children: React.ReactNode }) {
+  // Never load Tawk.to on a page whose URL carries a credential
+  // (/auth/magic-link?token=, /auth/impersonate?token=): it records
+  // location.href. Decided on the server from the middleware's x-pathname, so
+  // the script is never in the HTML (a client-side URL scrub loses the race
+  // against the async embed). src/lib/util/token-url-paths.ts
+  const tawkAllowed =
+    features.tawk && thirdPartyScriptsAllowed((await headers()).get("x-pathname"))
+
   return (
     <html
       lang="en"
@@ -100,7 +110,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         </I18nProvider>
 
         {/* Tawk.to Chat Widget - set NEXT_PUBLIC_TAWK_ENABLED=false to disable */}
-        {features.tawk && (
+        {tawkAllowed && (
           <Script
             id="tawk-to"
             strategy="afterInteractive"

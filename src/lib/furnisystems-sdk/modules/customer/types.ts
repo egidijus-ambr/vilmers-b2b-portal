@@ -454,16 +454,6 @@ export interface UpdateAddressInput {
   is_default_shipping?: boolean
 }
 
-export interface AuthCredentials {
-  email: string
-  password: string
-}
-
-export interface RegisterInput extends AuthCredentials {
-  full_name: string
-  phone?: string
-}
-
 export interface OrdersFilterInput {
   company_code?: string
   company_name?: string

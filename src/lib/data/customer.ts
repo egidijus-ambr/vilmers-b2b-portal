@@ -5,7 +5,6 @@ import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag, unstable_cache, unstable_noStore } from "next/cache"
 import { redirect } from "next/navigation"
-import { headers } from "next/headers"
 import {
   getAuthHeaders,
   getCacheOptions,
@@ -19,10 +18,7 @@ import {
   setReturnToCookie,
   consumeReturnToCookie,
 } from "./cookies"
-import { ErrorHandlers } from "@lib/util/error-handler"
 import { validateSession } from "@lib/util/session-validation"
-import { validateTokenAndExtractCustomerId } from "@lib/util/jwt-utils"
-import { getClientIpFromHeaders } from "@lib/util/client-ip"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
 import { getDefaultPriceListId } from "./default-pricelist"
 import { getAnonymousProductTagIds } from "./anonymous-product-tags"
@@ -31,6 +27,17 @@ import { getShowAllProductsActive } from "./show-all-products"
 import { getPageByCode } from "./pages"
 import { Page } from "@lib/furnisystems-sdk"
 import { normalizeLanguage } from "@lib/i18n/config"
+import { v1SessionClient } from "@lib/v1-session/instance"
+import {
+  logoutV1SessionInAction,
+  storeV1TokensInAction,
+  v1RequestContextInAction,
+} from "@lib/v1-session/server"
+import {
+  classifyMagicLinkToken,
+  requestV1MagicLink,
+  verifyV1MagicLink,
+} from "@lib/v1-session/magic-link"
 
 export const retrieveCustomer =
   async (): Promise<ExtendedStoreCustomer | null> => {
@@ -83,102 +90,22 @@ export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   // return updateRes
 }
 
-export async function signup(_currentState: unknown, formData: FormData) {
-  const password = formData.get("password") as string
-  const customerForm = {
-    email: formData.get("email") as string,
-    full_name: formData.get("full_name") as string,
-    phone: formData.get("phone") as string,
-  }
-
-  // try {
-  //   const token = await sdk.auth.register("customer", "emailpass", {
-  //     email: customerForm.email,
-  //     password: password,
-  //   })
-
-  //   await setAuthToken(token as string)
-
-  //   const headers = {
-  //     ...(await getAuthHeaders()),
-  //   }
-
-  //   const { customer: createdCustomer } = await sdk.store.customer.create(
-  //     customerForm,
-  //     {},
-  //     headers
-  //   )
-
-  //   const loginToken = await sdk.auth.login("customer", "emailpass", {
-  //     email: customerForm.email,
-  //     password,
-  //   })
-
-  //   await setAuthToken(loginToken as string)
-
-  //   const customerCacheTag = await getCacheTag("customers")
-  //   revalidateTag(customerCacheTag)
-
-  //   await transferCart()
-
-  //   return createdCustomer
-  // } catch (error: any) {
-  //   return error.toString()
-  // }
-}
-
-export async function login(_currentState: unknown, formData: FormData) {
-  console.log("Logging in...")
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
-  // Mirrors performMagicLinkLogin()'s languageCode handling below, but falls back to the
-  // portal's default language (supportedLanguages are en/fr/de - "lt" was never one of
-  // them) so a missing/unsupported value can't send the customer to a mangled URL that
-  // the i18n middleware then has to untangle.
-  // The password-login form posts a hidden field named "language" (see
-  // src/modules/account/components/login/index.tsx), while magic-link/impersonate forms
-  // use "languageCode" - read both so neither login path falls back silently.
-  const languageCode = normalizeLanguage(
-    (formData.get("languageCode") ?? formData.get("language")) as
-      | string
-      | null
-  )
-
-  try {
-    await sdk.customer.login({
-      email,
-      password,
-    })
-
-    // SDK handles token storage internally, just manage cache
-    const newCacheId = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`
-    await setCacheId(newCacheId)
-
-    const customerCacheTag = await getCacheTag("customers")
-    revalidateTag(customerCacheTag)
-  } catch (error: any) {
-    return ErrorHandlers.login(error)
-  }
-
-  try {
-    await transferCart()
-  } catch (error: any) {
-    console.error("Cart transfer error:", error)
-    const { handleError } = await import("@lib/util/error-handler")
-    return handleError(error, "cart transfer")
-  }
-
-  // Redirect to account dashboard after successful login
-  redirect(`/${languageCode}/account`)
-}
-
 export async function signout(languageCode: string) {
   try {
     // Get cache tags before removing cache ID
     const customerCacheTag = await getCacheTag("customers")
     const cartCacheTag = await getCacheTag("carts")
+
+    // End the v1 session of this browser (stage 2c-3, D5: this session only,
+    // POST /auth/logout, never logout-all). Always clears both v1 cookies.
+    try {
+      await logoutV1SessionInAction()
+    } catch (error) {
+      console.warn(
+        "[signout] v1 logout failed:",
+        error instanceof Error ? error.name : "Unknown error"
+      )
+    }
 
     // Logout from the SDK
     await sdk.customer.logout()
@@ -289,17 +216,6 @@ export const updateCustomerAddress = async (
   //   })
 }
 
-export const getStoreLoginLink = async (): Promise<string> => {
-  try {
-    // SDK automatically handles authentication from cookies
-    const storeUrl = await sdk.customer.getStoreLoginLink()
-    return storeUrl
-  } catch (error) {
-    console.error("Error getting store login link:", error)
-    throw error
-  }
-}
-
 export const getClaimsLink = async (language: string): Promise<string> => {
   try {
     // SDK automatically handles authentication from cookies
@@ -311,245 +227,138 @@ export const getClaimsLink = async (language: string): Promise<string> => {
   }
 }
 
+/**
+ * Login form action: requests a magic link on v1
+ * (POST /api/v1/auth/magic-link/request through the BFF: x-bff-secret,
+ * x-client-ip, user-agent). Returns `{ success: true }` or an i18n key.
+ * The backend answers 202 for every address, so this never reveals whether
+ * the email belongs to an account. Never logs the email.
+ */
 export async function requestMagicLink(
   _currentState: unknown,
   formData: FormData
-) {
-  // Wrap everything in a top-level try-catch to prevent any uncaught exceptions
+): Promise<{ success: true } | string> {
   try {
-    const email = formData.get("email") as string
-
+    const email = String(formData.get("email") ?? "").trim()
     if (!email) {
-      return "Email is required"
+      return "magic-link-request-email-required"
     }
-
-    // Get the current language from the form data or use a default
-    const language = (formData.get("language") as string) || "en"
 
     // Stash the page to return to after a successful login (e.g. a private
     // CMS page). No-op if missing/unsafe. Set before the send attempt so a
     // failed send + retry doesn't lose it.
     await setReturnToCookie(formData.get("returnTo") as string | null)
 
-    // Extract IP address from request headers
-    const ipAddress = getClientIpFromHeaders(await headers()) ?? "unknown"
-
-    console.log("Magic link request from IP:", ipAddress)
-
-    try {
-      await sdk.customer.getMagicLinkForB2BCustomer(
-        email,
-        language,
-        ipAddress
-      )
-
-      return { success: true, message: "Magic link sent successfully" }
-    } catch (sdkError: any) {
-      // For security reasons, if user doesn't exist, we still show success message
-      // This prevents email enumeration attacks
-      if (
-        sdkError?.message?.includes("There is no such user!") ||
-        sdkError?.message?.includes("no such user") ||
-        sdkError?.message?.includes("user not found") ||
-        sdkError?.message?.includes("not found") ||
-        sdkError?.status === 404
-      ) {
-        console.log("User not found, returning success for security")
-        return { success: true, message: "Magic link sent successfully" }
-      }
-
-      // For rate limiting errors, return a user-friendly message
-      if (
-        sdkError?.message?.includes("Too many") ||
-        sdkError?.message?.includes("rate limit") ||
-        sdkError?.message?.includes("Try again after")
-      ) {
-        console.log("Rate limit error, returning user-friendly message")
-        return "Too many requests. Please wait a moment and try again."
-      }
-
-      // For all other errors, return a generic error message
-      console.log("Other SDK error, returning generic message")
-      return "Service is currently unavailable. Please try again later."
+    const outcome = await requestV1MagicLink(
+      v1SessionClient(),
+      { email, language: formData.get("language") },
+      await v1RequestContextInAction()
+    )
+    switch (outcome) {
+      case "sent":
+        return { success: true }
+      case "rate-limited":
+        return "magic-link-request-rate-limited"
+      case "error":
+        return "magic-link-request-error"
+      default:
+        return "magic-link-request-unavailable"
     }
-  } catch (error: any) {
-    // This is the ultimate fallback to prevent any uncaught exceptions
-    console.error("Top-level catch - preventing uncaught exception:", error)
-    return "Service is currently unavailable. Please try again later."
+  } catch (error) {
+    console.error(
+      "[magic-link] request action failed:",
+      error instanceof Error ? error.name : "Unknown error"
+    )
+    return "magic-link-request-unavailable"
   }
 }
 
+export type MagicLinkVerifyState = {
+  status: "expired" | "unavailable" | "error"
+} | null
+
+/**
+ * Magic-link landing action (the Continue button; stage 2c-3, D6). The
+ * token's shape decides the path (src/lib/v1-session/magic-link.ts):
+ *   v1      -> POST /api/v1/auth/magic-link/verify. Success replaces the
+ *              current session: the old v1 session (if any) is logged out,
+ *              the new pair and its legacyToken (`_furni_jwt`) are stored.
+ *   legacy  -> GraphQL verifyMagicLinkForB2BCustomer (links mailed before the
+ *              deploy; removed in a later step). Success clears any v1
+ *              cookies: this login has no v1 pair.
+ *   other   -> "expired", no backend call.
+ * An expired / used link, a 401 or a transient error returns a state for the
+ * page and touches NO cookie: the current session, if any, stays.
+ */
 export async function verifyMagicLinkAction(
   _currentState: unknown,
   formData: FormData
-) {
-  const token = formData.get("token") as string
-  const languageCode = formData.get("languageCode") as string
+): Promise<MagicLinkVerifyState> {
+  const token = String(formData.get("token") ?? "")
+  const languageCode = normalizeLanguage(
+    formData.get("languageCode") as string | null
+  )
 
-  // Check existing session state
-  const existingSessionValidation = await validateSession()
-  console.log("[Magic Link] Existing session status:", {
-    isValid: existingSessionValidation.isValid,
-    customerId: existingSessionValidation.customerId,
-    error: existingSessionValidation.error,
-  })
-
-  // Validate and extract customer ID from magic link token
-  const tokenInfo = validateTokenAndExtractCustomerId(token)
-  console.log("[Magic Link] Token validation:", {
-    isValid: tokenInfo.isValid,
-    isExpired: tokenInfo.isExpired,
-    customerId: tokenInfo.customerId,
-  })
-
-  // Decision matrix based on session state, token state, and customer ID comparison
-  if (existingSessionValidation.isValid) {
-    // Existing session is valid
-    if (tokenInfo.isValid) {
-      // Token is valid
-      if (
-        existingSessionValidation.customerId === tokenInfo.customerId &&
-        tokenInfo.customerId
-      ) {
-        // Scenario 1: Valid session + Valid token + Same customer ID → Keep existing session
-        console.log(
-          "[Magic Link] Scenario 1: Same customer with valid token - keeping existing session"
-        )
-        await consumeMagicLinkKeepingSession(token)
-        redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
-        return
-      } else {
-        // Scenario 2: Valid session + Valid token + Different customer ID → Switch to new user
-        console.log(
-          "[Magic Link] Scenario 2: Different customer with valid token - switching users"
-        )
-        await performMagicLinkLogin(token, languageCode)
-        return
-      }
-    } else {
-      // Token is expired/invalid
-      if (
-        existingSessionValidation.customerId === tokenInfo.customerId &&
-        tokenInfo.customerId
-      ) {
-        // Scenario 3: Valid session + Expired token + Same customer ID → Keep existing session
-        console.log(
-          "[Magic Link] Scenario 3: Same customer with expired token - keeping existing session"
-        )
-        await consumeMagicLinkKeepingSession(token)
-        redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
-        return
-      } else {
-        // Scenario 4: Valid session + Expired token + Different customer ID → Logout current user
-        console.log(
-          "[Magic Link] Scenario 4: Different customer with expired token - logging out current user"
-        )
-        await signout(languageCode)
-        return
-      }
-    }
-  } else {
-    // No valid existing session
-    if (tokenInfo.isValid) {
-      // Scenario 5: Invalid session + Valid token → Login with token
-      console.log(
-        "[Magic Link] Scenario 5: No session with valid token - logging in"
-      )
-      await performMagicLinkLogin(token, languageCode)
-      return
-    } else {
-      // Scenario 6: Invalid session + Expired token → Redirect without login
-      console.log(
-        "[Magic Link] Scenario 6: No session with expired token - redirecting without login"
-      )
-      redirect(`/${languageCode}/account`)
-      return
-    }
+  const kind = classifyMagicLinkToken(token)
+  if (kind === "invalid") {
+    return { status: "expired" }
   }
-}
 
-/**
- * Scenarios 1 and 3: the browser already holds a valid session for the account
- * the link was issued to, so the user stays logged in whatever happens here.
- * The link is still sent to the backend so its single-use token is consumed
- * server-side and cannot be replayed later (e.g. from a forwarded email). On
- * success the SDK replaces the cookie with a fresh session for that same
- * account; on failure (already used, expired, rate limited) the existing
- * session is left untouched. Never throws, so the caller's redirect runs.
- */
-async function consumeMagicLinkKeepingSession(token: string): Promise<void> {
-  try {
-    await sdk.customer.verifyMagicLink(token)
-  } catch {
-    console.warn(
-      "[Magic Link] Link could not be consumed (already used or expired) - keeping existing session"
-    )
-  }
-}
-
-/**
- * Performs the actual magic link login process
- */
-async function performMagicLinkLogin(
-  token: string,
-  languageCode: string
-): Promise<void> {
-  let verified = false
-  try {
-    console.log("[performMagicLinkLogin] Starting magic link verification...")
-
-    // Verify the magic link token with the backend
-    await sdk.customer.verifyMagicLink(token)
-    verified = true
-
-    console.log("[performMagicLinkLogin] Magic link verification successful")
-
-    // SDK handles token storage internally, just manage cache
-    const newCacheId = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`
-    await setCacheId(newCacheId)
-
-    // Clear all customer-related cache tags to force fresh data
-    revalidateTag("customers")
-
-    // Also clear the specific cache tag if it exists
-    const customerCacheTag = await getCacheTag("customers")
-    if (customerCacheTag) {
-      revalidateTag(customerCacheTag)
-    }
-
-    // Clear Apollo cache to remove any cached data
-    sdk.clearCache()
-
-    // Transfer cart if needed
+  if (kind === "legacy") {
     try {
-      await transferCart()
-    } catch (error: any) {
-      console.error("[performMagicLinkLogin] Cart transfer error:", error)
+      // The SDK stores the new `_furni_jwt` itself.
+      await sdk.customer.verifyMagicLink(token)
+    } catch {
+      console.warn("[magic-link] legacy verify rejected or failed")
+      return { status: "expired" }
     }
-
-    console.log(
-      "[performMagicLinkLogin] Magic link login successful, redirecting to account"
-    )
-  } catch (error: any) {
-    console.error(
-      "[performMagicLinkLogin] Magic link verification failed:",
-      error
-    )
-    // Even if login fails, we still redirect to account page
+    // Invariant: v1 cookies, when present, belong to the same login as
+    // `_furni_jwt`. A legacy login has no v1 pair: end the old one.
+    await endV1SessionBeforeLogin()
+    await refreshSessionCaches()
+    redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
   }
 
-  // Only a genuinely verified login honors returnTo - the catch above is a
-  // best-effort fallback redirect for a failed verification, not a success.
-  if (verified) {
-    const returnTo = await consumeReturnToCookie()
-    if (returnTo) {
-      redirect(returnTo)
-    }
+  const outcome = await verifyV1MagicLink(
+    v1SessionClient(),
+    token,
+    await v1RequestContextInAction()
+  )
+  if (outcome.kind !== "ok") {
+    return { status: outcome.kind }
   }
 
-  redirect(`/${languageCode}/account`)
+  await endV1SessionBeforeLogin()
+  await storeV1TokensInAction(outcome.tokens)
+  await setAuthToken(outcome.tokens.legacyToken)
+  await refreshSessionCaches()
+
+  // redirect() throws: keep it outside any try/catch.
+  redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
+}
+
+/** Best-effort logout of the v1 session this browser had (D5: that one only). */
+async function endV1SessionBeforeLogin(): Promise<void> {
+  try {
+    await logoutV1SessionInAction()
+  } catch (error) {
+    console.warn(
+      "[magic-link] logout of the previous v1 session failed:",
+      error instanceof Error ? error.name : "Unknown error"
+    )
+  }
+}
+
+/** A new login: new cache id, customer caches and the Apollo cache dropped. */
+async function refreshSessionCaches(): Promise<void> {
+  const newCacheId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  await setCacheId(newCacheId)
+  revalidateTag("customers")
+  const customerCacheTag = await getCacheTag("customers")
+  if (customerCacheTag) {
+    revalidateTag(customerCacheTag)
+  }
+  sdk.clearCache()
 }
 
 /**

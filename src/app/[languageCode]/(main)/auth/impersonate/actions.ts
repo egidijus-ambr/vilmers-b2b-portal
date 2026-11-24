@@ -8,6 +8,7 @@ import { getFirstCategoryUrl } from "@lib/util/first-category-href"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { getImpersonationClaims, isTokenExpired } from "@lib/util/jwt-utils"
+import { logoutV1SessionInAction } from "@lib/v1-session/server"
 
 // Asks the backend which customer the token authenticates as, sending the
 // token itself as the Bearer credential. A direct fetch, not
@@ -92,6 +93,19 @@ export async function impersonateLoginAction(
     console.error("[Impersonate] Backend rejected the impersonation token")
     redirect(`/${languageCode}/account`)
     return
+  }
+
+  // Stage 2c-3 invariant: v1 cookies, when present, belong to the same login
+  // as `_furni_jwt`. This GraphQL impersonation login (v1 in 2c-4) has no v1
+  // pair, so end the v1 session of whoever used this browser before (that
+  // session only, D5) and clear its cookies before the new `_furni_jwt`.
+  try {
+    await logoutV1SessionInAction()
+  } catch (error) {
+    console.warn(
+      "[Impersonate] v1 logout of the previous session failed:",
+      error instanceof Error ? error.name : "Unknown error"
+    )
   }
 
   let loggedIn = false

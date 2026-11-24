@@ -1,6 +1,5 @@
 import React from "react"
 import { requestMagicLink } from "@lib/data/customer"
-import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import Button from "@modules/common/components/button"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
@@ -16,11 +15,7 @@ function SubmitButton({ children, className, "data-testid": dataTestId }: { chil
   )
 }
 
-type Props = {
-  setCurrentView: (view: LOGIN_VIEW) => void
-}
-
-const Login = ({ setCurrentView }: Props) => {
+const Login = () => {
   const { t } = useTranslation()
   const params = useParams()
   const languageCode = params.languageCode as string
@@ -31,8 +26,8 @@ const Login = ({ setCurrentView }: Props) => {
 
   // Check if the result indicates success
   const isSuccess = state && typeof state === "object" && state.success
-  // Check if the result is an error message
-  const errorMessage = typeof state === "string" ? state : null
+  // An error is returned as an i18n key (src/lib/data/customer.ts requestMagicLink)
+  const errorMessage = typeof state === "string" ? t(state) : null
 
   if (isSuccess) {
     return (

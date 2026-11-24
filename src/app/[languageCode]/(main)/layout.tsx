@@ -30,6 +30,7 @@ import { getNewBadgeDays } from "@lib/data/new-badge-days"
 import { NewBadgeProvider } from "@lib/context/new-badge-context"
 import { FabricCategoryLabelsProvider } from "@lib/context/fabric-category-labels-context"
 import { getFabricCategoryLabels } from "@lib/fabric-category-labels"
+import { thirdPartyScriptsAllowed } from "@lib/util/token-url-paths"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -165,7 +166,8 @@ export default async function PageLayout({
             </GoToConfiguratorProvider>
             </FabricCategoryLabelsProvider>
             </NewBadgeProvider>
-            {!chromeless && features.tawk && <TawkToChat />}
+            {/* Not on token landings (see src/lib/util/token-url-paths.ts). */}
+            {!chromeless && features.tawk && thirdPartyScriptsAllowed(rawPathname) && <TawkToChat />}
           </CartProvider>
         </ShopSettingsProvider>
       </ActingCustomerProvider>

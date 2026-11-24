@@ -64,8 +64,7 @@ sdk.setAuthHeaders({
 
 ```typescript
 // Customer operations (when implemented)
-const customer = await sdk.customer.getCustomer()
-await sdk.customer.login({ email: "user@example.com", password: "password" })
+const customer = await sdk.customer.getMe()
 
 // Cart operations (when implemented)
 const cart = await sdk.cart.createCart({ region_id: "region_123" })
@@ -136,7 +135,7 @@ import {
 } from "./furnisystems-sdk"
 
 try {
-  await sdk.customer.login(credentials)
+  await sdk.customer.getMe()
 } catch (error) {
   if (error instanceof AuthenticationError) {
     // Handle authentication failure
