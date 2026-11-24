@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withV1Session } from "@lib/v1-session/middleware-binding"
 import { isTokenUrlPath } from "@lib/util/token-url-paths"
+import { getPublicOrigin } from "@lib/util/public-origin"
 
 /** The GraphQL (legacy) session cookie; the source of truth for "logged in" until 2c-10. */
 const LEGACY_SESSION_COOKIE = "_furni_jwt"
@@ -177,7 +178,10 @@ export async function middleware(request: NextRequest) {
   const redirectPath = remainingPath ? `/${remainingPath}` : ""
   const queryString = request.nextUrl.search ? request.nextUrl.search : ""
 
-  const redirectUrl = `${request.nextUrl.origin}/${preferredLanguage}${redirectPath}${queryString}`
+  // Not request.nextUrl.origin: under `next start -H 127.0.0.1` that is
+  // http://localhost:8090, not the public host (see public-origin.ts).
+  const publicOrigin = getPublicOrigin(request.headers, request.nextUrl.origin)
+  const redirectUrl = `${publicOrigin}/${preferredLanguage}${redirectPath}${queryString}`
 
   // Use 302 redirect for faster response and set language preference cookie
   const response = NextResponse.redirect(redirectUrl, 302)
