@@ -79,9 +79,11 @@ export const getDefaultSettings = () => {
 export const getDimensions = ({
   shapeWidth,
   shapeHeight,
-  angle,
+  angle: angleProp,
   cornerRadius,
 }) => {
+  // Unset angle => 90 (same fallback as the component's connectionAngle).
+  const angle = angleProp ?? 90
   return {
     armrestPosition: null,
     connectors: [

@@ -47,7 +47,8 @@ export const POLYGON_CUT_PERCENTAGE = 0.6
 export const POLYGON_LCH_CUT_PERCENTAGE = 0.35
 export const POLYGON_ANGLE = 0.35
 
-export const ANGLE_CORNER_ANGLE = 35
+// Fallback for an unset Dimension.angle — 90 everywhere (was 35).
+export const ANGLE_CORNER_ANGLE = 90
 
 //--- PILLOWS
 export const STANDART_PILLOW_SIZE = 40

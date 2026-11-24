@@ -151,7 +151,7 @@ const ANGLECORNERFLAT = ({
   mattressWidth = null,
   mattressLength = null,
   rotation = 0,
-  angle = 90,
+  angle: angleProp = 90,
   depth = 0,
   armrestWidthOverride = null,
   cornerPartLength = 0,
@@ -164,6 +164,10 @@ const ANGLECORNERFLAT = ({
   ...props
 }) => {
   //----  )
+
+  // Unset angle => 90. The default param only covers undefined; GraphQL
+  // sends null, and null/0/NaN make tan(90° - angle) blow up the outline.
+  const angle = Number(angleProp) || 90
 
   const armOver = armrestWidthOverride ?? armrestWidth
 
