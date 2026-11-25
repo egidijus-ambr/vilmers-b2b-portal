@@ -3,6 +3,8 @@
 import React from "react"
 import { clx } from "@medusajs/ui"
 import NewBadge from "@modules/common/components/new-badge"
+import { fabricThumbSrc, fabricPreviewSrc } from "@lib/util/fabric-image"
+import FabricHoverPreview from "./fabric-hover-preview"
 
 type FabricDrawerCardProps = {
   fabric: {
@@ -10,7 +12,12 @@ type FabricDrawerCardProps = {
     code: string
     color_name: string | null
     createdAt?: string | null
-    image: { src: string; src_md: string | null; src_xs: string | null } | null
+    image: {
+      src: string
+      src_md: string | null
+      src_xs: string | null
+      src_thumbnail?: string | null
+    } | null
   }
   isSelected: boolean
   onClick: () => void
@@ -26,9 +33,15 @@ const FabricDrawerCard = ({
   disabled = false,
   disabledReason,
 }: FabricDrawerCardProps) => {
-  const imageSrc = fabric.image?.src_md ?? fabric.image?.src_xs ?? fabric.image?.src
+  // Grid swatch: 150px thumbnail; the larger image only loads on hover.
+  const imageSrc = fabricThumbSrc(fabric.image)
 
   return (
+    <FabricHoverPreview
+      src={disabled ? undefined : fabricPreviewSrc(fabric.image)}
+      code={fabric.code}
+      name={fabric.color_name}
+    >
     <button
       onClick={onClick}
       disabled={disabled}
@@ -51,6 +64,7 @@ const FabricDrawerCard = ({
             alt={fabric.color_name ?? fabric.code}
             className="w-full h-full object-cover brightness-[0.97]"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -82,6 +96,7 @@ const FabricDrawerCard = ({
         )}
       </div>
     </button>
+    </FabricHoverPreview>
   )
 }
 
