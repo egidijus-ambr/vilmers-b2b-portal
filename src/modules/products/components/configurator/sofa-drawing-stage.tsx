@@ -114,7 +114,7 @@ import {
 // ============================================================
 const sofaShapeElements: Record<string, React.ComponentType<any>> = {
   A2L, A2R, A3L, A3R,
-  CORNERL, CORNERR,
+  CORNERCUTR,
   COMPOSITE,
   E,
   FOTEL,
