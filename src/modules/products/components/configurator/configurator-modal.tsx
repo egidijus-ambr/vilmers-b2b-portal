@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useTranslations } from "@lib/i18n"
 import ResponsiveDialog from "@modules/common/components/responsive-dialog"
 import { ConfiguratorProvider } from "@configurator/context/configurator-context"
 import ConfiguratorContent from "./configurator-content"
@@ -22,13 +23,14 @@ const ConfiguratorModal = ({
   languageCode,
   showAllProducts = false,
 }: ConfiguratorModalProps) => {
+  const { t: tc } = useTranslations("common")
   if (!isAdvancedProduct) return null
 
   return (
     <ResponsiveDialog
       isOpen={isOpen}
       onClose={close}
-      title="Product Configurator"
+      title={tc("product-configurator")}
       size="full"
       data-testid="configurator-modal"
     >

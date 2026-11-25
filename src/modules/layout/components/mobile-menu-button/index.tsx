@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "@lib/i18n"
+
 interface MobileMenuButtonProps {
   isOpen: boolean
   onClick: () => void
@@ -11,6 +13,7 @@ const MobileMenuButton = ({
   onClick,
   isHomePage = false,
 }: MobileMenuButtonProps) => {
+  const { t } = useTranslations("common")
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -23,7 +26,7 @@ const MobileMenuButton = ({
         isHomePage ? "text-white" : "text-dark-blue"
       }`}
       onClick={handleClick}
-      aria-label="Toggle mobile menu"
+      aria-label={t("toggle-mobile-menu")}
       data-testid="mobile-menu-button"
     >
       <span

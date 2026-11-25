@@ -14,6 +14,8 @@ import { isPrivatePageResult } from "@lib/furnisystems-sdk/modules/pages/types"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
 import { isTokenExpired } from "@lib/util/jwt-utils"
 import { activeThemeName } from "themes"
+import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { getServerT } from "@lib/i18n/server-translations"
 
 const brand = activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
 
@@ -59,7 +61,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const page = await getPageByPath(path, params.languageCode)
 
   if (!page) {
-    return { title: "Page not found" }
+    const metaLang = (supportedLanguages as readonly string[]).includes(
+      params.languageCode
+    )
+      ? (params.languageCode as SupportedLanguage)
+      : "en"
+    const tMeta = await getServerT("common", metaLang)
+    return { title: tMeta("page-not-found") }
   }
 
   if (isPrivatePageResult(page)) {
@@ -86,6 +94,11 @@ export default async function CmsPage(props: Props) {
   const searchParams = await props.searchParams
   const { languageCode, slug } = params
   const path = slug.join("/")
+  const pageLang = (supportedLanguages as readonly string[]).includes(
+    languageCode
+  )
+    ? (languageCode as SupportedLanguage)
+    : "en"
 
   const selectedTagSlug =
     typeof searchParams?.tag === "string" ? searchParams.tag : null
@@ -164,10 +177,12 @@ export default async function CmsPage(props: Props) {
   const ancestorItems = buildAncestorBreadcrumbs(page.ancestors ?? [], languageCode)
 
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: "Home", href: "/" },
+    { label: (await getServerT("account", pageLang))("breadcrumb-home"), href: "/" },
     ...ancestorItems,
     { label: profile?.title ?? path, href: null },
   ]
+
+  const tCommon = await getServerT("common", pageLang)
 
   return (
     <>
@@ -202,7 +217,7 @@ export default async function CmsPage(props: Props) {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)]">
-          <p className="text-ui-fg-subtle">This page has no content yet.</p>
+          <p className="text-ui-fg-subtle">{tCommon("page-no-content")}</p>
         </div>
       )}
     </>

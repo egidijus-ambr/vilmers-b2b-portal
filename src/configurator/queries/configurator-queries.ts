@@ -343,6 +343,7 @@ export const GET_CONFIGURATOR_DATA = gql`
                 src
                 src_md
                 src_xs
+                src_thumbnail
               }
             }
           }

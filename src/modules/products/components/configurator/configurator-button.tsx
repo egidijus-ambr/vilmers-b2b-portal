@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useTranslations } from "@lib/i18n"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useCustomer } from "@lib/context/customer-context"
@@ -27,6 +28,7 @@ const ConfiguratorButton = ({
   showAllProducts = false,
   handle,
 }: ConfiguratorButtonProps) => {
+  const { t: tc } = useTranslations("common")
   const [isOpen, setIsOpen] = useState(false)
   const { customer } = useCustomer()
 
@@ -39,7 +41,7 @@ const ConfiguratorButton = ({
         className="inline-flex items-center px-8 py-3 text-sm font-medium rounded-button border border-dark-blue bg-dark-blue text-white hover:opacity-90 transition-all"
         data-testid="configurator-button"
       >
-        Product configurator
+        {tc("product-configurator")}
       </Link>
     )
   }
@@ -50,7 +52,7 @@ const ConfiguratorButton = ({
         onClick={() => setIsOpen(true)}
         data-testid="configurator-button"
       >
-        Product configurator
+        {tc("product-configurator")}
       </Button>
 
       {isOpen && (

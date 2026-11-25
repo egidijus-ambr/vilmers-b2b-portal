@@ -19,6 +19,7 @@ import {
   ZoomIn,
   SlidersHorizontal,
 } from "lucide-react"
+import { useTranslations } from "@lib/i18n"
 
 export type ProductImage = {
   id: number
@@ -166,6 +167,8 @@ const ProductImageGallery = ({
   alwaysExpanded = false,
   showPanelHeader = true,
 }: ProductImageGalleryProps) => {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
@@ -445,7 +448,7 @@ const ProductImageGallery = ({
   if (!images.length && !apiPhotos.length) {
     return (
       <div className="w-full aspect-square max-h-[840px] bg-white flex items-center justify-center">
-        <span className="text-gray-400">No image</span>
+        <span className="text-gray-400">{t("no-image")}</span>
       </div>
     )
   }
@@ -500,7 +503,10 @@ const ProductImageGallery = ({
             ) : currentImage.type === "original" ? (
               <Image
                 src={currentImage.src}
-                alt={`${productTitle} - image ${selectedIndex + 1}`}
+                alt={tc("product-image-number", {
+                  product: productTitle,
+                  number: selectedIndex + 1,
+                })}
                 fill
                 priority={selectedIndex === 0}
                 className="[object-fit:var(--gallery-main-fit,cover)]"
@@ -561,7 +567,7 @@ const ProductImageGallery = ({
                   )
                 }}
                 className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow transition-all duration-150 opacity-0 group-hover:opacity-100"
-                aria-label="Previous image"
+                aria-label={tc("previous-image")}
               >
                 <ChevronLeft className="w-5 h-5 text-dark-blue" />
               </button>
@@ -573,7 +579,7 @@ const ProductImageGallery = ({
                   )
                 }}
                 className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow transition-all duration-150 opacity-0 group-hover:opacity-100"
-                aria-label="Next image"
+                aria-label={tc("next-image")}
               >
                 <ChevronRight className="w-5 h-5 text-dark-blue" />
               </button>
@@ -612,7 +618,7 @@ const ProductImageGallery = ({
                       ? "border-dark-blue shadow-md"
                       : "border-transparent hover:border-line hover:shadow-sm",
                   ].join(" ")}
-                  aria-label={`View image ${index + 1}`}
+                  aria-label={tc("view-image-number", { number: index + 1 })}
                   aria-pressed={isSelected}
                 >
                   {isVideoItem(image) ? (
@@ -638,7 +644,10 @@ const ProductImageGallery = ({
                   ) : (
                     <Image
                       src={image.thumbnail}
-                      alt={`${productTitle} thumbnail ${index + 1}`}
+                      alt={tc("product-thumbnail-number", {
+                        product: productTitle,
+                        number: index + 1,
+                      })}
                       fill
                       className={`[object-fit:var(--gallery-thumb-fit,cover)] transition-opacity duration-500 ${
                         loadedThumbnails.has(image.thumbnail) ? "opacity-100" : "opacity-0"
@@ -665,7 +674,7 @@ const ProductImageGallery = ({
                 className="flex items-center gap-2 text-sm font-medium text-dark-blue border border-line rounded px-3 py-2 hover:bg-ui-bg-subtle transition-colors duration-150"
               >
                 <SlidersHorizontal className="w-4 h-4" />
-                <span>More product photos</span>
+                <span>{tc("more-product-photos")}</span>
               </button>
             ) : panelExpanded ? (
               <div className={alwaysExpanded ? "flex flex-col gap-4" : "border border-line p-4 flex flex-col gap-4"}>
@@ -674,12 +683,12 @@ const ProductImageGallery = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm font-semibold text-dark-blue">
                       <SlidersHorizontal className="w-4 h-4" />
-                      <span>More product photos</span>
+                      <span>{tc("more-product-photos")}</span>
                     </div>
                     <button
                       onClick={togglePanel}
                       className="text-ui-fg-muted hover:text-dark-blue transition-colors duration-150 rounded p-0.5"
-                      aria-label="Close photo panel"
+                      aria-label={tc("close-photo-panel")}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -704,7 +713,7 @@ const ProductImageGallery = ({
                     {showCategoryFilter && allCategories.length > 1 && (
                       <div className="flex flex-col gap-2">
                         <span className="text-xs font-medium text-ui-fg-muted uppercase tracking-wide">
-                          Category
+                          {tc("category")}
                         </span>
                         <div className="flex flex-wrap gap-2">
                           {allCategories.map((category) => {
@@ -735,15 +744,15 @@ const ProductImageGallery = ({
                       availableCombinations.length > 0 && (
                         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
                           <GalleryDropdown
-                            label="Configurations"
-                            placeholder="Select configuration"
+                            label={tc("configurations")}
+                            placeholder={tc("select-configuration")}
                             options={availableCombinations}
                             value={selectedCombination}
                             onChange={handleCombinationSelect}
                           />
                           <GalleryDropdown
-                            label="Fabrics"
-                            placeholder="Select fabric"
+                            label={tc("fabrics")}
+                            placeholder={tc("select-fabric")}
                             options={availableFabrics}
                             value={selectedFabric}
                             onChange={handleFabricSelect}
@@ -759,7 +768,7 @@ const ProductImageGallery = ({
                          (next to the hero), not inside this panel. */}
                     {hasFullSelection && filteredApiImages.length === 0 && (
                       <p className="text-sm text-ui-fg-muted">
-                        No photos available for the selected combination.
+                        {tc("no-photos-for-combination")}
                       </p>
                     )}
                   </>
@@ -789,7 +798,7 @@ const ProductImageGallery = ({
               <button
                 onClick={() => setLightboxOpen(false)}
                 className="fixed top-3 right-3 z-10 bg-black/5 hover:bg-black/10 rounded-full p-2 transition-colors"
-                aria-label="Close lightbox"
+                aria-label={tc("close-lightbox")}
               >
                 <X className="w-6 h-6 text-dark-blue" />
               </button>
@@ -820,9 +829,11 @@ const ProductImageGallery = ({
                   ) : (
                     <Image
                       src={lightboxItem.src}
-                      alt={`${productTitle} - image ${lightboxIndex + 1} of ${
-                        lightboxImages.length
-                      }`}
+                      alt={tc("product-image-of", {
+                        product: productTitle,
+                        current: lightboxIndex + 1,
+                        total: lightboxImages.length,
+                      })}
                       fill
                       className="object-contain"
                       sizes="(max-width: 1400px) 100vw, 1400px"
@@ -844,7 +855,7 @@ const ProductImageGallery = ({
                       )
                     }
                     className="fixed left-3 top-1/2 -translate-y-1/2 bg-black/5 hover:bg-black/15 rounded-full p-3 transition-colors"
-                    aria-label="Previous image"
+                    aria-label={tc("previous-image")}
                   >
                     <ChevronLeft className="w-7 h-7 text-dark-blue" />
                   </button>
@@ -855,7 +866,7 @@ const ProductImageGallery = ({
                       )
                     }
                     className="fixed right-3 top-1/2 -translate-y-1/2 bg-black/5 hover:bg-black/15 rounded-full p-3 transition-colors"
-                    aria-label="Next image"
+                    aria-label={tc("next-image")}
                   >
                     <ChevronRight className="w-7 h-7 text-dark-blue" />
                   </button>

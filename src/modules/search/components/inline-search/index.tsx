@@ -157,7 +157,7 @@ export default function InlineSearch({
           {debouncedValue.length >= 3 ? (
             <div className="p-6">
               {isLoading ? (
-                <p className="text-sm text-gray-500">Loading...</p>
+                <p className="text-sm text-gray-500">{t("loading")}</p>
               ) : results.length > 0 ? (
                 <div>
                   <p className="mb-4 text-sm font-medium text-gray-700">

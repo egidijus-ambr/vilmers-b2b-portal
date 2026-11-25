@@ -268,10 +268,10 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                   </span>
                 </div>
 
-                {/* Customer (agent) or Location (regular user) — no i18n key exists; hardcoded literal matching the table column header */}
+                {/* Customer (agent) or Location (regular user) */}
                 <div className="flex items-center justify-between px-4 py-2.5">
                   <span className="text-sm text-gray-500">
-                    {isAgent ? "Customer" : "Location"}
+                    {isAgent ? t("customer") : t("location")}
                   </span>
                   <span className="text-sm text-dark-blue font-medium text-right max-w-[55%] break-words leading-tight">
                     {isAgent
@@ -304,8 +304,8 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                     }`}
                     title={
                       order.total_price_confirmed
-                        ? "Confirmed Price"
-                        : "Unconfirmed Price"
+                        ? t("confirmed-price")
+                        : t("unconfirmed-price")
                     }
                   >
                     {order.total_price_confirmed && (
@@ -345,12 +345,12 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
             </TableHeaderCell>
             {isAgent && (
               <TableHeaderCell className="hidden md:table-cell w-[300px]">
-                Customer
+                {t("customer")}
               </TableHeaderCell>
             )}
             {!isAgent && (
               <TableHeaderCell className="hidden md:table-cell w-[300px]">
-                Location
+                {t("location")}
               </TableHeaderCell>
             )}
             <TableHeaderCell className="hidden lg:table-cell">
@@ -531,8 +531,8 @@ const OrdersTable = ({ pageSize = 10, hideTitle = false }: OrdersTableProps) => 
                       }`}
                       title={
                         order.total_price_confirmed
-                          ? "Confirmed Price"
-                          : "Unconfirmed Price"
+                          ? t("confirmed-price")
+                          : t("unconfirmed-price")
                       }
                     >
                       {order.total_price_confirmed && (

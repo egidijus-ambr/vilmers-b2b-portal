@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { CategoryData } from "@lib/furnisystems-sdk/modules/categories/types"
+import { useTranslations } from "@lib/i18n"
 import ArrowLeft from "@modules/common/icons/arrow-left"
 import ArrowRight from "@modules/common/icons/arrow-right"
 
@@ -18,6 +19,7 @@ export default function ChildCategoriesCarousel({
   language,
   languageCode,
 }: ChildCategoriesCarouselProps) {
+  const { t: tc } = useTranslations("common")
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
@@ -81,7 +83,7 @@ export default function ChildCategoriesCarousel({
                 ? "opacity-100 hover:opacity-70"
                 : "opacity-30 cursor-default"
             }`}
-            aria-label="Scroll left"
+            aria-label={tc("scroll-left")}
           >
             <ArrowLeft
               size="20"
@@ -96,7 +98,7 @@ export default function ChildCategoriesCarousel({
                 ? "opacity-100 hover:opacity-70"
                 : "opacity-30 cursor-default"
             }`}
-            aria-label="Scroll right"
+            aria-label={tc("scroll-right")}
           >
             <ArrowRight
               size="20"

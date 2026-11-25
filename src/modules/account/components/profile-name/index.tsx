@@ -2,6 +2,7 @@
 
 import React, { useEffect, useActionState } from "react"
 
+import { useTranslations } from "@lib/i18n"
 import Input from "@modules/common/components/input"
 
 import AccountInfo from "../account-info"
@@ -13,6 +14,8 @@ type MyInformationProps = {
 }
 
 const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [successState, setSuccessState] = React.useState(false)
 
   const updateCustomerName = async (
@@ -47,7 +50,7 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
   return (
     <form action={formAction} className="w-full overflow-visible">
       <AccountInfo
-        label="Name"
+        label={tc("name")}
         currentInfo={`${customer.full_name}`}
         isSuccess={successState}
         isError={!!state?.error}
@@ -56,7 +59,7 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className="grid grid-cols-2 gap-x-4">
           <Input
-            label="First name"
+            label={t("first-name")}
             name="full_name"
             required
             defaultValue={customer.full_name ?? ""}

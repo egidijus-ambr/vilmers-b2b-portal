@@ -1,5 +1,6 @@
 import React from "react"
 import ProductSection from "@modules/products/components/product-section"
+import { getServerT, type SupportedLanguage } from "@lib/i18n"
 
 export type ProductPageFeature = {
   name: string
@@ -9,17 +10,21 @@ export type ProductPageFeature = {
 
 type ProductFeatureSectionProps = {
   features: ProductPageFeature[]
+  languageCode: string
 }
 
-const ProductFeatureSection: React.FC<ProductFeatureSectionProps> = ({
+const ProductFeatureSection = async ({
   features,
-}) => {
+  languageCode,
+}: ProductFeatureSectionProps) => {
   if (!features || features.length === 0) {
     return null
   }
 
+  const tc = await getServerT("common", languageCode as SupportedLanguage)
+
   return (
-    <ProductSection title="Features" divider>
+    <ProductSection title={tc("features")} divider>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {features.map((feature, index) => (
           <div key={index} className="flex flex-row items-start gap-4">

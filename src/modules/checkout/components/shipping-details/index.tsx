@@ -3,14 +3,13 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import Radio from "@modules/common/components/radio"
 import ChevronDown from "@modules/common/icons/chevron-down"
+import { useTranslations } from "@lib/i18n"
 
 const ORDER_TYPES = [
-  { value: "expo", label: "Expo" },
-  { value: "customer", label: "Customer" },
-  { value: "stock", label: "Stock" },
+  { value: "expo", ns: "common", labelKey: "checkout-order-type-expo" },
+  { value: "customer", ns: "account", labelKey: "customer" },
+  { value: "stock", ns: "common", labelKey: "checkout-order-type-stock" },
 ]
-
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
@@ -51,6 +50,8 @@ export default function ShippingDetails({
   onShippingChange,
   language = "en",
 }: ShippingDetailsProps) {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [orderType, setOrderType] = useState("")
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
@@ -79,6 +80,12 @@ export default function ShippingDetails({
     en: "en-GB", de: "de-DE", fr: "fr-FR", lt: "lt-LT", da: "da-DK",
   }
   const locale = localeMap[language] || "en-GB"
+
+  // Sunday-first weekday abbreviations (2023-01-01 is a Sunday)
+  const dayLabels = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" })
+    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2023, 0, 1 + i)))
+  }, [locale])
 
   const calendarDays = useMemo(
     () => getCalendarDays(viewYear, viewMonth),
@@ -118,13 +125,13 @@ export default function ShippingDetails({
   return (
     <div className="flex flex-col gap-y-6">
       <h3 className="font-medium text-gray-900">
-        Shipping details
+        {tc("checkout-shipping-details")}
       </h3>
 
       {/* Order type */}
       <div>
         <label className="block text-sm font-medium text-dark-blue mb-3">
-          Order type
+          {t("type")}
         </label>
         <div className="flex items-center gap-x-6">
           {ORDER_TYPES.map((type) => (
@@ -134,7 +141,7 @@ export default function ShippingDetails({
               onClick={() => handleOrderTypeChange(type.value)}
             >
               <Radio checked={orderType === type.value} />
-              <span className="text-base text-dark-blue">{type.label}</span>
+              <span className="text-base text-dark-blue">{type.ns === "account" ? t(type.labelKey) : tc(type.labelKey)}</span>
             </div>
           ))}
         </div>
@@ -143,7 +150,7 @@ export default function ShippingDetails({
       {/* Delivery date */}
       <div ref={calendarRef} className="relative">
         <label className="block text-sm font-medium text-dark-blue mb-1.5">
-          Desired delivery date  (optional)
+          {tc("checkout-delivery-date-optional")}
         </label>
         <button
           type="button"
@@ -153,7 +160,7 @@ export default function ShippingDetails({
           <span className={selectedDate ? "text-dark-blue" : "text-gray-500"}>
             {selectedDate
               ? selectedDate.toLocaleDateString(locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
-              : "Select a date"}
+              : tc("checkout-select-date")}
           </span>
           <ChevronDown size="14" className="flex-shrink-0 ml-2" />
         </button>
@@ -187,7 +194,7 @@ export default function ShippingDetails({
 
           {/* Day headers */}
           <div className="grid grid-cols-7 mb-2">
-            {DAY_LABELS.map((day) => (
+            {dayLabels.map((day) => (
               <div key={day} className="text-center text-xs font-medium text-dark-blue py-2">
                 {day}
               </div>
@@ -237,7 +244,7 @@ export default function ShippingDetails({
             <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
-            <span className="text-sm text-blue-700">The exact delivery week will be provided after order confirmation.</span>
+            <span className="text-sm text-blue-700">{tc("checkout-delivery-week-note")}</span>
           </div>
         )}
       </div>

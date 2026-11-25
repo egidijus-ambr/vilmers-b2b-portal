@@ -3,6 +3,7 @@
 import React, { useCallback, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import type { SofaFormExtended } from "@configurator/lib/types"
+import { useTranslations } from "@lib/i18n"
 
 // sofa-drawing-stage is a Konva canvas component that must be created separately.
 // The dynamic import is intentional — Konva requires browser DOM (no SSR).
@@ -33,6 +34,7 @@ const SofaStageContainer = ({
   onSofaDelete,
   onCombinationsChange,
 }: SofaStageContainerProps) => {
+  const { t } = useTranslations("account")
   const stageCanvasRef = useRef<HTMLDivElement>(null)
 
   // --- Controls state
@@ -63,7 +65,7 @@ const SofaStageContainer = ({
       <div className="flex  flex-col items-center justify-center md:justify-end gap-2 py-2 md:py-0 md:pb-3 px-1 border-r border-[#e7e9ea] shrink-0 md:w-12">
         {/* Toggle delete buttons */}
         <ToolbarButton
-          title="Toggle shape buttons"
+          title={t("toggle-shape-buttons")}
           active={showButtons}
           onClick={() => setShowButtons((v) => !v)}
         >
@@ -82,7 +84,7 @@ const SofaStageContainer = ({
 
         {/* Toggle metric lines */}
         <ToolbarButton
-          title="Toggle metric lines"
+          title={t("toggle-metric-lines")}
           active={showArrows}
           onClick={() => setShowArrows((v) => !v)}
         >
@@ -104,7 +106,7 @@ const SofaStageContainer = ({
 
         {/* Toggle grid */}
         <ToolbarButton
-          title={showGrid ? "Hide grid" : "Show grid"}
+          title={showGrid ? t("hide-grid") : t("show-grid")}
           active={showGrid}
           onClick={() => setShowGrid((v) => !v)}
         >
@@ -143,7 +145,7 @@ const SofaStageContainer = ({
 
         {/* Zoom in */}
         <ToolbarButton
-          title="Zoom in"
+          title={t("zoom-in")}
           active={false}
           alwaysBlue
           onClick={increaseScale}
@@ -165,7 +167,7 @@ const SofaStageContainer = ({
 
         {/* Zoom out */}
         <ToolbarButton
-          title="Zoom out"
+          title={t("zoom-out")}
           active={false}
           alwaysBlue
           onClick={decreaseScale}
@@ -224,17 +226,16 @@ const SofaStageContainer = ({
                 </button>
                 <img
                   src="/sofa-example.gif"
-                  alt="Drag sofa modules"
+                  alt={t("drag-sofa-modules-alt")}
                   className="w-[220px] lg:w-[320px] mx-auto"
                 />
                 <p className="text-sm text-gray-600 mt-2">
-                  Drag sofa modules onto the canvas to compose your
-                  configuration.
+                  {t("drag-sofa-modules-hint")}
                 </p>
               </div>
             ) : (
               <p className="text-sm text-gray-500 bg-configurator-surface/80 px-3 py-2 rounded shadow-sm">
-                Drag sofa modules onto the canvas to compose your configuration.
+                {t("drag-sofa-modules-hint")}
               </p>
             )}
           </div>
@@ -248,7 +249,7 @@ const SofaStageContainer = ({
           >
             <img
               src="/zmogeliukas.png"
-              alt="Scale reference"
+              alt={t("scale-reference")}
               className="w-[120px] lg:w-[200px] inline-block"
             />
           </div>

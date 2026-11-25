@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useTranslations } from "@lib/i18n"
 
 interface InlineReferenceEditProps {
   reference: string
@@ -13,6 +14,8 @@ export function InlineReferenceEdit({
   label,
   onSave,
 }: InlineReferenceEditProps) {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [isEditing, setIsEditing] = useState(false)
   const [value, setValue] = useState(reference)
   const [isSaving, setIsSaving] = useState(false)
@@ -64,7 +67,7 @@ export function InlineReferenceEdit({
         <button
           onClick={() => setIsEditing(true)}
           className="text-dark-blue-40 hover:text-dark-blue"
-          aria-label="Edit reference"
+          aria-label={t("edit-reference")}
         >
           <svg
             width="14"
@@ -101,7 +104,7 @@ export function InlineReferenceEdit({
         onClick={handleSave}
         disabled={!value.trim() || isSaving}
         className="text-dark-blue hover:text-dark-blue/70 disabled:opacity-50"
-        aria-label="Save"
+        aria-label={t("save")}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M20 6L9 17l-5-5" />
@@ -111,7 +114,7 @@ export function InlineReferenceEdit({
         onClick={handleCancel}
         disabled={isSaving}
         className="text-dark-blue-70 hover:text-dark-blue"
-        aria-label="Cancel"
+        aria-label={tc("cancel")}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M18 6L6 18M6 6l12 12" />

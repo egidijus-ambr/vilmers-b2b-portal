@@ -33,7 +33,7 @@ export default async function CollectionProductGrid({
           className="flex items-center justify-center py-12"
           data-testid="no-products"
         >
-          <p className="text-gray-500 text-base">No products found</p>
+          <p className="text-gray-500 text-base">{t("search-no-results")}</p>
         </div>
       ) : (
         <>

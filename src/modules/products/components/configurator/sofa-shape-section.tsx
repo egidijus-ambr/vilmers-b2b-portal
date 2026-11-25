@@ -7,6 +7,7 @@ import { getDefaultArmrestWidth } from "@configurator/lib/group-logic"
 import { measureGroupOfGroups } from "@configurator/SofaDrawingElements/utils"
 import SofaModulesSelector from "./sofa-modules-selector"
 import SofaStageContainer from "./sofa-stage-container"
+import { useTranslations } from "@lib/i18n"
 
 export interface Dropable {
   id: string
@@ -24,6 +25,7 @@ type SofaShapeSectionProps = {
  * interactive Konva stage where users arrange sofa modules.
  */
 const SofaShapeSection = ({ languageCode, showAllProducts = false }: SofaShapeSectionProps) => {
+  const { t } = useTranslations("account")
   const { state, dispatch } = useConfigurator()
   const { sofaForms } = state
 
@@ -79,7 +81,7 @@ const SofaShapeSection = ({ languageCode, showAllProducts = false }: SofaShapeSe
   if (sofaForms.length === 0) {
     return (
       <div className="bg-gray-50 p-8 flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-400 text-sm">No sofa modules available</p>
+        <p className="text-gray-400 text-sm">{t("no-sofa-modules")}</p>
       </div>
     )
   }

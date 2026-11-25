@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useTranslations } from "@lib/i18n"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { getConfiguratorDataAction } from "@lib/data/configurator"
 import { mergeComponentGroups } from "@configurator/lib/component-utils"
@@ -41,6 +42,13 @@ export function useConfiguratorData(
   customerAdditionalComponents?: CustomerAdditionalComponent[]
 ): number | null {
   const { dispatch } = useConfigurator()
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
+  // Kept in refs so a translator identity change never re-triggers the fetch effect
+  const tRef = useRef(t)
+  tRef.current = t
+  const tcRef = useRef(tc)
+  tcRef.current = tc
   const [priceListId, setPriceListId] = useState<number | null>(null)
   const paletteIds = useCustomerPaletteIds()
   const paletteKey = paletteIds.join(",")
@@ -68,7 +76,7 @@ export function useConfiguratorData(
         if (cancelled) return
 
         if (!result) {
-          dispatch({ type: "SET_ERROR", payload: "Failed to load configurator data" })
+          dispatch({ type: "SET_ERROR", payload: tRef.current("configurator-data-load-error") })
           return
         }
 
@@ -212,7 +220,7 @@ export function useConfiguratorData(
         console.error("Error loading configurator data:", error)
         dispatch({
           type: "SET_ERROR",
-          payload: error instanceof Error ? error.message : "Unknown error",
+          payload: error instanceof Error ? error.message : tcRef.current("unknown-error"),
         })
       }
     }

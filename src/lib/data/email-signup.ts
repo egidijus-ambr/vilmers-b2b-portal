@@ -7,6 +7,8 @@ import { subscribeToMailerlite } from "./mailerlite"
 export interface EmailSignupState {
   success: boolean
   error?: string
+  /** Stable code for the client to translate; `error` stays as the English fallback. */
+  errorCode?: "invalid-email" | "generic" | "later"
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -80,12 +82,20 @@ export async function subscribeEmailSignup(
   const language = (formData.get("language") as string | null)?.trim() || undefined
 
   if (!email || !EMAIL_REGEX.test(email)) {
-    return { success: false, error: "Please enter a valid email address." }
+    return {
+      success: false,
+      error: "Please enter a valid email address.",
+      errorCode: "invalid-email",
+    }
   }
 
   const blockId = blockIdRaw ? Number(blockIdRaw) : NaN
   if (!Number.isInteger(blockId) || blockId <= 0) {
-    return { success: false, error: "Something went wrong. Please try again." }
+    return {
+      success: false,
+      error: "Something went wrong. Please try again.",
+      errorCode: "generic",
+    }
   }
 
   const delivery = await getSignupDelivery(blockId)
@@ -102,6 +112,15 @@ export async function subscribeEmailSignup(
       return {
         success: false,
         error: "Something went wrong. Please try again.",
+        errorCode: "generic",
+      }
+    }
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: "Something went wrong. Please try again.",
+        errorCode: "generic",
       }
     }
 
@@ -128,15 +147,19 @@ export async function subscribeEmailSignup(
       return { success: true }
     }
 
+    // A backend-supplied message is already user-facing text; only the
+    // static fallback gets a translatable code.
     return {
       success: false,
       error: result?.message || "Something went wrong. Please try again.",
+      errorCode: result?.message ? undefined : "generic",
     }
   } catch (error) {
     console.error("Error sending email signup:", error)
     return {
       success: false,
       error: "An error occurred. Please try again later.",
+      errorCode: "later",
     }
   }
 }

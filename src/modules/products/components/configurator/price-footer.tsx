@@ -44,6 +44,7 @@ const PriceFooter = ({
   const { state, dispatch } = useConfigurator()
   const { totalPrice, quantity, unpricedModuleIds, mainComponentMissing } = state
   const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [isAdding, setIsAdding] = useState(false)
   const canSeePrices = useCanSeePrices()
   const { customer } = useCustomer()
@@ -81,7 +82,7 @@ const PriceFooter = ({
 
   const hasMissingRequired = missingRequiredGroupNames.length > 0
   const missingMessage = hasMissingRequired
-    ? `Please select ${missingRequiredGroupNames.join(", ")}`
+    ? t("please-select-groups", { groups: missingRequiredGroupNames.join(", ") })
     : null
   const blockReason =
     emptyMessage ?? missingMessage ?? (priceBlocks ? priceIssueMessage : null)
@@ -124,7 +125,7 @@ const PriceFooter = ({
       <div className="flex items-center">
         {displayVolume > 0 && (
           <div className="text-sm text-gray-600">
-            <span className="text-gray-400">Volume</span>{" "}
+            <span className="text-gray-400">{t("volume")}</span>{" "}
             <span className="font-medium">{displayVolume.toFixed(2)} m³</span>
           </div>
         )}
@@ -166,7 +167,7 @@ const PriceFooter = ({
             <p className="text-sm text-gray-400">
               {hasPriceIssue
                 ? t("price-unavailable")
-                : canSeePrices ? "Select options to see price" : "Select options to continue"}
+                : canSeePrices ? t("select-options-to-see-price") : t("select-options-to-continue")}
             </p>
           ) : canSeePrices ? (
             <PriceDisplay
@@ -195,7 +196,7 @@ const PriceFooter = ({
           }
           title={
             blockedNoActingCustomer
-              ? "Select a customer first"
+              ? tc("checkout-select-customer-title")
               : blockReason ?? undefined
           }
         >
@@ -205,10 +206,10 @@ const PriceFooter = ({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Adding...
+              {t("adding")}
             </span>
           ) : (
-            "Add to Cart"
+            t("add-to-cart")
           )}
         </Button>
       </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "@lib/i18n"
 
 interface ToastProps {
   message: string
@@ -12,6 +13,7 @@ interface ToastProps {
 }
 
 const Toast = ({ message, type = "success", duration = 5000, onClose, cartItemCount, cartHref }: ToastProps) => {
+  const { t } = useTranslations("common")
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -39,7 +41,7 @@ const Toast = ({ message, type = "success", duration = 5000, onClose, cartItemCo
             href={cartHref}
             className="ml-4 px-4 py-1.5 bg-white text-[#1e2a3a] text-sm font-medium hover:bg-gray-100 transition-colors"
           >
-            Cart ({cartItemCount})
+            {t("cart-with-count", { count: cartItemCount })}
           </a>
         )}
       </div>

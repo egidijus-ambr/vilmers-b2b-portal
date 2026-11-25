@@ -2,6 +2,8 @@
 
 import React, { useState } from "react"
 
+import { useTranslations } from "@lib/i18n"
+
 interface ReferencesTooltipProps {
   references: string[]
   children: React.ReactNode
@@ -11,6 +13,7 @@ const ReferencesTooltip = ({
   references,
   children,
 }: ReferencesTooltipProps) => {
+  const { t } = useTranslations("account")
   const [isVisible, setIsVisible] = useState(false)
 
   if (!references || references.length === 0) {
@@ -46,7 +49,7 @@ const ReferencesTooltip = ({
                       #
                     </th>
                     <th className="text-left py-1 px-2 font-medium text-gray-700">
-                      Customers References
+                      {t("customers-references")}
                     </th>
                   </tr>
                 </thead>

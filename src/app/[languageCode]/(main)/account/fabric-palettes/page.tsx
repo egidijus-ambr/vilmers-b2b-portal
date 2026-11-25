@@ -430,7 +430,7 @@ export default function FabricPalettesPage() {
                             })
                           }
                           className="flex items-center justify-center w-8 h-8 rounded-full bg-gold hover:bg-gold/90 text-white transition-colors flex-shrink-0"
-                          aria-label="Group info"
+                          aria-label={t("group-info")}
                         >
                           <Info className="h-4 w-4" strokeWidth={2} />
                         </button>
@@ -457,10 +457,11 @@ export default function FabricPalettesPage() {
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                   src={
+                                    fabric.image.src_thumbnail ||
                                     fabric.image.src_md ||
-                                    fabric.image.src ||
-                                    fabric.image.src_thumbnail
+                                    fabric.image.src
                                   }
+                                  decoding="async"
                                   alt={fabric.color_name || fabric.code}
                                   className="h-full w-full object-cover"
                                   loading="lazy"

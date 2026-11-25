@@ -4,6 +4,7 @@ import type { FabricFeatureDetail } from "@lib/furnisystems-sdk/modules/customer
 import type { FeatureGroupEntry } from "../../hooks/use-fabric-group-details"
 import { resolveFeatureName } from "../../utils/fabric-profile-helpers"
 import { clx } from "@medusajs/ui"
+import { useTranslations } from "@lib/i18n"
 
 interface FabricTextFeaturesGridProps {
   featureGroups: FeatureGroupEntry[]
@@ -49,13 +50,14 @@ export function FabricCharacteristicsDisplay({
   showHeading = false,
   className,
 }: FabricCharacteristicsDisplayProps) {
+  const { t: tc } = useTranslations("common")
   if (features.length === 0) return null
 
   return (
     <div className={className}>
       {showHeading && (
         <h3 className="text-xs font-semibold text-dark-blue tracking-[0.2em] uppercase mb-4">
-          Characteristics
+          {tc("characteristics")}
         </h3>
       )}
       <div className="flex flex-wrap gap-4">

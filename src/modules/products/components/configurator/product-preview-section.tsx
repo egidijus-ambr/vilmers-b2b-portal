@@ -38,7 +38,7 @@ export default function ProductPreviewSection({ languageCode }: ProductPreviewSe
   if (!modelComponent) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-400 text-sm">Product preview</p>
+        <p className="text-gray-400 text-sm">{t("product-preview")}</p>
       </div>
     )
   }

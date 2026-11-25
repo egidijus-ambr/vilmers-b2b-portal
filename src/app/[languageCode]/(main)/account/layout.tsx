@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { useTranslations } from "@lib/i18n"
 import { Toaster } from "@medusajs/ui"
 import AccountLayout from "@modules/account/templates/account-layout"
 import { CustomerProvider } from "@lib/context/customer-context"
@@ -20,6 +21,8 @@ export default function AccountPageLayout({
   const [loginPage, setLoginPage] = useState<Page | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const router = useRouter()
   const params = useParams()
   const languageCode = params.languageCode as string
@@ -38,7 +41,7 @@ export default function AccountPageLayout({
       } catch (error) {
         console.error("[AccountPageLayout] Error retrieving customer:", error)
         setCustomer(null)
-        setError("Failed to load customer data")
+        setError(t("customer-load-error"))
       } finally {
         setLoading(false)
       }
@@ -64,7 +67,7 @@ export default function AccountPageLayout({
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Retry
+            {tc("retry")}
           </button>
         </div>
       </div>

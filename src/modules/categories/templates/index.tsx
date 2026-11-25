@@ -9,6 +9,8 @@ import CategoryProductGridSkeleton from "@modules/categories/components/category
 import ContentBlock from "@modules/home/components/content-block"
 import ChildCategoriesCarousel from "@modules/categories/components/child-categories-carousel"
 import { getCategoryFilterFacets } from "@lib/data/category-filters"
+import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { getServerT } from "@lib/i18n/server-translations"
 
 interface CategoryPageTemplateProps {
   category: CategoryData
@@ -45,9 +47,10 @@ function getCategoryDescription(category: CategoryData): string | null {
  */
 function buildBreadcrumbs(
   category: CategoryData,
+  homeLabel: string,
   menuCategories?: CategoryData[]
 ): BreadcrumbItem[] {
-  const items: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
+  const items: BreadcrumbItem[] = [{ label: homeLabel, href: "/" }]
 
   // Collect parent chain (walk up parent_category)
   const parents: CategoryData[] = []
@@ -105,7 +108,17 @@ export default async function CategoryPageTemplate({
 }: CategoryPageTemplateProps) {
   const name = getCategoryName(category)
   const description = getCategoryDescription(category)
-  const breadcrumbs = buildBreadcrumbs(category, menuCategories)
+  const tAccount = await getServerT(
+    "account",
+    (supportedLanguages as readonly string[]).includes(language)
+      ? (language as SupportedLanguage)
+      : "en"
+  )
+  const breadcrumbs = buildBreadcrumbs(
+    category,
+    tAccount("breadcrumb-home"),
+    menuCategories
+  )
   const categoryPermalink = getCategoryPermalink(category) || ""
 
   // Parse attribute IDs and category IDs from URL and fetch filter facets

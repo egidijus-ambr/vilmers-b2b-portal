@@ -6,6 +6,7 @@ import { Dialog, DialogPanel } from "@headlessui/react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import ProductSection from "@modules/products/components/product-section"
 import type { Photo } from "./types"
+import { useTranslations } from "@lib/i18n"
 
 const isVideoPhoto = (p: Photo) =>
   p.mediaType === "video" || /\.mp4($|\?)/i.test(p.url)
@@ -20,6 +21,7 @@ type GalleryClientProps = {
 }
 
 const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
+  const { t: tc } = useTranslations("common")
   const [page, setPage] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
@@ -70,21 +72,21 @@ const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h4>
-          Gallery
+          {tc("gallery")}
         </h4>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => handlePageNav("prev")}
               className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-              aria-label="Previous page"
+              aria-label={tc("previous-page")}
             >
               <ChevronLeft className="w-5 h-5 text-gray-600" />
             </button>
             <button
               onClick={() => handlePageNav("next")}
               className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-              aria-label="Next page"
+              aria-label={tc("next-page")}
             >
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
@@ -126,7 +128,7 @@ const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
               ) : (
                 <Image
                   src={photo.url}
-                  alt={photo.name || `Interior photo ${globalIndex + 1}`}
+                  alt={photo.name || tc("interior-photo-number", { number: globalIndex + 1 })}
                   fill
                   className={`object-cover transition-opacity duration-500 group-hover:scale-105 ${
                     isLoaded ? "opacity-100" : "opacity-0"
@@ -156,7 +158,7 @@ const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
               <button
                 onClick={() => setLightboxOpen(false)}
                 className="fixed top-3 right-3 z-10 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
-                aria-label="Close lightbox"
+                aria-label={tc("close-lightbox")}
               >
                 <X className="w-6 h-6 text-white" />
               </button>
@@ -186,9 +188,10 @@ const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
                   ) : (
                     <Image
                       src={current.url}
-                      alt={`Interior photo ${lightboxIndex + 1} of ${
-                        photos.length
-                      }`}
+                      alt={tc("interior-photo-of", {
+                        current: lightboxIndex + 1,
+                        total: photos.length,
+                      })}
                       fill
                       className="object-contain"
                       sizes="100vw"
@@ -211,7 +214,7 @@ const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
                       setLightboxImageLoading(true)
                     }}
                     className="fixed left-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 rounded-full p-3 transition-colors"
-                    aria-label="Previous image"
+                    aria-label={tc("previous-image")}
                   >
                     <ChevronLeft className="w-7 h-7 text-white" />
                   </button>
@@ -223,7 +226,7 @@ const GalleryClient: React.FC<GalleryClientProps> = ({ photos }) => {
                       setLightboxImageLoading(true)
                     }}
                     className="fixed right-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 rounded-full p-3 transition-colors"
-                    aria-label="Next image"
+                    aria-label={tc("next-image")}
                   >
                     <ChevronRight className="w-7 h-7 text-white" />
                   </button>

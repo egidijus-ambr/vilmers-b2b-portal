@@ -69,6 +69,27 @@ const COUNTRIES = [
   { code: "OTHER", name: "Other" },
 ]
 
+// Display label only; the submitted value stays the English `name`.
+function getCountryOptions(locale: string, otherLabel: string) {
+  let displayNames: Intl.DisplayNames | null = null
+  try {
+    displayNames = new Intl.DisplayNames([locale], { type: "region" })
+  } catch {
+    displayNames = null
+  }
+  const withLabels = COUNTRIES.filter((c) => c.code !== "OTHER").map((c) => ({
+    code: c.code,
+    value: c.name,
+    label: displayNames?.of(c.code) || c.name,
+  }))
+  withLabels.sort((a, b) => a.label.localeCompare(b.label, locale))
+  const other = COUNTRIES.find((c) => c.code === "OTHER")
+  if (other) {
+    withLabels.push({ code: other.code, value: other.name, label: otherLabel })
+  }
+  return withLabels
+}
+
 export default function BecomePartnerPage() {
   const { t } = useTranslation()
   const params = useParams()
@@ -85,7 +106,18 @@ export default function BecomePartnerPage() {
   >(sendPartnerRequest, null)
 
   const isSuccess = state?.success === true
-  const errorMessage = state?.error
+  const errorMessage =
+    state?.errorCode === "failed"
+      ? t(
+          "partner-request-failed",
+          "Failed to send request. Please try again."
+        )
+      : state?.errorCode === "error"
+        ? t(
+            "partner-request-error",
+            "An error occurred. Please try again later."
+          )
+        : state?.error
   const fieldErrors = state?.fieldErrors || {}
 
   const partnerProfile = becomePartnerPage?.page_profiles?.find(
@@ -198,9 +230,9 @@ export default function BecomePartnerPage() {
                   <option value="" disabled>
                     {t("country-placeholder")}
                   </option>
-                  {COUNTRIES.map((country) => (
-                    <option key={country.code} value={country.name}>
-                      {country.name}
+                  {getCountryOptions(languageCode, t("other")).map((country) => (
+                    <option key={country.code} value={country.value}>
+                      {country.label}
                     </option>
                   ))}
                 </FormSelect>

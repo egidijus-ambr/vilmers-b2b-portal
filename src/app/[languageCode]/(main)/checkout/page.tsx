@@ -43,7 +43,7 @@ export default function Checkout() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">{tc("loading")}</div>
       </div>
     )
   }
@@ -88,7 +88,7 @@ export default function Checkout() {
                         : undefined
                     }
                   >
-                    {checkoutState.isSubmitting ? "Placing order..." : "Place Order"}
+                    {checkoutState.isSubmitting ? tc("checkout-placing-order") : tc("checkout-place-order")}
                   </Button>
                 </CartSummary>
               </div>

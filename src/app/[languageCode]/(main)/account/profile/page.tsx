@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "@lib/i18n"
 import { useCustomer } from "@lib/context/customer-context"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -11,6 +12,7 @@ import { listRegions } from "@lib/data/regions"
 
 export default function ProfilePage() {
   const { customer } = useCustomer()
+  const { t } = useTranslations("account")
   const router = useRouter()
   const [regions, setRegions] = useState<any[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,10 +54,9 @@ export default function ProfilePage() {
   return (
     <div className="w-full" data-testid="profile-page-wrapper">
       <div className="mb-8 flex flex-col gap-y-4">
-        <h1>Profile</h1>
+        <h1>{t("profile")}</h1>
         <p className="text-base-regular">
-          View and update your profile information, including your name, email,
-          and phone number. You can also update your billing address.
+          {t("profile-description")}
         </p>
       </div>
       <div className="flex flex-col gap-y-8 w-full">

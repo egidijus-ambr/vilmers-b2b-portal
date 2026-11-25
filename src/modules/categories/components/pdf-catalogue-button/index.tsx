@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useTranslations } from "@lib/i18n"
 import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
 import { useCustomer } from "@lib/context/customer-context"
 import { getCustomerMarket } from "@lib/util/customer-market"
@@ -25,6 +26,7 @@ function downloadCatalogue(catalogue: CatalogueFile): void {
 export default function PdfCatalogueButton({
   productId,
 }: PdfCatalogueButtonProps) {
+  const { t: tc } = useTranslations("common")
   const context = useCatalogBuilder()
   const catalogueMap = context?.catalogueMap ?? {}
   const { customer } = useCustomer()
@@ -94,8 +96,8 @@ export default function PdfCatalogueButton({
     <div ref={containerRef} className="relative">
       <button
         onClick={handleButtonClick}
-        title="Download PDF catalogue"
-        aria-label="Download PDF catalogue"
+        title={tc("download-pdf-catalogue")}
+        aria-label={tc("download-pdf-catalogue")}
         className="flex items-center justify-center w-8 h-8 text-gold transition-opacity opacity-80 hover:opacity-100"
       >
         <CatalogDownloadIcon className="w-6 h-6" />

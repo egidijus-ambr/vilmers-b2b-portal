@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from "react"
 import type { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import type { SupportedLanguage } from "@lib/i18n"
+import { useTranslations } from "@lib/i18n"
 import B2BProductCard from "@modules/categories/components/category-product-card"
 import ArrowLeft from "@modules/common/icons/arrow-left"
 import ArrowRight from "@modules/common/icons/arrow-right"
@@ -26,6 +27,7 @@ export default function ProductCarouselGrid({
   cardClassName,
   imageBackgroundClass,
 }: ProductCarouselGridProps) {
+  const { t } = useTranslations("common")
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
@@ -98,7 +100,7 @@ export default function ProductCarouselGrid({
                     ? "opacity-100 hover:opacity-70"
                     : "opacity-30 cursor-default"
                 }`}
-                aria-label="Scroll left"
+                aria-label={t("scroll-left")}
               >
                 <ArrowLeft
                   size="20"
@@ -113,7 +115,7 @@ export default function ProductCarouselGrid({
                     ? "opacity-100 hover:opacity-70"
                     : "opacity-30 cursor-default"
                 }`}
-                aria-label="Scroll right"
+                aria-label={t("scroll-right")}
               >
                 <ArrowRight
                   size="20"

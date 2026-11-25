@@ -278,6 +278,31 @@ const STEP_LABELS: Record<StepId, string> = {
   other: "Other",
 }
 
+const STEP_LABEL_KEYS: Record<StepId, { ns: "account" | "common"; key: string }> = {
+  "sofa-modules": { ns: "account", key: "sofa-modules" },
+  fabric: { ns: "common", key: "fabrics" },
+  threads: { ns: "account", key: "step-threads" },
+  "armrest-legs": { ns: "account", key: "step-armrest-legs" },
+  design: { ns: "account", key: "step-design-comfort" },
+  logo: { ns: "account", key: "step-logo" },
+  other: { ns: "common", key: "other" },
+}
+
+/**
+ * Display label for a step. Steps whose label is the static fallback
+ * (STEP_LABELS) are translated by step id; labels composed from backend group
+ * names are already localized and returned untouched.
+ */
+export function getStepDisplayLabel(
+  step: { id: StepId; label: string },
+  t: (key: string) => string,
+  tc: (key: string) => string
+): string {
+  if (step.label !== STEP_LABELS[step.id]) return step.label
+  const { ns, key } = STEP_LABEL_KEYS[step.id]
+  return ns === "account" ? t(key) : tc(key)
+}
+
 /**
  * Compute which steps should be shown for this product.
  * Fabric and threads steps are only included when hasFabricSelection is true

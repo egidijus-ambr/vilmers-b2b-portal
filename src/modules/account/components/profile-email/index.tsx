@@ -2,6 +2,7 @@
 
 import React, { useEffect, useActionState } from "react";
 
+import { useTranslations } from "@lib/i18n"
 import Input from "@modules/common/components/input"
 
 import AccountInfo from "../account-info"
@@ -13,6 +14,7 @@ type MyInformationProps = {
 }
 
 const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
+  const { t: tc } = useTranslations("common")
   const [successState, setSuccessState] = React.useState(false)
 
   // TODO: It seems we don't support updating emails now?
@@ -48,7 +50,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
   return (
     <form action={formAction} className="w-full">
       <AccountInfo
-        label="Email"
+        label={tc("email")}
         currentInfo={`${customer.email}`}
         isSuccess={successState}
         isError={!!state.error}
@@ -58,7 +60,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className="grid grid-cols-1 gap-y-2">
           <Input
-            label="Email"
+            label={tc("email")}
             name="email"
             type="email"
             autoComplete="email"

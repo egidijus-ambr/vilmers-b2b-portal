@@ -16,6 +16,7 @@ import {
   getMissingRequiredGroupCodes,
   getGroupName,
   getValidComponents,
+  getStepDisplayLabel,
 } from "@configurator/lib/component-utils"
 import {
   getCustomerPriceListIds,
@@ -427,18 +428,18 @@ const ConfiguratorContent = ({
           : undefined,
         customerReference: reference,
       })
-      setToast({ message: "Item added to cart", type: "success" })
+      setToast({ message: t("item-added-to-cart"), type: "success" })
     } catch (error) {
       const paletteMessage =
         error instanceof PaletteActionError
           ? paletteErrorMessage(tc, error.code, error.items)
           : null
       setToast({
-        message: paletteMessage ?? "Failed to add item to cart",
+        message: paletteMessage ?? t("add-to-cart-failed"),
         type: "error",
       })
     }
-  }, [productData, state, totalVolume, addItem, tc, showAllProducts])
+  }, [productData, state, totalVolume, addItem, t, tc, showAllProducts])
 
   const proceedToReferenceGate = async () => {
     if (!state.referenceText.trim()) {
@@ -494,7 +495,7 @@ const ConfiguratorContent = ({
       <div className="flex items-center justify-center h-96">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
-          <p className="text-sm text-gray-500">Loading configurator...</p>
+          <p className="text-sm text-gray-500">{t("configurator-loading")}</p>
         </div>
       </div>
     )
@@ -505,7 +506,7 @@ const ConfiguratorContent = ({
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <p className="text-sm text-red-600 mb-2">
-            Failed to load configurator
+            {t("configurator-load-error")}
           </p>
           <p className="text-xs text-gray-500">{error}</p>
         </div>
@@ -648,21 +649,21 @@ const ConfiguratorContent = ({
             <ReferenceStep />
           ) : currentStepDef?.id === "sofa-modules" ? (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Sofa Modules</h3>
+              <h3 className="text-lg font-semibold">{t("sofa-modules")}</h3>
               <p className="text-sm text-gray-500">
-                Select and arrange sofa modules on the canvas to build your configuration.
+                {t("sofa-modules-intro")}
               </p>
               {paletteIds.length === 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
                   <p className="text-sm text-amber-700">
-                    You don't have a fabric palette assigned. Without a palette you won't be able to see module prices, pick a fabric, or place an order. Please contact your manager.
+                    {t("no-fabric-palette-warning")}
                   </p>
                 </div>
               )}
               {paletteIds.length > 0 && !hasSofaModules && (
                 <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
                   <p className="text-sm text-amber-700">
-                    Please add at least one sofa module to continue.
+                    {t("sofa-add-module-continue")}
                   </p>
                 </div>
               )}
@@ -694,7 +695,7 @@ const ConfiguratorContent = ({
                   }
                   className="text-sm text-gray-600 hover:text-gray-900 px-8 py-3 rounded-button border border-gray-300 font-medium transition-colors"
                 >
-                  ← {steps[currentStep - 1]?.label}
+                  ← {steps[currentStep - 1] && getStepDisplayLabel(steps[currentStep - 1], t, tc)}
                 </button>
               ) : (
                 <div />
@@ -716,7 +717,7 @@ const ConfiguratorContent = ({
                       : "text-gray-400 bg-configurator-surface cursor-not-allowed"
                   )}
                 >
-                  {steps[currentStep + 1]?.label} →
+                  {steps[currentStep + 1] && getStepDisplayLabel(steps[currentStep + 1], t, tc)} →
                 </button>
               )}
             </div>

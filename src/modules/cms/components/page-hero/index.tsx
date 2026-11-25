@@ -4,6 +4,7 @@ import { Heading } from "@medusajs/ui"
 import Breadcrumb, {
   BreadcrumbItem,
 } from "@modules/common/components/breadcrumb"
+import { useTranslations } from "@lib/i18n"
 import PageHeader from "@modules/common/components/page-header"
 import CmsCtaButton from "@modules/common/components/cms-cta-button"
 import type { CtaLike, LinkPageLike } from "@modules/home/components/content-block/linkResolver"
@@ -47,6 +48,7 @@ const PageHero = ({
   languageCode,
   chromeless,
 }: PageHeroProps) => {
+  const { t: tc } = useTranslations("common")
   // The CTA renders differently depending on whether it sits over the
   // background image (transparent OutlineButton-style pill) or on a plain
   // background (filled style), so it's built per-branch rather than as a
@@ -83,7 +85,7 @@ const PageHero = ({
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           role="img"
-          aria-label={title ?? "Page hero image"}
+          aria-label={title ?? tc("page-hero-image")}
           style={{ backgroundImage: `url('${encodeURI(heroImageSrc!)}')` }}
         />
         <div className="absolute inset-0 bg-black/40" />

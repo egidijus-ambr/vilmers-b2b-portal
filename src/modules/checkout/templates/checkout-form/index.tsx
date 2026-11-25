@@ -148,7 +148,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
     }
 
     if (!paymentMethodId) {
-      setError("No payment method available. Please contact support.")
+      setError(tc("checkout-no-payment-method"))
       return
     }
 
@@ -235,11 +235,11 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
         setError(
           paletteErrorMessage(tc, result.success ? undefined : result.code, result.success ? undefined : result.items) ||
             (result.success ? null : result.error) ||
-            "Failed to place order. Please try again."
+            tc("checkout-place-order-failed")
         )
       }
     } catch (err: any) {
-      setError(err.message || "Failed to place order. Please try again.")
+      setError(err.message || tc("checkout-place-order-failed"))
     } finally {
       setIsSubmitting(false)
     }
@@ -264,28 +264,28 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
       {/* Customer information */}
       <div className="bg-white pb-6 p-4 md:p-6">
         <h3 className="font-medium text-gray-900 mb-6">
-          Customer information
+          {tc("checkout-customer-information")}
         </h3>
         <div className="flex flex-col gap-y-3">
           <div className="flex">
-            <span className="w-32 text-sm text-gray-500 flex-shrink-0">Name</span>
+            <span className="w-32 text-sm text-gray-500 flex-shrink-0">{tc("name")}</span>
             <span className="text-sm text-dark-blue">{customer?.b2b_company_name || [customer?.name, customer?.surname].filter(Boolean).join(" ") || "—"}</span>
           </div>
           {customer?.phone && (
             <div className="flex">
-              <span className="w-32 text-sm text-gray-500 flex-shrink-0">Phone</span>
+              <span className="w-32 text-sm text-gray-500 flex-shrink-0">{tc("phone")}</span>
               <span className="text-sm text-dark-blue">{customer.phone}</span>
             </div>
           )}
           {customer?.email && (
             <div className="flex">
-              <span className="w-32 text-sm text-gray-500 flex-shrink-0">Email</span>
+              <span className="w-32 text-sm text-gray-500 flex-shrink-0">{tc("email")}</span>
               <span className="text-sm text-dark-blue">{customer.email}</span>
             </div>
           )}
           {customer?.account_code && (
             <div className="flex">
-              <span className="w-32 text-sm text-gray-500 flex-shrink-0">Customer code</span>
+              <span className="w-32 text-sm text-gray-500 flex-shrink-0">{tc("customer-code")}</span>
               <span className="text-sm text-dark-blue">{customer.account_code}</span>
             </div>
           )}
@@ -311,7 +311,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
         />
       </div>
       {showErrors && !orderType && (
-        <p data-checkout-error className="text-sm text-red-500 -mt-4">Please select an order type</p>
+        <p data-checkout-error className="text-sm text-red-500 -mt-4">{tc("checkout-select-order-type")}</p>
       )}
 
       {error && (

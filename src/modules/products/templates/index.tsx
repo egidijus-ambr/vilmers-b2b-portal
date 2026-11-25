@@ -79,7 +79,10 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
           />
         </ProductSection>
         {product.features.length > 0 && (
-          <ProductFeatureSection features={product.features} />
+          <ProductFeatureSection
+            features={product.features}
+            languageCode={product.languageCode}
+          />
         )}
         {product.contentBlocks.length > 0 && (
           <ProductContentBlocks

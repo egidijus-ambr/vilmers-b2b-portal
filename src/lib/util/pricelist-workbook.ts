@@ -2052,7 +2052,8 @@ function buildComponentRows(
   dimensionDecimals: number,
   modelGroupCode: string,
   enabledGroupIds: Set<number> | null,
-  bedCombinedSection = false
+  bedCombinedSection = false,
+  language = "en"
 ): ComponentSheetRow[] {
   const rows: ComponentSheetRow[] = []
 
@@ -2064,7 +2065,7 @@ function buildComponentRows(
   if (advancedProduct.advanced_product_price_fabric_category.length > 0) {
     rows.push({
       kind: "data",
-      description: "Base price",
+      description: resolveBasePriceLabel(language),
       artCode: "",
       volume: null,
       priceByGroup: buildPriceByGroupMap(
@@ -2527,6 +2528,18 @@ const UNCATEGORIZED_LABEL: Record<string, string> = {
 
 function resolveUncategorizedLabel(language: string): string {
   return UNCATEGORIZED_LABEL[language.toLowerCase()] ?? UNCATEGORIZED_LABEL.en
+}
+
+// Fixed per-language description for the advanced-product-level base-price
+// row emitted by `buildComponentRows` (same language set as above).
+const BASE_PRICE_LABEL: Record<string, string> = {
+  en: "Base price",
+  de: "Grundpreis",
+  fr: "Prix de base",
+}
+
+function resolveBasePriceLabel(language: string): string {
+  return BASE_PRICE_LABEL[language.toLowerCase()] ?? BASE_PRICE_LABEL.en
 }
 
 /**
@@ -3017,7 +3030,8 @@ export async function buildPricelistWorkbook(
           cfg.dimensionDecimals,
           modelGroupCodeFor(advancedProduct.advanced_product_type),
           enabledGroupIds,
-          cfg.bedCombinedSection && isOtherWithFabrics
+          cfg.bedCombinedSection && isOtherWithFabrics,
+          language
         )
       : []
 

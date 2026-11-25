@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 
 import { getCollectionByPermalink } from "@lib/data/collection"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { getServerT } from "@lib/i18n/server-translations"
 import CollectionPageTemplate from "@modules/collections/templates"
 
 type Props = {
@@ -23,9 +24,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       return {}
     }
 
+    const t = await getServerT("account", validLanguage)
     const profile = collection.collection_profiles?.[0]
     const metaTitle =
-      profile?.meta_information?.meta_title || profile?.name || "Collection"
+      profile?.meta_information?.meta_title || profile?.name || t("collection")
     const metaDescription =
       profile?.meta_information?.meta_description || profile?.description || ""
 

@@ -25,13 +25,14 @@ export default async function CarePage(props: Props) {
   const language = params.languageCode as SupportedLanguage
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
   const t = await getServerT("common", validLanguage)
+  const tAccount = await getServerT("account", validLanguage)
 
   return (
     <>
       <PageHeader
         title={t("care-page-title", "Product Care")}
         breadcrumbItems={[
-          { label: "Home", href: "/" },
+          { label: tAccount("breadcrumb-home"), href: "/" },
           { label: t("care-page-title", "Product Care"), href: null },
         ]}
         level="h2"

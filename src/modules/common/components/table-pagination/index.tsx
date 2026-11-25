@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "@lib/i18n"
+
 interface TablePaginationProps {
   currentPage: number
   totalPages: number
@@ -48,6 +50,7 @@ export default function TablePagination({
   totalPages,
   onPageChange,
 }: TablePaginationProps) {
+  const { t } = useTranslations("common")
   if (totalPages <= 1)
     return <div className="flex justify-center w-full py-6"></div>
 
@@ -67,7 +70,7 @@ export default function TablePagination({
               ? "text-dark-blue hover:bg-gray-100"
               : "text-gray-300 cursor-not-allowed"
           }`}
-          aria-label="Previous page"
+          aria-label={t("previous-page")}
         >
           &#8592;
         </button>
@@ -105,7 +108,7 @@ export default function TablePagination({
               ? "text-dark-blue hover:bg-gray-100"
               : "text-gray-300 cursor-not-allowed"
           }`}
-          aria-label="Next page"
+          aria-label={t("next-page")}
         >
           &#8594;
         </button>

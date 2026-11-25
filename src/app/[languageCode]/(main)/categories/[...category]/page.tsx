@@ -5,6 +5,7 @@ import { getCategoryByPermalink, enrichContentBlocksWithTileCategories, listMenu
 import { CategorySortOption, SORT_OPTION_TO_GRAPHQL } from "@lib/furnisystems-sdk/modules/products/types"
 import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
 import { isNewParam } from "@lib/data/new-filter"
+import { getServerT } from "@lib/i18n/server-translations"
 import CategoryPageTemplate from "@modules/categories/templates"
 
 const VALID_SORT_OPTIONS = Object.keys(SORT_OPTION_TO_GRAPHQL) as CategorySortOption[]
@@ -27,9 +28,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
       return {}
     }
 
+    const t = await getServerT("common", validLanguage)
+
     const profile = category.category_profiles?.[0]
     const metaTitle =
-      profile?.meta_information?.meta_title || profile?.name || "Category"
+      profile?.meta_information?.meta_title || profile?.name || t("category")
     const metaDescription =
       profile?.meta_information?.meta_description || profile?.description || ""
 

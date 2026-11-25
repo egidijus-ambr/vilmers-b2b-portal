@@ -9,6 +9,7 @@ import {
 } from "@headlessui/react"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import SearchInput from "@modules/common/components/search-input"
+import { useTranslations } from "@lib/i18n"
 
 const COUNTRY_CODES = [
   "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
@@ -29,10 +30,11 @@ export default function CountrySelect({
   value,
   onChange,
   label,
-  placeholder = "Select country",
+  placeholder,
   error,
   language = "en",
 }: CountrySelectProps) {
+  const { t } = useTranslations("common")
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
 
@@ -79,7 +81,7 @@ export default function CountrySelect({
             className={`w-full flex items-center justify-between h-14 px-3 text-base border ${error ? "border-red-500" : "border-gray-300 hover:border-gray-400"} rounded-input bg-white text-left transition-colors`}
           >
             <span className={selectedCountry ? "text-dark-blue" : "text-gray-500"}>
-              {selectedCountry ? selectedCountry.name : placeholder}
+              {selectedCountry ? selectedCountry.name : placeholder ?? t("select-country")}
             </span>
             <ChevronDown size="14" className="flex-shrink-0 ml-2" />
           </ListboxButton>
@@ -95,7 +97,7 @@ export default function CountrySelect({
                 ref={searchRef}
                 value={search}
                 onChange={setSearch}
-                placeholder="Search countries..."
+                placeholder={t("search-countries")}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
@@ -110,7 +112,7 @@ export default function CountrySelect({
             ))}
             {filtered.length === 0 && (
               <div className="px-3 py-3 text-sm text-gray-500">
-                No countries found
+                {t("no-countries-found")}
               </div>
             )}
           </ListboxOptions>

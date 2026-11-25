@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useTranslations } from "@lib/i18n"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import FabricDrawer from "./fabric-drawer"
 import type {
@@ -32,6 +33,8 @@ const FabricSelector = ({
   title,
   languageCode,
 }: FabricSelectorProps) => {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const { state } = useConfigurator()
   const { selectedFabric } = state
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -52,7 +55,7 @@ const FabricSelector = ({
     ? getGroupName(selectedGroup, languageCode, customerPaletteIds)
     : null
 
-  const drawerTitle = title ?? "Fabric"
+  const drawerTitle = title ?? t("fabric-drawer-title")
 
   return (
     <>
@@ -66,7 +69,7 @@ const FabricSelector = ({
           {selectedFabricObj?.image?.src_xs ? (
             <img
               src={
-                selectedFabricObj.image.src_md ?? selectedFabricObj.image.src_xs
+                selectedFabricObj.image.src_xs ?? selectedFabricObj.image.src_md ?? undefined
               }
               alt={selectedFabricObj.color_name ?? selectedFabricObj.code}
               className="w-full h-full object-cover"
@@ -102,7 +105,7 @@ const FabricSelector = ({
               </p>
             </>
           ) : (
-            <p className="text-sm text-gray-400">Select fabric...</p>
+            <p className="text-sm text-gray-400">{tc("select-fabric")}</p>
           )}
         </div>
 

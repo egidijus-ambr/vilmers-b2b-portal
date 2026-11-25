@@ -1,6 +1,7 @@
 "use client"
 
 import { useCatalogBuilder } from "@lib/context/catalog-builder-context"
+import { useTranslations } from "@lib/i18n"
 
 interface SelectionCheckboxProps {
   productId: number
@@ -12,6 +13,7 @@ export default function SelectionCheckbox({
   productName,
 }: SelectionCheckboxProps) {
   const context = useCatalogBuilder()
+  const { t: tc } = useTranslations("common")
 
   // Don't render outside CatalogBuilderProvider or when selection mode is off
   if (!context?.selectionMode) return null
@@ -27,7 +29,7 @@ export default function SelectionCheckbox({
   return (
     <button
       type="button"
-      aria-label={`Select ${productName}`}
+      aria-label={tc("select-product", { product: productName })}
       aria-checked={isChecked}
       role="checkbox"
       onClick={(e) => {

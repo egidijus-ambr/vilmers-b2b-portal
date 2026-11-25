@@ -6,6 +6,7 @@ import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { searchCustomersForSelector } from "@lib/data/customer-search"
 import SearchInput from "@modules/common/components/search-input"
 import Button from "@modules/common/components/button"
+import { useTranslations } from "@lib/i18n"
 import type { SearchCustomerResult } from "@lib/furnisystems-sdk/modules/customer/types"
 
 const DEBOUNCE_MS = 250
@@ -16,6 +17,7 @@ export default function CustomerList({
   onPick,
   redirectOnPick = true,
 }: Props) {
+  const { t } = useTranslations("common")
   const { actingCustomer, setActingCustomer, clearActingCustomer } =
     useActingCustomer()
   const acting = actingCustomer as SearchCustomerResult | null
@@ -41,7 +43,7 @@ export default function CustomerList({
           setResults(data)
         } catch (e) {
           if (seq !== seqRef.current) return
-          setError("Could not load customers. Try again.")
+          setError(t("customers-load-error"))
         } finally {
           if (seq === seqRef.current) setLoading(false)
         }
@@ -65,15 +67,15 @@ export default function CustomerList({
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder="Search customers..."
+          placeholder={t("search-customers")}
           autoFocus
         />
       </div>
       <p className="px-3 pt-2 text-xs uppercase text-gray-500">
-        {query ? "Results" : "Recent"}
+        {query ? t("results") : t("recent")}
       </p>
       {loading && (
-        <p className="px-3 py-4 text-sm text-gray-500">Loading...</p>
+        <p className="px-3 py-4 text-sm text-gray-500">{t("loading")}</p>
       )}
       {error && (
         <div className="flex flex-col gap-2 px-3 py-4 text-sm text-red-600">
@@ -83,12 +85,12 @@ export default function CustomerList({
             className="self-start px-4 py-1.5 text-xs"
             onClick={() => setRetryTick((t) => t + 1)}
           >
-            Retry
+            {t("retry")}
           </Button>
         </div>
       )}
       {!loading && !error && displayResults.length === 0 && (
-        <p className="px-3 py-4 text-sm text-gray-500">No customers found</p>
+        <p className="px-3 py-4 text-sm text-gray-500">{t("no-customers-found")}</p>
       )}
       {!loading && !error && displayResults.length > 0 && (
         <ul className="max-h-72 overflow-y-auto">
@@ -139,7 +141,7 @@ export default function CustomerList({
                         clearActingCustomer()
                         onPick()
                       }}
-                      aria-label="Clear acting customer"
+                      aria-label={t("clear-acting-customer")}
                       className="flex items-center px-3 text-dark-blue hover:bg-gold/20"
                     >
                       <X className="h-4 w-4" />

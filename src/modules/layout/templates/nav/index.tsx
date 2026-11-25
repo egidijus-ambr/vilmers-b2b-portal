@@ -47,6 +47,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
   const pathname = usePathname()
   const { languageCode } = useParams() as { languageCode: string }
   const { t, isReady } = useTranslations()
+  const { t: ta } = useTranslations("account")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -181,7 +182,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
     >
       <img
         src={logoImgSrc}
-        alt="Store Logo"
+        alt={t("store-logo")}
         className={`h-[var(--nav-logo-height-mobile)] small:h-[var(--nav-logo-height)] transition-[filter] duration-200 ${
           shouldInvertLogo ? "brightness-0 invert" : ""
         }`}
@@ -203,7 +204,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
       className={`${isInlineSearch ? "small:hidden " : ""}flex items-center justify-center w-8 h-8 small:w-10 small:h-10 transition-colors ${
         isTransparent ? "text-white hover:text-white/80" : "text-nav-foreground hover:text-nav-foreground/80"
       }`}
-      aria-label="Search products"
+      aria-label={t("search-placeholder")}
       data-testid="nav-search-button"
     >
       <svg
@@ -341,7 +342,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
                 {/* Icon: visible on mobile, hidden on desktop */}
                 <Cart className="h-5 w-5 small:hidden" />
                 {/* Text label: hidden on mobile, visible on desktop */}
-                <span className="hidden small:inline">Cart</span>
+                <span className="hidden small:inline">{ta("breadcrumb-cart")}</span>
                 {totalCartItems > 0 && (
                   <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-dark-blue text-white text-xs font-semibold leading-none">
                     {totalCartItems}

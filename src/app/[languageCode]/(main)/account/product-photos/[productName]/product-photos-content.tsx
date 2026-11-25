@@ -61,11 +61,11 @@ export default function ProductPhotosContent(): JSX.Element | null {
 
         // If no photos found, this might be an invalid product
         if (interiorPhotos.length === 0) {
-          setError(`No interior photos found for "${decodedProductName}"`)
+          setError(t("no-interior-photos-found", { product: decodedProductName }))
         }
       } catch (err) {
         console.error("Error fetching product photos:", err)
-        setError("Failed to load photos for this product")
+        setError(t("photos-load-error"))
 
         // If error suggests product doesn't exist, show 404
         if (err instanceof Error && err.message.includes("not found")) {
@@ -115,7 +115,7 @@ export default function ProductPhotosContent(): JSX.Element | null {
 
           {error && (
             <div className="text-center p-8 bg-red-50 border border-red-200 text-red-700 ">
-              <p className="font-medium mb-2">Unable to load photos</p>
+              <p className="font-medium mb-2">{t("photos-load-error-title")}</p>
               <p className="text-sm">{error}</p>
             </div>
           )}
@@ -148,11 +148,10 @@ export default function ProductPhotosContent(): JSX.Element | null {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-ui-fg-base mb-2">
-                No Photos Available
+                {t("no-photos-available")}
               </h3>
               <p className="text-ui-fg-muted mb-4">
-                No interior photos are currently available for "
-                {decodedProductName}".
+                {t("no-interior-photos-currently", { product: decodedProductName })}
               </p>
             </div>
           )}

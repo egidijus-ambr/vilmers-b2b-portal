@@ -6,6 +6,7 @@ import dynamic from "next/dynamic"
 import type { SofaFormExtended } from "@configurator/lib/types"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import SofaModulesDrawer from "./sofa-modules-drawer"
+import { useTranslations } from "@lib/i18n"
 
 type SofaModulesSelectorProps = {
   sofaForms: SofaFormExtended[]
@@ -130,6 +131,8 @@ const SofaModulesSelector = ({
   armrestName,
   showAllProducts = false,
 }: SofaModulesSelectorProps) => {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { state } = useConfigurator()
   const selectedFabric = state.selectedFabric
@@ -151,10 +154,10 @@ const SofaModulesSelector = ({
         {/* Label block */}
         <div className="w-[134px] small:w-48 shrink-0 h-[78px] small:h-28 flex flex-col justify-end pb-2 pl-3 border-r border-gray-200 bg-configurator-surface">
           <p className="text-xs font-semibold text-gold uppercase tracking-wide mb-0.5">
-            Sofa Modules
+            {t("sofa-modules")}
           </p>
           <p className="text-sm font-medium text-gray-900">
-            {sofaForms.length} available
+            {t("modules-available", { count: sofaForms.length })}
           </p>
         </div>
 
@@ -201,7 +204,7 @@ const SofaModulesSelector = ({
             <span className="text-sm font-bold text-gray-700">
               +{extraCount}
             </span>
-            <span className="text-[10px] text-gray-500">more</span>
+            <span className="text-[10px] text-gray-500">{tc("more")}</span>
           </div>
         )}
 

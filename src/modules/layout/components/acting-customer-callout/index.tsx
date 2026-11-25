@@ -3,8 +3,10 @@
 import { useCustomer } from "@lib/context/customer-context"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
+import { useTranslations } from "@lib/i18n"
 
 export default function ActingCustomerCallout() {
+  const { t } = useTranslations("common")
   const { customer } = useCustomer()
   const { actingCustomer, isImpersonatedByManager } = useActingCustomer()
 
@@ -13,8 +15,7 @@ export default function ActingCustomerCallout() {
 
   return (
     <p role="status" className="text-right text-sm text-dark-blue">
-      You&apos;re viewing the general catalog. Select a customer to see their
-      pricing and place an order.
+      {t("acting-customer-callout")}
     </p>
   )
 }

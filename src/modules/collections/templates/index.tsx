@@ -8,6 +8,8 @@ import CollectionProductGrid from "@modules/collections/components/collection-pr
 import CategoryProductGridSkeleton from "@modules/categories/components/category-product-grid-skeleton"
 import ContentBlock from "@modules/home/components/content-block"
 import type { ContentBlockData } from "@modules/home/components/content-block/types"
+import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { getServerT } from "@lib/i18n/server-translations"
 
 interface CollectionPageTemplateProps {
   collection: CollectionData
@@ -34,9 +36,12 @@ function getCollectionPermalink(collection: CollectionData): string | null {
  * Collections are flat (no parent chain), so the breadcrumb is always
  * Home → collection name (no link on the current page).
  */
-function buildBreadcrumbs(collection: CollectionData): BreadcrumbItem[] {
+function buildBreadcrumbs(
+  collection: CollectionData,
+  homeLabel: string
+): BreadcrumbItem[] {
   return [
-    { label: "Home", href: "/" },
+    { label: homeLabel, href: "/" },
     { label: getCollectionName(collection), href: null },
   ]
 }
@@ -63,7 +68,13 @@ export default async function CollectionPageTemplate({
 }: CollectionPageTemplateProps) {
   const name = getCollectionName(collection)
   const description = getCollectionDescription(collection)
-  const breadcrumbs = buildBreadcrumbs(collection)
+  const tAccount = await getServerT(
+    "account",
+    (supportedLanguages as readonly string[]).includes(language)
+      ? (language as SupportedLanguage)
+      : "en"
+  )
+  const breadcrumbs = buildBreadcrumbs(collection, tAccount("breadcrumb-home"))
   const collectionPermalink = getCollectionPermalink(collection) || ""
 
   const contentBlocks = (collection.content_blocks ?? [])

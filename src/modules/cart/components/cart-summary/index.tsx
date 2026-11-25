@@ -28,6 +28,7 @@ export default function CartSummary({
   title?: string
 }) {
   const { t, language } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const ctx = useCart()
   const items = itemsProp ?? ctx.items
   const { discountPct } = useCustomerDiscount()
@@ -88,7 +89,7 @@ export default function CartSummary({
                   {name}
                 </span>
                 <span className="text-sm font-light text-gray-500 mt-1">
-                  Quantity: {quantity}
+                  {t("quantity-value", { quantity })}
                 </span>
                 <span className="mt-4">
                   {(() => {
@@ -128,8 +129,8 @@ export default function CartSummary({
         )}
         {canSeePrices && (
           <div className="flex justify-between items-center">
-            <span className="text-[18px] font-semibold text-dark-blue">
-              TOTAL
+            <span className="text-[18px] font-semibold text-dark-blue uppercase">
+              {t("total")}
             </span>
             <span>
               <PriceDisplay
@@ -151,14 +152,14 @@ export default function CartSummary({
               <Button
                 className="w-full"
                 disabled
-                title="Select a customer first"
+                title={tc("checkout-select-customer-title")}
               >
-                Proceed to checkout
+                {t("proceed-to-checkout")}
               </Button>
             ) : (
               <LocalizedClientLink href="/checkout" className="block">
                 <Button className="w-full">
-                  Proceed to checkout
+                  {t("proceed-to-checkout")}
                 </Button>
               </LocalizedClientLink>
             )}
@@ -171,7 +172,7 @@ export default function CartSummary({
                   variant="outline"
                   className="w-full"
                   disabled
-                  title="Select a customer first"
+                  title={tc("checkout-select-customer-title")}
                 >
                   {t("preview-offer-pdf")}
                 </Button>

@@ -32,7 +32,9 @@ export default function LinkedProductsSection({
             products={group.products}
             language={languageCode as SupportedLanguage}
             maxRows={1}
-            title={t(`linked-products-${group.type}`)}
+            title={t(`linked-products-${group.type}`, {
+              defaultValue: t("linked-products-default"),
+            })}
           />
         </div>
       ))}

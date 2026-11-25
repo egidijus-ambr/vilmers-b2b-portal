@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { ProductContainer } from "@lib/furnisystems-sdk/modules/products/types"
 import { formatPrice } from "@lib/util/money"
-import { SupportedLanguage } from "@lib/i18n"
+import { SupportedLanguage, useTranslations } from "@lib/i18n"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import PdfCatalogueButton from "@modules/categories/components/pdf-catalogue-button"
 import SelectionCheckbox from "@modules/categories/components/catalog-builder/selection-checkbox"
@@ -109,6 +109,7 @@ export default function B2BProductCard({
   const { name, handle, image, priceLabel, isFromPrice, isAdvanced, categoryName } =
     extractProductDisplayData(container, language)
 
+  const { t } = useTranslations("account")
   const { enabled: goToConfigurator } = useGoToConfigurator()
   const catalogBuilder = useCatalogBuilder()
   const inSelectionMode = !!catalogBuilder?.selectionMode
@@ -171,7 +172,7 @@ export default function B2BProductCard({
             />
           ) : (
             <div className="flex h-full items-center justify-center text-gray-400">
-              No image
+              {t("no-image")}
             </div>
           )}
           <div className="absolute top-3 left-3 z-10 flex items-center gap-2">

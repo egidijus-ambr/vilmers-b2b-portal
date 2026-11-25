@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { getServerT, type SupportedLanguage } from "@lib/i18n"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories, enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { getCustomerFilterData } from "@lib/data/customer"
@@ -32,7 +33,7 @@ type Props = {
 function mapFurnisystemsProduct(
   container: FurnisystemsProductDetail,
   languageCode: string,
-  rootCategory?: CategoryData,
+  rootCategory: CategoryData | undefined,
   showAllProducts: boolean = false,
   handle: string = "",
   catalogues: CatalogueFile[] = [],
@@ -41,7 +42,8 @@ function mapFurnisystemsProduct(
   // self-excluded. Falls back to the raw, un-hydrated blocks so callers that
   // don't hydrate (if any) don't crash — but product_grid/page_grid/
   // category_tiles blocks won't render their items in that case.
-  contentBlocks?: ContentBlockData[]
+  contentBlocks: ContentBlockData[] | undefined,
+  labels: { home: string; product: string }
 ): ProductPageData {
   const isAdvanced = container.type === "ADVANCED_PRODUCT" || !!container.advanced_product
 
@@ -72,7 +74,7 @@ function mapFurnisystemsProduct(
       : []
 
   // Build breadcrumbs (hrefs without language prefix — LocalizedClientLink adds it)
-  const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
+  const breadcrumbs: BreadcrumbItem[] = [{ label: labels.home, href: "/" }]
 
   if (container.primary_category) {
     // Walk up the parent chain, collect ancestors
@@ -112,7 +114,7 @@ function mapFurnisystemsProduct(
     }
   }
 
-  breadcrumbs.push({ label: profile?.name ?? "Product", href: null })
+  breadcrumbs.push({ label: profile?.name ?? labels.product, href: null })
 
   // Map product features (select correct language profile)
   const features: ProductPageFeature[] = (container.product_features ?? [])
@@ -195,7 +197,7 @@ function mapFurnisystemsProduct(
 
   return {
     id: String(container.id),
-    title: profile?.name ?? "Product",
+    title: profile?.name ?? labels.product,
     description: profile?.description ?? null,
     images: galleryImages,
     productName: profile?.name ?? null,
@@ -216,11 +218,13 @@ function mapFurnisystemsProduct(
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle, languageCode } = await params
+  const t = await getServerT("account", languageCode as SupportedLanguage)
+  const tc = await getServerT("common", languageCode as SupportedLanguage)
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
   const product = await getProductByPermalink(handle, languageCode, priceListIds, customerTagIds)
 
   if (!product) {
-    return { title: "Product Not Found" }
+    return { title: tc("product-not-found") }
   }
 
   const isAdvanced = product.type === "ADVANCED_PRODUCT" || !!product.advanced_product
@@ -235,7 +239,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const heroChild = product.advanced_product ?? product.single_product
   const heroImage = heroChild?.category_photo ?? heroChild?.gallery_photos?.[0] ?? null
 
-  const productTitle = profile?.name ?? "Product"
+  const productTitle = profile?.name ?? t("product")
 
   const ogImages = heroImage?.src
     ? [
@@ -265,6 +269,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { handle, languageCode } = await params
+  const tAccount = await getServerT("account", languageCode as SupportedLanguage)
   const [{ customerTagIds, priceListIds }, showAllProducts] = await Promise.all([
     getCustomerFilterData(),
     getShowAllProductsActive(),
@@ -324,7 +329,8 @@ export default async function ProductPage({ params }: Props) {
     showAllProducts,
     handle,
     catalogues,
-    contentBlocks as unknown as ContentBlockData[]
+    contentBlocks as unknown as ContentBlockData[],
+    { home: tAccount("breadcrumb-home"), product: tAccount("product") }
   )
 
   return <ProductTemplate product={productData} />

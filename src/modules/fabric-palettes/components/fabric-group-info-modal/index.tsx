@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "@lib/i18n"
 import ResponsiveDialog from "@modules/common/components/responsive-dialog"
 import type { FabricGroupDetail } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useFabricGroupDetails } from "../../hooks/use-fabric-group-details"
@@ -23,6 +24,7 @@ export default function FabricGroupInfoModal({
   groupData,
   languageCode,
 }: FabricGroupInfoModalProps) {
+  const { t: tc } = useTranslations("common")
   const { priceCategory, description, featuresWithPhoto, featureGroups } =
     useFabricGroupDetails(groupData, languageCode)
 
@@ -67,7 +69,7 @@ export default function FabricGroupInfoModal({
         {/* Empty state */}
         {featureGroups.length === 0 && featuresWithPhoto.length === 0 && (
           <p className="text-sm text-dark-blue-70 italic">
-            No feature information available.
+            {tc("no-feature-information")}
           </p>
         )}
       </div>

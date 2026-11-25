@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { X } from "lucide-react"
 import { useIsPWAStandalone } from "@lib/hooks/use-is-pwa-standalone"
+import { useTranslations } from "@lib/i18n"
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -34,6 +35,7 @@ export function PWAInstallPrompt() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const isStandalone = useIsPWAStandalone()
+  const { t } = useTranslations("common")
 
   useEffect(() => {
     // Check if it's iOS
@@ -170,7 +172,7 @@ export function PWAInstallPrompt() {
           <button
             onClick={handleDismiss}
             className="absolute right-4 top-4 w-6 h-6 flex items-center justify-center cursor-pointer hover:bg-white/50 rounded-full transition-colors"
-            aria-label="Dismiss install prompt"
+            aria-label={t("pwa-dismiss-prompt")}
           >
             <X className="w-5 h-5 text-stone-400" strokeWidth={2} />
           </button>
@@ -179,12 +181,12 @@ export function PWAInstallPrompt() {
         {/* Content section */}
         <div className="flex-1 px-6 py-5 flex flex-col gap-2">
           <h2 className="text-xl font-semibold text-black">
-            Install App
+            {t("pwa-install-title")}
           </h2>
           <p className="text-md font-normal text-black leading-snug">
             {isIOS
-              ? "Tap Share → Add to Home Screen → Add"
-              : "Install our app for faster access and offline functionality."}
+              ? t("pwa-install-ios-instructions")
+              : t("pwa-install-description")}
           </p>
         </div>
 
@@ -195,7 +197,7 @@ export function PWAInstallPrompt() {
             className="flex-1 h-8 px-6 bg-gold hover:bg-[#8a7545] rounded-full flex items-center justify-center transition-colors cursor-pointer"
           >
             <span className="text-white text-sm font-normal">
-              Install Now
+              {t("pwa-install-now")}
             </span>
           </button>
 
@@ -204,7 +206,7 @@ export function PWAInstallPrompt() {
             className="px-6 h-8 rounded-full border border-gold hover:bg-stone-50 flex items-center justify-center transition-colors cursor-pointer"
           >
             <span className="text-gold text-sm font-normal">
-              Later
+              {t("pwa-install-later")}
             </span>
           </button>
         </div>

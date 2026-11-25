@@ -9,6 +9,7 @@ import {
 } from "@headlessui/react"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import SearchInput from "@modules/common/components/search-input"
+import { useTranslations } from "@lib/i18n"
 
 export interface Address {
   id: number
@@ -54,8 +55,9 @@ export default function AddressSelect({
   selectedAddressId,
   onSelect,
   label,
-  placeholder = "Select an address",
+  placeholder,
 }: AddressSelectProps) {
+  const { t: tc } = useTranslations("common")
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
   const selected = addresses.find((a) => a.id === selectedAddressId) ?? null
@@ -80,7 +82,7 @@ export default function AddressSelect({
         <div className="relative">
           <ListboxButton className="w-full flex items-center justify-between h-14 px-3 text-base border border-gray-300 rounded-input bg-white text-left hover:border-gray-400 transition-colors">
             <span className={selected ? "text-dark-blue truncate" : "text-gray-500"}>
-              {selected ? formatAddress(selected) : placeholder}
+              {selected ? formatAddress(selected) : placeholder ?? tc("checkout-select-an-address")}
             </span>
             <ChevronDown size="14" className="flex-shrink-0 ml-2" />
           </ListboxButton>
@@ -93,7 +95,7 @@ export default function AddressSelect({
                 ref={searchRef}
                 value={search}
                 onChange={setSearch}
-                placeholder="Search addresses..."
+                placeholder={tc("checkout-search-addresses")}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
@@ -129,7 +131,7 @@ export default function AddressSelect({
             ))}
             {filtered.length === 0 && (
               <div className="px-3 py-3 text-sm text-gray-500">
-                No addresses found
+                {tc("checkout-no-addresses")}
               </div>
             )}
           </ListboxOptions>

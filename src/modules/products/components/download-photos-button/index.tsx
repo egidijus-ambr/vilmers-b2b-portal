@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "@lib/i18n"
 
 type DownloadPhotosButtonProps = {
   productName: string
@@ -13,6 +14,7 @@ const DownloadPhotosButton = ({
   photoCount,
   disabled = false,
 }: DownloadPhotosButtonProps) => {
+  const { t: tc } = useTranslations("common")
   const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,7 +38,7 @@ const DownloadPhotosButton = ({
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to download photos")
+        throw new Error(errorData.error || tc("download-photos-failed"))
       }
 
       // Create download link
@@ -60,7 +62,7 @@ const DownloadPhotosButton = ({
       window.URL.revokeObjectURL(url)
     } catch (err) {
       console.error("Download failed:", err)
-      setError(err instanceof Error ? err.message : "Download failed")
+      setError(err instanceof Error ? err.message : tc("download-failed"))
     } finally {
       setIsDownloading(false)
     }
@@ -71,7 +73,7 @@ const DownloadPhotosButton = ({
       <button
         onClick={handleDownload}
         disabled={disabled || isDownloading || photoCount === 0}
-        title={`Download all photos (${photoCount})`}
+        title={tc("download-all-photos", { count: photoCount })}
         className={`
           flex items-center justify-center transition-colors
           ${

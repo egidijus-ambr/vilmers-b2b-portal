@@ -128,13 +128,13 @@ const Hero = async ({
                 level="h1"
                 className="text-[2.5rem] small:text-[3.5rem] font-medium  text-white font-normal drop-shadow-lg leading-tight"
               >
-                Comfort and quality
+                {t("hero-title-line-1")}
               </Heading>
               <Heading
                 level="h2"
                 className="text-[2rem] small:text-[2.5rem] font-medium  text-white font-normal drop-shadow-lg leading-tight"
               >
-                with smart design.
+                {t("hero-title-line-2")}
               </Heading>
             </>
           )}

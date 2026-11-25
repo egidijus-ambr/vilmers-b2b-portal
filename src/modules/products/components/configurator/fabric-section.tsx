@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo } from "react"
+import { useTranslations } from "@lib/i18n"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import { buildSortedFabricGroups, pickDefaultFabric } from "@configurator/lib/group-logic"
 import { useFabricCategoryAvailability } from "@configurator/hooks/use-fabric-category-availability"
@@ -24,6 +25,7 @@ type FabricSectionProps = {
  * Ported from storefront FabricsWithCombinationsSelect.tsx
  */
 const FabricSection = ({ languageCode }: FabricSectionProps) => {
+  const { t } = useTranslations("account")
   const { state, dispatch } = useConfigurator()
   const { productData, selectedFabric, selectedFabricCombination } = state
 
@@ -184,7 +186,7 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
 
     return (
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold">Fabric Selection</h3>
+        <h3 className="text-sm font-semibold">{t("fabric-selection")}</h3>
 
         {/* Combination switcher (only when >1 combination) */}
         {fabricCombinations.length > 1 && (
@@ -219,7 +221,7 @@ const FabricSection = ({ languageCode }: FabricSectionProps) => {
   // No combinations: single fabric selector
   return (
     <div className="">
-      <h3 className="text-sm font-semibold">Fabric Selection</h3>
+      <h3 className="text-sm font-semibold">{t("fabric-selection")}</h3>
       <FabricSelector
         fabricGroups={fabricGroups}
         option={null}

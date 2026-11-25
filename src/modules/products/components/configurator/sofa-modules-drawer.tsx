@@ -9,6 +9,7 @@ import { getPriceFromPriceCategories, applyDiscount } from "@configurator/lib/pr
 import { useCustomerDiscount } from "@lib/hooks/use-customer-discount"
 import PriceDisplay from "@modules/common/components/price-display"
 import { activeTheme } from "themes"
+import { useTranslations } from "@lib/i18n"
 import {
   METRIC_SIZE,
   LABEL_GAP,
@@ -52,6 +53,20 @@ const GROUPS_ORDER = [
   "Combinations",
   "Other modules",
 ]
+
+// GROUPS_ORDER entries (and the "Other modules" fallback) double as lookup keys
+// against backend `metadata.group`, so they stay literal for matching; they are
+// translated only at display time via these keys. Unknown backend group names
+// are shown as-is.
+const GROUP_LABEL_KEYS: Record<string, string> = {
+  "Modules": "sofa-group-modules",
+  "Corners and Openends": "sofa-group-corners-openends",
+  "Modules With Armrest": "sofa-group-with-armrest",
+  "Modules With Left Armrest": "sofa-group-with-left-armrest",
+  "Modules With Right Armrest": "sofa-group-with-right-armrest",
+  "Combinations": "sofa-group-combinations",
+  "Other modules": "sofa-group-other",
+}
 
 function getModuleGroup(sofaForm: SofaFormExtended): string {
   return (
@@ -207,6 +222,7 @@ interface ModuleCardProps {
 }
 
 function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, currency }: ModuleCardProps) {
+  const { t: tc } = useTranslations("common")
   const price = getPriceFromPriceCategories(selectedFabric, sofaForm.form_price_fabric_category)
   const { discountPct } = useCustomerDiscount()
   const dims = sofaForm.dimensions
@@ -260,7 +276,7 @@ function ModuleCard({ sofaForm, onAdd, armrestWidthOverride, selectedFabric, cur
           onClick={onAdd}
           className="mt-1.5 w-full text-xs font-medium border border-configurator-accent text-configurator-accent hover:bg-configurator-accent hover:text-configurator-accent-foreground transition-colors py-1 px-2"
         >
-          Add
+          {tc("add")}
         </button>
       </div>
     </div>
@@ -282,6 +298,8 @@ const SofaModulesDrawer = ({
   currency,
   showAllProducts = false,
 }: SofaModulesDrawerProps) => {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const [searchValue, setSearchValue] = useState("")
 
   // Filter by search query against name or code, and by price availability
@@ -377,12 +395,12 @@ const SofaModulesDrawer = ({
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">
-                      Sofa Modules
+                      {t("sofa-modules")}
                     </Dialog.Title>
                     <button
                       onClick={close}
                       className="p-1 hover:bg-gray-100 transition-colors"
-                      aria-label="Close drawer"
+                      aria-label={tc("close-drawer")}
                     >
                       <svg
                         className="w-5 h-5"
@@ -404,7 +422,7 @@ const SofaModulesDrawer = ({
                   <div className="px-6 py-3 border-b">
                     <input
                       type="search"
-                      placeholder="Search modules..."
+                      placeholder={t("search-modules")}
                       value={searchValue}
                       onChange={(e) => setSearchValue(e.target.value)}
                       className="w-full border border-gray-300 rounded-input px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-configurator-accent focus:border-configurator-accent"
@@ -413,7 +431,19 @@ const SofaModulesDrawer = ({
 
                   {armrestName && (
                     <div className="px-6 py-2 text-xs text-gray-500 border-b">
-                      Sizes shown with armrest: <span className="font-medium text-gray-700">{armrestName}</span>
+                      {(() => {
+                        // Locale word order is kept: translate with a marker, then style the value
+                        const [before, after] = t("sizes-shown-with-armrest", {
+                          armrest: "\u0000",
+                        }).split("\u0000")
+                        return (
+                          <>
+                            {before}
+                            <span className="font-medium text-gray-700">{armrestName}</span>
+                            {after}
+                          </>
+                        )
+                      })()}
                     </div>
                   )}
 
@@ -421,7 +451,7 @@ const SofaModulesDrawer = ({
                   <div className="flex-1 overflow-y-auto px-6 pb-6">
                     {moduleGroups.length === 0 ? (
                       <p className="text-sm text-gray-400 text-center py-8">
-                        No modules match your search
+                        {t("no-modules-match")}
                       </p>
                     ) : (
                       moduleGroups.map(({ group, items }) => (
@@ -429,7 +459,7 @@ const SofaModulesDrawer = ({
                           {showGroupHeaders && (
                             <div className="flex items-center justify-between pt-4 pb-2 border-b border-gold mb-3">
                               <span className="text-sm font-semibold text-gray-700">
-                                {group}
+                                {GROUP_LABEL_KEYS[group] ? t(GROUP_LABEL_KEYS[group]) : group}
                               </span>
                               <span className="text-xs text-gray-400">
                                 {items.length}

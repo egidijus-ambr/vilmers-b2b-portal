@@ -3,6 +3,8 @@
 import React from "react"
 import { clx } from "@medusajs/ui"
 import type { StepDefinition } from "@configurator/lib/types"
+import { getStepDisplayLabel } from "@configurator/lib/component-utils"
+import { useTranslations } from "@lib/i18n"
 
 type ConfiguratorStepperProps = {
   steps: StepDefinition[]
@@ -17,6 +19,8 @@ const ConfiguratorStepper = ({
   onStepChange,
   canNavigateToStep,
 }: ConfiguratorStepperProps) => {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   return (
     <div className="w-full">
       <div className="flex">
@@ -74,7 +78,7 @@ const ConfiguratorStepper = ({
                   }
                 )}
               >
-                {step.label}
+                {getStepDisplayLabel(step, t, tc)}
               </span>
 
               {/* Connector line to next step */}

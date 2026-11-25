@@ -4,15 +4,15 @@
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { setShowAllProductsCookie } from "@lib/util/show-all-products-cookie"
-
-const TOOLTIP =
-  "Show all products, including those not available in the customer's pricelist or market."
+import { useTranslations } from "@lib/i18n"
 
 type Props = {
   initialChecked: boolean
 }
 
 export default function ShowAllProductsToggle({ initialChecked }: Props) {
+  const { t } = useTranslations("common")
+  const TOOLTIP = t("all-products-tooltip")
   const router = useRouter()
   const [checked, setChecked] = useState(initialChecked)
   const [, startTransition] = useTransition()
@@ -33,7 +33,7 @@ export default function ShowAllProductsToggle({ initialChecked }: Props) {
         onChange={(e) => onChange(e.target.checked)}
         className="h-4 w-4 accent-dark-blue cursor-pointer"
       />
-      <span>All products</span>
+      <span>{t("all-products")}</span>
       <span
         aria-label={TOOLTIP}
         title={TOOLTIP}

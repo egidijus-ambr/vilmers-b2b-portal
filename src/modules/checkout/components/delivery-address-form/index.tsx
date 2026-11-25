@@ -34,6 +34,7 @@ export default function DeliveryAddressForm({
   submitAttempt = 0,
 }: DeliveryAddressFormProps) {
   const { language } = useTranslations("account")
+  const { t } = useTranslations("account")
   const { t: tc } = useTranslations("common")
   const [mode, setMode] = useState<"select" | "new">("select")
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
@@ -157,7 +158,7 @@ export default function DeliveryAddressForm({
   return (
     <div className="flex flex-col gap-y-6">
       <h3 className="font-medium text-gray-900">
-        Delivery Address
+        {t("delivery-address")}
       </h3>
 
       {mode === "select" && (
@@ -166,14 +167,14 @@ export default function DeliveryAddressForm({
             addresses={addresses}
             selectedAddressId={selectedAddressId}
             onSelect={handleSelectAddress}
-            label="Delivery address"
+            label={t("delivery-address")}
           />
           <Button
             variant="outline"
             onClick={handleSwitchToNew}
             className="self-start"
           >
-            + Add new address
+            {tc("checkout-add-new-address")}
           </Button>
         </>
       )}
@@ -185,7 +186,7 @@ export default function DeliveryAddressForm({
             onClick={handleCancelNew}
             className="self-start"
           >
-            ← Back to address selection
+            {tc("checkout-back-to-address-selection")}
           </Button>
           <div>
             <SearchInput

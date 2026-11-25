@@ -14,6 +14,7 @@ export default function ProductPhotosPage() {
   const { customer } = useCustomer()
   const router = useRouter()
   const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const {
     products,
     loading: productsLoading,
@@ -40,7 +41,7 @@ export default function ProductPhotosPage() {
     <div className="w-full " data-testid="product-photos-page-wrapper">
       <div className="w-full mt-6">
         <div className="mb-4 flex flex-col gap-y-2">
-          <h2>Product Photos</h2>
+          <h2>{t("product-photos.title")}</h2>
         </div>
 
         <div className="flex flex-col gap-y-8 w-full">
@@ -48,7 +49,7 @@ export default function ProductPhotosPage() {
 
           {productsError && (
             <div className="text-center p-8 bg-red-50 text-red-700 ">
-              <p>{productsError}</p>
+              <p>{t("products-fetch-failed")}</p>
             </div>
           )}
 
@@ -68,7 +69,7 @@ export default function ProductPhotosPage() {
                         <div className="relative aspect-square">
                           <Image
                             src={product.first_interior_photo_url!}
-                            alt={`${product.name} interior photo`}
+                            alt={tc("product-interior-photo", { product: product.name })}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-200"
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
@@ -87,7 +88,7 @@ export default function ProductPhotosPage() {
               ) : (
                 <div className="text-center p-8 bg-ui-bg-subtle">
                   <p className="text-ui-fg-muted">
-                    No products with interior photos found.
+                    {t("no-products-with-photos")}
                   </p>
                 </div>
               )}

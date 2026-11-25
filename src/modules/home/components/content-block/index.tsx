@@ -1062,6 +1062,7 @@ function ButtonBlock({
   backgroundColor: string | null
   textColor: string | null
 }) {
+  const { t: tc } = useTranslation("common")
   // Resolve href
   let href: string | null = null
   let target: string | undefined = undefined
@@ -1076,7 +1077,7 @@ function ButtonBlock({
   }
 
   const isFilled = style === "filled"
-  const text = buttonText || "Read more"
+  const text = buttonText || tc("read-more")
 
   const buttonStyle: React.CSSProperties = isFilled
     ? {
@@ -1295,6 +1296,7 @@ function Gallery({
   display?: GalleryDisplay
   stageHeight?: number
 }) {
+  const { t: tc } = useTranslation("common")
   const [currentPage, setCurrentPage] = useState(0)
   const orientations = useImageOrientations(images)
   const imagesPerPage = 3
@@ -1359,14 +1361,14 @@ function Gallery({
           <button
             onClick={goToPrevious}
             className="transition-opacity hover:opacity-70"
-            aria-label="Previous images"
+            aria-label={tc("previous-images")}
           >
             <ArrowLeft size="20" color="dark-blue-70" />
           </button>
           <button
             onClick={goToNext}
             className="transition-opacity hover:opacity-70"
-            aria-label="Next images"
+            aria-label={tc("next-images")}
           >
             <ArrowRight size="20" color="dark-blue" />
           </button>
@@ -1622,6 +1624,7 @@ function GalleryScrollRhythm({
   display?: GalleryDisplay
   stageHeight?: number
 }) {
+  const { t: tc } = useTranslation("common")
   // Width class for the display-width box that wraps arrows + track +
   // progress bar. The track clips its horizontally-scrolling images at this
   // box's right edge (via `overflow-x-auto` + no right padding), so nothing
@@ -1734,7 +1737,7 @@ function GalleryScrollRhythm({
               ? "opacity-100 hover:opacity-70"
               : "opacity-30 cursor-default"
           }`}
-          aria-label="Previous images"
+          aria-label={tc("previous-images")}
         >
           <ArrowLeft
             size="20"
@@ -1749,7 +1752,7 @@ function GalleryScrollRhythm({
               ? "opacity-100 hover:opacity-70"
               : "opacity-30 cursor-default"
           }`}
-          aria-label="Next images"
+          aria-label={tc("next-images")}
         >
           <ArrowRight
             size="20"
@@ -2039,11 +2042,26 @@ function EmailSignup({
 
           {state?.error && (
             <p className="mt-4 text-base text-red-600">
-              {state.error ||
-                t(
-                  "email-signup-error",
-                  "Something went wrong. Please try again."
-                )}
+              {state.errorCode === "invalid-email"
+                ? t(
+                    "email-signup-invalid-email",
+                    "Please enter a valid email address."
+                  )
+                : state.errorCode === "later"
+                  ? t(
+                      "email-signup-error-later",
+                      "An error occurred. Please try again later."
+                    )
+                  : state.errorCode === "generic"
+                    ? t(
+                        "email-signup-error",
+                        "Something went wrong. Please try again."
+                      )
+                    : state.error ||
+                      t(
+                        "email-signup-error",
+                        "Something went wrong. Please try again."
+                      )}
             </p>
           )}
         </div>
@@ -2109,6 +2127,7 @@ function PageGrid({
   titleAlignment: TitleAlignment
   hideTitle: boolean
 }) {
+  const { t: tc } = useTranslation("common")
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -2183,7 +2202,7 @@ function PageGrid({
                 : "bg-white/80 text-gray-600 border border-gray-300"
             }`}
           >
-            All
+            {tc("all")}
           </Link>
           {pillTags.map((tag) => (
             <Link

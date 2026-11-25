@@ -7,6 +7,7 @@ import NavMenu from "@modules/layout/components/nav-menu"
 import { MenuItem } from "@modules/layout/components/nav-menu-item"
 import { signout } from "@lib/data/customer"
 import { t } from "i18next"
+import { useTranslations } from "@lib/i18n"
 import { ExtendedStoreCustomer } from "@lib/types/customer"
 
 interface AccountDropdownProps {
@@ -19,6 +20,8 @@ const AccountDropdown = ({
   isHomePage = false,
 }: AccountDropdownProps) => {
   const { languageCode } = useParams() as { languageCode: string }
+  const { t: ta } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
 
   const handleLogout = async () => {
     await signout(languageCode)
@@ -47,7 +50,7 @@ const AccountDropdown = ({
               <div className="flex items-center gap-x-2">
                 <Image
                   src="/images/profile-icon.svg"
-                  alt="Profile"
+                  alt={ta("profile")}
                   width={16}
                   height={16}
                 />
@@ -61,7 +64,7 @@ const AccountDropdown = ({
               <div className="flex items-center gap-x-2">
                 <Image
                   src="/images/orders-icon.svg"
-                  alt="Orders"
+                  alt={ta("orders")}
                   width={16}
                   height={16}
                 />
@@ -75,7 +78,7 @@ const AccountDropdown = ({
               <div className="flex items-center gap-x-2">
                 <Image
                   src="/images/orders-icon.svg"
-                  alt="Carts"
+                  alt={ta("carts")}
                   width={16}
                   height={16}
                 />
@@ -89,7 +92,7 @@ const AccountDropdown = ({
               <div className="flex items-center gap-x-2">
                 <Image
                   src="/images/fabric-palettes-icon.svg"
-                  alt="Fabric Palette"
+                  alt={tc("fabric-palettes")}
                   width={16}
                   height={16}
                 />
@@ -103,7 +106,7 @@ const AccountDropdown = ({
               <div className="flex items-center gap-x-2">
                 <Image
                   src="/images/logout-icon.svg"
-                  alt="Logout"
+                  alt={tc("log-out")}
                   width={16}
                   height={16}
                 />

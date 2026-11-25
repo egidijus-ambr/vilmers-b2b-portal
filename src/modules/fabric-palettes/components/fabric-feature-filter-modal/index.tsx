@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, Fragment } from "react"
 import { Dialog, Transition } from "@headlessui/react"
 import { clx } from "@medusajs/ui"
 import X from "@modules/common/icons/x"
+import { useTranslations } from "@lib/i18n"
 import { useFabricCategoryLabel } from "@lib/context/fabric-category-labels-context"
 import Button from "@modules/common/components/button"
 import type {
@@ -35,6 +36,7 @@ export default function FabricFeatureFilterModal({
   language,
   labels,
 }: FabricFeatureFilterModalProps) {
+  const { t: tc } = useTranslations("common")
   const fabricCategoryLabel = useFabricCategoryLabel()
   const [isOpen, setIsOpen] = useState(false)
   const [pendingFeatures, setPendingFeatures] = useState<Set<number>>(new Set())
@@ -190,7 +192,7 @@ export default function FabricFeatureFilterModal({
       const count = computeCount(featureId)
       const fgroup = feature.fabric_feature_group ?? null
       const groupId = fgroup ? fgroup.id : null
-      const groupName = fgroup ? resolveFeatureGroupName(fgroup, language) : "Other"
+      const groupName = fgroup ? resolveFeatureGroupName(fgroup, language) : tc("other")
 
       if (!groupMap.has(groupId)) {
         groupMap.set(groupId, { groupId, groupName, features: [] })
@@ -216,7 +218,7 @@ export default function FabricFeatureFilterModal({
     })
 
     return groups
-  }, [allFabricGroups, featureMetaMap, pendingFeatures, pendingPriceCategories, featureToGroupMap, language])
+  }, [allFabricGroups, featureMetaMap, pendingFeatures, pendingPriceCategories, featureToGroupMap, language, tc])
 
   const totalCount = useMemo(() => {
     const pendingPriceCatsArray = Array.from(pendingPriceCategories)

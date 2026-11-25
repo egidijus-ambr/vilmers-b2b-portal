@@ -13,6 +13,7 @@ interface ProductPhotosNavProps {
 }
 
 const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
+  const { t: tc } = useTranslations("common")
   const router = useRouter()
   const params = useParams()
   const pathname = usePathname()
@@ -54,7 +55,7 @@ const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
     return (
       <div className="bg-white p-4 h-fit min-w-[240px]">
         <div className="text-center py-8">
-          <div className="text-base-regular text-red-500">Error: {error}</div>
+          <div className="text-base-regular text-red-500">{tc("error-with-message", { message: t("products-fetch-failed") })}</div>
         </div>
       </div>
     )
@@ -76,7 +77,7 @@ const ProductPhotosNav = ({ currentPath }: ProductPhotosNavProps) => {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search products..."
+          placeholder={tc("search-placeholder")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300  text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

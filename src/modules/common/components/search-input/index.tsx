@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useTranslations } from "@lib/i18n"
 
 interface SearchInputProps {
   value: string
@@ -17,7 +18,7 @@ interface SearchInputProps {
 const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
   value,
   onChange,
-  placeholder = "Search...",
+  placeholder,
   showSearchIcon = true,
   label,
   autoFocus,
@@ -25,6 +26,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
   onKeyDown,
   "data-testid": dataTestId,
 }, ref) => {
+  const { t } = useTranslations("account")
   return (
     <div className="w-full">
       {label && (
@@ -53,7 +55,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
         <input
           ref={ref}
           type="text"
-          placeholder={placeholder}
+          placeholder={placeholder ?? t("search-placeholder")}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoFocus={autoFocus}

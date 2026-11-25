@@ -2,6 +2,7 @@
 
 import React from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useTranslations } from "@lib/i18n"
 
 export interface BreadcrumbItem {
   label: string
@@ -47,10 +48,11 @@ const Breadcrumb = ({
   variant = "default",
   compact = false,
 }: BreadcrumbProps) => {
+  const { t } = useTranslations("common")
   const isLight = variant === "light"
 
   return (
-    <nav aria-label="Breadcrumb" className={isLight ? "" : compact ? "mb-2" : "mb-8"}>
+    <nav aria-label={t("breadcrumb")} className={isLight ? "" : compact ? "mb-2" : "mb-8"}>
       <ol className="flex items-center flex-wrap gap-3 text-sm">
         {items.map((item, index) => {
           const isLast = index === items.length - 1

@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useTranslations } from "@lib/i18n"
 import ArrowRight from "@modules/common/icons/arrow-right"
 
 interface ActionCardProps {
@@ -17,12 +18,13 @@ interface ActionCardProps {
 const ActionCard = ({
   title,
   description,
-  buttonText = "Check",
+  buttonText,
   height = "fixed",
   onClick,
   demo = false,
   footerLabel,
 }: ActionCardProps) => {
+  const { t } = useTranslations("account")
   return (
     <div
       className={`w-full p-4 sm:p-6 bg-white flex flex-col justify-start items-start gap-2.5 ${
@@ -49,7 +51,7 @@ const ActionCard = ({
             className="inline-flex items-center hover:opacity-70 transition-opacity"
           >
             <span className="pr-2 text-slate-800 text-sm sm:text-base font-medium leading-normal">
-              {buttonText}
+              {buttonText ?? t("check")}
             </span>
             <ArrowRight color="dark-blue" />
           </button>

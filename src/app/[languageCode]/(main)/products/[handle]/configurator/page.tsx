@@ -6,6 +6,7 @@ import { getShowAllProductsActive } from "@lib/data/show-all-products"
 import Breadcrumb, { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import ConfiguratorPageClient from "./configurator-page-client"
 import { features } from "@lib/features"
+import { getServerT, type SupportedLanguage } from "@lib/i18n"
 
 type Props = {
   params: Promise<{ handle: string; languageCode: string }>
@@ -13,6 +14,8 @@ type Props = {
 
 export default async function ConfiguratorPage({ params }: Props) {
   const { handle, languageCode } = await params
+  const t = await getServerT("account", languageCode as SupportedLanguage)
+  const tc = await getServerT("common", languageCode as SupportedLanguage)
 
   if (!features.configurator) {
     redirect(`/${languageCode}/products/${handle}`)
@@ -42,11 +45,11 @@ export default async function ConfiguratorPage({ params }: Props) {
     ? product.advanced_product?.advanced_product_profiles ?? []
     : product.single_product?.product_profiles ?? []
   const profile = profiles[0]
-  const productTitle = profile?.name ?? "Product"
+  const productTitle = profile?.name ?? t("product")
 
   const rootCategory = menuCategories.find((c) => c.is_root_category)
 
-  const breadcrumbs: BreadcrumbItem[] = [{ label: "Home", href: "/" }]
+  const breadcrumbs: BreadcrumbItem[] = [{ label: t("breadcrumb-home"), href: "/" }]
 
   if (product.primary_category) {
     const chain: typeof product.primary_category[] = []
@@ -85,8 +88,7 @@ export default async function ConfiguratorPage({ params }: Props) {
 
   // Product crumb is clickable (links back to PDP); Configurator is the unclickable current page
   breadcrumbs.push({ label: productTitle, href: `/products/${handle}` })
-  // TODO: i18n — add "configurator" key to locale files when translations are available
-  breadcrumbs.push({ label: "Configurator", href: null })
+  breadcrumbs.push({ label: tc("configurator"), href: null })
 
   return (
     <>

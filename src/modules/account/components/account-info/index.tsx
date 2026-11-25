@@ -2,6 +2,7 @@ import { Disclosure } from "@headlessui/react"
 import { Badge, Button, clx } from "@medusajs/ui"
 import { useEffect } from "react"
 
+import { useTranslations } from "@lib/i18n"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { useFormStatus } from "react-dom"
 
@@ -22,10 +23,12 @@ const AccountInfo = ({
   isSuccess,
   isError,
   clearState,
-  errorMessage = "An error occurred, please try again",
+  errorMessage,
   children,
   'data-testid': dataTestid
 }: AccountInfoProps) => {
+  const { t } = useTranslations("account")
+  const { t: tc } = useTranslations("common")
   const { state, close, toggle } = useToggleState()
 
   const { pending } = useFormStatus()
@@ -63,7 +66,7 @@ const AccountInfo = ({
             data-testid="edit-button"
             data-active={state}
           >
-            {state ? "Cancel" : "Edit"}
+            {state ? tc("cancel") : tc("edit")}
           </Button>
         </div>
       </div>
@@ -82,7 +85,7 @@ const AccountInfo = ({
           data-testid="success-message"
         >
           <Badge className="p-2 my-4" color="green">
-            <span>{label} updated succesfully</span>
+            <span>{t("info-updated-successfully", { label })}</span>
           </Badge>
         </Disclosure.Panel>
       </Disclosure>
@@ -101,7 +104,7 @@ const AccountInfo = ({
           data-testid="error-message"
         >
           <Badge className="p-2 my-4" color="red">
-            <span>{errorMessage}</span>
+            <span>{errorMessage === undefined ? tc("error-try-again") : errorMessage}</span>
           </Badge>
         </Disclosure.Panel>
       </Disclosure>
@@ -126,7 +129,7 @@ const AccountInfo = ({
                 type="submit"
                 data-testid="save-button"
               >
-                Save changes
+                {tc("save-changes")}
               </Button>
             </div>
           </div>

@@ -4,6 +4,9 @@ import React, { createContext, useContext, useEffect, useState } from "react"
 import { sdk } from "@lib/config"
 import { ProductSummary } from "@lib/furnisystems-sdk/modules/product-photos/types"
 
+/** Stable error code; consumers translate it with `account:products-fetch-failed`. */
+export const PRODUCT_PHOTOS_FETCH_ERROR = "products-fetch-failed"
+
 interface ProductPhotosContextType {
   products: ProductSummary[]
   loading: boolean
@@ -31,7 +34,7 @@ export function ProductPhotosProvider({
       const data = await sdk.productPhotos.getProductsSummary()
       setProducts(data.products)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch products")
+      setError(PRODUCT_PHOTOS_FETCH_ERROR)
       console.error("ProductPhotosProvider: Error fetching products:", err)
     } finally {
       setLoading(false)

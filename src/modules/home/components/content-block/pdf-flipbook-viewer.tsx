@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { PageFlip } from "page-flip"
+import { useTranslations } from "@lib/i18n"
 import ArrowLeft from "@modules/common/icons/arrow-left"
 import ArrowRight from "@modules/common/icons/arrow-right"
 
@@ -30,6 +31,11 @@ export default function PdfFlipbookViewer({
   // viewer), and any React re-render of the page list could try to move
   // nodes PageFlip already relocated. Building the book element and its
   // pages imperatively, outside React's tree, avoids both failure modes.
+  const { t: tc } = useTranslations("common")
+  // Ref so the (imperative) page-building effect reads the current translator
+  // without re-initialising PageFlip when it changes.
+  const tcRef = useRef(tc)
+  tcRef.current = tc
   const hostRef = useRef<HTMLDivElement>(null)
   const flipRef = useRef<PageFlip | null>(null)
   const [current, setCurrent] = useState(0)
@@ -45,7 +51,7 @@ export default function PdfFlipbookViewer({
       pageEl.className = "flipbook-page"
       const img = document.createElement("img")
       img.src = pageUrls[i]
-      img.alt = `Page ${i + 1}`
+      img.alt = tcRef.current("page-number", { number: i + 1 })
       img.loading = "lazy"
       img.draggable = false
       img.width = pageWidth
@@ -154,7 +160,7 @@ export default function PdfFlipbookViewer({
       <div className="relative z-10 flex items-center gap-4">
         <button
           type="button"
-          aria-label="Previous page"
+          aria-label={tc("previous-page")}
           onClick={() => flipRef.current?.flipPrev()}
           className="rounded-full border bg-white p-2 hover:bg-neutral-50"
         >
@@ -165,7 +171,7 @@ export default function PdfFlipbookViewer({
         </span>
         <button
           type="button"
-          aria-label="Next page"
+          aria-label={tc("next-page")}
           onClick={() => flipRef.current?.flipNext()}
           className="rounded-full border bg-white p-2 hover:bg-neutral-50"
         >
@@ -178,7 +184,7 @@ export default function PdfFlipbookViewer({
             rel="noreferrer"
             className="text-sm text-neutral-600 underline hover:text-neutral-900"
           >
-            Download PDF
+            {tc("download-pdf")}
           </a>
         )}
       </div>

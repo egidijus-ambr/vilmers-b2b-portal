@@ -1,6 +1,7 @@
 "use client"
 
 import React, { Fragment } from "react"
+import { useTranslations } from "@lib/i18n"
 import { Dialog, Transition } from "@headlessui/react"
 import { clx } from "@medusajs/ui"
 import type { FabricCombination } from "@configurator/lib/types"
@@ -22,6 +23,7 @@ const FabricCombinationDrawer = ({
   onSelect,
   getName,
 }: FabricCombinationDrawerProps) => {
+  const { t } = useTranslations("account")
   const handleSelect = (combination: FabricCombination) => {
     onSelect(combination)
     close()
@@ -60,7 +62,7 @@ const FabricCombinationDrawer = ({
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b">
                     <Dialog.Title className="text-lg font-semibold">
-                      Fabric Combination
+                      {t("fabric-combination")}
                     </Dialog.Title>
                     <button
                       onClick={close}

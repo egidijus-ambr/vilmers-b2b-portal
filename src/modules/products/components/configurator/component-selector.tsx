@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useTranslations } from "@lib/i18n"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import ComponentDrawer from "./component-drawer"
 import type {
@@ -23,6 +24,7 @@ const ComponentSelector = ({
   validComponents,
   languageCode,
 }: ComponentSelectorProps) => {
+  const { t: tc } = useTranslations("common")
   const { state } = useConfigurator()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -33,7 +35,7 @@ const ComponentSelector = ({
   const groupName = getGroupName(group, languageCode)
   const componentName = selectedComponent
     ? getComponentName(selectedComponent, languageCode)
-    : "Select..."
+    : tc("select-placeholder")
 
   const imageSrc =
     selectedComponent?.image?.src_md ??

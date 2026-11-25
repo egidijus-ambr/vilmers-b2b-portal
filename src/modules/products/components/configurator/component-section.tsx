@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useTranslations } from "@lib/i18n"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import ComponentSelector from "./component-selector"
 import { getValidComponents } from "@configurator/lib/component-utils"
@@ -23,6 +24,7 @@ const ComponentSection = ({
   showAllProducts,
   multiEntryCustomerComponentCodesByGroup = new Map(),
 }: ComponentSectionProps) => {
+  const { t } = useTranslations("account")
   const { state } = useConfigurator()
   const applyMultiEntryFilter = (components: ReturnType<typeof getValidComponents>, groupCode: string) => {
     const customerCodes = multiEntryCustomerComponentCodesByGroup.get(groupCode)
@@ -58,7 +60,7 @@ const ComponentSection = ({
   if (visibleGroups.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-sm text-gray-400">No options available for this step</p>
+        <p className="text-sm text-gray-400">{t("no-options-for-step")}</p>
       </div>
     )
   }

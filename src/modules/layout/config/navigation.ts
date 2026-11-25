@@ -35,10 +35,10 @@ export const getNavigationConfig = (
         layout: "single-column" as const,
         items: [
           {
-            label: "News",
+            label: t("nav-news"),
             href: "https://vilmers.com/inspiration/?jsf=jet-engine:inspiration_grid&tax=inspiration_category:109",
           },
-          { label: "Flipbooks", href: "https://vilmers.com/flipbooks/" },
+          { label: t("nav-flipbooks"), href: "https://vilmers.com/flipbooks/" },
         ],
       },
     },

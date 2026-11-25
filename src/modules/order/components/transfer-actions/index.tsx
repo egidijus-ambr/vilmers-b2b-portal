@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "@lib/i18n"
 import { acceptTransferRequest, declineTransferRequest } from "@lib/data/orders"
 import { Button, Text } from "@medusajs/ui"
 import { useState } from "react"
@@ -7,6 +8,7 @@ import { useState } from "react"
 type TransferStatus = "pending" | "success" | "error"
 
 const TransferActions = ({ id, token }: { id: string; token: string }) => {
+  const { t } = useTranslations("account")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [status, setStatus] = useState<{
     accept: TransferStatus | null
@@ -40,12 +42,12 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
     <div className="flex flex-col gap-y-4">
       {status?.accept === "success" && (
         <Text className="text-emerald-500">
-          Order transferred successfully!
+          {t("order-transfer-success")}
         </Text>
       )}
       {status?.decline === "success" && (
         <Text className="text-emerald-500">
-          Order transfer declined successfully!
+          {t("order-transfer-declined-success")}
         </Text>
       )}
       {status?.accept !== "success" && status?.decline !== "success" && (
@@ -58,7 +60,7 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
               status?.accept === "pending" || status?.decline === "pending"
             }
           >
-            Accept transfer
+            {t("order-transfer-accept")}
           </Button>
           <Button
             size="large"
@@ -69,7 +71,7 @@ const TransferActions = ({ id, token }: { id: string; token: string }) => {
               status?.accept === "pending" || status?.decline === "pending"
             }
           >
-            Decline transfer
+            {t("order-transfer-decline")}
           </Button>
         </div>
       )}

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useTranslations } from "@lib/i18n"
 import { useConfigurator } from "@configurator/context/configurator-context"
 import FabricCombinationDrawer from "./fabric-combination-drawer"
 import type { FabricCombination } from "@configurator/lib/types"
@@ -14,6 +15,7 @@ const FabricCombinationSelector = ({
   fabricCombinations,
   languageCode,
 }: FabricCombinationSelectorProps) => {
+  const { t } = useTranslations("account")
   const { state, dispatch } = useConfigurator()
   const selectedId = state.selectedFabricCombination.fabricCombination?.id ?? null
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -38,7 +40,7 @@ const FabricCombinationSelector = ({
     <>
       <div className="space-y-2">
         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          Fabric combination
+          {t("fabric-combination")}
         </h4>
 
         {/* Compact row — shows selected combination image full-width */}
@@ -57,14 +59,14 @@ const FabricCombinationSelector = ({
             </div>
           ) : (
             <div className="w-full aspect-[16/9] bg-gray-100 flex items-center justify-center">
-              <span className="text-xs text-gray-400">No image</span>
+              <span className="text-xs text-gray-400">{t("no-image")}</span>
             </div>
           )}
 
           {/* Label row */}
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-sm font-medium text-gray-900">
-              {selectedCombination ? getName(selectedCombination) : "Select combination..."}
+              {selectedCombination ? getName(selectedCombination) : t("select-combination")}
             </span>
             <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

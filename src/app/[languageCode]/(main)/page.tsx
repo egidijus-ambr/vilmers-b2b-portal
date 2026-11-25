@@ -12,6 +12,8 @@ import { getPageByCode, enrichContentBlocksWithPages } from "@lib/data/pages"
 import { enrichContentBlocksWithTileCategories } from "@lib/data/categories"
 import { enrichContentBlocksWithProducts } from "@lib/data/products"
 import { activeThemeName } from "themes"
+import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { getServerT } from "@lib/i18n/server-translations"
 
 export async function generateMetadata(props: {
   params: Promise<{ languageCode: string }>
@@ -22,8 +24,13 @@ export async function generateMetadata(props: {
     shopSettings?.default_manufacturer?.company_name?.trim() ||
     activeThemeName.charAt(0).toUpperCase() + activeThemeName.slice(1)
   const ogImage = shopSettings?.default_meta_image?.src
-  const description =
-    "Discover premium furniture and home solutions for your business."
+  const metaLang = (supportedLanguages as readonly string[]).includes(
+    languageCode
+  )
+    ? (languageCode as SupportedLanguage)
+    : "en"
+  const tMeta = await getServerT("common", metaLang)
+  const description = tMeta("home-meta-description")
 
   return {
     title: { absolute: brand },
@@ -139,7 +146,11 @@ export default async function Home(props: {
       {/* {collections && region ? (
         <div className="py-0">
           <ul className="flex flex-col gap-x-6">
-            <FeaturedProducts collections={collections} region={region} />
+            <FeaturedProducts
+              collections={collections}
+              region={region}
+              languageCode={languageCode}
+            />
           </ul>
         </div>
       ) : (

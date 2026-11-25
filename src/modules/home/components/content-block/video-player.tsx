@@ -1,6 +1,7 @@
 "use client"
 
 import { VideoPlayerProps } from "./types"
+import { useTranslations } from "@lib/i18n"
 
 function getYouTubeVideoId(link: string): string | null {
   const regex =
@@ -23,6 +24,7 @@ export default function VideoPlayer({
   videoControls,
   objectFitCover,
 }: VideoPlayerProps) {
+  const { t: tc } = useTranslations("common")
   if (!videoType || !videoLink) return null
 
   if (videoType === "uploaded") {
@@ -61,7 +63,7 @@ export default function VideoPlayer({
         src={`https://www.youtube.com/embed/${videoId}?${params.toString()}`}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
-        title="YouTube video"
+        title={tc("youtube-video")}
       />
     )
   }
@@ -82,7 +84,7 @@ export default function VideoPlayer({
         src={`https://player.vimeo.com/video/${videoId}?${params.toString()}`}
         allow="autoplay; fullscreen; picture-in-picture"
         allowFullScreen
-        title="Vimeo video"
+        title={tc("vimeo-video")}
       />
     )
   }

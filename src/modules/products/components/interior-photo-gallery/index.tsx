@@ -4,6 +4,7 @@ import { ProductPhoto } from "@lib/furnisystems-sdk/modules/product-photos/types
 import DownloadPhotosButton from "@modules/products/components/download-photos-button"
 import Image, { getImageProps } from "next/image"
 import { useState, useEffect, useRef } from "react"
+import { useTranslations } from "@lib/i18n"
 
 type InteriorPhotoGalleryProps = {
   photos: ProductPhoto[]
@@ -21,6 +22,7 @@ const InteriorPhotoGallery = ({
   photos,
   productName,
 }: InteriorPhotoGalleryProps) => {
+  const { t: tc } = useTranslations("common")
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [containerWidth, setContainerWidth] = useState(800)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -100,7 +102,7 @@ const InteriorPhotoGallery = ({
   if (!displayPhotos.length) {
     return (
       <div className="flex items-center justify-center p-8 text-ui-fg-muted">
-        <p>No interior photos available for {productName}</p>
+        <p>{tc("no-interior-photos-for-product", { product: productName })}</p>
       </div>
     )
   }
@@ -139,7 +141,10 @@ const InteriorPhotoGallery = ({
                     return thumbUrl ? (
                       <Image
                         src={thumbUrl}
-                        alt={`${productName} video thumbnail ${index + 1}`}
+                        alt={tc("product-video-thumbnail-number", {
+                          product: productName,
+                          number: index + 1,
+                        })}
                         fill
                         className="object-cover"
                         sizes="(max-width: 640px) 64px, (max-width: 1024px) 80px, 96px"
@@ -163,7 +168,10 @@ const InteriorPhotoGallery = ({
               ) : (
                 <Image
                   src={photo.url}
-                  alt={`${productName} thumbnail ${index + 1}`}
+                  alt={tc("product-thumbnail-number", {
+                    product: productName,
+                    number: index + 1,
+                  })}
                   fill
                   className="object-cover transition-opacity duration-200"
                   sizes="(max-width: 640px) 64px, (max-width: 1024px) 80px, 96px"
@@ -211,7 +219,10 @@ const InteriorPhotoGallery = ({
         ) : (
           <Image
             src={displayPhotos[selectedImageIndex].url}
-            alt={`${productName} interior photo ${selectedImageIndex + 1}`}
+            alt={tc("product-interior-photo-number", {
+              product: productName,
+              number: selectedImageIndex + 1,
+            })}
             width={containerWidth || 800}
             height={Math.round((containerWidth || 800) * 0.75)}
             priority={selectedImageIndex === 0}

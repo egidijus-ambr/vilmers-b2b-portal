@@ -2,12 +2,12 @@
 "use client"
 
 import { useGoToConfigurator } from "@lib/context/go-to-configurator-context"
-
-const TOOLTIP =
-  "When on, clicking an advanced product opens its configurator directly. Non-advanced products open the normal product page."
+import { useTranslations } from "@lib/i18n"
 
 export default function GoToConfiguratorToggle() {
+  const { t } = useTranslations("common")
   const { enabled, setEnabled } = useGoToConfigurator()
+  const TOOLTIP = t("open-configurator-tooltip")
 
   return (
     <label className="inline-flex items-center gap-2 text-sm text-dark-blue cursor-pointer select-none">
@@ -17,7 +17,7 @@ export default function GoToConfiguratorToggle() {
         onChange={(e) => setEnabled(e.target.checked)}
         className="h-4 w-4 accent-dark-blue cursor-pointer"
       />
-      <span>Open configurator</span>
+      <span>{t("open-configurator")}</span>
       <span
         aria-label={TOOLTIP}
         title={TOOLTIP}

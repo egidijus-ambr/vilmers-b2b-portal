@@ -163,7 +163,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           {/* Close button */}
           <button
             onClick={onClose}
-            aria-label="Close search"
+            aria-label={t("close-search")}
             className="shrink-0 p-2 text-dark-blue hover:text-dark-blue/70 transition-colors"
           >
             <svg
@@ -208,7 +208,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
-                <span>Loading...</span>
+                <span>{t("loading")}</span>
               </div>
             ) : results.length > 0 ? (
               <div>

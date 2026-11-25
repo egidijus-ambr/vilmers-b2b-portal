@@ -30,6 +30,8 @@ const SEND_PARTNER_REQUEST_MUTATION = gql`
 export interface PartnerRequestState {
   success: boolean
   error?: string
+  /** Stable code for the client to translate; `error` stays as the English fallback. */
+  errorCode?: "failed" | "error"
   fieldErrors?: Record<string, string>
 }
 
@@ -89,6 +91,7 @@ export async function sendPartnerRequest(
       return {
         success: false,
         error: "Failed to send request. Please try again.",
+        errorCode: "failed",
       }
     }
   } catch (error: any) {
@@ -96,6 +99,7 @@ export async function sendPartnerRequest(
     return {
       success: false,
       error: "An error occurred. Please try again later.",
+      errorCode: "error",
     }
   }
 }

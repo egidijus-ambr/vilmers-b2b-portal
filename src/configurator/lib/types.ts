@@ -145,7 +145,12 @@ export interface Fabric {
   price_group_number?: number | null
   createdAt?: string | null
   order: number
-  image: { src: string; src_md: string | null; src_xs: string | null } | null
+  image: {
+    src: string
+    src_md: string | null
+    src_xs: string | null
+    src_thumbnail?: string | null
+  } | null
 }
 
 export interface FabricGroupPalette {

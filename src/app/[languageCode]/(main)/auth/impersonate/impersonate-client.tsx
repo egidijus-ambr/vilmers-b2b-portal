@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "@lib/i18n"
 import { impersonateLoginAction } from "./actions"
 import { useEffect, useActionState } from "react"
 
@@ -12,6 +13,7 @@ export default function ImpersonateClient({
   token,
   languageCode,
 }: ImpersonateClientProps) {
+  const { t: tc } = useTranslations("common")
   const [state, formAction, isPending] = useActionState(
     impersonateLoginAction,
     null
@@ -53,10 +55,10 @@ export default function ImpersonateClient({
             </svg>
           </div>
           <h2 className="mt-6 text-center font-extrabold text-gray-900">
-            Logging you in
+            {tc("impersonate-logging-in")}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Please wait while we set up your session...
+            {tc("impersonate-please-wait")}
           </p>
         </div>
 

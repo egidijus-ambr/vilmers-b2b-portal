@@ -84,6 +84,7 @@ const MobileMenu = ({
   const menuRef = useRef<HTMLDivElement>(null)
   const { languageCode } = useParams() as { languageCode: string }
   const { t } = useTranslations("common")
+  const { t: ta } = useTranslations("account")
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
 
   const toggleItem = (id: string) => {
@@ -331,7 +332,7 @@ const MobileMenu = ({
                   >
                     <Image
                       src="/images/profile-icon.svg"
-                      alt="Profile"
+                      alt={ta("profile")}
                       width={20}
                       height={20}
                     />
@@ -346,7 +347,7 @@ const MobileMenu = ({
                   >
                     <Image
                       src="/images/orders-icon.svg"
-                      alt="Orders"
+                      alt={ta("orders")}
                       width={20}
                       height={20}
                     />
@@ -361,7 +362,7 @@ const MobileMenu = ({
                   >
                     <Image
                       src="/images/orders-icon.svg"
-                      alt="Carts"
+                      alt={ta("carts")}
                       width={20}
                       height={20}
                     />
@@ -376,7 +377,7 @@ const MobileMenu = ({
                   >
                     <Image
                       src="/images/fabric-palettes-icon.svg"
-                      alt="Fabric Palette"
+                      alt={t("fabric-palettes")}
                       width={20}
                       height={20}
                     />
@@ -392,7 +393,7 @@ const MobileMenu = ({
                 >
                   <Image
                     src="/images/profile-icon.svg"
-                    alt="Profile"
+                    alt={ta("profile")}
                     width={20}
                     height={20}
                   />
@@ -418,7 +419,7 @@ const MobileMenu = ({
               >
                 <Image
                   src="/images/logout-icon.svg"
-                  alt="Logout"
+                  alt={t("log-out")}
                   width={20}
                   height={20}
                 />

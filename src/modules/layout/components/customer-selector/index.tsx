@@ -10,6 +10,7 @@ import { ChevronDown } from "lucide-react"
 import { Fragment } from "react"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import CustomerList from "./customer-list"
+import { useTranslations } from "@lib/i18n"
 
 export default function CustomerSelector({
   redirectOnPick = true,
@@ -17,6 +18,7 @@ export default function CustomerSelector({
   /** Set false where picking a customer must not navigate (checkout). */
   redirectOnPick?: boolean
 } = {}) {
+  const { t } = useTranslations("common")
   const { actingCustomer, isAgentOrAdmin } = useActingCustomer()
 
   if (!isAgentOrAdmin) return null
@@ -33,7 +35,7 @@ export default function CustomerSelector({
     ? `${ac.account_code ?? ""}${ac.account_code ? " - " : ""}${
         ac.b2b_company_name ?? ac.name ?? ""
       }`
-    : "Select customer"
+    : t("select-customer")
 
   return (
     <Popover className="relative min-w-0 max-w-full small:w-[36rem]">

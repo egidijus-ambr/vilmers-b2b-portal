@@ -36,6 +36,7 @@ export default async function SearchResultsPage(props: Props) {
   const validLanguage = supportedLanguages.includes(language) ? language : "en"
   const page = Math.max(1, parseInt(searchParams.page || "1", 10) || 1)
   const t = await getServerT("common", validLanguage)
+  const tAccount = await getServerT("account", validLanguage)
 
   const { products, totalPages, totalCount } = await getSearchProducts(
     decodedQuery,
@@ -48,8 +49,8 @@ export default async function SearchResultsPage(props: Props) {
       <PageHeader
         title={`${t("search-results-for", "Results for")} "${decodedQuery}"`}
         breadcrumbItems={[
-          { label: "Home", href: "/" },
-          { label: "Search", href: null },
+          { label: tAccount("breadcrumb-home"), href: "/" },
+          { label: t("search"), href: null },
         ]}
         level="h2"
       />

@@ -28,7 +28,10 @@ export default async function Footer({ language, shopSettings }: FooterProps) {
     shopSettings?.default_manufacturer?.company_name || "Vilmers"
   const copyrightText =
     shopSettings?.footer_copyright_text ||
-    `© ${new Date().getFullYear()} ${brandName}. All rights reserved.`
+    t("footer-copyright", {
+      year: new Date().getFullYear(),
+      brand: brandName,
+    })
 
   const footer = activeTheme.layout.footer
 

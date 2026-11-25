@@ -1,3 +1,5 @@
+import { supportedLanguages, SupportedLanguage } from "@lib/i18n"
+import { getServerT } from "@lib/i18n/server-translations"
 import { declineTransferRequest } from "@lib/data/orders"
 import { Heading, Text } from "@medusajs/ui"
 import TransferImage from "@modules/order/components/transfer-image"
@@ -5,9 +7,12 @@ import TransferImage from "@modules/order/components/transfer-image"
 export default async function TransferPage({
   params,
 }: {
-  params: { id: string; token: string }
+  params: { languageCode: string; id: string; token: string }
 }) {
   const { id, token } = params
+  const language = params.languageCode as SupportedLanguage
+  const validLanguage = supportedLanguages.includes(language) ? language : "en"
+  const t = await getServerT("account", validLanguage)
 
   const { success, error } = await declineTransferRequest(id, token)
 
@@ -18,20 +23,20 @@ export default async function TransferPage({
         {success && (
           <>
             <Heading level="h1" className="text-[2.5rem] small:text-[3.5rem] leading-tight text-zinc-900">
-              Order transfer declined!
+              {t("order-transfer-declined-title")}
             </Heading>
             <Text className="text-zinc-600">
-              Transfer of order {id} has been successfully declined.
+              {t("order-transfer-declined-body", { id })}
             </Text>
           </>
         )}
         {!success && (
           <>
             <Text className="text-zinc-600">
-              There was an error declining the transfer. Please try again.
+              {t("order-transfer-decline-error")}
             </Text>
             {error && (
-              <Text className="text-red-500">Error message: {error}</Text>
+              <Text className="text-red-500">{t("transfer-error-message", { message: error })}</Text>
             )}
           </>
         )}
