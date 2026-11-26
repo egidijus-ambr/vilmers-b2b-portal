@@ -10,7 +10,7 @@ import { orderDetailItemToProductItemRow } from "@modules/common/components/prod
 import InfoRow from "@modules/common/components/info-row"
 import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
 import { isAgentOrAdmin } from "@lib/util/roles"
-import { BuildingStorefront } from "@medusajs/icons"
+import { Store } from "lucide-react"
 import { features } from "@lib/features"
 
 interface OrderDetailsProps {
@@ -153,7 +153,7 @@ const OrderDetailsTemplate = ({ order }: OrderDetailsProps) => {
               label={t("shop_location")}
               value={
                 <span className="flex items-center gap-1">
-                  <BuildingStorefront className="w-4 h-4" />
+                  <Store className="w-4 h-4" />
                   {order.purchased_subAccount.name}
                 </span>
               }

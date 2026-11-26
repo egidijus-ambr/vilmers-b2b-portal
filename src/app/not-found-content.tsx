@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowUpRightMini } from "@medusajs/icons"
+import { ArrowUpRight } from "lucide-react"
 import { Text } from "@medusajs/ui"
 import Link from "next/link"
 
@@ -17,7 +17,8 @@ export default function NotFoundContent() {
       </p>
       <Link className="flex gap-x-1 items-center group" href="/">
         <Text className="text-ui-fg-interactive">{t("go-to-frontpage")}</Text>
-        <ArrowUpRightMini
+        <ArrowUpRight
+          size={15}
           className="group-hover:rotate-45 ease-in-out duration-150"
           color="var(--fg-interactive)"
         />

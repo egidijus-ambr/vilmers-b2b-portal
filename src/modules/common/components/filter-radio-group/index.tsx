@@ -1,4 +1,4 @@
-import { EllipseMiniSolid } from "@medusajs/icons"
+import DotSolid from "@modules/common/icons/dot-solid"
 import { Label, RadioGroup, Text, clx } from "@medusajs/ui"
 
 type FilterRadioGroupProps = {
@@ -30,7 +30,7 @@ const FilterRadioGroup = ({
               "ml-[-23px]": i.value === value,
             })}
           >
-            {i.value === value && <EllipseMiniSolid />}
+            {i.value === value && <DotSolid />}
             <RadioGroup.Item
               checked={i.value === value}
               className="hidden peer"

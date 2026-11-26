@@ -1,7 +1,9 @@
 "use client"
 
 import { convertToLocale } from "@lib/util/money"
-import { CheckCircleSolid, XMark } from "@medusajs/icons"
+import { X } from "lucide-react"
+
+import CheckCircleSolid from "@modules/common/icons/check-circle-solid"
 import {
   HttpTypes,
   StoreCart,
@@ -213,7 +215,7 @@ function FreeShippingPopup({
           className="rounded-full bg-neutral-900 shadow-none outline-none border-none text-[15px] p-2"
           onClick={() => setIsClosed(true)}
         >
-          <XMark />
+          <X size={15} />
         </Button>
       </div>
 

@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useCart } from "@lib/context/cart-context"
-import { Spinner, Trash } from "@medusajs/icons"
+import Spinner from "@modules/common/icons/spinner"
+import Trash from "@modules/common/icons/trash"
 
 interface CartItemActionsProps {
   cartItemId: number
@@ -43,7 +44,7 @@ const CartItemActions = ({ cartItemId, quantity }: CartItemActionsProps) => {
           className="flex items-center text-ui-fg-subtle hover:text-ui-fg-base cursor-pointer"
           onClick={handleDelete}
         >
-          {deleting ? <Spinner className="animate-spin" /> : <Trash />}
+          {deleting ? <Spinner size="15" className="animate-spin" /> : <Trash size="15" />}
         </button>
         <div className="flex items-center border rounded border-gold">
           <button
@@ -64,7 +65,7 @@ const CartItemActions = ({ cartItemId, quantity }: CartItemActionsProps) => {
             +
           </button>
         </div>
-        {updating && <Spinner className="animate-spin" />}
+        {updating && <Spinner size="15" className="animate-spin" />}
       </div>
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
