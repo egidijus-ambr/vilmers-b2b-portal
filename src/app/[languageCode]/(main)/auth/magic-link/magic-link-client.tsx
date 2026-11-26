@@ -9,10 +9,8 @@ import { startTransition, useActionState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 interface MagicLinkClientProps {
-  /** Empty when rendering a no-JS fallback failure (`initialStatus`). */
   token: string
   languageCode: string
-  initialStatus?: NonNullable<MagicLinkVerifyState>["status"]
 }
 
 /**
@@ -24,26 +22,22 @@ interface MagicLinkClientProps {
  * button comes back) or "error" (request a new link). A user who is already
  * logged in is redirected by the action instead of seeing a failure.
  *
- * Without JavaScript nothing auto-runs: the <noscript> form posts to
- * ./verify/route.ts instead (a native POST from this no-referrer page carries
- * `Origin: null`, which Next's server-action handler rejects). A failure there
- * comes back as `initialStatus` with no token: nothing to retry, so every
- * status then offers a new link.
+ * Without JavaScript nothing runs and the token is not used: a <noscript>
+ * message asks to enable JavaScript (the portal needs it throughout).
  */
 export default function MagicLinkClient({
   token,
   languageCode,
-  initialStatus,
 }: MagicLinkClientProps) {
   const { t } = useTranslation()
   const [state, formAction, isPending] = useActionState<
     MagicLinkVerifyState,
     FormData
-  >(verifyMagicLinkAction, initialStatus ? { status: initialStatus } : null)
+  >(verifyMagicLinkAction, null)
   const submitted = useRef(false)
 
   useEffect(() => {
-    if (submitted.current || !token) return
+    if (submitted.current) return
     submitted.current = true
     const formData = new FormData()
     formData.set("token", token)
@@ -79,7 +73,7 @@ export default function MagicLinkClient({
       <div className="max-w-md w-full space-y-8 px-4">
         {signingIn ? (
           <div className="text-center" data-testid="magic-link-signing-in">
-            {/* No JS: hide the spinner, show the Continue fallback instead. */}
+            {/* No JS: hide the spinner, ask to enable JavaScript instead. */}
             <noscript>
               <style>{"[data-magic-link-auto]{display:none!important}"}</style>
             </noscript>
@@ -120,17 +114,12 @@ export default function MagicLinkClient({
               <h2 className="mt-6 text-center font-extrabold text-gray-900">
                 {t("magic-link-continue-title")}
               </h2>
-              <p className="mt-2 mb-8 text-center text-sm text-gray-600">
-                {t("magic-link-continue-description")}
-              </p>
-              <form
-                action={`/${languageCode}/auth/magic-link/verify`}
-                method="post"
-                className="flex justify-center"
+              <p
+                className="mt-2 text-center text-sm text-gray-600"
+                data-testid="magic-link-noscript"
               >
-                <input type="hidden" name="token" value={token} />
-                {continueButton}
-              </form>
+                {t("magic-link-enable-javascript")}
+              </p>
             </noscript>
           </div>
         ) : (
@@ -151,7 +140,7 @@ export default function MagicLinkClient({
               </p>
             )}
 
-            {status === "unavailable" && token ? (
+            {status === "unavailable" ? (
               // Retry (JS): the same server action as the automatic run.
               <form action={formAction} className="flex justify-center">
                 <input type="hidden" name="token" value={token} />

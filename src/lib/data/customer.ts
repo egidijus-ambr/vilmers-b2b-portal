@@ -279,10 +279,9 @@ export type MagicLinkVerifyState = {
 
 /**
  * Magic-link landing action, submitted automatically when the landing page
- * mounts (or by its no-JS fallback button). v1 links are reusable within
- * their TTL, so a second open (mail scanner, double click, already logged
- * in) is harmless. The token's shape decides the path
- * (src/lib/v1-session/magic-link.ts):
+ * mounts. v1 links are reusable within their TTL, so a second open (mail
+ * scanner, double click, already logged in) is harmless. The token's shape
+ * decides the path (src/lib/v1-session/magic-link.ts):
  *   v1      -> POST /api/v1/auth/magic-link/verify. Success replaces the
  *              current session: the old v1 session (if any) is logged out,
  *              the new pair and its legacyToken (`_furni_jwt`) are stored.
