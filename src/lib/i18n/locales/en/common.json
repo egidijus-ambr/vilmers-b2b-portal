@@ -126,6 +126,7 @@
   "checkout-select-customer-required": "Select a customer before placing an order. Orders must be placed on behalf of a customer with a customer code.",
   "checkout-select-customer-title": "Select a customer first",
   "order-buyer-not-authorized": "This order could not be placed because no valid customer is selected. Please select a customer with a customer code and try again.",
+  "cart-changed-in-another-tab": "The selected customer or cart changed in another tab. The page has been refreshed — please check and try again.",
   "checkout-field-address-name": "Address name",
   "checkout-field-address-1": "Address line 1",
   "checkout-field-address-2": "Address line 2",

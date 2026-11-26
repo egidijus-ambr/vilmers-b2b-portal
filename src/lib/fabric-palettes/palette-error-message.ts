@@ -1,4 +1,5 @@
 import {
+  CART_CHANGED,
   FABRIC_NOT_IN_PALETTE,
   ORDER_BUYER_NOT_AUTHORIZED,
   offendingColourCodes,
@@ -18,6 +19,7 @@ export function paletteErrorMessage(
   items?: PaletteErrorItem[]
 ): string | null {
   if (code === ORDER_BUYER_NOT_AUTHORIZED) return t("order-buyer-not-authorized")
+  if (code === CART_CHANGED) return t("cart-changed-in-another-tab")
   if (code !== FABRIC_NOT_IN_PALETTE) return null
   const codes = offendingColourCodes(items)
   return codes.length
