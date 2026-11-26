@@ -16,6 +16,8 @@ export type PaletteErrorItem = {
 export const FABRIC_NOT_IN_PALETTE = "FABRIC_NOT_IN_PALETTE"
 /** Order rejected because the buyer is missing/unauthorised (e.g. reason NO_ACCOUNT_CODE). */
 export const ORDER_BUYER_NOT_AUTHORIZED = "ORDER_BUYER_NOT_AUTHORIZED"
+/** Add-to-cart refused: the acting customer / active cart changed (e.g. in another tab). Mirrors addCartItemAction. */
+export const CART_CHANGED = "CART_CHANGED"
 
 /** Serialisable error payload returned by server actions (thrown errors are redacted in production). */
 export type ActionError = {

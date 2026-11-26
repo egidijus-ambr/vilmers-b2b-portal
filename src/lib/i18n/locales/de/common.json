@@ -126,6 +126,7 @@
   "checkout-select-customer-required": "Wählen Sie einen Kunden aus, bevor Sie eine Bestellung aufgeben. Bestellungen müssen im Namen eines Kunden mit Kundennummer aufgegeben werden.",
   "checkout-select-customer-title": "Bitte zuerst einen Kunden auswählen",
   "order-buyer-not-authorized": "Die Bestellung konnte nicht aufgegeben werden, da kein gültiger Kunde ausgewählt ist. Bitte wählen Sie einen Kunden mit Kundennummer und versuchen Sie es erneut.",
+  "cart-changed-in-another-tab": "Der ausgewählte Kunde oder Warenkorb wurde in einem anderen Tab geändert. Die Seite wurde aktualisiert – bitte prüfen Sie und versuchen Sie es erneut.",
   "checkout-field-address-name": "Adressname",
   "checkout-field-address-1": "Adresszeile 1",
   "checkout-field-address-2": "Adresszeile 2",

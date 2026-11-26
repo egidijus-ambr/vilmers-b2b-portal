@@ -124,9 +124,18 @@ export const deleteCartAction = async (
  * auth token (the browser SDK has no token), which the backend needs for
  * palette enforcement and the cart ownership check. Errors are returned, not
  * thrown, because production redacts thrown server-action error details.
+ *
+ * The target cart is resolved server-side as the active cart of the acting
+ * customer (same resolver as `getActiveCartAction`); the client-supplied
+ * `expectedCartId` is only a consistency check. If the acting customer (or
+ * their active cart) changed since the client loaded its cart, e.g. an agent
+ * switched customer in another tab, the ids differ and the add is refused
+ * with code "CART_CHANGED" instead of writing into a cart the UI is not
+ * showing. (No exported constant: "use server" modules may only export
+ * async functions.)
  */
 export const addCartItemAction = async (
-  cartId: number,
+  expectedCartId: number,
   input: AddCartItemInput
 ): Promise<{ ok: true } | { ok: false; error: ActionError }> => {
   unstable_noStore()
@@ -136,13 +145,121 @@ export const addCartItemAction = async (
     if (!validation.isValid) {
       return { ok: false, error: { message: "Authentication required" } }
     }
-    await sdk.cart.addItem(cartId, input)
+    const customerId = await resolveActingCustomerId()
+    if (customerId == null) {
+      return { ok: false, error: { message: "Authentication required" } }
+    }
+    const activeCart = await sdk.cart.getOrCreateActiveCart(customerId)
+    if (!activeCart || Number(activeCart.id) !== Number(expectedCartId)) {
+      return {
+        ok: false,
+        error: {
+          message: "Your cart has changed. Please review it and try again.",
+          code: "CART_CHANGED",
+        },
+      }
+    }
+    await sdk.cart.addItem(activeCart.id, input)
     return { ok: true }
   } catch (error: any) {
     console.error("[addCartItemAction] Error adding item:", error)
     return {
       ok: false,
       error: toActionError(error, "Failed to add item to cart"),
+    }
+  }
+}
+
+/**
+ * Fetch (or create) the active cart for the acting customer. Runs server-side
+ * so the SDK attaches the cookie auth token. The customer is resolved from the
+ * session via `resolveActingCustomerId()` (agents/admins act for the selected
+ * customer); a customer id is never accepted from the client.
+ */
+export const getActiveCartAction = async (): Promise<
+  { ok: true; cart: FurnisystemsCart | null } | { ok: false; error: ActionError }
+> => {
+  unstable_noStore()
+
+  try {
+    const validation = await validateSession()
+    if (!validation.isValid) {
+      return { ok: false, error: { message: "Authentication required" } }
+    }
+    const customerId = await resolveActingCustomerId()
+    if (customerId == null) return { ok: true, cart: null }
+    const cart = await sdk.cart.getOrCreateActiveCart(customerId)
+    return { ok: true, cart }
+  } catch (error: any) {
+    console.error("[getActiveCartAction] Error fetching active cart:", error)
+    return {
+      ok: false,
+      error: toActionError(error, "Failed to fetch cart"),
+    }
+  }
+}
+
+export const updateCartItemQuantityAction = async (
+  cartItemId: number,
+  quantity: number
+): Promise<{ ok: true } | { ok: false; error: ActionError }> => {
+  unstable_noStore()
+
+  try {
+    const validation = await validateSession()
+    if (!validation.isValid) {
+      return { ok: false, error: { message: "Authentication required" } }
+    }
+    await sdk.cart.updateItemQuantity(cartItemId, quantity)
+    return { ok: true }
+  } catch (error: any) {
+    console.error("[updateCartItemQuantityAction] Error updating quantity:", error)
+    return {
+      ok: false,
+      error: toActionError(error, "Failed to update quantity"),
+    }
+  }
+}
+
+export const updateCartItemReferenceAction = async (
+  cartItemId: number,
+  reference: string
+): Promise<{ ok: true } | { ok: false; error: ActionError }> => {
+  unstable_noStore()
+
+  try {
+    const validation = await validateSession()
+    if (!validation.isValid) {
+      return { ok: false, error: { message: "Authentication required" } }
+    }
+    await sdk.cart.updateItemReference(cartItemId, reference)
+    return { ok: true }
+  } catch (error: any) {
+    console.error("[updateCartItemReferenceAction] Error updating reference:", error)
+    return {
+      ok: false,
+      error: toActionError(error, "Failed to update reference"),
+    }
+  }
+}
+
+export const removeCartItemAction = async (
+  cartItemId: number
+): Promise<{ ok: true } | { ok: false; error: ActionError }> => {
+  unstable_noStore()
+
+  try {
+    const validation = await validateSession()
+    if (!validation.isValid) {
+      return { ok: false, error: { message: "Authentication required" } }
+    }
+    await sdk.cart.removeItem(cartItemId)
+    return { ok: true }
+  } catch (error: any) {
+    console.error("[removeCartItemAction] Error removing item:", error)
+    return {
+      ok: false,
+      error: toActionError(error, "Failed to remove item"),
     }
   }
 }

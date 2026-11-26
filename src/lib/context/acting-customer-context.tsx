@@ -15,6 +15,7 @@ import {
   clearActingCustomerCookie,
 } from "@lib/util/acting-customer-cookie"
 import type { SearchCustomerResult } from "@lib/furnisystems-sdk/modules/customer/types"
+import { getActingCustomerForSelector } from "@lib/data/customer-search"
 
 type ActingCustomer =
   | SearchCustomerResult
@@ -28,6 +29,13 @@ type ActingCustomerContextValue = {
     options?: { redirect?: boolean }
   ) => void
   clearActingCustomer: () => void
+  /**
+   * Re-read the acting customer from the server (cookie) without writing the
+   * cookie or navigating, e.g. after it changed in another tab. Resolves to
+   * the resynced customer id (null = none), or undefined if it could not be
+   * read / does not apply (end-customers).
+   */
+  resyncActingCustomer: () => Promise<number | null | undefined>
   isAgentOrAdmin: boolean
   isImpersonatedByManager: boolean
 }
@@ -87,10 +95,23 @@ export function ActingCustomerProvider({
     setActingCustomer(null)
   }, [setActingCustomer])
 
+  const resyncActingCustomer = useCallback(async () => {
+    if (!isAgentOrAdmin) return undefined
+    const res = await getActingCustomerForSelector()
+    if (!res.ok) return undefined
+    setActing((prev) => {
+      // Keep the current object when the id is unchanged (no needless re-renders).
+      if (prev && res.customer && String(prev.id) === String(res.customer.id)) return prev
+      return res.customer as ActingCustomer
+    })
+    return res.customer ? Number(res.customer.id) : null
+  }, [isAgentOrAdmin])
+
   const value: ActingCustomerContextValue = {
     actingCustomer: isAgentOrAdmin ? acting : (customer as ActingCustomer),
     setActingCustomer,
     clearActingCustomer,
+    resyncActingCustomer,
     isAgentOrAdmin,
     isImpersonatedByManager,
   }

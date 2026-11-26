@@ -89,6 +89,7 @@
   "checkout-select-customer-required": "Prieš pateikdami užsakymą pasirinkite klientą. Užsakymai turi būti pateikiami kliento, turinčio kliento kodą, vardu.",
   "checkout-select-customer-title": "Pirmiausia pasirinkite klientą",
   "order-buyer-not-authorized": "Užsakymo pateikti nepavyko, nes nepasirinktas tinkamas klientas. Pasirinkite klientą, turintį kliento kodą, ir bandykite dar kartą.",
+  "cart-changed-in-another-tab": "Pasirinktas klientas arba krepšelis buvo pakeistas kitame skirtuke. Puslapis atnaujintas — patikrinkite ir bandykite dar kartą.",
   "new": "Naujiena",
   "new-products": "Nauji produktai"
 }

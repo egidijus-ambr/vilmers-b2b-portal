@@ -6,7 +6,7 @@ import { useCart } from "@lib/context/cart-context"
 import CustomerSelector from "@modules/layout/components/customer-selector"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
 import { fetchCustomerAddresses, placeOrder, fetchDefaultPaymentMethod } from "@lib/data/checkout"
-import { sdk } from "@lib/config"
+import { removeCartItemAction } from "@lib/data/carts"
 import { useTranslations } from "@lib/i18n"
 import { paletteErrorMessage } from "@lib/fabric-palettes/palette-error-message"
 import DeliveryAddressForm, { AddressFormData } from "@modules/checkout/components/delivery-address-form"
@@ -223,9 +223,11 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
 
       if (result.success && result.orderId) {
         try {
-          await Promise.all(
-            items.map((item) => sdk.cart.removeItem(item.id))
+          const results = await Promise.all(
+            items.map((item) => removeCartItemAction(item.id))
           )
+          const failed = results.find((r) => !r.ok)
+          if (failed && !failed.ok) throw new Error(failed.error.message)
         } catch (clearErr) {
           console.error("[CheckoutForm] Cart clear failed:", clearErr)
         }
