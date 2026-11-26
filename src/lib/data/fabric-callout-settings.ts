@@ -3,29 +3,18 @@
 import { gql } from "@apollo/client"
 import { sdk } from "@lib/config"
 
-export type LocaleMap = Partial<
-  Record<"en" | "da" | "de" | "fr" | "lt", string>
->
-
+// The stock callout messages come from the UI translations
+// (account namespace: fabric-palettes.stock-low-message / stock-plenty-message).
+// Only the numeric threshold is stored as a Setting.
 export type FabricCalloutSettings = {
-  plentyMessage: LocaleMap | null
-  lowMessage: LocaleMap | null
   threshold: number
 }
 
+const DEFAULT_THRESHOLD = 50
+
 const FABRIC_CALLOUT_SETTINGS_QUERY = gql`
   query FabricCalloutSettings {
-    findManySetting(
-      where: {
-        name: {
-          in: [
-            "fabric_stock_plenty_message"
-            "fabric_stock_low_message"
-            "fabric_low_stock_threshold"
-          ]
-        }
-      }
-    ) {
+    findManySetting(where: { name: { equals: "fabric_low_stock_threshold" } }) {
       id
       name
       value
@@ -43,23 +32,10 @@ interface FabricCalloutSettingsResponse {
   findManySetting: RawSetting[]
 }
 
-function parseLocaleMap(value: string | null | undefined): LocaleMap | null {
-  if (!value) return null
-  try {
-    const parsed = JSON.parse(value)
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as LocaleMap
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
 function parseThreshold(value: string | null | undefined): number {
-  if (!value) return 50
+  if (!value) return DEFAULT_THRESHOLD
   const parsed = parseInt(value, 10)
-  return Number.isNaN(parsed) ? 50 : parsed
+  return Number.isNaN(parsed) ? DEFAULT_THRESHOLD : parsed
 }
 
 export async function getFabricCalloutSettings(): Promise<FabricCalloutSettings> {
@@ -69,32 +45,12 @@ export async function getFabricCalloutSettings(): Promise<FabricCalloutSettings>
       query: FABRIC_CALLOUT_SETTINGS_QUERY,
       fetchPolicy: "no-cache",
     })
-
-    console.log("[getFabricCalloutSettings] Query result:", {
-      data: result.data,
-      errors: result.errors,
-    })
-    const settings = result.data?.findManySetting ?? []
-
-    const plentyRaw = settings.find(
-      (s) => s.name === "fabric_stock_plenty_message"
-    )
-    const lowRaw = settings.find((s) => s.name === "fabric_stock_low_message")
-    const thresholdRaw = settings.find(
+    const thresholdRaw = (result.data?.findManySetting ?? []).find(
       (s) => s.name === "fabric_low_stock_threshold"
     )
-
-    return {
-      plentyMessage: parseLocaleMap(plentyRaw?.value),
-      lowMessage: parseLocaleMap(lowRaw?.value),
-      threshold: parseThreshold(thresholdRaw?.value),
-    }
+    return { threshold: parseThreshold(thresholdRaw?.value) }
   } catch (error) {
     console.error("[getFabricCalloutSettings] Error:", error)
-    return {
-      plentyMessage: null,
-      lowMessage: null,
-      threshold: 50,
-    }
+    return { threshold: DEFAULT_THRESHOLD }
   }
 }

@@ -11,26 +11,9 @@ import {
   FabricTextFeaturesGrid,
   FabricCharacteristicsDisplay,
 } from "../fabric-feature-display"
-import type {
-  FabricCalloutSettings,
-  LocaleMap,
-} from "@lib/data/fabric-callout-settings"
+import type { FabricCalloutSettings } from "@lib/data/fabric-callout-settings"
 import { activeTheme } from "themes"
 import { toast } from "@medusajs/ui"
-
-function resolveCalloutMessage(
-  map: LocaleMap | null | undefined,
-  languageCode: string,
-  fallback: string
-): string {
-  if (!map) return fallback
-  const locale = languageCode as keyof LocaleMap
-  const fromLocale = map[locale]
-  if (fromLocale) return fromLocale
-  const fromEn = map["en"]
-  if (fromEn) return fromEn
-  return fallback
-}
 
 interface FabricImageModalProps {
   isOpen: boolean
@@ -179,16 +162,8 @@ export default function FabricImageModal({
                     const isLow = stock.totalQty < threshold
                     const Icon = isLow ? AlertTriangle : Info
                     const message = isLow
-                      ? resolveCalloutMessage(
-                          calloutSettings?.lowMessage,
-                          languageCode,
-                          t("fabric-palettes.stock-low-message")
-                        )
-                      : resolveCalloutMessage(
-                          calloutSettings?.plentyMessage,
-                          languageCode,
-                          t("fabric-palettes.stock-plenty-message")
-                        )
+                      ? t("fabric-palettes.stock-low-message")
+                      : t("fabric-palettes.stock-plenty-message")
                     return (
                       <div
                         className={`mt-3 flex items-start gap-2 rounded p-3 ${
