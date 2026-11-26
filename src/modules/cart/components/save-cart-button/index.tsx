@@ -9,7 +9,7 @@ import SaveCartModal from "@modules/cart/components/save-cart-modal"
 
 const SaveCartButton = () => {
   const { t } = useTranslations("account")
-  const { cart, items } = useCart()
+  const { cart, items, isMutating } = useCart()
   const { state: isOpen, open, close } = useToggleState(false)
 
   // Don't offer to save an empty cart.
@@ -23,6 +23,7 @@ const SaveCartButton = () => {
         variant="secondary"
         className="w-full"
         onClick={open}
+        disabled={isMutating}
         data-testid="save-cart-button"
       >
         {t("save-the-cart")}

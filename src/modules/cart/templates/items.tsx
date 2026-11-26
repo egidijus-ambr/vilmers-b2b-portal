@@ -6,7 +6,6 @@ import { useCart } from "@lib/context/cart-context"
 import { FurnisystemsCartItem } from "@lib/furnisystems-sdk/modules/cart/types"
 import SofaConfigurationDetail from "@modules/common/components/sofa-configuration"
 import { InlineReferenceEdit } from "@modules/common/components/product-items-table/inline-reference-edit"
-import Spinner from "@modules/common/icons/spinner"
 import { getItemName, localeMap } from "@lib/util/cart-item-display"
 import { useCanSeePrices } from "@lib/context/customer-context"
 
@@ -107,15 +106,20 @@ function buildOrderDetailItem(item: FurnisystemsCartItem): any {
 function CartItemCard({
   item,
   readOnly = false,
+  onMutationError,
 }: {
   item: FurnisystemsCartItem
   readOnly?: boolean
+  onMutationError?: (error: unknown) => void
 }) {
   const { t, language } = useTranslations("account")
   const canSeePrices = useCanSeePrices()
-  const { updateItemQuantity, updateItemReference, removeItem } = useCart()
-  const [updating, setUpdating] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const { updateItemQuantity, updateItemReference, removeItem, isMutating } =
+    useCart()
+  // One cart-wide busy flag: while any mutation (+ its refresh) is in flight
+  // every control on every card is disabled and CartTemplate shows the
+  // overlay. No per-item spinners (they shifted the layout).
+  const busy = !readOnly && isMutating
   const [isExpanded, setIsExpanded] = useState(false)
   const isAdvanced = isAdvancedItem(item)
 
@@ -134,22 +138,26 @@ function CartItemCard({
   }
 
   const handleQuantityChange = async (newQuantity: number) => {
-    setUpdating(true)
     try {
       await updateItemQuantity(item.id, newQuantity)
-    } catch {
-      // error handled silently
-    } finally {
-      setUpdating(false)
+    } catch (error) {
+      onMutationError?.(error)
     }
   }
 
   const handleRemove = async () => {
-    setDeleting(true)
     try {
       await removeItem(item.id)
-    } catch {
-      setDeleting(false)
+    } catch (error) {
+      onMutationError?.(error)
+    }
+  }
+
+  const handleReferenceSave = async (newRef: string) => {
+    try {
+      await updateItemReference(item.id, newRef)
+    } catch (error) {
+      onMutationError?.(error)
     }
   }
 
@@ -183,9 +191,7 @@ function CartItemCard({
                 <InlineReferenceEdit
                   reference={item.reference}
                   label={t("customer-reference")}
-                  onSave={async (newRef) => {
-                    await updateItemReference(item.id, newRef)
-                  }}
+                  onSave={handleReferenceSave}
                 />
               )
             ) : null}
@@ -210,7 +216,7 @@ function CartItemCard({
                 <button
                   className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
                   onClick={() => handleQuantityChange(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1 || updating}
+                  disabled={quantity <= 1 || busy}
                 >
                   &mdash;
                 </button>
@@ -220,12 +226,11 @@ function CartItemCard({
                 <button
                   className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
                   onClick={() => handleQuantityChange(quantity + 1)}
-                  disabled={updating}
+                  disabled={busy}
                 >
                   +
                 </button>
               </div>
-              {updating && <Spinner className="mt-1" />}
             </div>
           )}
           {canSeePrices && (
@@ -267,14 +272,11 @@ function CartItemCard({
           {!readOnly && (
           <button
             onClick={handleRemove}
-            disabled={deleting}
+            disabled={busy}
             aria-label={t("remove")}
             className="shrink-0 w-12 flex items-center justify-center py-3 text-sm text-dark-blue hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            {deleting ? (
-              <Spinner />
-            ) : (
-              <svg
+            <svg
                 className="w-5 h-5"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -287,7 +289,6 @@ function CartItemCard({
                   d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                 />
               </svg>
-            )}
           </button>
           )}
         </div>
@@ -328,9 +329,7 @@ function CartItemCard({
                   <InlineReferenceEdit
                     reference={item.reference}
                     label={t("customer-reference")}
-                    onSave={async (newRef) => {
-                      await updateItemReference(item.id, newRef)
-                    }}
+                    onSave={handleReferenceSave}
                   />
                 )
               ) : null}
@@ -359,7 +358,7 @@ function CartItemCard({
                         onClick={() =>
                           handleQuantityChange(Math.max(1, quantity - 1))
                         }
-                        disabled={quantity <= 1 || updating}
+                        disabled={quantity <= 1 || busy}
                       >
                         &mdash;
                       </button>
@@ -369,12 +368,11 @@ function CartItemCard({
                       <button
                         className="w-10 h-10 flex items-center justify-center text-dark-blue hover:bg-gray-50 disabled:opacity-40"
                         onClick={() => handleQuantityChange(quantity + 1)}
-                        disabled={updating}
+                        disabled={busy}
                       >
                         +
                       </button>
                     </div>
-                    {updating && <Spinner className="mt-1" />}
                   </>
                 )}
               </div>
@@ -418,13 +416,10 @@ function CartItemCard({
             {!readOnly && (
             <button
               onClick={handleRemove}
-              disabled={deleting}
+              disabled={busy}
               className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-dark-blue hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              {deleting ? (
-                <Spinner />
-              ) : (
-                <svg
+              <svg
                   className="w-5 h-5"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -437,7 +432,6 @@ function CartItemCard({
                     d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                   />
                 </svg>
-              )}
               {t("remove")}
             </button>
             )}
@@ -459,21 +453,16 @@ function CartItemCard({
 const ItemsTemplate = ({
   items: itemsProp,
   readOnly = false,
+  onMutationError,
 }: {
   items?: FurnisystemsCartItem[]
   readOnly?: boolean
+  onMutationError?: (error: unknown) => void
 } = {}) => {
   const ctx = useCart()
+  // Initial loading is handled by CartTemplate (skeleton); a background
+  // refresh keeps rendering the current items until the new ones arrive.
   const items = itemsProp ?? ctx.items
-  const isLoading = itemsProp ? false : ctx.isLoading
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner />
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col gap-y-4">
@@ -484,7 +473,12 @@ const ItemsTemplate = ({
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
         .map((item) => (
-          <CartItemCard key={item.id} item={item} readOnly={readOnly} />
+          <CartItemCard
+            key={item.id}
+            item={item}
+            readOnly={readOnly}
+            onMutationError={onMutationError}
+          />
         ))}
     </div>
   )

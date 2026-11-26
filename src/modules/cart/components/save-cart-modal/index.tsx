@@ -21,7 +21,7 @@ const SaveCartModal = ({ isOpen, onClose }: SaveCartModalProps) => {
   const router = useRouter()
   const params = useParams()
   const languageCode = params?.languageCode as string
-  const { cart, saveActiveCart, startNewCart } = useCart()
+  const { cart, saveActiveCart, startNewCart, isMutating } = useCart()
 
   const [phase, setPhase] = useState<Phase>("name")
   const [name, setName] = useState(cart?.name ?? "")
@@ -106,7 +106,7 @@ const SaveCartModal = ({ isOpen, onClose }: SaveCartModalProps) => {
                 </Button>
                 <Button
                   onClick={handleSave}
-                  disabled={pending}
+                  disabled={pending || isMutating}
                   data-testid="save-cart-save-button"
                 >
                   {t("save")}
@@ -132,7 +132,7 @@ const SaveCartModal = ({ isOpen, onClose }: SaveCartModalProps) => {
                 </Button>
                 <Button
                   onClick={handleStartNew}
-                  disabled={pending}
+                  disabled={pending || isMutating}
                   className="w-full"
                   data-testid="save-cart-start-new-button"
                 >

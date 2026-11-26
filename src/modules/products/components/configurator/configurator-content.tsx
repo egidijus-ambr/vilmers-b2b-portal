@@ -23,7 +23,7 @@ import {
   getPrimaryPriceListId,
 } from "@configurator/lib/pricelist"
 import { useActingCustomer } from "@lib/context/acting-customer-context"
-import { useCart } from "@lib/context/cart-context"
+import { CartBusyError, useCart } from "@lib/context/cart-context"
 import { useCustomerPaletteIds } from "@configurator/lib/palette-utils"
 import { hasUnjoinedConnectableModules } from "@configurator/lib/sofa-connectivity"
 import { activeTheme } from "themes"
@@ -430,6 +430,9 @@ const ConfiguratorContent = ({
       })
       setToast({ message: t("item-added-to-cart"), type: "success" })
     } catch (error) {
+      // A second click while the first add is still in flight is rejected
+      // by the cart's busy lock (no double add); not a failure to report.
+      if (error instanceof CartBusyError) return
       const paletteMessage =
         error instanceof PaletteActionError
           ? paletteErrorMessage(tc, error.code, error.items)

@@ -36,6 +36,9 @@ export default function CartSummary({
   const { customer } = useCustomer()
   const { actingCustomer } = useActingCustomer()
   const blockedNoActingCustomer = isAgentOrAdmin(customer) && !actingCustomer
+  // While a cart mutation is in flight the default actions render as disabled
+  // buttons instead of links (CartTemplate also marks the area `inert`).
+  const busy = !itemsProp && ctx.isMutating
 
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat(localeMap[language] || "en-GB", {
@@ -148,11 +151,15 @@ export default function CartSummary({
       <div className="mt-6">
         {children ?? (
           <>
-            {blockedNoActingCustomer ? (
+            {blockedNoActingCustomer || busy ? (
               <Button
                 className="w-full"
                 disabled
-                title={tc("checkout-select-customer-title")}
+                title={
+                  blockedNoActingCustomer
+                    ? tc("checkout-select-customer-title")
+                    : undefined
+                }
               >
                 {t("proceed-to-checkout")}
               </Button>
@@ -167,12 +174,14 @@ export default function CartSummary({
               <SaveCartButton />
             </div>
             <div className="mt-3">
-              {blockedNoActingCustomer || !ctx.cart?.id ? (
+              {blockedNoActingCustomer || busy || !ctx.cart?.id ? (
                 <Button
                   variant="outline"
                   className="w-full"
                   disabled
-                  title={tc("checkout-select-customer-title")}
+                  title={
+                    busy ? undefined : tc("checkout-select-customer-title")
+                  }
                 >
                   {t("preview-offer-pdf")}
                 </Button>
