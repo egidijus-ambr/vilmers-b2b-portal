@@ -11,17 +11,20 @@ interface MagicLinkPageProps {
   }>
 }
 
-// Stage 2c-3 (plan §3.3): the token is used only when the user presses
-// Continue (no auto-submit: mail scanners that run JavaScript would burn the
-// single-use link). The middleware sends this page with
+// v1 magic links are reusable until they expire (backend TTL, 15 minutes),
+// so the landing verifies automatically on mount: a mail scanner opening the
+// link first no longer burns it, and the user needs no extra click. The
+// verify stays in the server action (verifyMagicLinkAction) because a server
+// page cannot set cookies. Without JavaScript the page only asks to enable
+// it (the portal needs JS throughout). The middleware sends this page with
 // `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
 export default async function MagicLinkPage({
   params,
   searchParams,
 }: MagicLinkPageProps) {
   const languageCode = normalizeLanguage((await params).languageCode)
-  const raw = (await searchParams).token
-  const token = Array.isArray(raw) ? raw[0] : raw
+  const { token: rawToken } = await searchParams
+  const token = Array.isArray(rawToken) ? rawToken[0] : rawToken
 
   if (!token) {
     // No token provided, redirect to account page
