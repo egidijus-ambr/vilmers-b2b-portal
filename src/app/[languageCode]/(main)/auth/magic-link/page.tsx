@@ -8,22 +8,48 @@ interface MagicLinkPageProps {
   }>
   searchParams: Promise<{
     token?: string | string[]
+    status?: string | string[]
   }>
 }
 
-// Stage 2c-3 (plan §3.3): the token is used only when the user presses
-// Continue (no auto-submit: mail scanners that run JavaScript would burn the
-// single-use link). The middleware sends this page with
+// v1 magic links are reusable until they expire (backend TTL, 15 minutes),
+// so the landing verifies automatically on mount: a mail scanner opening the
+// link first no longer burns it, and the user needs no extra click. The
+// verify stays in the server action (verifyMagicLinkAction) because a server
+// page cannot set cookies; without JavaScript a Continue button submits the
+// same action. The middleware sends this page with
 // `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
+// `?status=` (no token) is where the no-JS fallback (./verify/route.ts) lands
+// after a failed verify.
+function isFailureStatus(
+  value: string | undefined
+): value is FailureStatus {
+  return value === "expired" || value === "unavailable" || value === "error"
+}
+
+type FailureStatus = "expired" | "unavailable" | "error"
+
 export default async function MagicLinkPage({
   params,
   searchParams,
 }: MagicLinkPageProps) {
   const languageCode = normalizeLanguage((await params).languageCode)
-  const raw = (await searchParams).token
-  const token = Array.isArray(raw) ? raw[0] : raw
+  const query = await searchParams
+  const first = (value?: string | string[]) =>
+    Array.isArray(value) ? value[0] : value
+  const token = first(query.token)
 
   if (!token) {
+    const status = first(query.status)
+    if (isFailureStatus(status)) {
+      return (
+        <MagicLinkClient
+          token=""
+          languageCode={languageCode}
+          initialStatus={status}
+        />
+      )
+    }
     // No token provided, redirect to account page
     redirect(`/${languageCode}/account`)
   }

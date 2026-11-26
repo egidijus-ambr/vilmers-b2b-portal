@@ -278,8 +278,11 @@ export type MagicLinkVerifyState = {
 } | null
 
 /**
- * Magic-link landing action (the Continue button; stage 2c-3, D6). The
- * token's shape decides the path (src/lib/v1-session/magic-link.ts):
+ * Magic-link landing action, submitted automatically when the landing page
+ * mounts (or by its no-JS fallback button). v1 links are reusable within
+ * their TTL, so a second open (mail scanner, double click, already logged
+ * in) is harmless. The token's shape decides the path
+ * (src/lib/v1-session/magic-link.ts):
  *   v1      -> POST /api/v1/auth/magic-link/verify. Success replaces the
  *              current session: the old v1 session (if any) is logged out,
  *              the new pair and its legacyToken (`_furni_jwt`) are stored.
@@ -287,8 +290,10 @@ export type MagicLinkVerifyState = {
  *              deploy; removed in a later step). Success clears any v1
  *              cookies: this login has no v1 pair.
  *   other   -> "expired", no backend call.
- * An expired / used link, a 401 or a transient error returns a state for the
- * page and touches NO cookie: the current session, if any, stays.
+ * A failed verify touches no session cookie: the current session, if any,
+ * stays. If that session is valid the user is simply sent on to the
+ * destination (an already-logged-in user never sees "expired" for reopening
+ * a link); otherwise the state is returned for the page.
  */
 export async function verifyMagicLinkAction(
   _currentState: unknown,
@@ -301,16 +306,20 @@ export async function verifyMagicLinkAction(
 
   const kind = classifyMagicLinkToken(token)
   if (kind === "invalid") {
-    return { status: "expired" }
+    return failedVerifyState({ status: "expired" }, languageCode)
   }
 
   if (kind === "legacy") {
+    let verified = false
     try {
       // The SDK stores the new `_furni_jwt` itself.
       await sdk.customer.verifyMagicLink(token)
+      verified = true
     } catch {
       console.warn("[magic-link] legacy verify rejected or failed")
-      return { status: "expired" }
+    }
+    if (!verified) {
+      return failedVerifyState({ status: "expired" }, languageCode)
     }
     // Invariant: v1 cookies, when present, belong to the same login as
     // `_furni_jwt`. A legacy login has no v1 pair: end the old one.
@@ -325,7 +334,7 @@ export async function verifyMagicLinkAction(
     await v1RequestContextInAction()
   )
   if (outcome.kind !== "ok") {
-    return { status: outcome.kind }
+    return failedVerifyState({ status: outcome.kind }, languageCode)
   }
 
   await endV1SessionBeforeLogin()
@@ -334,6 +343,26 @@ export async function verifyMagicLinkAction(
   await refreshSessionCaches()
 
   // redirect() throws: keep it outside any try/catch.
+  redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
+}
+
+/**
+ * A failed verify with a still-valid session (the link was reopened, or the
+ * user is already logged in): go to the destination instead of an error
+ * page. Without a valid session the state is returned for the page.
+ * redirect() throws: it stays outside the try/catch.
+ */
+async function failedVerifyState(
+  state: NonNullable<MagicLinkVerifyState>,
+  languageCode: string
+): Promise<MagicLinkVerifyState> {
+  let loggedIn = false
+  try {
+    loggedIn = (await validateSession()).isValid
+  } catch {
+    loggedIn = false
+  }
+  if (!loggedIn) return state
   redirect((await consumeReturnToCookie()) ?? `/${languageCode}/account`)
 }
 
