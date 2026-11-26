@@ -1,5 +1,4 @@
 import { Fragment } from "react"
-import { Github } from "@medusajs/icons"
 import { Button, Heading } from "@medusajs/ui"
 import OutlineButton from "@modules/common/components/outline-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"

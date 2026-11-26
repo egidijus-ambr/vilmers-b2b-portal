@@ -6,7 +6,7 @@ import { formatPrice } from "@lib/util/money"
 import { capitalizeFirstLetter } from "@lib/util/string"
 import StatusBadge from "../status-badge"
 import ReferencesTooltip from "../references-tooltip"
-import { DocumentText } from "@medusajs/icons"
+import { FileText } from "lucide-react"
 import { Order } from "@lib/furnisystems-sdk/modules/customer/types"
 import { useTranslations, useI18n } from "@lib/i18n"
 import { useCustomer, useCanSeePrices } from "@lib/context/customer-context"
@@ -44,7 +44,7 @@ const InvoiceDownloadLink = ({ orderId }: { orderId: string }) => {
       onClick={(e) => e.stopPropagation()}
       className="inline-flex flex-shrink-0 text-gray-400 hover:text-dark-blue transition-colors"
     >
-      <DocumentText className="h-4 w-4" />
+      <FileText className="h-4 w-4" />
     </a>
   )
 }

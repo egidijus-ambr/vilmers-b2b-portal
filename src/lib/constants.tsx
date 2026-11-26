@@ -1,5 +1,5 @@
 import React from "react"
-import { CreditCard } from "@medusajs/icons"
+import { CreditCard } from "lucide-react"
 
 import Ideal from "@modules/common/icons/ideal"
 import Bancontact from "@modules/common/icons/bancontact"
@@ -12,7 +12,7 @@ export const paymentInfoMap: Record<
 > = {
   pp_stripe_stripe: {
     title: "Credit card",
-    icon: <CreditCard />,
+    icon: <CreditCard size={15} />,
   },
   "pp_stripe-ideal_stripe": {
     title: "iDeal",
@@ -28,7 +28,7 @@ export const paymentInfoMap: Record<
   },
   pp_system_default: {
     title: "Manual Payment",
-    icon: <CreditCard />,
+    icon: <CreditCard size={15} />,
   },
   // Add more payment providers here
 }

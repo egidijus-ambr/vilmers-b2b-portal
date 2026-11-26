@@ -1,7 +1,7 @@
 "use client"
 
 //import { transferCart } from "@lib/data/customer"
-import { ExclamationCircleSolid } from "@medusajs/icons"
+import ExclamationCircleSolid from "@modules/common/icons/exclamation-circle-solid"
 import { StoreCart, StoreCustomer } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import { useState } from "react"
