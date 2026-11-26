@@ -52,7 +52,7 @@ export const CREATE_ORDER = gql`
     $shopId: ShopSettingWhereUniqueInput!
     $hostname: String!
     $price_multiplier: Int!
-    $b2b_customer_discount: Int
+    $b2b_customer_discount: Float
     $metadata: Json
     $cookie: String
     $createdBy: String
