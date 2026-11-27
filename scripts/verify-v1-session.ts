@@ -49,6 +49,7 @@ import {
   verifyV1MagicLink,
 } from "../src/lib/v1-session/magic-link"
 import { isTokenUrlPath, thirdPartyScriptsAllowed } from "../src/lib/util/token-url-paths"
+import { exchangeV1Impersonation, isHandoffCodeShape } from "../src/lib/v1-session/impersonation"
 
 // ---- fixtures ----------------------------------------------------------------------
 
@@ -823,6 +824,47 @@ async function main() {
     eq((await verifyV1MagicLink(status(400, "VALIDATION_FAILED"), LINK, ctx)).kind, "error", "400")
     const down = makeClient((async () => { throw new TypeError("fetch failed") }) as unknown as typeof fetch)
     eq((await verifyV1MagicLink(down, LINK, ctx)).kind, "unavailable", "network")
+  })
+
+  // ---- 2c-4: impersonation exchange ----------------------------------------------------
+
+  const HANDOFF = "H4nd0ff_".repeat(5) + "xyz"
+  sensitive.push(HANDOFF)
+
+  await test("impersonation: handoff code shape is the backend's opaque-token shape", () => {
+    ok(isHandoffCodeShape(HANDOFF), "43-char base64url accepted")
+    ;[HANDOFF + "a", HANDOFF.slice(1), "a.b.c", "", null, undefined, 43, HANDOFF.slice(0, 42) + "="].forEach((v) =>
+      ok(!isHandoffCodeShape(v), `rejected ${String(v).slice(0, 8)}`)
+    )
+  })
+
+  await test("impersonation: 200 with pair + legacyToken -> ok; request shape, BFF headers, no Authorization", async () => {
+    const s1 = stubFetch(() => verifyAnswer({ legacyToken: LEGACY_JWT }))
+    const r = await exchangeV1Impersonation(makeClient(s1.fn), HANDOFF, ctx)
+    ok(r.kind === "ok" && r.tokens.legacyToken === LEGACY_JWT && r.tokens.refreshToken === "V".repeat(43), `ok (${r.kind})`)
+    eq([s1.seen[0].url, s1.seen[0].body], ["http://backend.test/api/v1/auth/impersonation/exchange", { handoffCode: HANDOFF }], "request")
+    const h = s1.seen[0].headers
+    eq([h["x-bff-secret"], h["x-client-ip"]], [SECRET, CLIENT_IP], "BFF headers")
+    ok(!Object.keys(h).some((k) => k.toLowerCase() === "authorization"), "no Authorization header")
+  })
+
+  await test("impersonation: 2xx without legacyToken / refresh cookie -> error; bad shape -> expired without a call", async () => {
+    eq((await exchangeV1Impersonation(makeClient(stubFetch(() => verifyAnswer({})).fn), HANDOFF, ctx)).kind, "error", "no legacyToken")
+    eq((await exchangeV1Impersonation(makeClient(stubFetch(() => verifyAnswer({ legacyToken: LEGACY_JWT }, false)).fn), HANDOFF, ctx)).kind, "error", "no refresh cookie")
+    const s = stubFetch(() => verifyAnswer({ legacyToken: LEGACY_JWT }))
+    eq((await exchangeV1Impersonation(makeClient(s.fn), "not-a-code", ctx)).kind, "expired", "bad shape")
+    eq(s.seen.length, 0, "nothing sent for a bad shape")
+  })
+
+  await test("impersonation: 401 -> expired; 429 / 500 / 503 / network -> unavailable; 400 -> error", async () => {
+    const status = (n: number, code: string) => makeClient(stubFetch(() => problem(n, code)).fn)
+    eq((await exchangeV1Impersonation(status(401, "UNAUTHENTICATED"), HANDOFF, ctx)).kind, "expired", "401")
+    eq((await exchangeV1Impersonation(status(429, "RATE_LIMITED"), HANDOFF, ctx)).kind, "unavailable", "429")
+    eq((await exchangeV1Impersonation(status(500, "INTERNAL"), HANDOFF, ctx)).kind, "unavailable", "500")
+    eq((await exchangeV1Impersonation(status(503, "SERVICE_UNAVAILABLE"), HANDOFF, ctx)).kind, "unavailable", "503")
+    eq((await exchangeV1Impersonation(status(400, "VALIDATION_FAILED"), HANDOFF, ctx)).kind, "error", "400")
+    const down = makeClient((async () => { throw new TypeError("fetch failed") }) as unknown as typeof fetch)
+    eq((await exchangeV1Impersonation(down, HANDOFF, ctx)).kind, "unavailable", "network")
   })
 
   await test("token landings: matched with/without locale, any case, percent-encoded; others not", () => {

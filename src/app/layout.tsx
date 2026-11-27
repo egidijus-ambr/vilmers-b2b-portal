@@ -84,7 +84,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   // Never load Tawk.to on a page whose URL carries a credential
-  // (/auth/magic-link?token=, /auth/impersonate?token=): it records
+  // (/auth/magic-link?token=, /auth/impersonation#code=): it records
   // location.href. Decided on the server from the middleware's x-pathname, so
   // the script is never in the HTML (a client-side URL scrub loses the race
   // against the async embed). src/lib/util/token-url-paths.ts

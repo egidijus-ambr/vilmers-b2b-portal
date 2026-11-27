@@ -2,8 +2,9 @@
 // used by the edge middleware and by server layouts.
 //
 //   /<lang>/auth/magic-link?token=<magic-link token>     (v1 opaque or legacy JWT)
-//   /<lang>/auth/impersonate?token=<impersonation JWT>   (GraphQL, until 2c-4)
-//   /<lang>/auth/impersonation#code=...                  (2c-4 v1 landing, planned)
+//   /<lang>/auth/impersonation#code=<handoff code>       (2c-4 v1 landing)
+//   /<lang>/auth/impersonate?token=...                   (removed in 2c-4; still
+//                                                        matched so a stale link fails closed)
 //
 // Third-party scripts that record location.href (Tawk.to) must never load on
 // them, and they are served with Referrer-Policy: no-referrer + no-store.

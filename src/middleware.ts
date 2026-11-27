@@ -6,7 +6,7 @@ import { getPublicOrigin } from "@lib/util/public-origin"
 /** The GraphQL (legacy) session cookie; the source of truth for "logged in" until 2c-10. */
 const LEGACY_SESSION_COOKIE = "_furni_jwt"
 
-// Token landings (/auth/magic-link?token=, /auth/impersonate?token=, ...):
+// Token landings (/auth/magic-link?token=, /auth/impersonation#code=, ...):
 // the credential is in the URL, so never send it as a Referer and never
 // cache the page (plan §3.3). See src/lib/util/token-url-paths.ts.
 function setTokenUrlHeaders(response: NextResponse) {
