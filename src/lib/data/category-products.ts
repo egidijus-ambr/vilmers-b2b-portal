@@ -2,6 +2,11 @@ import { sdk } from "@lib/config"
 import { getCustomerFilterData } from "./customer"
 import { applyNewFilter, getNewSinceCutoff } from "./new-filter"
 import { CategorySortOption, SORT_OPTION_TO_GRAPHQL } from "@lib/furnisystems-sdk/modules/products/types"
+import {
+  runCatalogListing,
+  v1CategoryProductNames,
+  v1CategoryProducts,
+} from "./catalog-v1"
 
 
 export async function getCategoryProducts(
@@ -12,6 +17,50 @@ export async function getCategoryProducts(
   attrIds: number[] = [],
   catIds: number[] = [],
   newOnly: boolean = false
+) {
+  // v1 or GraphQL per request: see ./catalog-transport-rule.ts.
+  const result = await runCatalogListing(
+    "category products",
+    (bearer) =>
+      v1CategoryProducts(bearer, {
+        permalink: categoryPermalink,
+        language,
+        page,
+        sort: sortBy ?? "name_asc",
+        attributeIds: attrIds,
+        categoryIds: catIds,
+        newOnly,
+      }),
+    () =>
+      getCategoryProductsGraphql(
+        categoryPermalink,
+        language,
+        page,
+        sortBy,
+        attrIds,
+        catIds,
+        newOnly
+      ),
+    () => ({ numberOfPages: 0, productsCount: 0, sortedProductContainers: [] })
+  )
+
+  return {
+    products: result.sortedProductContainers,
+    totalPages: result.numberOfPages,
+    totalCount: result.productsCount,
+    currentPage: page,
+  }
+}
+
+/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+async function getCategoryProductsGraphql(
+  categoryPermalink: string,
+  language: string,
+  page: number,
+  sortBy: CategorySortOption | undefined,
+  attrIds: number[],
+  catIds: number[],
+  newOnly: boolean
 ) {
   // Build filter based on customer tags and price lists
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
@@ -39,7 +88,7 @@ export async function getCategoryProducts(
   const graphqlSortBy = SORT_OPTION_TO_GRAPHQL[sortBy ?? 'name_asc']
 
   // Fetch products
-  const result = await sdk.products.getCategoryProducts({
+  return sdk.products.getCategoryProducts({
     permalink: categoryPermalink,
     page,
     perPage: 28,
@@ -48,13 +97,6 @@ export async function getCategoryProducts(
     language,
     selectedCategoryIds: catIds.length > 0 ? catIds : undefined,
   })
-
-  return {
-    products: result.sortedProductContainers,
-    totalPages: result.numberOfPages,
-    totalCount: result.productsCount,
-    currentPage: page,
-  }
 }
 
 export async function getAllCategoryProductNames(
@@ -69,6 +111,43 @@ export async function getAllCategoryProductNames(
   products: { id: number; name: string }[]
   totalCount: number
 }> {
+  // v1 or GraphQL per request: see ./catalog-transport-rule.ts.
+  const result = await runCatalogListing(
+    "category product names",
+    (bearer) =>
+      v1CategoryProductNames(bearer, {
+        permalink: categoryPermalink,
+        language,
+        attributeIds: attrIds,
+        categoryIds: catIds,
+        newOnly,
+      }),
+    () =>
+      getCategoryProductNamesGraphql(
+        categoryPermalink,
+        language,
+        attrIds,
+        catIds,
+        newOnly
+      ),
+    () => ({ names: [], products: [], totalCount: 0 })
+  )
+
+  return {
+    names: result.names,
+    products: result.products ?? [],
+    totalCount: result.totalCount,
+  }
+}
+
+/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+async function getCategoryProductNamesGraphql(
+  categoryPermalink: string,
+  language: string,
+  attrIds: number[],
+  catIds: number[],
+  newOnly: boolean
+) {
   // Build filter based on customer tags and price lists
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
   const where = sdk.products.buildWhereFilter(language, customerTagIds, priceListIds)
@@ -92,16 +171,10 @@ export async function getAllCategoryProductNames(
     if (cutoff) applyNewFilter(where, cutoff)
   }
 
-  const result = await sdk.products.getCategoryProductNames({
+  return sdk.products.getCategoryProductNames({
     permalink: categoryPermalink,
     where,
     language,
     selectedCategoryIds: catIds.length > 0 ? catIds : undefined,
   })
-
-  return {
-    names: result.names,
-    products: result.products ?? [],
-    totalCount: result.totalCount,
-  }
 }

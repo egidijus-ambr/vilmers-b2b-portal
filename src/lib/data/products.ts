@@ -8,6 +8,8 @@ import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getCustomerFilterData } from "./customer"
 import { getRegion, retrieveRegion } from "./regions"
 import { ContentBlock, ProductContainer } from "@lib/furnisystems-sdk"
+import { runCatalogListing, v1ContentBlockProducts } from "./catalog-v1"
+import { getCatalogRequestContext } from "./catalog-transport"
 
 export const listProducts = async ({
   pageParam = 1,
@@ -145,6 +147,40 @@ export async function enrichContentBlocksWithProducts(
     return blocks
   }
 
+  // v1 or GraphQL per request (see ./catalog-transport-rule.ts). On v1 the
+  // server reads the block's own config (mode / max_products / tag_ids /
+  // grid picks) by id and applies the caller's visibility; the block config
+  // carried here (possibly from a cached CMS page) is not used.
+  // GraphQL requests keep the original single pass (one customer filter for
+  // all blocks); runCatalogListing below only re-routes a v1 401 per block.
+  if ((await getCatalogRequestContext()).transport === "graphql") {
+    return enrichContentBlocksWithProductsGraphql(blocks, language)
+  }
+  return Promise.all(
+    blocks.map(async (block) => {
+      if (block.type !== "product_grid") return block
+      const products = await runCatalogListing<ProductContainer[]>(
+        `content block ${block.id}`,
+        async (bearer) => {
+          const blockId = Number(block.id)
+          if (!Number.isInteger(blockId) || blockId <= 0) return []
+          return v1ContentBlockProducts(bearer, { blockId, language })
+        },
+        async () =>
+          (await enrichContentBlocksWithProductsGraphql([block], language))[0]
+            ?.products ?? [],
+        () => []
+      )
+      return { ...block, products }
+    })
+  )
+}
+
+/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+async function enrichContentBlocksWithProductsGraphql(
+  blocks: ContentBlock[],
+  language: string
+): Promise<ContentBlock[]> {
   // Build filter based on customer tags and price lists so home-page grids
   // only show products the logged-in customer is allowed to see (mirrors the
   // category / search filtering applied elsewhere).

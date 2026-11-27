@@ -3,11 +3,41 @@
 import { sdk } from "@lib/config"
 import { SupportedLanguage } from "@lib/i18n"
 import { getCustomerFilterData } from "./customer"
+import {
+  QUICK_SEARCH_PAGE_SIZE,
+  CATALOG_PAGE_SIZE,
+  runCatalogListing,
+  v1SearchProducts,
+} from "./catalog-v1"
 
-export async function getSearchProducts(
+const emptyPage = () => ({
+  numberOfPages: 0,
+  productsCount: 0,
+  sortedProductContainers: [],
+})
+
+/** v1 or GraphQL per request: see ./catalog-transport-rule.ts. */
+async function searchListing(
   searchTerm: string,
   language: SupportedLanguage,
-  page: number = 1
+  pageSize: number,
+  page: number
+) {
+  return runCatalogListing(
+    "search products",
+    (bearer) =>
+      v1SearchProducts(bearer, { q: searchTerm, language, page, pageSize }),
+    () => searchProductsGraphql(searchTerm, language, pageSize, page),
+    emptyPage
+  )
+}
+
+/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+async function searchProductsGraphql(
+  searchTerm: string,
+  language: SupportedLanguage,
+  pageSize: number,
+  page: number
 ) {
   // Build filter based on customer tags and price lists
   const { customerTagIds, priceListIds } = await getCustomerFilterData()
@@ -17,13 +47,19 @@ export async function getSearchProducts(
     priceListIds
   )
 
-  // Fetch products
-  const result = await sdk.products.searchProducts(
+  return sdk.products.searchProducts(searchTerm, language, pageSize, page, where)
+}
+
+export async function getSearchProducts(
+  searchTerm: string,
+  language: SupportedLanguage,
+  page: number = 1
+) {
+  const result = await searchListing(
     searchTerm,
     language,
-    28,
-    page,
-    where
+    CATALOG_PAGE_SIZE,
+    page
   )
 
   return {
@@ -39,19 +75,11 @@ export async function quickSearchProducts(
   language: SupportedLanguage
 ) {
   try {
-    const { customerTagIds, priceListIds } = await getCustomerFilterData()
-    const where = sdk.products.buildWhereFilter(
-      language,
-      customerTagIds,
-      priceListIds
-    )
-
-    const result = await sdk.products.searchProducts(
+    const result = await searchListing(
       searchTerm,
       language,
-      4,
-      1,
-      where
+      QUICK_SEARCH_PAGE_SIZE,
+      1
     )
 
     return JSON.parse(
