@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import { getServerT, type SupportedLanguage } from "@lib/i18n"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories, enrichContentBlocksWithTileCategories } from "@lib/data/categories"
-import { getCustomerFilterData } from "@lib/data/customer"
 import { getShowAllProductsActive } from "@lib/data/show-all-products"
 import { getProductCatalogues } from "@lib/data/product-catalogues"
 import { enrichContentBlocksWithProducts } from "@lib/data/products"
@@ -220,8 +219,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle, languageCode } = await params
   const t = await getServerT("account", languageCode as SupportedLanguage)
   const tc = await getServerT("common", languageCode as SupportedLanguage)
-  const { customerTagIds, priceListIds } = await getCustomerFilterData()
-  const product = await getProductByPermalink(handle, languageCode, priceListIds, customerTagIds)
+  const product = await getProductByPermalink(handle, languageCode)
 
   if (!product) {
     return { title: tc("product-not-found") }
@@ -270,12 +268,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { handle, languageCode } = await params
   const tAccount = await getServerT("account", languageCode as SupportedLanguage)
-  const [{ customerTagIds, priceListIds }, showAllProducts] = await Promise.all([
-    getCustomerFilterData(),
-    getShowAllProductsActive(),
-  ])
+  const showAllProducts = await getShowAllProductsActive()
   const [product, menuCategories] = await Promise.all([
-    getProductByPermalink(handle, languageCode, priceListIds, customerTagIds),
+    getProductByPermalink(handle, languageCode),
     listMenuCategories(languageCode),
   ])
 
@@ -287,8 +282,8 @@ export default async function ProductPage({ params }: Props) {
 
   // Hydrate raw content blocks the same way CMS pages do ([...slug]/page.tsx)
   // — config-driven per block type, and customer-scoped for product_grid
-  // (tags/price lists via getCustomerFilterData() inside
-  // enrichContentBlocksWithProducts), so this must run per-request and never
+  // (server-side visibility on v1; getCustomerFilterData() on the GraphQL
+  // path inside enrichContentBlocksWithProducts), so this must run per-request and never
   // be wrapped in unstable_cache.
   let contentBlocks: ContentBlock[] = product.content_blocks ?? []
   contentBlocks = await enrichContentBlocksWithTileCategories(

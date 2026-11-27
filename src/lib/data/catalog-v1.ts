@@ -16,8 +16,14 @@ import {
   isV1ProblemError,
   v1DataGet,
   withActingRetry,
+  withActingRetryIfStale,
   type V1Query,
 } from "@lib/furnisystems-sdk/client/v1-data"
+import {
+  mapV1ProductDetail,
+  type V1ProductDetail,
+} from "@lib/furnisystems-sdk/modules/products/v1-detail-adapter"
+import type { FurnisystemsProductDetail } from "@lib/furnisystems-sdk/modules/products/types"
 import {
   mapV1CategoryFacets,
   mapV1ProductCardPage,
@@ -34,7 +40,11 @@ import type {
   CategoryProductsResponse,
   ProductContainer,
 } from "@lib/furnisystems-sdk/modules/products/types"
-import { actingCustomerIdForV1, dropActingCookie } from "./v1-acting"
+import {
+  actingCustomerIdForV1,
+  dropActingCookie,
+  isActingStaleFor,
+} from "./v1-acting"
 import { getV1RequestContext } from "./v1-transport"
 import { getShowAllProductsCookie } from "./show-all-products"
 
@@ -243,4 +253,80 @@ export async function v1ContentBlockProducts(
     { language: lang(p.language) }
   )
   return mapV1ProductCards(body.data)
+}
+
+/**
+ * One v1 GET on a route whose answer the acting header NARROWS by
+ * visibility (product page, configurator): a 404 with the header stays a
+ * 404 unless the acting customer itself is stale (withActingRetryIfStale).
+ */
+async function narrowedCatalogGet<T>(
+  bearer: string | null,
+  path: string,
+  query: V1Query
+): Promise<T> {
+  const [actingId, showAll] = await Promise.all([
+    bearer ? actingCustomerIdForV1() : Promise.resolve(null),
+    getShowAllProductsCookie(),
+  ])
+  const restApiUrl = process.env.NEXT_PUBLIC_BACKEND_REST_API || ""
+  return withActingRetryIfStale(
+    actingId,
+    (acting) =>
+      v1DataGet<T>(
+        { restApiUrl },
+        {
+          path,
+          query: { ...query, showAll: showAll ? true : undefined },
+          bearer,
+          actingCustomerId: acting,
+        }
+      ),
+    bearer && actingId !== null
+      ? isActingStaleFor(bearer, actingId)
+      : async () => false,
+    dropActingCookie
+  )
+}
+
+/**
+ * Product page (slice 2). Throws V1ProblemError (404 = unknown OR not
+ * visible to the caller: the listing admission rule, owner decision).
+ */
+export async function v1ProductByPermalink(
+  bearer: string | null,
+  p: { permalink: string; language: string }
+): Promise<FurnisystemsProductDetail> {
+  const body = await narrowedCatalogGet<V1ProductDetail>(
+    bearer,
+    `/catalog/products/by-permalink/${seg(p.permalink)}`,
+    { language: lang(p.language) }
+  )
+  return mapV1ProductDetail(body)
+}
+
+/** GET /catalog/products/:id/configurator, as served (snake_case `data`). */
+export interface V1ConfiguratorResponse {
+  data: any
+  /** null only for a login without prices (kept on GraphQL, see configurator.ts). */
+  priceListId: number | null
+  paletteIds: number[]
+  /** Optional (being added on the backend); unused: the "place an order"
+   *  card keeps reading customer.is_configurator_enabled. */
+  configuratorEnabled?: boolean
+}
+
+/**
+ * Configurator data (slice 2). The server chooses the price list and the
+ * palettes; nothing price- or palette-related is sent. Throws V1ProblemError.
+ */
+export async function v1ConfiguratorData(
+  bearer: string | null,
+  p: { productContainerId: number; language: string }
+): Promise<V1ConfiguratorResponse> {
+  return narrowedCatalogGet<V1ConfiguratorResponse>(
+    bearer,
+    `/catalog/products/${p.productContainerId}/configurator`,
+    { language: lang(p.language) }
+  )
 }

@@ -1,9 +1,24 @@
 /**
  * Which backend API serves a request: REST v1 or the legacy GraphQL path.
- * ONE rule for every migrated surface (portal REST migration slices 1, 6, 7):
- * catalogue listings, the BFF proxies under /api (invoice, customer files,
- * Tawk hash), orders, palettes, the agent's customer selector, the acting
- * customer, the current user and the "show all products" gate.
+ * ONE rule for every migrated surface (portal REST migration slices 1, 2,
+ * 4, 5, 6, 7): catalogue listings, the product page (+ linked products), the
+ * configurator data, taxonomy (menu, category, collection, category tiles),
+ * CMS pages (by path / code / slug, page grids), content-block config, the
+ * shop settings, the public forms, the BFF proxies under /api (invoice,
+ * customer files, Tawk hash), orders, palettes, the agent's customer
+ * selector, the acting customer, the current user and the "show all
+ * products" gate.
+ *
+ * Caller-independent reads (category menu, categories by id, the default
+ * price list, and the settings values that do not depend on the session:
+ * new_badge_days, pricelist switches, low-stock threshold) always use v1
+ * WITHOUT a bearer: there is nothing session-specific to keep on GraphQL.
+ *
+ * ONE extra condition, configurator data only (selectConfiguratorTransport):
+ * a v1 session whose login has prices DISABLED (GET /auth/session
+ * `features.prices === false`) keeps the GraphQL configurator call, because
+ * v1 serves it null amounts and the configurator / add-to-cart still price
+ * on the client. DELETE WHEN CARTS ARE PRICED ON THE SERVER.
  *
  * Rule (owner decision; no environment switch, no feature flag):
  *   - a usable v1 access token                         -> v1
@@ -52,6 +67,22 @@
  *   4. NOT getClaimsLink (src/lib/data/customer.ts): it has no v1 endpoint
  *      yet (backend gap: GET /me/claims-link) and stays on GraphQL until the
  *      backend adds one.
+ *   5. slices 2, 4, 5 (product page, configurator, taxonomy, CMS, settings,
+ *      forms): drop the GraphQL arms of
+ *      ./furnisystems-products.ts getProductByPermalinkGraphql (and the
+ *      getCustomerFilterData call in it),
+ *      ./configurator.ts getConfiguratorDataGraphql,
+ *      ./cms-v1.ts runCmsCall (the `graphql` parameter),
+ *      ./{categories,collection,pages,shop-settings,email-signup,partner}.ts
+ *      `*Graphql`, and the SDK modules they call (sdk.categories,
+ *      sdk.collections, sdk.pages, sdk.shopSettings, products
+ *      getProductByPermalink / getConfiguratorData,
+ *      src/configurator/queries/configurator-queries.ts).
+ *      ./anonymous-product-tags.ts and ./default-pricelist.ts are then only
+ *      read by GraphQL arms (getCustomerFilterData): delete them with step 3.
+ *   6. selectConfiguratorTransport's prices-disabled arm: delete when carts
+ *      are priced on the server (then a login without prices needs no
+ *      client-side amounts and takes v1 like everyone else).
  *
  * Pure, no imports: unit-tested by scripts/verify-catalog-v1.ts and
  * scripts/verify-identity-v1.ts.
@@ -91,4 +122,19 @@ export function selectIdentityTransport(
   if (v1Status === "ok") return "v1"
   if (v1Status === "anonymous" && !hasLegacyJwt) return "guest"
   return "graphql"
+}
+
+/**
+ * Configurator data: the request's transport, except that a login with
+ * prices disabled (`features.prices === false` on GET /auth/session) keeps
+ * the GraphQL call (null v1 amounts cannot be priced on the client).
+ * `pricesFeature` undefined / null = unknown or a guest: not disabled.
+ * TEMPORARY: delete when carts are priced on the server.
+ */
+export function selectConfiguratorTransport(
+  transport: V1Transport,
+  pricesFeature: boolean | null | undefined
+): V1Transport {
+  if (transport === "graphql") return "graphql"
+  return pricesFeature === false ? "graphql" : "v1"
 }

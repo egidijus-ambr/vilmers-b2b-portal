@@ -1,7 +1,6 @@
 import { redirect, notFound } from "next/navigation"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories } from "@lib/data/categories"
-import { getCustomerFilterData } from "@lib/data/customer"
 import { getShowAllProductsActive } from "@lib/data/show-all-products"
 import Breadcrumb, { BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import ConfiguratorPageClient from "./configurator-page-client"
@@ -21,13 +20,12 @@ export default async function ConfiguratorPage({ params }: Props) {
     redirect(`/${languageCode}/products/${handle}`)
   }
 
-  const [{ priceListIds }, showAllProducts, menuCategories] = await Promise.all([
-    getCustomerFilterData(),
+  const [showAllProducts, menuCategories] = await Promise.all([
     getShowAllProductsActive(),
     listMenuCategories(languageCode),
   ])
 
-  const product = await getProductByPermalink(handle, languageCode, priceListIds)
+  const product = await getProductByPermalink(handle, languageCode)
 
   if (!product) {
     notFound()

@@ -53,3 +53,22 @@ export function dropActingCookieIfStale(
     dropActingCookie
   )
 }
+
+/**
+ * `isActingStale` for withActingRetryIfStale (product page, configurator):
+ * true only when GET /me with the header answers 404 (the acting customer
+ * itself is gone or no longer managed); any other answer or error: false.
+ */
+export function isActingStaleFor(
+  bearer: string,
+  actingCustomerId: number
+): () => Promise<boolean> {
+  return async () => {
+    try {
+      await v1GetMeActing(bearer, actingCustomerId)
+      return false
+    } catch (error) {
+      return (error as { status?: unknown } | null)?.status === 404
+    }
+  }
+}

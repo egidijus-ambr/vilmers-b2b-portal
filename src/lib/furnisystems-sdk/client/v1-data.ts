@@ -34,6 +34,12 @@ async function defaultBffHeaders(): Promise<Record<string, string>> {
 
 export const ACTING_CUSTOMER_HEADER = "X-Acting-Customer-Id"
 
+/** One field error of a 400 VALIDATION_FAILED answer (`path` e.g. `body.email`). */
+export interface V1FieldError {
+  path: string
+  message: string
+}
+
 /** A v1 call that did not answer 2xx (status 0 = no HTTP answer at all). */
 export class V1ProblemError extends Error {
   readonly status: number
@@ -43,6 +49,10 @@ export class V1ProblemError extends Error {
   readonly requestId: string | null
   /** Whether the failed request carried X-Acting-Customer-Id. */
   readonly actingSent: boolean
+  /** Field errors (400 VALIDATION_FAILED only); [] otherwise. */
+  readonly errors: V1FieldError[]
+  /** Retry-After in seconds (429), when sent as a number. */
+  readonly retryAfter: number | null
 
   constructor(init: {
     status: number
@@ -50,6 +60,8 @@ export class V1ProblemError extends Error {
     detail?: string | null
     requestId?: string | null
     actingSent?: boolean
+    errors?: V1FieldError[] | null
+    retryAfter?: number | null
     message?: string
   }) {
     super(
@@ -62,6 +74,8 @@ export class V1ProblemError extends Error {
     this.detail = init.detail ?? null
     this.requestId = init.requestId ?? null
     this.actingSent = init.actingSent ?? false
+    this.errors = init.errors ?? []
+    this.retryAfter = init.retryAfter ?? null
   }
 }
 
@@ -105,6 +119,11 @@ export interface V1DataRequest {
   /** Path below /api/v1, already URL-encoded per segment, e.g. `/catalog/...`. */
   path: string
   query?: V1Query
+  /**
+   * POST only: a JSON body (sent with Content-Type: application/json).
+   * Omitted = no body and no Content-Type (the bodyless v1 POST routes).
+   */
+  body?: Record<string, unknown>
   /** v1 access token; omitted for a guest (no Authorization header at all). */
   bearer?: string | null
   /** Sent as X-Acting-Customer-Id when a positive integer. */
@@ -132,12 +151,29 @@ async function problemFrom(
     body = null
   }
   const str = (v: unknown) => (typeof v === "string" ? v : null)
+  const errors: V1FieldError[] = Array.isArray(body?.errors)
+    ? (body!.errors as unknown[])
+        .filter(
+          (e): e is V1FieldError =>
+            !!e &&
+            typeof (e as V1FieldError).path === "string" &&
+            typeof (e as V1FieldError).message === "string"
+        )
+        .map((e) => ({ path: e.path, message: e.message }))
+    : []
+  const retryAfterRaw = response.headers.get("retry-after")
+  const retryAfter =
+    retryAfterRaw && /^\d+$/.test(retryAfterRaw.trim())
+      ? Number(retryAfterRaw.trim())
+      : null
   return new V1ProblemError({
     status: response.status,
     code: str(body?.code),
     detail: str(body?.detail),
     requestId: str(body?.requestId) ?? response.headers.get("x-request-id"),
     actingSent,
+    errors,
+    retryAfter,
   })
 }
 
@@ -180,11 +216,19 @@ async function v1Send(
     req.query
   )}`
 
+  // A JSON body only when the caller passes one (public forms); the other
+  // v1 POST routes used here declare none (no Content-Type, so no 415).
+  const hasBody = method === "POST" && req.body !== undefined
+  if (hasBody) headers["Content-Type"] = "application/json"
+
   let response: Response
   try {
-    // POST without a body: the v1 routes used here declare none (a JSON
-    // body would be ignored; no Content-Type means no 415 either).
-    response = await doFetch(url, { method, headers, cache: "no-store" })
+    response = await doFetch(url, {
+      method,
+      headers,
+      cache: "no-store",
+      ...(hasBody ? { body: JSON.stringify(req.body) } : {}),
+    })
   } catch (error) {
     throw new V1ProblemError({
       status: 0,
@@ -219,7 +263,10 @@ export async function v1DataGet<T>(
   return jsonOf<T>(response, actingIdOf(req.actingCustomerId) !== null)
 }
 
-/** POST (no request body) to a v1 JSON endpoint; throws V1ProblemError. */
+/**
+ * POST to a v1 JSON endpoint (`req.body` as JSON when given, else no body);
+ * throws V1ProblemError.
+ */
 export async function v1DataPost<T>(
   deps: V1DataClientDeps,
   req: V1DataRequest
@@ -297,5 +344,50 @@ export function dropActingIfConfirmedStale(
     } catch (error) {
       if (isV1ProblemError(error) && error.status === 404) await drop()
     }
+  }
+}
+
+/**
+ * For resources the acting header NARROWS by visibility (the product page,
+ * the configurator): a 404 with the header usually means "the acting
+ * customer may not see this product", which must stay a 404 (GraphQL
+ * filtered by the acting customer's tags / price lists too), NOT silently
+ * become the agent's own view. So:
+ *   403 with the header        -> retry once without it (acting no longer
+ *                                 allowed: the agent's own view, as
+ *                                 withActingRetry);
+ *   404 with the header        -> `isActingStale()` (GET /me with the
+ *                                 header): only when the acting customer
+ *                                 itself is gone (true) is the cookie
+ *                                 dropped and the call retried without the
+ *                                 header; otherwise the 404 stands;
+ *   anything else              -> thrown unchanged.
+ */
+export async function withActingRetryIfStale<T>(
+  actingCustomerId: number | null,
+  call: (actingCustomerId: number | null) => Promise<T>,
+  isActingStale: () => Promise<boolean>,
+  dropActing: () => Promise<void> | void
+): Promise<T> {
+  if (actingCustomerId === null) return call(null)
+  try {
+    return await call(actingCustomerId)
+  } catch (error) {
+    if (!isV1ProblemError(error) || !error.actingSent) throw error
+    if (error.status === 403) return call(null)
+    if (error.status !== 404) throw error
+    let stale = false
+    try {
+      stale = await isActingStale()
+    } catch {
+      stale = false
+    }
+    if (!stale) throw error
+    try {
+      await dropActing()
+    } catch {
+      // Best effort (cookies are read-only in a render).
+    }
+    return call(null)
   }
 }

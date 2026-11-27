@@ -3,6 +3,10 @@
 import { gql } from "@apollo/client"
 import { sdk } from "@lib/config"
 import { subscribeToMailerlite } from "./mailerlite"
+import { isV1ProblemError } from "@lib/furnisystems-sdk/client/v1-data"
+import { emailSignupErrorCode } from "@lib/furnisystems-sdk/modules/pages/v1-adapter"
+import { runCmsCall, v1SessionGet, v1SessionPost } from "./cms-v1"
+import { describeV1Error } from "./me-v1"
 
 export interface EmailSignupState {
   success: boolean
@@ -45,9 +49,31 @@ const SEND_EMAIL_SIGNUP_MUTATION = gql`
   }
 `
 
-// Defaults to "email" (the mutation path, no client-side third-party call,
-// no env-var dependency) on any failure, not-found, or type mismatch.
+// Defaults to "email" (the server-side notification path, no client-side
+// third-party call, no env-var dependency) on any failure, not-found, or
+// type mismatch.
+//
+// v1: GET /catalog/content-blocks/:id with the session's bearer (a block of
+// a private CMS page is 404 for a guest; `config` never carries the
+// server-side notify_email). GraphQL for legacy-only sessions / a v1 401.
 async function getSignupDelivery(blockId: number): Promise<SignupDelivery> {
+  const block = await runCmsCall<{ type?: string; config?: unknown } | null>(
+    `content block ${blockId}`,
+    {
+      v1: (bearer) => v1SessionGet(bearer, `/catalog/content-blocks/${blockId}`),
+      graphql: () => getSignupBlockGraphql(blockId),
+      onError: () => null,
+    }
+  )
+  if (!block || block.type !== "email_signup") return "email"
+  const config = block.config as Record<string, unknown> | null | undefined
+  return config?.delivery === "mailerlite" ? "mailerlite" : "email"
+}
+
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
+async function getSignupBlockGraphql(
+  blockId: number
+): Promise<{ type?: string; config?: unknown } | null> {
   try {
     const client = sdk.getApolloClient()
     const { data } = await client.query({
@@ -56,20 +82,10 @@ async function getSignupDelivery(blockId: number): Promise<SignupDelivery> {
       fetchPolicy: "no-cache",
       errorPolicy: "all",
     })
-
-    const block = data?.findUniqueContentBlock as
-      | { type?: string; config?: Record<string, unknown> | null }
-      | null
-      | undefined
-
-    if (!block || block.type !== "email_signup") {
-      return "email"
-    }
-
-    return block.config?.delivery === "mailerlite" ? "mailerlite" : "email"
+    return (data?.findUniqueContentBlock as { type?: string; config?: unknown } | null) ?? null
   } catch (error) {
     console.error("Error resolving email-signup block delivery:", error)
-    return "email"
+    return null
   }
 }
 
@@ -127,6 +143,54 @@ export async function subscribeEmailSignup(
     return result
   }
 
+  // v1: POST /public/email-signup { contentBlockId, email, language? }; the
+  // recipient is resolved on the server (never sent from here). A v1 401
+  // re-routes to the GraphQL mutation; other failures map to the existing
+  // error codes (400 email -> invalid-email, 429 / 503 -> later, else
+  // generic): emailSignupErrorCode.
+  type SignupOutcome = EmailSignupState | { graphql: true }
+  const outcome = await runCmsCall<SignupOutcome>(`email signup ${blockId}`, {
+    v1: async (bearer) => {
+      await v1SessionPost(bearer, "/public/email-signup", {
+        contentBlockId: blockId,
+        email,
+        // Optional; only a well-formed code (backend LANGUAGE_RE), else omitted.
+        ...(language && /^[a-zA-Z_-]{1,10}$/.test(language)
+          ? { language: language.toLowerCase() }
+          : {}),
+      })
+      return { success: true }
+    },
+    graphql: async () => ({ graphql: true as const }),
+    onError: (error) => {
+      const errorCode = isV1ProblemError(error)
+        ? emailSignupErrorCode(error)
+        : emailSignupErrorCode({ status: 0 })
+      if (!isV1ProblemError(error)) {
+        console.error("Error sending email signup:", describeV1Error(error))
+      }
+      return {
+        success: false,
+        error:
+          errorCode === "invalid-email"
+            ? "Please enter a valid email address."
+            : errorCode === "later"
+            ? "An error occurred. Please try again later."
+            : "Something went wrong. Please try again.",
+        errorCode,
+      }
+    },
+  })
+  if (!("graphql" in outcome)) return outcome
+  return sendEmailSignupGraphql(blockId, email, language)
+}
+
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
+async function sendEmailSignupGraphql(
+  blockId: number,
+  email: string,
+  language: string | undefined
+): Promise<EmailSignupState> {
   try {
     const client = sdk.getApolloClient()
     const { data } = await client.mutate({

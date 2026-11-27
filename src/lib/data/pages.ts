@@ -3,7 +3,56 @@ import { unstable_cache } from "next/cache"
 import { sdk } from "@lib/config"
 import { ContentBlock, Page, PageResult } from "@lib/furnisystems-sdk"
 import type { GridPage } from "@modules/home/components/content-block/types"
+import { isV1ProblemError } from "@lib/furnisystems-sdk/client/v1-data"
+import {
+  classifyV1PageError,
+  mapV1CmsPage,
+  mapV1ListData,
+  pageResultForOutcome,
+} from "@lib/furnisystems-sdk/modules/pages/v1-adapter"
+import { isSupportedLanguage } from "@lib/i18n/config"
 import { getAuthHeaders } from "./cookies"
+import {
+  cmsRequestContext,
+  runCmsCall,
+  seg,
+  v1Lang,
+  v1SessionGet,
+  v1SharedGet,
+} from "./cms-v1"
+import { describeV1Error } from "./me-v1"
+
+/*
+ * CMS pages on REST v1 (slice 5). Transport per ./v1-transport-rule.ts.
+ *
+ * unstable_cache is used ONLY for the GUEST answer (no bearer, no acting
+ * header, no BFF headers: v1SharedGet) of by-code / by-slug / by-path, which
+ * is identical for every guest and never contains a private page (the
+ * backend answers 404 / 401 PRIVATE_PAGE instead). Anything fetched with a
+ * session bearer is per request (React `cache` at most). The GraphQL path
+ * (legacy-only sessions) keeps its own, always-anonymous cached lookups
+ * under its own keys: its blocks carry `grid_product_containers`, the v1
+ * ones do not, so the two must never share an entry.
+ *
+ * Private pages (getPageByPath / getPageByPathAuthed):
+ *   guest       v1 401 PRIVATE_PAGE -> the PRIVATE_PAGE sentinel, so
+ *               [...slug]/page.tsx redirects to /<lang>/account?returnTo=...
+ *               exactly as for the GraphQL PRIVATE_PAGE error (the login flow
+ *               validates returnTo: same-origin paths only). 404 -> null
+ *               (not-found). Today's deployed backend still answers 404 for a
+ *               guest on a private page (=> not-found until the backend's
+ *               401 PRIVATE_PAGE change is deployed).
+ *   v1 session  after the sentinel, getPageByPathAuthed makes the lookup
+ *               WITH the bearer (a portal session sees private pages),
+ *               uncached, shared by the layout and the page through React
+ *               cache. Until the backend's 401 change is deployed a private
+ *               page is a guest 404 -> not-found for EVERYONE, logged-in
+ *               users included (deploy order: backend first), and those
+ *               guest 404s are cached without TTL: fire the `cms-pages`
+ *               revalidate (or bump V1_PAGE_SCHEMA_VERSION) after it.
+ *   other 401   GraphQL for that call. Other v1 failures: no page (not-found),
+ *               never cached.
+ */
 
 const PAGE_CACHE_TAG = "cms-pages"
 
@@ -16,11 +65,56 @@ const PAGE_CACHE_TAG = "cms-pages"
 // serve pre-change shape forever. Changing this suffix forces fresh keys.
 // Bumped 2026-09-28 for ContentBlock.grid_product_containers.
 const CONTENT_BLOCK_SCHEMA_VERSION = "cb2"
+/** Version of the v1 (guest) cache entries; separate keys from GraphQL's. */
+const V1_PAGE_SCHEMA_VERSION = "v1p1"
+
+/**
+ * One guest v1 page lookup for unstable_cache: 404 -> null and 401
+ * PRIVATE_PAGE -> the sentinel are cacheable answers; anything else THROWS
+ * (5xx, 429, network: never cached).
+ */
+async function sharedPageLookup(
+  path: string,
+  query: Record<string, string>
+): Promise<PageResult | null> {
+  try {
+    return mapV1CmsPage(await v1SharedGet(path, query))
+  } catch (error) {
+    if (isV1ProblemError(error)) {
+      const known = pageResultForOutcome(classifyV1PageError(error.status, error.code))
+      if (known !== undefined) return known
+    }
+    throw error
+  }
+}
+
+/** Guest lookups by code / slug never yield the sentinel (other routes 404). */
+const asPage = (r: PageResult | null): Page | null =>
+  r && !("restricted" in r) ? (r as Page) : null
 
 export const getPageByCode = async (
   code: string,
   language?: string
 ): Promise<Page | null> => {
+  const ctx = await cmsRequestContext()
+  if (ctx.transport === "graphql") return getPageByCodeGraphql(code, language)
+  if (!isSupportedLanguage(language)) return null
+  const lang = v1Lang(language)
+  const cached = unstable_cache(
+    async () =>
+      sharedPageLookup(`/catalog/pages/by-code/${seg(code)}`, { language: lang }),
+    [`v1-page-code-${code}-${lang}-${V1_PAGE_SCHEMA_VERSION}`],
+    { tags: [PAGE_CACHE_TAG] }
+  )
+  try {
+    return asPage(await cached())
+  } catch (error) {
+    console.error(`Error fetching page with code "${code}":`, describeV1Error(error))
+    return null
+  }
+}
+
+function getPageByCodeGraphql(code: string, language?: string): Promise<Page | null> {
   const cached = unstable_cache(
     async () => {
       try {
@@ -41,6 +135,25 @@ export const getPageBySlug = async (
   slug: string,
   language?: string
 ): Promise<Page | null> => {
+  const ctx = await cmsRequestContext()
+  if (ctx.transport === "graphql") return getPageBySlugGraphql(slug, language)
+  if (!isSupportedLanguage(language)) return null
+  const lang = v1Lang(language)
+  const cached = unstable_cache(
+    async () =>
+      sharedPageLookup(`/catalog/pages/by-slug/${seg(slug)}`, { language: lang }),
+    [`v1-page-slug-${slug}-${lang}-${V1_PAGE_SCHEMA_VERSION}`],
+    { tags: [PAGE_CACHE_TAG] }
+  )
+  try {
+    return asPage(await cached())
+  } catch (error) {
+    console.error(`Error fetching page with slug "${slug}":`, describeV1Error(error))
+    return null
+  }
+}
+
+function getPageBySlugGraphql(slug: string, language?: string): Promise<Page | null> {
   const cached = unstable_cache(
     async () => {
       try {
@@ -57,10 +170,46 @@ export const getPageBySlug = async (
   return cached()
 }
 
+/**
+ * The page at `path`: ALWAYS the anonymous lookup, as before (v1: the
+ * cached guest answer; legacy-only sessions: the cached anonymous GraphQL
+ * lookup). A private page comes back as the PRIVATE_PAGE sentinel; the
+ * callers ([...slug]/page.tsx, the (main) layout) then make the
+ * authenticated lookup (getPageByPathAuthed) or redirect to login, exactly
+ * as for the GraphQL PRIVATE_PAGE error. Deliberately no bearer call here:
+ * the layout runs this on EVERY route (products, categories, ...), so a
+ * per-session lookup would add an uncached backend call to each page view.
+ */
 export const getPageByPath = async (
   path: string,
   language: string
 ): Promise<PageResult | null> => {
+  const ctx = await cmsRequestContext()
+  if (ctx.transport === "graphql") return getPageByPathGraphql(path, language)
+  if (!isSupportedLanguage(language)) return null
+  const lang = v1Lang(language)
+  const cached = unstable_cache(
+    async () => sharedPageLookup("/catalog/pages/by-path", { path, language: lang }),
+    [`v1-page-path-${path}-${lang}-${V1_PAGE_SCHEMA_VERSION}`],
+    { tags: [PAGE_CACHE_TAG] }
+  )
+  try {
+    return await cached()
+  } catch (error) {
+    if (isV1ProblemError(error) && error.status === 401) {
+      // Not PRIVATE_PAGE (handled inside): cannot happen without a bearer;
+      // the old anonymous lookup then.
+      return getPageByPathGraphql(path, language)
+    }
+    console.error(`Error fetching page with path "${path}":`, describeV1Error(error))
+    return null
+  }
+}
+
+function getPageByPathGraphql(
+  path: string,
+  language: string
+): Promise<PageResult | null> {
   const cached = unstable_cache(
     async () => {
       try {
@@ -77,21 +226,45 @@ export const getPageByPath = async (
   return cached()
 }
 
-// Deliberately NOT unstable_cache-wrapped: this is the authenticated retry
+// Deliberately NOT unstable_cache-wrapped: this is the authenticated lookup
 // for private pages (see [...slug]/page.tsx). Its result can carry full
-// private page content, and unstable_cache's Data Cache entry for a given
-// path/language is shared across all visitors regardless of auth state -
-// caching an authed response here would leak private content to the next
-// anonymous visitor of the same path. getPageByPath above stays the cached,
-// always-anonymous lookup used by every other caller.
+// private page content, and an unstable_cache Data Cache entry is shared
+// across all visitors regardless of auth state.
 //
 // Wrapped in React's cache() for per-request memoization only (request-scoped,
-// reset every render pass, never shared across users or requests - unlike
-// unstable_cache's Data Cache). Both the shared layout (chromeless detection)
-// and the page component call this for the same path/language when a page is
-// private; cache() dedupes that to a single GraphQL fetch per request.
+// never shared across users or requests). Both the shared layout (chromeless
+// detection) and the page component call this for the same path/language.
+//
+// v1: GET /catalog/pages/by-path with the session's bearer. GraphQL
+// (legacy-only sessions, a v1 session without a bearer, a v1 401 other than
+// PRIVATE_PAGE): the token-authenticated GraphQL lookup, unchanged.
 export const getPageByPathAuthed = cache(
   async (path: string, language: string): Promise<PageResult | null> => {
+    const ctx = await cmsRequestContext()
+    if (ctx.transport === "v1" && ctx.bearer && isSupportedLanguage(language)) {
+      try {
+        return mapV1CmsPage(
+          await v1SessionGet(ctx.bearer, "/catalog/pages/by-path", {
+            path,
+            language: v1Lang(language),
+          })
+        )
+      } catch (error) {
+        const outcome = isV1ProblemError(error)
+          ? classifyV1PageError(error.status, error.code)
+          : "error"
+        const known = pageResultForOutcome(outcome)
+        if (known !== undefined) return known
+        if (outcome !== "fallback") {
+          console.error(
+            `Error fetching private page with path "${path}":`,
+            describeV1Error(error)
+          )
+          return null
+        }
+        console.warn(`[cms-v1] page ${path}: 401, using the GraphQL path`)
+      }
+    }
     try {
       const authHeaders: Record<string, string> = {
         ...(await getAuthHeaders()),
@@ -103,6 +276,61 @@ export const getPageByPathAuthed = cache(
     }
   }
 )
+
+/** v1 `ids` bound (cmsSchemas MAX_PAGE_IDS). */
+const MAX_PAGE_IDS = 100
+const PAGE_ID_RE = /^[A-Za-z0-9_-]{1,64}$/
+/** Backend CHILD_PAGES_MAX. */
+const MAX_CHILD_TAKE = 1000
+
+/**
+ * page_grid cards by id, in the order of `ids` (session-dependent: private
+ * pages are only in a portal session's answer). Per request, never cached.
+ */
+async function getPagesByIds(ids: string[], language: string): Promise<GridPage[]> {
+  return runCmsCall<GridPage[]>("pages by ids", {
+    v1: async (bearer) => {
+      if (!isSupportedLanguage(language)) return []
+      const valid = ids.filter((id) => PAGE_ID_RE.test(id))
+      const out: GridPage[] = []
+      for (let i = 0; i < valid.length; i += MAX_PAGE_IDS) {
+        const chunk = valid.slice(i, i + MAX_PAGE_IDS)
+        out.push(
+          ...mapV1ListData<GridPage>(
+            await v1SessionGet(bearer, "/catalog/pages", {
+              ids: chunk.join(","),
+              language: v1Lang(language),
+            })
+          )
+        )
+      }
+      return out
+    },
+    graphql: () => sdk.pages.getPagesByIds(ids, language),
+    onError: () => [],
+  })
+}
+
+/** Published children of a page, by arrangement (session-dependent). */
+async function getChildPages(
+  parentId: string,
+  language: string,
+  take: number
+): Promise<GridPage[]> {
+  return runCmsCall<GridPage[]>(`children of ${parentId}`, {
+    v1: async (bearer) => {
+      if (!isSupportedLanguage(language) || !PAGE_ID_RE.test(parentId)) return []
+      return mapV1ListData<GridPage>(
+        await v1SessionGet(bearer, `/catalog/pages/${seg(parentId)}/children`, {
+          language: v1Lang(language),
+          take: Math.min(Math.max(1, Math.floor(take)), MAX_CHILD_TAKE),
+        })
+      )
+    },
+    graphql: () => sdk.pages.getChildPages(parentId, language, take),
+    onError: () => [],
+  })
+}
 
 // When a page_grid block has show_tags enabled we load the ENTIRE in-scope set
 // (no max_pages cap) so the pill row and server-side tag filter operate over all
@@ -144,10 +372,7 @@ export async function enrichContentBlocksWithPages(
   let pageMap = new Map<string, GridPage>()
   if (allPageIds.size > 0) {
     try {
-      const pages = await sdk.pages.getPagesByIds(
-        Array.from(allPageIds),
-        language
-      )
+      const pages = await getPagesByIds(Array.from(allPageIds), language)
       for (const page of pages) {
         pageMap.set(page.id, page)
       }
@@ -188,11 +413,7 @@ export async function enrichContentBlocksWithPages(
     await Promise.all(
       Array.from(childTakeByParent.entries()).map(async ([parentId, take]) => {
         try {
-          const children = await sdk.pages.getChildPages(
-            parentId,
-            language,
-            take
-          )
+          const children = await getChildPages(parentId, language, take)
           childPagesByParent.set(parentId, children)
         } catch (error) {
           console.error(

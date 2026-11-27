@@ -16,6 +16,7 @@
     "translations:download": "node scripts/download-translations.js",
     "verify:i18n-overrides": "sucrase-node scripts/verify-i18n-overrides.ts",
     "verify:discount": "sucrase-node scripts/verify-apply-discount.ts",
+    "verify:cms-v1": "node --conditions=react-server -r sucrase/register scripts/verify-cms-v1.ts",
     "verify:catalog-v1": "node --conditions=react-server -r sucrase/register scripts/verify-catalog-v1.ts",
     "verify:identity-v1": "node --conditions=react-server -r sucrase/register scripts/verify-identity-v1.ts",
     "verify:fabric-conditions": "sucrase-node scripts/verify-fabric-conditions.ts",

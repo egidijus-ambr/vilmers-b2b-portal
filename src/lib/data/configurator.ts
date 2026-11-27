@@ -5,6 +5,12 @@ import { unstable_noStore } from "next/cache"
 import { getActingCustomer } from "@lib/data/acting-customer"
 import { getDefaultPriceListId } from "@lib/data/default-pricelist"
 import { getPrimaryPriceListId } from "@configurator/lib/pricelist"
+import { applyPaletteColors } from "@configurator/lib/apply-palette-colors"
+import { isV1ProblemError } from "@lib/furnisystems-sdk/client/v1-data"
+import { v1ConfiguratorData } from "./catalog-v1"
+import { describeV1Error, v1GetAuthSession } from "./me-v1"
+import { getV1RequestContext } from "./v1-transport"
+import { selectConfiguratorTransport } from "./v1-transport-rule"
 
 export type ConfiguratorDataResult = {
   data: any
@@ -13,21 +19,24 @@ export type ConfiguratorDataResult = {
 }
 
 /**
- * Server-side wrapper for sdk.products.getConfiguratorData so the GraphQL
- * request carries the cookie auth token. The backend masks palette fields
- * (name / color_codes / color_overrides) for unauthenticated callers, and a
- * masked null means "all colours" to the client, so this must not run in the
- * browser. `paletteIds` still comes from the client so an agent acting for a
- * customer gets that customer's palettes.
+ * Configurator data, server-side (never in the browser).
  *
- * The price list is NOT accepted from the client: it is the acting
- * customer's primary list (direct, else group) resolved from the session, or
- * the shop's default list when there is no acting customer / no assigned
- * list. The id actually used is returned so the client prices against the
- * same list the rows were fetched for. A failure to resolve the acting
- * customer propagates (the hook shows an error) rather than silently
- * falling back to the default list, which would show a real customer the
- * wrong prices.
+ * v1 (GET /catalog/products/:id/configurator; ./v1-transport-rule.ts):
+ * the server applies the listing visibility rule (a product the caller may
+ * not see is 404) and chooses the price list (`priceListId`) and the
+ * palettes (`paletteIds`). Nothing price- or palette-related is sent: the
+ * client's `paletteIds` argument is ignored on this path and the server's
+ * list is used for applyPaletteColors. `data` keeps the GraphQL shape.
+ *
+ * GraphQL (unchanged): legacy-only sessions, a v1 401, and - the one extra
+ * condition, selectConfiguratorTransport - a login with prices disabled
+ * (`features.prices === false`): v1 would serve it null amounts that the
+ * configurator and add-to-cart cannot price. There the price list is the
+ * acting customer's primary list or the shop default and `paletteIds`
+ * comes from the client, exactly as before.
+ *
+ * Failures (403 CONFIGURATOR_DISABLED, 404, 429, 5xx, network) return null:
+ * the hook shows "configurator-data-load-error" (fail closed).
  */
 export async function getConfiguratorDataAction(
   productContainerId: number,
@@ -35,6 +44,67 @@ export async function getConfiguratorDataAction(
   paletteIds?: number[]
 ): Promise<ConfiguratorDataResult | null> {
   unstable_noStore()
+  const ctx = await getV1RequestContext()
+  if (ctx.transport === "graphql") {
+    return getConfiguratorDataGraphql(productContainerId, language, paletteIds)
+  }
+
+  let pricesFeature: boolean | null = null
+  if (ctx.bearer) {
+    try {
+      const session = await v1GetAuthSession(ctx.bearer)
+      pricesFeature = session.features?.prices ?? null
+    } catch (error) {
+      if (isV1ProblemError(error) && error.status === 401) {
+        console.warn("[configurator] auth/session 401, using the GraphQL path")
+        return getConfiguratorDataGraphql(productContainerId, language, paletteIds)
+      }
+      console.error("[configurator] auth/session failed:", describeV1Error(error))
+      return null
+    }
+  }
+  if (selectConfiguratorTransport(ctx.transport, pricesFeature) === "graphql") {
+    return getConfiguratorDataGraphql(productContainerId, language, paletteIds)
+  }
+
+  try {
+    const body = await v1ConfiguratorData(ctx.bearer, {
+      productContainerId,
+      language: language ?? "en",
+    })
+    if (body.priceListId == null) {
+      // Only a login without prices gets null; the session said otherwise
+      // (changed meanwhile): the unchanged GraphQL path can still price it.
+      console.warn("[configurator] v1 priceListId null, using the GraphQL path")
+      return getConfiguratorDataGraphql(productContainerId, language, paletteIds)
+    }
+    const data = applyPaletteColors(body.data ?? null, body.paletteIds ?? [])
+    if (!data) return null
+    return { data, priceListId: body.priceListId }
+  } catch (error) {
+    if (isV1ProblemError(error) && error.status === 401) {
+      console.warn("[configurator] 401, using the GraphQL path")
+      return getConfiguratorDataGraphql(productContainerId, language, paletteIds)
+    }
+    console.error(
+      `[configurator] product ${productContainerId} failed:`,
+      describeV1Error(error)
+    )
+    return null
+  }
+}
+
+/**
+ * GraphQL path (legacy sessions / v1 401 / prices disabled; see
+ * v1-transport-rule.ts). A failure to resolve the acting customer
+ * propagates (the hook shows an error) rather than silently falling back to
+ * the default list, which would show a real customer the wrong prices.
+ */
+async function getConfiguratorDataGraphql(
+  productContainerId: number,
+  language?: string,
+  paletteIds?: number[]
+): Promise<ConfiguratorDataResult | null> {
   const actingCustomer = await getActingCustomer()
   const priceListId =
     getPrimaryPriceListId(actingCustomer) ?? (await getDefaultPriceListId())
