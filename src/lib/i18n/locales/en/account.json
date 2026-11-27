@@ -94,7 +94,8 @@
     "fetch-failed": "Could not load your pricelist data. Please try again later.",
     "unexpected": "Something went wrong while generating the pricelist. Please try again.",
     "not-found": "The pricelist export is not available.",
-    "forbidden": "You do not have access to this pricelist file."
+    "forbidden": "You do not have access to this pricelist file.",
+    "not-available": "Prices are not available for your login, so the pricelist cannot be exported."
   },
   "breadcrumb-fabric-palettes": "Fabric Palette",
   "breadcrumb-home": "Home",

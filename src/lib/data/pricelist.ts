@@ -12,7 +12,9 @@ const GET_PRICE_LIST_NAME = gql`
 
 /**
  * Fetches a pricelist's display name, for the pricelist XLSX export's Info
- * sheet (see src/app/api/pricelist/export/route.ts). Deliberately not
+ * sheet (see src/app/api/pricelist/export/route.ts). GraphQL arm of the
+ * export only (legacy sessions, a v1 401): on v1 the name comes with
+ * GET /me/pricelist-export (src/lib/util/pricelist-export-source.ts). Deliberately not
  * cached like getDefaultPriceListId — this is keyed per pricelist ID rather
  * than a single global value, and the export is already a synchronous,
  * infrequent, one-shot request.

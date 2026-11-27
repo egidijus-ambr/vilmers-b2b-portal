@@ -94,7 +94,8 @@
     "fetch-failed": "Ihre Preislistendaten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
     "unexpected": "Beim Erstellen der Preisliste ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
     "not-found": "Der Preislisten-Export ist nicht verfügbar.",
-    "forbidden": "Sie haben keinen Zugriff auf diese Preislistendatei."
+    "forbidden": "Sie haben keinen Zugriff auf diese Preislistendatei.",
+    "not-available": "Für Ihr Konto sind keine Preise freigegeben, daher kann die Preisliste nicht exportiert werden."
   },
   "breadcrumb-fabric-palettes": "Stoffpalette",
   "breadcrumb-home": "Startseite",

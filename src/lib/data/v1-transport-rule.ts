@@ -9,7 +9,10 @@
  * selector, the acting customer, the current user and the "show all
  * products" gate, the claims link, and (slices 8 / 9) the carts, cart
  * lines and cart offers (./carts.ts, ./offer-pdf.ts via ./carts-v1.ts; the
- * checkout's createNewOrder stays on GraphQL over the same rows).
+ * checkout's createNewOrder stays on GraphQL over the same rows), and
+ * (slice 11) the price-list export data (GET /me/pricelist-export,
+ * src/lib/util/pricelist-export-source.ts; the portal still builds the
+ * workbook).
  *
  * Caller-independent reads (category menu, categories by id, the default
  * price list, and the settings values that do not depend on the session:
@@ -88,6 +91,16 @@
  *      ./carts.ts and ./offer-pdf.ts (runCartCall in ./carts-v1.ts then
  *      only needs the v1 arm) and the SDK modules sdk.cart and
  *      sdk.offerPdf.
+ *   8. slice 11 (price-list export data, GET /me/pricelist-export):
+ *      src/lib/util/pricelist-export-source.ts resolveExportSource: drop the
+ *      `graphql` arm (graphqlSource); src/lib/util/pricelist-export-jobs.ts:
+ *      make `prefetched` required and delete computeFingerprintResult, the
+ *      fpMemo / fpInFlight state and the joined-fetch re-query;
+ *      src/lib/util/pricelist-export-context.ts localPriceListId /
+ *      localTagIds; src/lib/data/pricelist.ts getPriceListName; the SDK
+ *      products getSofaPricelistExportProducts (+ its document, its
+ *      buildComponentPricedBranch helper, and buildWhereFilter if nothing
+ *      else uses it).
  *
  * Pure, no imports: unit-tested by scripts/verify-catalog-v1.ts and
  * scripts/verify-identity-v1.ts.

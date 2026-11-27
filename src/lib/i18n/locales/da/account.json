@@ -94,7 +94,8 @@
     "fetch-failed": "Dine prislistedata kunne ikke indlæses. Prøv igen senere.",
     "unexpected": "Der opstod en fejl under oprettelsen af prislisten. Prøv igen.",
     "not-found": "Prislisteeksporten er ikke tilgængelig.",
-    "forbidden": "Du har ikke adgang til denne prislistefil."
+    "forbidden": "Du har ikke adgang til denne prislistefil.",
+    "not-available": "Priser er ikke tilgængelige for dit login, så prislisten kan ikke eksporteres."
   },
   "breadcrumb-fabric-palettes": "Stofpalette",
   "breadcrumb-home": "Hjem",

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { resolveExportContext } from "@lib/util/pricelist-export-context"
 import {
-  combosEqual,
   getJob,
+  jobBelongsTo,
   openJobFile,
 } from "@lib/util/pricelist-export-jobs"
 
@@ -11,9 +11,11 @@ export const runtime = "nodejs"
 /**
  * GET /api/pricelist/export/file?jobId=
  *
- * Re-derives (priceListId, tagIds) from the session customer and requires
- * an exact match with the job's combo (language comes from the job), so a
- * leaked/guessed jobId cannot hand one customer another's prices.
+ * Re-resolves the customer in scope (and its cover lines) from the session
+ * and requires the job to have been built for exactly that customer
+ * (jobBelongsTo), so a leaked/guessed jobId cannot hand one customer
+ * another's prices. The price list / tags are not re-derived: on v1 only
+ * the backend knows them (the job carries the answer's values).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -24,9 +26,7 @@ export async function GET(request: NextRequest) {
     if (!job || job.status !== "ready") {
       return NextResponse.json({ error: "not_found" }, { status: 404 })
     }
-    if (
-      !combosEqual(job.combo, { ...resolved.context, language: job.combo.language })
-    ) {
+    if (!jobBelongsTo(job.combo, resolved.context)) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 })
     }
 

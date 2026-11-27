@@ -24,6 +24,7 @@
     "verify:palette-colors": "sucrase-node scripts/verify-palette-colors.ts",
     "verify:price-overrides": "sucrase-node scripts/verify-price-overrides.ts",
     "verify:pricelist-export-price-rows": "sucrase-node scripts/verify-pricelist-export-price-rows.ts",
+    "verify:pricelist-export-v1": "node --conditions=react-server -r sucrase/register scripts/verify-pricelist-export-v1.ts",
     "verify:pricelist-valid-from": "sucrase-node scripts/verify-pricelist-valid-from.ts",
     "verify:show-all-products-gate": "sucrase-node scripts/verify-show-all-products-gate.ts",
     "verify:v1-session": "node --conditions=react-server -r sucrase/register scripts/verify-v1-session.ts"

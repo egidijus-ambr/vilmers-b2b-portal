@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { normalizeLanguage } from "@lib/i18n/config"
 import { resolveExportContext } from "@lib/util/pricelist-export-context"
+import { resolveExportSource } from "@lib/util/pricelist-export-source"
+import { isExportProblemError } from "@lib/util/pricelist-export-v1"
 import {
   ExportFetchError,
   ExportNoPricesError,
@@ -16,8 +18,11 @@ export const runtime = "nodejs"
  * build and returns `{ status: "ready" | "pending", jobId }`. Poll
  * /api/pricelist/export/status, then fetch /api/pricelist/export/file.
  *
- * The price list and tag set are derived from the session customer -- the
- * client only supplies the language. The old synchronous GET was removed:
+ * The customer, price list and tag set are derived from the session -- the
+ * client only supplies the language. On v1 sessions the backend chooses
+ * them (GET /me/pricelist-export) and the file is keyed on its answer; on
+ * legacy sessions (and a v1 401) they are derived here and read on GraphQL
+ * (@lib/util/pricelist-export-source). The old synchronous GET was removed:
  * a cold build takes ~2 minutes, which is not viable as one request.
  *
  * Every failure returns a machine-readable `error` code; the client maps
@@ -38,9 +43,13 @@ export async function POST(request: NextRequest) {
     const language = normalizeLanguage(rawLanguage)
 
     try {
-      const result = await startExport({ ...resolved.context, language })
+      const source = await resolveExportSource(resolved.context, language)
+      const result = await startExport(source.combo, source.prefetched)
       return NextResponse.json(result)
     } catch (error) {
+      if (isExportProblemError(error)) {
+        return NextResponse.json({ error: error.code }, { status: error.status })
+      }
       if (error instanceof ExportFetchError) {
         return NextResponse.json({ error: "fetch_failed" }, { status: 502 })
       }

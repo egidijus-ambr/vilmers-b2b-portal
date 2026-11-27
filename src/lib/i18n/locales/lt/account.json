@@ -94,7 +94,8 @@
     "fetch-failed": "Nepavyko įkelti jūsų kainoraščio duomenų. Bandykite dar kartą vėliau.",
     "unexpected": "Kuriant kainoraštį įvyko klaida. Bandykite dar kartą.",
     "not-found": "Kainoraščio eksportas nepasiekiamas.",
-    "forbidden": "Neturite prieigos prie šio kainoraščio failo."
+    "forbidden": "Neturite prieigos prie šio kainoraščio failo.",
+    "not-available": "Jūsų paskyrai kainos nerodomos, todėl kainoraščio eksportuoti negalima."
   },
   "breadcrumb-fabric-palettes": "Audinių paletė",
   "breadcrumb-home": "Pradžia",

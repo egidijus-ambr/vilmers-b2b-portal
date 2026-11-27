@@ -21,6 +21,11 @@ import { fetchFabricCategoryLabels, type FabricCategoryLabels } from "@lib/fabri
 import { getPricelistSettings } from "@lib/data/pricelist-settings"
 import { countExportPriceRows } from "@lib/util/pricelist-export-price-rows"
 import {
+  comboIdentity,
+  comboKeyParts,
+  jobBelongsTo,
+} from "@lib/util/pricelist-export-v1"
+import {
   createImageFetchReport,
   isImageFetchDegraded,
   TRANSIENT_FAILURE_TOLERANCE,
@@ -29,11 +34,15 @@ import {
 /**
  * Shared cache + async job registry for the pricelist XLSX export.
  *
- * The file depends only on (theme, workbook code version, price list id,
- * customer tag-id set, language, DB data) -- nothing per-customer -- so one
- * built file serves every customer with the same combo. The DB-data part is
- * covered by `dataFingerprint`, a hash of the exact products payload the
- * workbook is built from (plus the price list name).
+ * The file is keyed on (theme, workbook code version, customer id, price
+ * list id, customer tag-id set, language, cover, DB data). On v1 the
+ * customer / price list / tags are the ones the SERVER chose (the answer of
+ * GET /me/pricelist-export, ./pricelist-export-source.ts), never values the
+ * portal computed; on the GraphQL arm they are the local ones. The
+ * customer id makes files per customer (v1: the server decides visibility
+ * for that customer, so two customers' files are never shared). The DB-data
+ * part is covered by `dataFingerprint`, a hash of the exact products payload
+ * the workbook is built from (plus the price list name).
  *
  * Production runs ONE portal process, so local disk + process memory is
  * sufficient. Process-wide state lives on `globalThis` (same pattern as a
@@ -91,6 +100,9 @@ export type JobStatus = "queued" | "running" | "ready" | "error"
 export type JobStage = "images" | "building"
 
 export interface ExportCombo {
+  /** The customer the data was exported for (v1: the answer's `customerId`). */
+  customerId: number
+  /** v1: the answer's `priceListId`; GraphQL arm: the local effective list. */
   priceListId: number
   /** Sorted ascending. */
   tagIds: number[]
@@ -183,12 +195,14 @@ const jobsDir = () => path.join(cacheDir(), "jobs")
 const filePathFor = (key: string) => path.join(cacheDir(), `${key}.xlsx`)
 const metaPathFor = (key: string) => path.join(cacheDir(), `${key}.json`)
 
-const comboId = (c: ExportCombo) =>
-  `${c.priceListId}|${c.tagIds.join(",")}|${c.language}|${JSON.stringify(c.coverLines ?? [])}`
+const comboId = (c: ExportCombo) => comboIdentity(c)
 
-export function combosEqual(a: ExportCombo, b: ExportCombo): boolean {
+function combosEqual(a: ExportCombo, b: ExportCombo): boolean {
   return comboId(a) === comboId(b)
 }
+
+/** See ./pricelist-export-v1.ts jobBelongsTo (the file route's check). */
+export { jobBelongsTo }
 
 // ------------------------------------------------------- fingerprinting
 
@@ -231,9 +245,8 @@ function comboBaseParts(
     WORKBOOK_VERSION,
     readBuildId(),
     stableStringify(resolvePricelistWorkbookSettings()),
-    combo.priceListId,
-    combo.tagIds,
-    combo.language,
+    // customer, price list, tags, language (v1: the answer's values).
+    ...comboKeyParts(combo),
     // Cover sheet settings (admin-editable): a change must miss the cache.
     // The cover DATE is the build date; a cached file keeps its build date.
     coverCacheParts(cover),
@@ -517,9 +530,20 @@ export interface StartResult {
 }
 
 /**
+ * The export's data fetched by the caller (v1: GET /me/pricelist-export,
+ * ./pricelist-export-source.ts). startExport then makes no GraphQL read.
+ */
+export interface PrefetchedExportData {
+  products: unknown[]
+  priceListName: string
+}
+
+/**
  * Fetches the products (always -- needed for the fingerprint), then either
  * resolves to an already-cached file or starts/joins a background build.
- * Throws if the product fetch fails (caller maps to `fetch_failed`).
+ * GraphQL arm only (legacy sessions, a v1 401): the v1 arm passes
+ * `prefetched`. Throws if the product fetch fails (caller maps to
+ * `fetch_failed`).
  */
 async function computeFingerprintResult(
   combo: ExportCombo,
@@ -542,6 +566,46 @@ async function computeFingerprintResult(
     throw new ExportFetchError("product query failed")
   }
   const tQuery = Date.now() - t0
+  let nameLookupFailed = false
+  const priceListName = await getPriceListName(combo.priceListId).catch((error) => {
+    console.error(`${LOG} Failed to fetch pricelist name:`, error)
+    nameLookupFailed = true
+    return `Pricelist ${combo.priceListId}`
+  })
+  const result = fingerprintOf(
+    combo,
+    products,
+    priceListName,
+    nameLookupFailed,
+    coverSettings,
+    fabricLabels,
+    `product query ${tQuery}ms`
+  )
+  // A fingerprint built on a fallback price list name or fallback fabric
+  // labels is not trustworthy.
+  if (!nameLookupFailed && !labelsFailed) {
+    state.fpMemo.set(baseId, {
+      fingerprint: result.fingerprint,
+      cacheKey: result.key,
+      checkedAt: result.checkedAt,
+    })
+  }
+  return result
+}
+
+/**
+ * The no-prices gate, fingerprint and cache key of one data payload (both
+ * arms). Throws ExportNoPricesError when the payload carries no price row.
+ */
+function fingerprintOf(
+  combo: ExportCombo,
+  products: any,
+  priceListName: string,
+  nameLookupFailed: boolean,
+  coverSettings: CoverSettingsInput,
+  fabricLabels: FabricCategoryLabels,
+  timing: string
+): FingerprintResult {
   // Checked BEFORE the fingerprint/memo/cache lookup: an empty payload has a
   // deterministic fingerprint, so it must not even be looked up on disk.
   if (countExportPriceRows(products) === 0) {
@@ -551,25 +615,14 @@ async function computeFingerprintResult(
     )
     throw new ExportNoPricesError("no price rows for the requested price list")
   }
-  let nameLookupFailed = false
-  const priceListName = await getPriceListName(combo.priceListId).catch((error) => {
-    console.error(`${LOG} Failed to fetch pricelist name:`, error)
-    nameLookupFailed = true
-    return `Pricelist ${combo.priceListId}`
-  })
   const tFp = Date.now()
   const fingerprint = computeFingerprint(products, priceListName)
   const key = computeKey(combo, coverSettings, fabricLabels, fingerprint)
   const checkedAt = Date.now()
   console.log(
-    `${LOG} fingerprint: product query ${tQuery}ms, hash ${Date.now() - tFp}ms ` +
-      `(total ${Date.now() - t0}ms) key=${key.slice(0, 12)}`
+    `${LOG} fingerprint: ${timing}, hash ${Date.now() - tFp}ms ` +
+      `key=${key.slice(0, 12)}`
   )
-  // A fingerprint built on a fallback price list name or fallback fabric
-  // labels is not trustworthy.
-  if (!nameLookupFailed && !labelsFailed) {
-    state.fpMemo.set(baseId, { fingerprint, cacheKey: key, checkedAt })
-  }
   return { products, priceListName, nameLookupFailed, fingerprint, key, checkedAt }
 }
 
@@ -592,7 +645,16 @@ function readyJobFrom(
   return job
 }
 
-export async function startExport(combo: ExportCombo): Promise<StartResult> {
+/**
+ * `prefetched` (v1): the data came with the combo (whose customer / list /
+ * tags are the server's answer), so the GraphQL memo fast path and the
+ * single-flighted query are skipped: every v1 POST runs the v1 query once,
+ * then the fingerprint decides between the disk cache and a build.
+ */
+export async function startExport(
+  combo: ExportCombo,
+  prefetched?: PrefetchedExportData
+): Promise<StartResult> {
   await ensureInitialized()
   pruneJobs()
   sweepIfDue().catch(() => {})
@@ -610,6 +672,25 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
   const { labels: fabricLabels, degraded: labelsFailed } =
     await fetchFabricCategoryLabels(combo.language)
   const baseId = computeBaseId(combo, coverSettings, fabricLabels)
+
+  if (prefetched) {
+    return startFromResult(
+      combo,
+      fingerprintOf(
+        combo,
+        prefetched.products,
+        prefetched.priceListName,
+        false,
+        coverSettings,
+        fabricLabels,
+        "v1 data"
+      ),
+      coverSettings,
+      fabricLabels,
+      labelsFailed
+    )
+  }
+
   for (const [k, m] of Array.from(state.fpMemo.entries())) {
     if (Date.now() - m.checkedAt >= FINGERPRINT_TTL_MS) state.fpMemo.delete(k)
   }
@@ -654,6 +735,17 @@ export async function startExport(combo: ExportCombo): Promise<StartResult> {
     if (!(joinedFetch && error instanceof ExportNoPricesError)) throw error
     result = await ownFetch()
   }
+  return startFromResult(combo, result, coverSettings, fabricLabels, labelsFailed)
+}
+
+/** Cache hit, a joined build, or a new background build for one fingerprint. */
+async function startFromResult(
+  combo: ExportCombo,
+  result: FingerprintResult,
+  coverSettings: CoverSettingsInput,
+  fabricLabels: FabricCategoryLabels,
+  labelsFailed: boolean
+): Promise<StartResult> {
   const { products, priceListName, nameLookupFailed, fingerprint, key, checkedAt } =
     result
 

@@ -15,6 +15,9 @@ const ERROR_MESSAGE_KEYS: Record<string, string> = {
   unexpected: "pricelist-export.unexpected",
   not_found: "pricelist-export.not-found",
   forbidden: "pricelist-export.forbidden",
+  // 403 from GET /me/pricelist-export (a login without prices); the card is
+  // normally hidden for such a login (getPricelistExportEnabled).
+  not_available: "pricelist-export.not-available",
 }
 
 const POLL_INTERVAL_MS = 2000

@@ -94,7 +94,8 @@
     "fetch-failed": "Impossible de charger les données de votre tarif. Veuillez réessayer plus tard.",
     "unexpected": "Une erreur est survenue lors de la génération du tarif. Veuillez réessayer.",
     "not-found": "L'export du tarif n'est pas disponible.",
-    "forbidden": "Vous n'avez pas accès à ce fichier de tarif."
+    "forbidden": "Vous n'avez pas accès à ce fichier de tarif.",
+    "not-available": "Les prix ne sont pas disponibles pour votre compte : la liste de prix ne peut pas être exportée."
   },
   "breadcrumb-fabric-palettes": "Palette de tissus",
   "breadcrumb-home": "Accueil",

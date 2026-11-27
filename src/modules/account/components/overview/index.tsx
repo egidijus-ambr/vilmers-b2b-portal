@@ -275,7 +275,9 @@ const Overview = (): JSX.Element => {
         <CustomerFilesCard />
 
         {/* Pricelist Export Card — hidden unless the admin setting
-            pricelist_export_enabled is on (default off). When enabled, it's
+            pricelist_export_enabled is on (default off), and on a v1
+            session also for a login without prices (getPricelistExportEnabled:
+            the backend refuses that export with 403). When enabled, it's
             always rendered; a missing pricelist is surfaced as an error
             toast on download, not by hiding the card (getPrimaryPriceListId
             falls back to the group pricelist, so gating on price_listId

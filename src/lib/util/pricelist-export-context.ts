@@ -8,9 +8,19 @@ import { getPricelistSettings } from "@lib/data/pricelist-settings"
 import { resolveCoverLines } from "@lib/util/pricelist-cover-components"
 
 export interface ExportContext {
-  priceListId: number
-  /** Sorted ascending, de-duplicated. */
-  tagIds: number[]
+  /**
+   * The customer in scope (getActingCustomer: the acting target, else the
+   * session customer). Binds a job / file to its customer.
+   */
+  customerId: number
+  /**
+   * GraphQL arm ONLY (legacy sessions, a v1 401): the locally derived
+   * effective price list (null = none) and tag ids. On v1 the server picks
+   * both and the answer's values are used (./pricelist-export-source.ts).
+   */
+  localPriceListId: number | null
+  /** GraphQL arm only. Sorted ascending, de-duplicated. */
+  localTagIds: number[]
   /**
    * Cover lines for the acting customer (component codes per configured
    * group, or the legacy terms). Empty when the cover is off, so customers
@@ -21,9 +31,11 @@ export interface ExportContext {
 
 /**
  * Shared precondition chain for every pricelist-export route: admin setting (ShopSetting.pricelist_export_enabled),
- * session, acting customer, effective price list, tag ids. The returned
- * (priceListId, tagIds) are ALWAYS derived server-side from the session --
- * nothing here (or in the routes) accepts them from the client.
+ * session, acting customer, cover lines (and, for the GraphQL arm only, the
+ * local effective price list and tag ids). Nothing here (or in the routes)
+ * accepts a customer, price list or tag from the client. The "no price
+ * list" check is the transport's (./pricelist-export-source.ts): on v1 the
+ * server answers it (409 EXPORT_NO_PRICE_LIST).
  *
  * Error codes and status codes are unchanged from the original GET route.
  */
@@ -53,14 +65,19 @@ export async function resolveExportContext(): Promise<
   }
   if (!customer) return fail("no_customer", 409)
 
-  const priceListId = getPrimaryPriceListId(customer)
-  // Never fall back to a default pricelist: it would export wrong prices.
-  if (priceListId == null) return fail("no_pricelist", 409)
+  const customerId = Number(customer?.id)
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return fail("no_customer", 409)
+  }
+
+  // GraphQL arm only. Never fall back to a default pricelist (wrong prices):
+  // a null list is answered `no_pricelist` by that arm.
+  const localPriceListId = getPrimaryPriceListId(customer) ?? null
 
   // Tags come straight off the already-resolved customer (see the original
   // route's comment: a second getCustomerFilterData() call could resolve a
   // different customer branch than the one that picked the pricelist).
-  const tagIds: number[] = Array.from(
+  const localTagIds: number[] = Array.from(
     new Set<number>(customer?.tags?.map((t: { id: number }) => t.id) ?? [])
   ).sort((a, b) => a - b)
 
@@ -73,5 +90,8 @@ export async function resolveExportContext(): Promise<
       )
     : []
 
-  return { ok: true, context: { priceListId, tagIds, coverLines } }
+  return {
+    ok: true,
+    context: { customerId, localPriceListId, localTagIds, coverLines },
+  }
 }
