@@ -1,27 +1,3 @@
-export interface OfferPdfResult {
-  base64: string
-  url: string | null
-  fileName: string | null
-}
-
-export interface OfferItemOverride {
-  cartItemId: number
-  name?: string
-  moduleCombination?: string
-  market?: string
-  bottoms?: string
-  totalNet?: number
-}
-
-export interface RenderOfferPdfOptions {
-  language: string
-  showPvm?: boolean
-  showVolume?: boolean
-  vatRate?: number
-  persist?: boolean
-  overrides?: OfferItemOverride[]
-}
-
 // --- Structured offer data (HTML template rendering) ---
 
 export interface OfferContext {

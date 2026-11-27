@@ -11,6 +11,26 @@ export interface GeneratedOfferPdf {
   base64: string
 }
 
+/** Raster settings of one export: html2canvas scale and JPEG quality. */
+export interface OfferPdfQuality {
+  scale: number
+  jpegQuality: number
+}
+
+/** Today's setting: the downloaded PDF and the first e-mail attempt. */
+export const OFFER_PDF_FULL_QUALITY: OfferPdfQuality = { scale: 3, jpegQuality: 0.92 }
+
+/**
+ * E-mail only: the settings tried in order when the backend refuses the PDF
+ * as too large (REST v1 caps the attachment at 3.5 MB). The first is
+ * today's full quality, so a PDF that fits is never degraded.
+ */
+export const OFFER_PDF_EMAIL_LADDER: OfferPdfQuality[] = [
+  OFFER_PDF_FULL_QUALITY,
+  { scale: 2, jpegQuality: 0.82 },
+  { scale: 1.5, jpegQuality: 0.72 },
+]
+
 const A4_WIDTH_MM = 210
 const A4_HEIGHT_MM = 297
 
@@ -27,7 +47,9 @@ function isCrossOriginImage(el: Element): boolean {
   }
 }
 
-export async function generateOfferPdf(): Promise<GeneratedOfferPdf> {
+export async function generateOfferPdf(
+  quality: OfferPdfQuality = OFFER_PDF_FULL_QUALITY
+): Promise<GeneratedOfferPdf> {
   const pages = Array.from(
     document.querySelectorAll<HTMLElement>(".offer-page")
   )
@@ -46,7 +68,7 @@ export async function generateOfferPdf(): Promise<GeneratedOfferPdf> {
     el: HTMLElement
   ): Promise<{ dataUrl: string; width: number; height: number }> => {
     const baseOpts = {
-      scale: 3,
+      scale: quality.scale,
       useCORS: true,
       backgroundColor: "#ffffff",
     }
@@ -54,7 +76,7 @@ export async function generateOfferPdf(): Promise<GeneratedOfferPdf> {
       const canvas = await html2canvas(el, baseOpts)
       // toDataURL throws on a tainted canvas — surfaces the CORS problem here
       // so we can fall back rather than fail the whole export.
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.92)
+      const dataUrl = canvas.toDataURL("image/jpeg", quality.jpegQuality)
       return { dataUrl, width: canvas.width, height: canvas.height }
     } catch (err) {
       console.warn(
@@ -66,7 +88,7 @@ export async function generateOfferPdf(): Promise<GeneratedOfferPdf> {
         ignoreElements: isCrossOriginImage,
       })
       return {
-        dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+        dataUrl: canvas.toDataURL("image/jpeg", quality.jpegQuality),
         width: canvas.width,
         height: canvas.height,
       }

@@ -189,9 +189,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [cart, refreshCart, resyncAfterCartChanged, uiLanguage, runExclusive])
 
   const updateItemQuantity = useCallback(async (cartItemId: number, quantity: number) => {
+    // v1 addresses a line by its cart: /me/carts/:id/items/:itemId.
+    if (!cart) throw new Error("No active cart")
+    const cartId = cart.id
     try {
       await runExclusive(async () => {
-        const res = await updateCartItemQuantityAction(cartItemId, quantity)
+        const res = await updateCartItemQuantityAction(cartId, cartItemId, quantity)
         if (!res.ok) throw new PaletteActionError(res.error)
         await refreshCart()
       })
@@ -199,12 +202,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("[CartContext] Failed to update quantity:", error)
       throw error
     }
-  }, [refreshCart, runExclusive])
+  }, [cart, refreshCart, runExclusive])
 
   const updateItemReference = useCallback(async (cartItemId: number, reference: string) => {
+    // v1 addresses a line by its cart: /me/carts/:id/items/:itemId.
+    if (!cart) throw new Error("No active cart")
+    const cartId = cart.id
     try {
       await runExclusive(async () => {
-        const res = await updateCartItemReferenceAction(cartItemId, reference)
+        const res = await updateCartItemReferenceAction(cartId, cartItemId, reference)
         if (!res.ok) throw new PaletteActionError(res.error)
         await refreshCart()
       })
@@ -212,12 +218,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("[CartContext] Failed to update reference:", error)
       throw error
     }
-  }, [refreshCart, runExclusive])
+  }, [cart, refreshCart, runExclusive])
 
   const removeItem = useCallback(async (cartItemId: number) => {
+    // v1 addresses a line by its cart: /me/carts/:id/items/:itemId.
+    if (!cart) throw new Error("No active cart")
+    const cartId = cart.id
     try {
       await runExclusive(async () => {
-        const res = await removeCartItemAction(cartItemId)
+        const res = await removeCartItemAction(cartId, cartItemId)
         if (!res.ok) throw new PaletteActionError(res.error)
         await refreshCart()
       })
@@ -225,7 +234,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("[CartContext] Failed to remove item:", error)
       throw error
     }
-  }, [refreshCart, runExclusive])
+  }, [cart, refreshCart, runExclusive])
 
   // These report failures as {ok:false}; a busy cart is reported the same way.
   const runExclusiveResult = useCallback(

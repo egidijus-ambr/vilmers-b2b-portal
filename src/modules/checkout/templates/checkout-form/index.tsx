@@ -78,7 +78,7 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
   const router = useRouter()
   const params = useParams()
   const languageCode = params.languageCode as string
-  const { items } = useCart()
+  const { cart, items } = useCart()
   const { t: tc } = useTranslations("common")
   const { actingCustomer: customer, isAgentOrAdmin } = useActingCustomer() as {
     actingCustomer: any
@@ -223,8 +223,12 @@ const CheckoutForm = forwardRef<CheckoutFormHandle, CheckoutFormProps>(function 
 
       if (result.success && result.orderId) {
         try {
+          // The order was placed through GraphQL; the lines are removed from
+          // the cart they were read from (v1 needs the cart id in the path).
+          if (!cart) throw new Error("No active cart")
+          const cartId = cart.id
           const results = await Promise.all(
-            items.map((item) => removeCartItemAction(item.id))
+            items.map((item) => removeCartItemAction(cartId, item.id))
           )
           const failed = results.find((r) => !r.ok)
           if (failed && !failed.ok) throw new Error(failed.error.message)

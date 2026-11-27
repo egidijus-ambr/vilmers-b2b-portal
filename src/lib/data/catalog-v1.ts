@@ -258,8 +258,9 @@ export async function v1ContentBlockProducts(
 /**
  * One v1 GET on a route whose answer the acting header NARROWS by
  * visibility (product page, configurator): a 404 with the header stays a
- * 404 unless the acting customer itself is stale, and a 403 is never
- * retried without the header (withActingRetryIfStale).
+ * 404 unless the acting customer itself is stale; a 403 is retried without
+ * the header only when it is ACTING_NOT_ALLOWED (the caller may not act at
+ * all), never a FORBIDDEN (withActingRetryIfStale).
  */
 async function narrowedCatalogGet<T>(
   bearer: string | null,

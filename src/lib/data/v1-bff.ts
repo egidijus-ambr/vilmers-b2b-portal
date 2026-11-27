@@ -61,8 +61,9 @@ export function safeFilename(disposition: string | null, fallback: string): stri
 /**
  * A v1 binary GET for the customer in scope: X-Acting-Customer-Id for an
  * agent / admin with a selected customer (v1-acting.ts), retried once
- * without it on a 403 / 404 (the agent's own scope, which on the backend
- * still includes its managed customers' orders). Throws V1ProblemError.
+ * without it on a 404 or a 403 ACTING_NOT_ALLOWED (the agent's own scope,
+ * which on the backend still includes its managed customers' orders); any
+ * other 403 is thrown. Throws V1ProblemError.
  */
 export async function v1ScopedBinary(
   bearer: string,

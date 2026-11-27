@@ -392,6 +392,11 @@ async function main() {
   try { await run(mk(403, true), true) } catch (e) { threw = (e as V1ProblemError).status === 403 }
   assert("403 FORBIDDEN with acting -> thrown, NO retry in the agent's own scope, cookie kept",
     threw && eq(seen, [7]) && dropped === 0)
+  assert("403 ACTING_NOT_ALLOWED with acting -> retried once in the caller's own scope, cookie kept, no staleness drop",
+    (await run(mk(403, true, "ACTING_NOT_ALLOWED"), false)) === "ok" && eq(seen, [7, null]) && dropped === 0)
+  threw = false
+  try { await run(mk(403, false, "ACTING_NOT_ALLOWED"), true) } catch (e) { threw = (e as V1ProblemError).status === 403 }
+  assert("403 ACTING_NOT_ALLOWED on a call WITHOUT the header -> thrown", threw && eq(seen, [7]))
   threw = false
   try { await run(mk(404, true, null), true) } catch (e) { threw = (e as V1ProblemError).status === 404 }
   assert("404 without a problem code (not the v1 app) -> thrown, no staleness check",

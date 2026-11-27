@@ -167,7 +167,7 @@ async function main() {
   assert("network error -> status 0", pNet?.status === 0)
 
   console.log("Client: acting retry")
-  const run = async (failStatus: number | null, retryOk = true) => {
+  const run = async (failStatus: number | null, retryOk = true, failCode: string | null = null) => {
     const seen: (number | null)[] = []
     let dropped = 0
     let error: unknown = null
@@ -178,7 +178,7 @@ async function main() {
         async (acting) => {
           seen.push(acting)
           if (acting !== null && failStatus !== null)
-            throw new V1ProblemError({ status: failStatus, actingSent: true })
+            throw new V1ProblemError({ status: failStatus, actingSent: true, code: failCode })
           if (acting === null && !retryOk) throw new V1ProblemError({ status: 404, actingSent: false })
           return "ok"
         },
@@ -194,9 +194,15 @@ async function main() {
   const stale = await run(404)
   assert("404 with acting: retried without header, cookie dropped",
     eq(stale.seen, [42, null]) && stale.dropped === 1 && stale.result === "ok")
-  const forbidden = await run(403)
-  assert("403 with acting: retried without header, cookie kept",
-    eq(forbidden.seen, [42, null]) && forbidden.dropped === 0 && forbidden.result === "ok")
+  const notAllowed = await run(403, true, "ACTING_NOT_ALLOWED")
+  assert("403 ACTING_NOT_ALLOWED with acting: retried without header, cookie kept",
+    eq(notAllowed.seen, [42, null]) && notAllowed.dropped === 0 && notAllowed.result === "ok")
+  const forbidden = await run(403, true, "FORBIDDEN")
+  assert("403 FORBIDDEN with acting: NOT retried (no own-scope answer), thrown, cookie kept",
+    eq(forbidden.seen, [42]) && forbidden.dropped === 0 && (forbidden.error as V1ProblemError)?.status === 403)
+  const forbiddenNoCode = await run(403)
+  assert("403 without a code (a proxy): NOT retried, thrown",
+    eq(forbiddenNoCode.seen, [42]) && (forbiddenNoCode.error as V1ProblemError)?.status === 403)
   const realNotFound = await run(404, false)
   assert("404 both with and without acting (e.g. unknown block): cookie kept, error thrown",
     realNotFound.dropped === 0 && (realNotFound.error as V1ProblemError)?.status === 404)

@@ -4,6 +4,8 @@ export type CartSummary = {
   id: number
   name: string | null
   isActive: boolean
+  /** v1 only (lines changed since last saved); GraphQL does not select it. */
+  isModified?: boolean
   updatedAt: string
   itemCount: number
 }
@@ -12,6 +14,8 @@ export interface FurnisystemsCart {
   id: number
   name: string | null
   isActive: boolean
+  /** v1 only (lines changed since last saved); GraphQL does not select it. */
+  isModified?: boolean
   customerId: number
   items: FurnisystemsCartItem[]
   createdAt: string

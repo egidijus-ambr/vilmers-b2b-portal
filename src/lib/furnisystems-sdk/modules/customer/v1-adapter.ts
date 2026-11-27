@@ -623,7 +623,7 @@ const titled = (p: N<{ language: string; title: N<string> }[]>) =>
 
 const named = (p: N<V1Profile[]>) => arr(p).map((x) => ({ name: x.name, language: x.language }))
 
-const DIMENSION_KEYS: Record<string, string> = {
+export const DIMENSION_KEYS: Record<string, string> = {
   width: "width",
   height: "height",
   length: "length",

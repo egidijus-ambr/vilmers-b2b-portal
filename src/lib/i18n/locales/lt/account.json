@@ -230,6 +230,8 @@
   "email-address": "El. pašto adresas",
   "email-invalid": "Įveskite galiojantį el. pašto adresą",
   "email-send-failed": "Nepavyko išsiųsti el. laiško. Bandykite dar kartą.",
+  "email-rate-limited": "Išsiųsta per daug pasiūlymų el. laiškų. Bandykite vėliau.",
+  "email-pdf-too-large": "Pasiūlymo PDF per didelis siųsti el. paštu (daugiausia 3,5 MB). Atsisiųskite jį arba padalykite krepšelį.",
   "email-session-expired": "Jūsų sesija baigėsi. Prisijunkite iš naujo.",
   "send": "Siųsti",
   "price-missing-modules": "{{count}} modul(ių) neturi kainos pasirinktai audinio kategorijai. Pasirinkite kitą audinį arba pašalinkite juos.",

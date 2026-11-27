@@ -231,6 +231,8 @@
   "email-address": "E-Mail-Adresse",
   "email-invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
   "email-send-failed": "E-Mail konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+  "email-rate-limited": "Es wurden zu viele Angebots-E-Mails gesendet. Bitte versuchen Sie es später erneut.",
+  "email-pdf-too-large": "Das Angebots-PDF ist zu groß für den E-Mail-Versand (max. 3,5 MB). Laden Sie es stattdessen herunter oder teilen Sie den Warenkorb auf.",
   "email-session-expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
   "send": "Senden",
   "price-missing-modules": "{{count}} Modul(e) haben keinen Preis für die gewählte Stoffkategorie. Wählen Sie einen anderen Stoff oder entfernen Sie sie.",

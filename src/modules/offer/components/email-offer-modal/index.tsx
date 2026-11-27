@@ -4,7 +4,10 @@ import { useEffect, useState } from "react"
 import Modal from "@modules/common/components/modal"
 import Button from "@modules/common/components/button"
 import { useTranslations } from "@lib/i18n"
-import { generateOfferPdf } from "@modules/offer/lib/generate-offer-pdf"
+import {
+  OFFER_PDF_EMAIL_LADDER,
+  generateOfferPdf,
+} from "@modules/offer/lib/generate-offer-pdf"
 import { sendCartOfferEmail } from "@lib/data/offer-pdf"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -51,19 +54,30 @@ export default function EmailOfferModal({
     setStatus("sending")
     setErrorMsg(null)
     try {
-      const { blob } = await generateOfferPdf()
-      // Send as a File in FormData: a >1MB base64 string argument trips React's
-      // decodeReply 1e6 limit ("Maximum array nesting exceeded").
-      const formData = new FormData()
-      formData.append("cartId", String(cartId))
-      formData.append("recipientEmail", email.trim())
-      formData.append(
-        "pdf",
-        new File([blob], `cart-offer-${cartId}.pdf`, {
-          type: "application/pdf",
-        })
-      )
-      const res = await sendCartOfferEmail(formData)
+      // Full quality first (as today). Only when the server answers
+      // "too-large" (REST v1 caps the attachment at 3.5 MB; the GraphQL
+      // path never does) is the PDF rebuilt at the next lower setting; the
+      // downloaded PDF is unaffected.
+      let res: Awaited<ReturnType<typeof sendCartOfferEmail>> = {
+        ok: false,
+        error: "too-large",
+      }
+      for (const quality of OFFER_PDF_EMAIL_LADDER) {
+        const { blob } = await generateOfferPdf(quality)
+        // Send as a File in FormData: a >1MB base64 string argument trips React's
+        // decodeReply 1e6 limit ("Maximum array nesting exceeded").
+        const formData = new FormData()
+        formData.append("cartId", String(cartId))
+        formData.append("recipientEmail", email.trim())
+        formData.append(
+          "pdf",
+          new File([blob], `cart-offer-${cartId}.pdf`, {
+            type: "application/pdf",
+          })
+        )
+        res = await sendCartOfferEmail(formData)
+        if (res.ok || res.error !== "too-large") break
+      }
       if (res.ok) {
         setStatus("success")
       } else {
@@ -72,6 +86,10 @@ export default function EmailOfferModal({
           setErrorMsg(t("email-session-expired"))
         } else if (res.error === "send-failed") {
           setErrorMsg(t("email-send-failed"))
+        } else if (res.error === "rate-limited") {
+          setErrorMsg(t("email-rate-limited"))
+        } else if (res.error === "too-large") {
+          setErrorMsg(t("email-pdf-too-large"))
         } else {
           // Surface the backend's own message.
           setErrorMsg(res.error)

@@ -31,7 +31,8 @@ import {
  * agent / manager its own company's AND its managed customers', a portal
  * admin every order. D4: with X-Acting-Customer-Id (sent for agent / admin
  * with a selected customer, v1-acting.ts) only that customer's orders. A
- * refused / stale acting id (403 / 404) is retried once without it.
+ * refused acting header (403 ACTING_NOT_ALLOWED) or a stale acting id (404)
+ * is retried once without it; any other 403 is not (withActingRetry).
  *
  * Errors on v1 (403 / 429 / 5xx): the same empty answer a GraphQL error gives
  * (the table shows "no orders"; the detail page "order not found"). 404 on

@@ -266,6 +266,15 @@ async function main() {
   try { await withActingRetry(7, async (id) => { calls.push(id); throw new V1ProblemError({ status: 404, actingSent: id !== null }) }, () => { dropped++ }) } catch (e) { err = e }
   assert("404 for the resource itself (retry 404 too) -> thrown, cookie kept", err instanceof V1ProblemError && eq(calls, [7, null]) && dropped === 1)
 
+  calls = []
+  dropped = 0
+  const r403 = await withActingRetry(7, async (id) => { calls.push(id); if (id) throw new V1ProblemError({ status: 403, actingSent: true, code: "ACTING_NOT_ALLOWED" }); return "own" }, () => { dropped++ })
+  assert("403 ACTING_NOT_ALLOWED with acting -> own scope, cookie kept", r403 === "own" && eq(calls, [7, null]) && dropped === 0)
+  calls = []
+  err = null
+  try { await withActingRetry(7, async (id) => { calls.push(id); throw new V1ProblemError({ status: 403, actingSent: true, code: "FORBIDDEN" }) }, () => { dropped++ }) } catch (e) { err = e }
+  assert("403 FORBIDDEN with acting -> thrown, no retry", err instanceof V1ProblemError && eq(calls, [7]) && dropped === 0)
+
   console.log("Acting-narrowed resources (order / invoice / file)")
   let dropN = 0
   const drop = () => { dropN++ }

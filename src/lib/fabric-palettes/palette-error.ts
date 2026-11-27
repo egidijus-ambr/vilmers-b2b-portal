@@ -26,8 +26,64 @@ export type ActionError = {
   items?: PaletteErrorItem[]
 }
 
-/** Extract {message, code, items} from an SDK / Apollo error thrown on the server. */
+/** v1: fabric group of the line is disabled (422). */
+export const FABRIC_GROUP_DISABLED = "FABRIC_GROUP_DISABLED"
+
+/**
+ * Generic messages for v1 problems that carry no `detail` of their own.
+ * (A `detail` is always a message written by the backend, never user input:
+ * e.g. 409 "Cannot delete a cart whose items belong to an order", the same
+ * text the GraphQL resolvers threw.)
+ */
+const V1_STATUS_MESSAGES: Record<number, string> = {
+  401: "Authentication required",
+  403: "You are not allowed to do this",
+  404: "Not found",
+  429: "Too many requests. Please try again later.",
+  503: "Service temporarily unavailable. Please try again later.",
+}
+
+/**
+ * A REST v1 V1ProblemError (src/lib/furnisystems-sdk/client/v1-data.ts),
+ * recognised by its name: this module is imported by client components, so
+ * it must not import the server-only v1 client.
+ */
+function isV1Problem(err: any): boolean {
+  return err?.name === "V1ProblemError" && typeof err?.status === "number"
+}
+
+function fromV1Problem(err: any, fallback: string): ActionError {
+  const code: string | undefined =
+    typeof err.code === "string" && err.code ? err.code : undefined
+  const detail: string | undefined =
+    typeof err.detail === "string" && err.detail ? err.detail : undefined
+  const items: PaletteErrorItem[] | undefined =
+    code === FABRIC_NOT_IN_PALETTE && Array.isArray(err.items)
+      ? err.items.map((i: any) => ({
+          index: i.index,
+          combinationIndex: i.combinationIndex ?? null,
+          fabricId: i.fabricId ?? null,
+          fabricCode: i.fabricCode ?? null,
+          fabricGroupId: i.fabricGroupId ?? null,
+          reason: i.reason,
+        }))
+      : undefined
+  // Never the Error message itself ("v1 request failed: 409 CONFLICT").
+  const message =
+    detail ??
+    (err.status >= 500 && err.status !== 503
+      ? fallback
+      : V1_STATUS_MESSAGES[err.status as number]) ??
+    fallback
+  return { message, code, ...(items ? { items } : {}) }
+}
+
+/**
+ * Extract {message, code, items} from an error thrown on the server: an SDK /
+ * Apollo (GraphQL) error, or a REST v1 problem (code + detail + items).
+ */
 export function toActionError(err: any, fallback: string): ActionError {
+  if (isV1Problem(err)) return fromV1Problem(err, fallback)
   const ext =
     err?.details?.extensions ??
     err?.graphQLErrors?.find?.((e: any) => e?.extensions?.code)?.extensions ??

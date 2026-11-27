@@ -231,6 +231,8 @@
   "email-address": "Email address",
   "email-invalid": "Please enter a valid email address",
   "email-send-failed": "Could not send the email. Please try again.",
+  "email-rate-limited": "Too many offer e-mails were sent. Please try again later.",
+  "email-pdf-too-large": "The offer PDF is too large to e-mail (max 3.5 MB). Download it instead, or split the cart.",
   "email-session-expired": "Your session has expired. Please sign in again.",
   "send": "Send",
   "price-missing-modules": "{{count}} module(s) have no price for the selected fabric category. Choose another fabric or remove them.",

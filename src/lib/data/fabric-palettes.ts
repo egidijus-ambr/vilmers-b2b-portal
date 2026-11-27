@@ -16,8 +16,9 @@ import { actingCustomerIdForV1, dropActingCookie } from "./v1-acting"
  *
  *   v1 (2c-8): GET /me/palettes, with X-Acting-Customer-Id when acting
  *     (the backend checks the acting right and returns the palettes in the
- *     documented priority order, already de-duplicated). A stale / refused
- *     acting id (403 / 404) is retried once without it (the agent's own
+ *     documented priority order, already de-duplicated). A stale acting id
+ *     (404) or a refused acting header (403 ACTING_NOT_ALLOWED) is retried
+ *     once without it (the agent's own
  *     palettes, as the GraphQL path does with no acting customer).
  *   v1 errors (403 / 404 / 429 / 5xx): [] (the page shows its empty state).
  *   GraphQL: unchanged (legacy-only sessions; v1-transport-rule.ts).

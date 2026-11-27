@@ -7,7 +7,9 @@
  * shop settings, the public forms, the BFF proxies under /api (invoice,
  * customer files, Tawk hash), orders, palettes, the agent's customer
  * selector, the acting customer, the current user and the "show all
- * products" gate, and the claims link.
+ * products" gate, the claims link, and (slices 8 / 9) the carts, cart
+ * lines and cart offers (./carts.ts, ./offer-pdf.ts via ./carts-v1.ts; the
+ * checkout's createNewOrder stays on GraphQL over the same rows).
  *
  * Caller-independent reads (category menu, categories by id, the default
  * price list, and the settings values that do not depend on the session:
@@ -82,6 +84,10 @@
  *   6. selectConfiguratorTransport's prices-disabled arm: delete when carts
  *      are priced on the server (then a login without prices needs no
  *      client-side amounts and takes v1 like everyone else).
+ *   7. slices 8 / 9 (carts, offers): drop the `graphql` arms in
+ *      ./carts.ts and ./offer-pdf.ts (runCartCall in ./carts-v1.ts then
+ *      only needs the v1 arm) and the SDK modules sdk.cart and
+ *      sdk.offerPdf.
  *
  * Pure, no imports: unit-tested by scripts/verify-catalog-v1.ts and
  * scripts/verify-identity-v1.ts.

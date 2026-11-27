@@ -230,6 +230,8 @@
   "email-address": "E-mailadresse",
   "email-invalid": "Indtast en gyldig e-mailadresse",
   "email-send-failed": "E-mailen kunne ikke sendes. Prøv igen.",
+  "email-rate-limited": "Der er sendt for mange tilbudsmails. Prøv igen senere.",
+  "email-pdf-too-large": "Tilbuddets PDF er for stor til at sende pr. e-mail (maks. 3,5 MB). Download den i stedet, eller del kurven op.",
   "email-session-expired": "Din session er udløbet. Log ind igen.",
   "send": "Send",
   "price-missing-modules": "{{count}} modul(er) har ingen pris for den valgte stofkategori. Vælg et andet stof, eller fjern dem.",

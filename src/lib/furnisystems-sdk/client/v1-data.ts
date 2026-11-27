@@ -40,6 +40,19 @@ export interface V1FieldError {
   message: string
 }
 
+/**
+ * One rejected fabric selection of a 422 FABRIC_NOT_IN_PALETTE answer (the
+ * same shape as the GraphQL `extensions.items`).
+ */
+export interface V1ProblemItem {
+  index: number
+  combinationIndex: number | null
+  fabricId: number | null
+  fabricCode: string | null
+  fabricGroupId: number | null
+  reason: string
+}
+
 /** A v1 call that did not answer 2xx (status 0 = no HTTP answer at all). */
 export class V1ProblemError extends Error {
   readonly status: number
@@ -53,6 +66,8 @@ export class V1ProblemError extends Error {
   readonly errors: V1FieldError[]
   /** Retry-After in seconds (429), when sent as a number. */
   readonly retryAfter: number | null
+  /** Rejected fabric selections (422 FABRIC_NOT_IN_PALETTE only); [] otherwise. */
+  readonly items: V1ProblemItem[]
 
   constructor(init: {
     status: number
@@ -62,6 +77,7 @@ export class V1ProblemError extends Error {
     actingSent?: boolean
     errors?: V1FieldError[] | null
     retryAfter?: number | null
+    items?: V1ProblemItem[] | null
     message?: string
   }) {
     super(
@@ -76,6 +92,7 @@ export class V1ProblemError extends Error {
     this.actingSent = init.actingSent ?? false
     this.errors = init.errors ?? []
     this.retryAfter = init.retryAfter ?? null
+    this.items = init.items ?? []
   }
 }
 
@@ -120,7 +137,7 @@ export interface V1DataRequest {
   path: string
   query?: V1Query
   /**
-   * POST only: a JSON body (sent with Content-Type: application/json).
+   * POST / PATCH: a JSON body (sent with Content-Type: application/json).
    * Omitted = no body and no Content-Type (the bodyless v1 POST routes).
    */
   body?: Record<string, unknown>
@@ -161,6 +178,25 @@ async function problemFrom(
         )
         .map((e) => ({ path: e.path, message: e.message }))
     : []
+  const num = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) ? v : null
+  const items: V1ProblemItem[] = Array.isArray(body?.items)
+    ? (body!.items as unknown[])
+        .filter(
+          (e): e is Record<string, unknown> =>
+            !!e &&
+            typeof e === "object" &&
+            typeof (e as { index?: unknown }).index === "number"
+        )
+        .map((e) => ({
+          index: e.index as number,
+          combinationIndex: num(e.combinationIndex),
+          fabricId: num(e.fabricId),
+          fabricCode: str(e.fabricCode),
+          fabricGroupId: num(e.fabricGroupId),
+          reason: str(e.reason) ?? "",
+        }))
+    : []
   const retryAfterRaw = response.headers.get("retry-after")
   const retryAfter =
     retryAfterRaw && /^\d+$/.test(retryAfterRaw.trim())
@@ -174,6 +210,7 @@ async function problemFrom(
     actingSent,
     errors,
     retryAfter,
+    items,
   })
 }
 
@@ -207,7 +244,7 @@ async function requestHeaders(
 async function v1Send(
   deps: V1DataClientDeps,
   req: V1DataRequest,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH" | "DELETE",
   accept: string
 ): Promise<Response> {
   const doFetch = deps.fetch ?? globalThis.fetch
@@ -216,9 +253,11 @@ async function v1Send(
     req.query
   )}`
 
-  // A JSON body only when the caller passes one (public forms); the other
-  // v1 POST routes used here declare none (no Content-Type, so no 415).
-  const hasBody = method === "POST" && req.body !== undefined
+  // A JSON body only when the caller passes one (public forms, cart writes);
+  // the other v1 POST routes used here declare none (no Content-Type, so no
+  // 415). GET / DELETE never carry one.
+  const hasBody =
+    (method === "POST" || method === "PATCH") && req.body !== undefined
   if (hasBody) headers["Content-Type"] = "application/json"
 
   let response: Response
@@ -275,6 +314,28 @@ export async function v1DataPost<T>(
   return jsonOf<T>(response, actingIdOf(req.actingCustomerId) !== null)
 }
 
+/** PATCH a v1 JSON endpoint with `req.body`; throws V1ProblemError. */
+export async function v1DataPatch<T>(
+  deps: V1DataClientDeps,
+  req: V1DataRequest
+): Promise<T> {
+  const response = await v1Send(deps, req, "PATCH", "application/json")
+  return jsonOf<T>(response, actingIdOf(req.actingCustomerId) !== null)
+}
+
+/**
+ * DELETE a v1 resource. Resolves on any 2xx (the v1 deletes answer 204 with
+ * no body, which is never read); throws V1ProblemError otherwise.
+ */
+export async function v1DataDelete(
+  deps: V1DataClientDeps,
+  req: V1DataRequest
+): Promise<void> {
+  const response = await v1Send(deps, req, "DELETE", "application/json")
+  // Release the (empty) body.
+  await response.body?.cancel().catch(() => undefined)
+}
+
 /**
  * GET a v1 binary endpoint (PDF, document download). Resolves the 2xx
  * Response with its body UNREAD, so the caller can stream it; throws
@@ -289,13 +350,37 @@ export async function v1DataGetBinary(
 }
 
 /**
- * Runs `call(actingId)`; when it fails with 403 / 404 while the acting
- * header was sent, retries ONCE without it (today's GraphQL behaviour for a
- * stale or no-longer-allowed acting customer is "fall back to the agent's
- * own view"). `onStaleActing` runs only for a 404 whose retry succeeded:
- * that 404 was about the acting customer, not about the resource (e.g. a
- * content block also 404s when it does not exist), so only then is the
- * acting cookie really stale.
+ * 403 `ACTING_NOT_ALLOWED`: the caller sent X-Acting-Customer-Id but may not
+ * act for anyone (a sub-account login, an impersonated session, a role that
+ * cannot act; furnisystems-backend src/api/v1/serviceErrors.ts toProblem,
+ * since 13c1182). Their own scope is then the right answer. Every other 403
+ * (`FORBIDDEN`: a policy denial) is NOT about the acting header.
+ */
+export const ACTING_NOT_ALLOWED = "ACTING_NOT_ALLOWED"
+
+export function isActingNotAllowed(error: unknown): boolean {
+  return (
+    isV1ProblemError(error) &&
+    error.actingSent &&
+    error.status === 403 &&
+    error.code === ACTING_NOT_ALLOWED
+  )
+}
+
+/**
+ * Runs `call(actingId)`; retries ONCE without the acting header when the
+ * call with it failed with
+ *   - 403 ACTING_NOT_ALLOWED (the caller may not act at all: its own scope),
+ *   - 404 (today's GraphQL behaviour for a stale acting customer is "fall
+ *     back to the agent's own view").
+ * Any other 403 (FORBIDDEN) and every other failure is thrown unchanged.
+ * `onStaleActing` runs only for a 404 whose retry succeeded: that 404 was
+ * about the acting customer, not about the resource (e.g. a content block
+ * also 404s when it does not exist), so only then is the acting cookie
+ * really stale. ACTING_NOT_ALLOWED keeps the cookie (it is not stale).
+ *
+ * READS ONLY. Never wrap a cart / offer call (or any write) in this: the
+ * retry would serve or write the agent's own cart.
  */
 export async function withActingRetry<T>(
   actingCustomerId: number | null,
@@ -306,13 +391,8 @@ export async function withActingRetry<T>(
   try {
     return await call(actingCustomerId)
   } catch (error) {
-    if (
-      !isV1ProblemError(error) ||
-      !error.actingSent ||
-      (error.status !== 403 && error.status !== 404)
-    ) {
-      throw error
-    }
+    if (!isV1ProblemError(error) || !error.actingSent) throw error
+    if (error.status !== 404 && !isActingNotAllowed(error)) throw error
     const result = await call(null)
     if (error.status === 404) {
       try {
@@ -348,29 +428,6 @@ export function dropActingIfConfirmedStale(
 }
 
 /**
- * For resources the acting header NARROWS by visibility (the product page,
- * the configurator): a 404 with the header usually means "the acting
- * customer may not see this product", which must stay a 404 (GraphQL
- * filtered by the acting customer's tags / price lists too), NOT silently
- * become the agent's own view.
- *
- * The ONLY answer the backend gives for a stale / invalid acting customer
- * is 404 `NOT_FOUND` (furnisystems-backend src/auth/scopes.ts
- * resolveActingCustomer: unknown, soft-deleted, non-B2B or unmanaged
- * target; rendered by src/api/v1/serviceErrors.ts toProblem). A refused
- * acting header (sub-account login, impersonated session, a role that may
- * not act) is 403 `FORBIDDEN`, the SAME code as every other 403 (policy
- * denial, staff realm on the catalogue), so no 403 can be told apart as
- * "acting refused" and none is retried: retrying would re-serve the request
- * in the agent's own scope (its palettes, its price list). So:
- *   404 NOT_FOUND with the header -> `isActingStale()` (GET /me with the
- *                                    header): only when the acting customer
- *                                    itself is gone (true) is the cookie
- *                                    dropped and the call retried without
- *                                    the header; otherwise the 404 stands;
- *   anything else (403 included)  -> thrown unchanged.
- */
-/**
  * The one problem a stale acting customer produces: 404 with code
  * NOT_FOUND. A 404 without a code (a proxy, not the v1 app) is not one.
  */
@@ -378,6 +435,35 @@ function isStaleActingCandidate(error: V1ProblemError): boolean {
   return error.status === 404 && error.code === "NOT_FOUND"
 }
 
+/**
+ * For resources the acting header NARROWS by visibility (the product page,
+ * the configurator): a 404 with the header usually means "the acting
+ * customer may not see this product", which must stay a 404 (GraphQL
+ * filtered by the acting customer's tags / price lists too), NOT silently
+ * become the agent's own view.
+ *
+ * What the backend answers about the acting header itself
+ * (furnisystems-backend src/auth/scopes.ts resolveActingCustomer, rendered
+ * by src/api/v1/serviceErrors.ts toProblem):
+ *   - unknown, soft-deleted, non-B2B or unmanaged target -> 404 NOT_FOUND
+ *     (the same answer as an invisible product, hence the /me check below);
+ *   - a caller that may not act at all (sub-account login, impersonated
+ *     session, a role that cannot act) -> 403 ACTING_NOT_ALLOWED (since
+ *     backend 13c1182; before it was 403 FORBIDDEN, indistinguishable).
+ * Every other 403 is FORBIDDEN (policy denial, staff realm on the
+ * catalogue) and is never retried: that would re-serve the request in the
+ * agent's own scope (its palettes, its price list). So:
+ *   403 ACTING_NOT_ALLOWED         -> retried once without the header (the
+ *                                     caller's own scope is the right
+ *                                     answer); cookie kept;
+ *   404 NOT_FOUND with the header  -> `isActingStale()` (GET /me with the
+ *                                     header): only when the acting customer
+ *                                     itself is gone (true) is the cookie
+ *                                     dropped and the call retried without
+ *                                     the header; otherwise the 404 stands;
+ *   anything else (403 FORBIDDEN included) -> thrown unchanged.
+ * READS ONLY, like withActingRetry: never around a cart / offer call.
+ */
 export async function withActingRetryIfStale<T>(
   actingCustomerId: number | null,
   call: (actingCustomerId: number | null) => Promise<T>,
@@ -389,6 +475,7 @@ export async function withActingRetryIfStale<T>(
     return await call(actingCustomerId)
   } catch (error) {
     if (!isV1ProblemError(error) || !error.actingSent) throw error
+    if (isActingNotAllowed(error)) return call(null)
     if (!isStaleActingCandidate(error)) throw error
     let stale = false
     try {

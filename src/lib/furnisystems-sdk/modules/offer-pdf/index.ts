@@ -4,35 +4,7 @@ import {
   CartOfferData,
   EmailCartOfferOptions,
   GetCartOfferDataOptions,
-  OfferPdfResult,
-  RenderOfferPdfOptions,
 } from "./types"
-
-const RENDER_CART_OFFER_PDF = gql`
-  mutation RenderCartOfferPdf(
-    $cartId: Int!
-    $language: Language!
-    $showPvm: Boolean
-    $showVolume: Boolean
-    $vatRate: Float
-    $persist: Boolean
-    $overrides: [OfferItemOverrideInput]
-  ) {
-    renderCartOfferPdf(
-      cartId: $cartId
-      language: $language
-      showPvm: $showPvm
-      showVolume: $showVolume
-      vatRate: $vatRate
-      persist: $persist
-      overrides: $overrides
-    ) {
-      base64
-      url
-      fileName
-    }
-  }
-`
 
 const GET_CART_OFFER_DATA = gql`
   query GetCartOfferData(
@@ -113,18 +85,6 @@ const EMAIL_CART_OFFER = gql`
 
 export class OfferPdfModule {
   constructor(private client: ApolloGraphQLClient) {}
-
-  async render(
-    cartId: number,
-    opts: RenderOfferPdfOptions
-  ): Promise<OfferPdfResult> {
-    const data = await this.client.mutate<{
-      renderCartOfferPdf: OfferPdfResult
-    }>(RENDER_CART_OFFER_PDF, {
-      variables: { cartId, ...opts },
-    })
-    return data.renderCartOfferPdf
-  }
 
   async getCartOfferData(
     cartId: number,

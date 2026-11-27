@@ -231,6 +231,8 @@
   "email-address": "Adresse e-mail",
   "email-invalid": "Veuillez saisir une adresse e-mail valide",
   "email-send-failed": "Impossible d'envoyer l'e-mail. Veuillez réessayer.",
+  "email-rate-limited": "Trop d'e-mails d'offre ont été envoyés. Veuillez réessayer plus tard.",
+  "email-pdf-too-large": "Le PDF de l'offre est trop volumineux pour être envoyé par e-mail (3,5 Mo max.). Téléchargez-le ou divisez le panier.",
   "email-session-expired": "Votre session a expiré. Veuillez vous reconnecter.",
   "send": "Envoyer",
   "price-missing-modules": "{{count}} module(s) n'ont pas de prix pour la catégorie de tissu choisie. Choisissez un autre tissu ou retirez-les.",
