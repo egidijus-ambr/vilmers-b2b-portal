@@ -39,6 +39,8 @@ import {
   requestV1MagicLink,
   verifyV1MagicLink,
 } from "@lib/v1-session/magic-link"
+import { isV1ProblemError } from "@lib/furnisystems-sdk/client/v1-data"
+import { describeV1Error, runIdentityCall, v1GetClaimsLink } from "./me-v1"
 
 export const retrieveCustomer =
   async (): Promise<ExtendedStoreCustomer | null> => {
@@ -217,13 +219,44 @@ export const updateCustomerAddress = async (
   //   })
 }
 
+/**
+ * The claims-portal login link (account overview "Claims" card). Transport
+ * per ./v1-transport-rule.ts (runIdentityCall):
+ *   v1      GET /me/claims-link?language= (the caller's own login, never the
+ *           acting customer); a v1 401 takes the GraphQL path for this call;
+ *           403 (impersonated session), 404 (admin-issued session), 503
+ *           (claims portal down / not configured) and anything else THROW;
+ *   graphql the unchanged getClaimsLink query (legacy-only sessions);
+ *   guest   throws (no login, no link), as the unauthenticated GraphQL
+ *           call did.
+ * The card catches and logs every failure (no navigation), as before.
+ */
 export const getClaimsLink = async (language: string): Promise<string> => {
+  unstable_noStore()
+  const lang = (language || "en").trim().slice(0, 10) || "en"
   try {
-    // SDK automatically handles authentication from cookies
-    const claimsUrl = await sdk.customer.getClaimsLink(language)
-    return claimsUrl
+    return await runIdentityCall<string>("getClaimsLink", {
+      v1: async (bearer) => {
+        const { url } = await v1GetClaimsLink(bearer, lang)
+        if (!url) throw new Error("No claims URL received")
+        return url
+      },
+      // SDK automatically handles authentication from cookies
+      graphql: () => sdk.customer.getClaimsLink(lang),
+      guest: () => {
+        throw new Error("Not signed in: no claims link")
+      },
+      onError: (error) => {
+        throw error instanceof Error
+          ? error
+          : new Error(`claims link failed: ${describeV1Error(error)}`)
+      },
+    })
   } catch (error) {
-    console.error("Error getting claims link:", error)
+    console.error(
+      "Error getting claims link:",
+      isV1ProblemError(error) ? describeV1Error(error) : error
+    )
     throw error
   }
 }

@@ -120,10 +120,16 @@ export interface ComponentImage {
   src_xs: string | null
 }
 
+/**
+ * A linked component's target. The PDP renders only the profile name /
+ * description, `code` (name fallback) and image.src_md / src. Optional
+ * because v1 (CatalogDetailLinkedTargetComponent) does not serve it; the
+ * GraphQL document still selects it. v1 images carry no src_xs (null).
+ */
 export interface LinkedComponentTarget {
   id: number
   code: string | null
-  additional_component_group: ComponentGroupRef
+  additional_component_group?: ComponentGroupRef
   additional_component_profiles: ComponentProfile[]
   image: ComponentImage | null
 }

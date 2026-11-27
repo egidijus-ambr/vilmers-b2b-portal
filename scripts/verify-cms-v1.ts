@@ -116,9 +116,9 @@ const detail: V1ProductDetail = {
             targetComponent: {
               id: 1685,
               code: "C",
-              group: { code: "back-cushion-comfort", profiles: [{ name: "Back pillow comfort", language: "en" }] },
               profiles: [{ name: "C/NP", description: "soft", language: "en" }],
-              image: { src: "k.png", srcMd: "km.png", srcXs: "kx.png" },
+              // minimal target (backend 2bb05ed): no group, no srcXs
+              image: { src: "k.png", srcMd: "km.png" },
             },
           },
         ],
@@ -207,11 +207,10 @@ async function main() {
   assert("linked component snake_case",
     link?.id === 3125 && link.link_type === "INCLUDES" && link.display_order === 1 &&
     link.target_component.id === 1685 && link.target_component.code === "C" &&
-    link.target_component.additional_component_group.code === "back-cushion-comfort" &&
     eq(link.target_component.additional_component_profiles, [{ name: "C/NP", description: "soft", language: "en" }]) &&
-    eq(link.target_component.image, { src: "k.png", src_md: "km.png", src_xs: "kx.png" }))
-  assert("linked target group has no id (GraphQL selects none)",
-    !("id" in (link?.target_component.additional_component_group ?? {})))
+    eq(link.target_component.image, { src: "k.png", src_md: "km.png", src_xs: null }))
+  assert("linked target has no group (v1 does not serve it)",
+    link?.target_component.additional_component_group === undefined)
   assert("categories codes", eq(p.categories, [{ code: "SOFAS" }, { code: null }]))
   const pc = p.primary_category
   assert("primary category: permalink -> meta_information.permalink",
@@ -369,7 +368,8 @@ async function main() {
       classifyV1PageError(pe.status, pe.code) === "private")
   }
 
-  const mk = (status: number, actingSent: boolean) => new V1ProblemError({ status, actingSent })
+  const mk = (status: number, actingSent: boolean, code: string | null = status === 404 ? "NOT_FOUND" : status === 403 ? "FORBIDDEN" : null) =>
+    new V1ProblemError({ status, actingSent, code })
   let seen: (number | null)[] = []
   let dropped = 0
   const run = (fail: V1ProblemError | null, stale: boolean) => {
@@ -388,9 +388,15 @@ async function main() {
   }
   assert("no acting -> one call", (await withActingRetryIfStale(null, async (a) => String(a), async () => true, () => {})) === "null")
   assert("success with acting -> one call", (await run(null, false)) === "ok" && eq(seen, [7]))
-  assert("403 with acting -> retry without, cookie kept",
-    (await run(mk(403, true), false)) === "ok" && eq(seen, [7, null]) && dropped === 0)
   let threw = false
+  try { await run(mk(403, true), true) } catch (e) { threw = (e as V1ProblemError).status === 403 }
+  assert("403 FORBIDDEN with acting -> thrown, NO retry in the agent's own scope, cookie kept",
+    threw && eq(seen, [7]) && dropped === 0)
+  threw = false
+  try { await run(mk(404, true, null), true) } catch (e) { threw = (e as V1ProblemError).status === 404 }
+  assert("404 without a problem code (not the v1 app) -> thrown, no staleness check",
+    threw && eq(seen, [7]) && dropped === 0)
+  threw = false
   try { await run(mk(404, true), false) } catch (e) { threw = (e as V1ProblemError).status === 404 }
   assert("404 with acting, acting NOT stale -> 404 stands (no agent view, cookie kept)",
     threw && eq(seen, [7]) && dropped === 0)

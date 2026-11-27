@@ -52,6 +52,16 @@ export interface V1DetailComponentProfile {
   language: string
 }
 
+/** A linked target's image: only the two sizes the PDP comfort section shows. */
+export interface V1DetailLinkedTargetImage {
+  src: string
+  srcMd: N<string>
+}
+
+/**
+ * CatalogDetailLinkedTargetComponent (backend 2bb05ed): any linked
+ * component (as GraphQL links it), minimal: no `group`, no `srcXs`.
+ */
 export interface V1DetailLinkedComponent {
   id: number
   linkType: string
@@ -59,9 +69,8 @@ export interface V1DetailLinkedComponent {
   targetComponent: {
     id: number
     code: N<string>
-    group: N<{ code: N<string>; profiles: V1DetailNameProfile[] }>
     profiles: V1DetailComponentProfile[]
-    image: N<V1DetailImage>
+    image: N<V1DetailLinkedTargetImage>
   }
 }
 
@@ -188,9 +197,16 @@ function detailImage(img: N<V1CardImage> | undefined) {
   }
 }
 
-function componentImage(img: N<V1DetailImage> | undefined) {
+function componentImage(
+  img: N<V1DetailImage | V1DetailLinkedTargetImage> | undefined
+) {
   if (!img) return null
-  return { src: img.src, src_md: img.srcMd ?? null, src_xs: img.srcXs ?? null }
+  return {
+    src: img.src,
+    src_md: img.srcMd ?? null,
+    // A linked target's image has no srcXs (nothing renders it there).
+    src_xs: ("srcXs" in img ? img.srcXs : null) ?? null,
+  }
 }
 
 const nameProfiles = (ps: V1DetailNameProfile[] | null | undefined) =>
@@ -222,12 +238,8 @@ function mapComponent(c: V1DetailComponent): ProductAdditionalComponent {
       target_component: {
         id: l.targetComponent.id,
         code: l.targetComponent.code ?? null,
-        additional_component_group: {
-          code: l.targetComponent.group?.code ?? null,
-          additional_component_group_profiles: nameProfiles(
-            l.targetComponent.group?.profiles
-          ),
-        },
+        // No `additional_component_group`: v1 does not serve the target's
+        // group (the PDP reads only profiles, code and image).
         additional_component_profiles: componentProfiles(
           l.targetComponent.profiles
         ),

@@ -280,10 +280,10 @@ export interface LinkedComponent {
   id: number
   link_type: string
   display_order: number
+  /** Minimal on v1 (backend 2bb05ed): no component_sku (not rendered). */
   target_component: {
     id: number
     code: string | null
-    component_sku?: string | null
     image: { src_thumbnail?: string; src_md: string | null } | null
     additional_component_profiles: { id: number; name: string; description: string | null; language: string }[]
   }

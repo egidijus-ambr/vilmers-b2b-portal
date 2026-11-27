@@ -16,6 +16,12 @@ export type ConfiguratorDataResult = {
   data: any
   /** The price list the data was fetched for; derived server-side. */
   priceListId: number
+  /**
+   * v1 only: the REAL caller's configurator flag (never the acting
+   * target's; true for a guest). Informational, not enforced. Undefined on
+   * the GraphQL path (customer.is_configurator_enabled carries it there).
+   */
+  configuratorEnabled?: boolean
 }
 
 /**
@@ -35,8 +41,16 @@ export type ConfiguratorDataResult = {
  * acting customer's primary list or the shop default and `paletteIds`
  * comes from the client, exactly as before.
  *
- * Failures (403 CONFIGURATOR_DISABLED, 404, 429, 5xx, network) return null:
- * the hook shows "configurator-data-load-error" (fail closed).
+ * A login whose configurator is disabled (Customer.is_configurator_enabled
+ * = false) is served like everyone else, on both paths, as before v1: the
+ * backend no longer refuses it (it reports the flag as `configuratorEnabled`
+ * instead), and the portal only hides its "place an order" card for it
+ * (account overview, customer.is_configurator_enabled from GET /me
+ * `features`). `configuratorEnabled` is passed through for callers that
+ * want it; nothing gates on it here.
+ *
+ * Failures (404, 429, 5xx, network) return null: the hook shows
+ * "configurator-data-load-error" (fail closed).
  */
 export async function getConfiguratorDataAction(
   productContainerId: number,
@@ -80,7 +94,11 @@ export async function getConfiguratorDataAction(
     }
     const data = applyPaletteColors(body.data ?? null, body.paletteIds ?? [])
     if (!data) return null
-    return { data, priceListId: body.priceListId }
+    return {
+      data,
+      priceListId: body.priceListId,
+      configuratorEnabled: body.configuratorEnabled,
+    }
   } catch (error) {
     if (isV1ProblemError(error) && error.status === 401) {
       console.warn("[configurator] 401, using the GraphQL path")

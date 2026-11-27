@@ -352,17 +352,32 @@ export function dropActingIfConfirmedStale(
  * the configurator): a 404 with the header usually means "the acting
  * customer may not see this product", which must stay a 404 (GraphQL
  * filtered by the acting customer's tags / price lists too), NOT silently
- * become the agent's own view. So:
- *   403 with the header        -> retry once without it (acting no longer
- *                                 allowed: the agent's own view, as
- *                                 withActingRetry);
- *   404 with the header        -> `isActingStale()` (GET /me with the
- *                                 header): only when the acting customer
- *                                 itself is gone (true) is the cookie
- *                                 dropped and the call retried without the
- *                                 header; otherwise the 404 stands;
- *   anything else              -> thrown unchanged.
+ * become the agent's own view.
+ *
+ * The ONLY answer the backend gives for a stale / invalid acting customer
+ * is 404 `NOT_FOUND` (furnisystems-backend src/auth/scopes.ts
+ * resolveActingCustomer: unknown, soft-deleted, non-B2B or unmanaged
+ * target; rendered by src/api/v1/serviceErrors.ts toProblem). A refused
+ * acting header (sub-account login, impersonated session, a role that may
+ * not act) is 403 `FORBIDDEN`, the SAME code as every other 403 (policy
+ * denial, staff realm on the catalogue), so no 403 can be told apart as
+ * "acting refused" and none is retried: retrying would re-serve the request
+ * in the agent's own scope (its palettes, its price list). So:
+ *   404 NOT_FOUND with the header -> `isActingStale()` (GET /me with the
+ *                                    header): only when the acting customer
+ *                                    itself is gone (true) is the cookie
+ *                                    dropped and the call retried without
+ *                                    the header; otherwise the 404 stands;
+ *   anything else (403 included)  -> thrown unchanged.
  */
+/**
+ * The one problem a stale acting customer produces: 404 with code
+ * NOT_FOUND. A 404 without a code (a proxy, not the v1 app) is not one.
+ */
+function isStaleActingCandidate(error: V1ProblemError): boolean {
+  return error.status === 404 && error.code === "NOT_FOUND"
+}
+
 export async function withActingRetryIfStale<T>(
   actingCustomerId: number | null,
   call: (actingCustomerId: number | null) => Promise<T>,
@@ -374,8 +389,7 @@ export async function withActingRetryIfStale<T>(
     return await call(actingCustomerId)
   } catch (error) {
     if (!isV1ProblemError(error) || !error.actingSent) throw error
-    if (error.status === 403) return call(null)
-    if (error.status !== 404) throw error
+    if (!isStaleActingCandidate(error)) throw error
     let stale = false
     try {
       stale = await isActingStale()

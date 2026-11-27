@@ -7,15 +7,18 @@ import { getActingCustomer } from "./acting-customer"
 import type { SearchCustomerResult } from "@lib/furnisystems-sdk/modules/customer/types"
 import {
   mapV1ManagedCustomer,
-  mapV1MeToActingCustomer,
+  mapV1ManagedCustomerDetailed,
 } from "@lib/furnisystems-sdk/modules/customer/v1-adapter"
 import { isV1ProblemError } from "@lib/furnisystems-sdk/client/v1-data"
 import {
   V1_MAX_PAGE_SIZE,
   runIdentityCall,
-  v1GetMeActing,
   v1ListManagedCustomers,
+  v1ManagedCustomersByIds,
 } from "./me-v1"
+
+/** Today's cap of an `ids` lookup (the backend allows 20 with detail). */
+const SELECTOR_MAX_IDS = 10
 
 /**
  * The agent's customer selector.
@@ -26,8 +29,11 @@ import {
  *
  *   v1 (2c-9): GET /me/managed-customers?search=&pageSize= (agents: their
  *     managed customers, portal admins: every live B2B customer; ordered by
- *     order count, then name). `ids` lookups (no such filter on v1) go
- *     through GET /me + X-Acting-Customer-Id per id (at most 10).
+ *     order count, then name). `ids` lookups (at most 10, de-duplicated):
+ *     ONE GET /me/managed-customers?ids=...&expand=detail (each row hydrated
+ *     like GET /me + X-Acting-Customer-Id), in the order of `ids`; ids the
+ *     caller may not act for are absent, as with GraphQL. A 403 (e.g. an
+ *     impersonated session: no acting) is [], as the per-id lookups gave.
  *   v1 errors: thrown, so the selector shows its "could not load" + retry
  *     state, as on a GraphQL error. A v1 401 takes the GraphQL path.
  */
@@ -42,23 +48,26 @@ export async function searchCustomersForSelector(args: {
   return runIdentityCall<SearchCustomerResult[]>("searchCustomersForSelector", {
     v1: async (bearer) => {
       if (args.ids && args.ids.length > 0) {
-        const ids = args.ids
-          .filter((id) => Number.isInteger(id) && id > 0 && id <= 2147483647)
-          .slice(0, 10)
-        const found = await Promise.all(
-          ids.map(async (id) => {
-            try {
-              return mapV1MeToActingCustomer(await v1GetMeActing(bearer, id))
-            } catch (error) {
-              // Unknown / unmanaged: not in the result, as with GraphQL.
-              if (isV1ProblemError(error) && (error.status === 404 || error.status === 403)) {
-                return null
-              }
-              throw error
-            }
-          })
-        )
-        return found.filter((c): c is SearchCustomerResult => c !== null)
+        const ids = Array.from(
+          new Set(
+            args.ids.filter((id) => Number.isInteger(id) && id > 0 && id <= 2147483647)
+          )
+        ).slice(0, SELECTOR_MAX_IDS)
+        if (ids.length === 0) return []
+        let rows
+        try {
+          rows = (await v1ManagedCustomersByIds(bearer, ids)).data ?? []
+        } catch (error) {
+          // Acting refused for this session: nobody is in the result, as
+          // with a 403 on every per-id lookup before.
+          if (isV1ProblemError(error) && error.status === 403) return []
+          throw error
+        }
+        const byId = new Map(rows.map((r) => [r.id, r]))
+        return ids
+          .map((id) => byId.get(id))
+          .filter((r): r is NonNullable<typeof r> => r != null)
+          .map(mapV1ManagedCustomerDetailed)
       }
       const search = (args.query ?? "").trim().slice(0, 200)
       const pageSize = Math.min(

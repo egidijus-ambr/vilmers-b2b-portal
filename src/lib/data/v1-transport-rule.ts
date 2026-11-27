@@ -7,7 +7,7 @@
  * shop settings, the public forms, the BFF proxies under /api (invoice,
  * customer files, Tawk hash), orders, palettes, the agent's customer
  * selector, the acting customer, the current user and the "show all
- * products" gate.
+ * products" gate, and the claims link.
  *
  * Caller-independent reads (category menu, categories by id, the default
  * price list, and the settings values that do not depend on the session:
@@ -64,9 +64,8 @@
  *      isImpersonatedByManager (acting-customer.ts);
  *      and the SDK methods they call (sdk.customer.getMe / getCustomerOrders /
  *      getCustomerOrderById / getFabricPalettes* / searchCustomers);
- *   4. NOT getClaimsLink (src/lib/data/customer.ts): it has no v1 endpoint
- *      yet (backend gap: GET /me/claims-link) and stays on GraphQL until the
- *      backend adds one.
+ *   4. src/lib/data/customer.ts getClaimsLink: drop its `graphql` arm
+ *      (GET /me/claims-link is the v1 path) and the SDK getClaimsLink.
  *   5. slices 2, 4, 5 (product page, configurator, taxonomy, CMS, settings,
  *      forms): drop the GraphQL arms of
  *      ./furnisystems-products.ts getProductByPermalinkGraphql (and the

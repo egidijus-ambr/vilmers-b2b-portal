@@ -258,7 +258,8 @@ export async function v1ContentBlockProducts(
 /**
  * One v1 GET on a route whose answer the acting header NARROWS by
  * visibility (product page, configurator): a 404 with the header stays a
- * 404 unless the acting customer itself is stale (withActingRetryIfStale).
+ * 404 unless the acting customer itself is stale, and a 403 is never
+ * retried without the header (withActingRetryIfStale).
  */
 async function narrowedCatalogGet<T>(
   bearer: string | null,
@@ -311,9 +312,11 @@ export interface V1ConfiguratorResponse {
   /** null only for a login without prices (kept on GraphQL, see configurator.ts). */
   priceListId: number | null
   paletteIds: number[]
-  /** Optional (being added on the backend); unused: the "place an order"
-   *  card keeps reading customer.is_configurator_enabled. */
-  configuratorEnabled?: boolean
+  /** The REAL caller's Customer.is_configurator_enabled (never the acting
+   *  target's; true for a guest). Informational: the route serves the data
+   *  either way (it no longer answers 403 CONFIGURATOR_DISABLED), and the
+   *  "place an order" card keeps reading customer.is_configurator_enabled. */
+  configuratorEnabled: boolean
 }
 
 /**

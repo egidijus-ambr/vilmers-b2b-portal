@@ -35,21 +35,20 @@ import { describeV1Error } from "./me-v1"
  * ones do not, so the two must never share an entry.
  *
  * Private pages (getPageByPath / getPageByPathAuthed):
- *   guest       v1 401 PRIVATE_PAGE -> the PRIVATE_PAGE sentinel, so
- *               [...slug]/page.tsx redirects to /<lang>/account?returnTo=...
- *               exactly as for the GraphQL PRIVATE_PAGE error (the login flow
- *               validates returnTo: same-origin paths only). 404 -> null
- *               (not-found). Today's deployed backend still answers 404 for a
- *               guest on a private page (=> not-found until the backend's
- *               401 PRIVATE_PAGE change is deployed).
+ *   guest       v1 401 PRIVATE_PAGE (backend 2bb05ed: a guest whose path
+ *               resolves to a private page, itself or through an ancestor)
+ *               -> the PRIVATE_PAGE sentinel (classifyV1PageError switches
+ *               on that code), so [...slug]/page.tsx redirects to
+ *               /<lang>/account?returnTo=... with NO GraphQL call; the login
+ *               form then sets the returnTo cookie (the login flow validates
+ *               returnTo: same-origin paths only). 404 -> null (not-found).
  *   v1 session  after the sentinel, getPageByPathAuthed makes the lookup
  *               WITH the bearer (a portal session sees private pages),
  *               uncached, shared by the layout and the page through React
- *               cache. Until the backend's 401 change is deployed a private
- *               page is a guest 404 -> not-found for EVERYONE, logged-in
- *               users included (deploy order: backend first), and those
- *               guest 404s are cached without TTL: fire the `cms-pages`
- *               revalidate (or bump V1_PAGE_SCHEMA_VERSION) after it.
+ *               cache. Deploy order: backend first; a backend without the
+ *               401 answers a guest 404 for a private page (not-found for
+ *               everyone). V1_PAGE_SCHEMA_VERSION was bumped (v1p2) so guest
+ *               404s cached from such a backend are not served afterwards.
  *   other 401   GraphQL for that call. Other v1 failures: no page (not-found),
  *               never cached.
  */
@@ -66,7 +65,10 @@ const PAGE_CACHE_TAG = "cms-pages"
 // Bumped 2026-09-28 for ContentBlock.grid_product_containers.
 const CONTENT_BLOCK_SCHEMA_VERSION = "cb2"
 /** Version of the v1 (guest) cache entries; separate keys from GraphQL's. */
-const V1_PAGE_SCHEMA_VERSION = "v1p1"
+// v1p2 (2026-11-27): the backend now answers 401 PRIVATE_PAGE where it
+// answered 404 for a guest on a private page; the old 404 entries (no TTL)
+// must not survive the deploy.
+const V1_PAGE_SCHEMA_VERSION = "v1p2"
 
 /**
  * One guest v1 page lookup for unstable_cache: 404 -> null and 401
@@ -196,9 +198,13 @@ export const getPageByPath = async (
   try {
     return await cached()
   } catch (error) {
-    if (isV1ProblemError(error) && error.status === 401) {
-      // Not PRIVATE_PAGE (handled inside): cannot happen without a bearer;
-      // the old anonymous lookup then.
+    if (
+      isV1ProblemError(error) &&
+      classifyV1PageError(error.status, error.code) === "fallback"
+    ) {
+      // A 401 other than PRIVATE_PAGE (that one is the cached sentinel,
+      // sharedPageLookup): cannot happen without a bearer; the generic rule
+      // then (the old anonymous GraphQL lookup).
       return getPageByPathGraphql(path, language)
     }
     console.error(`Error fetching page with path "${path}":`, describeV1Error(error))

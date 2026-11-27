@@ -144,3 +144,36 @@ export function v1ListManagedCustomers(
     query: { page: 1, pageSize: p.pageSize, search: p.search },
   })
 }
+
+/** Backend MANAGED_DETAIL_MAX_IDS: `expand=detail` takes 1-20 ids. */
+export const V1_MANAGED_DETAIL_MAX_IDS = 20
+
+/**
+ * GET /me/managed-customers?ids=...&expand=detail: the given customers the
+ * caller may act for, each with `detail` (what GET /me + X-Acting-Customer-Id
+ * serves), in ONE call. Ids outside the caller's scope are silently absent.
+ * `ids` must hold 1-20 valid ids (the caller filters / caps them).
+ */
+export function v1ManagedCustomersByIds(
+  bearer: string,
+  ids: number[]
+): Promise<{ data: V1ManagedCustomer[]; meta: V1PageMeta }> {
+  return meGet(bearer, "/me/managed-customers", {
+    query: { ids, expand: "detail", page: 1, pageSize: ids.length },
+  })
+}
+
+/**
+ * GET /me/claims-link?language=: a one-time claims-portal login URL for the
+ * caller's OWN login. Deliberately NOT React-`cache`d (every URL is single
+ * use) and WITHOUT X-Acting-Customer-Id: the backend validates the header
+ * but never uses it, so sending it could only turn a stale acting cookie
+ * into a 404. Errors: 403 impersonated session, 404 admin-issued session
+ * (no own login), 503 claims portal not configured / refused.
+ */
+export function v1GetClaimsLink(
+  bearer: string,
+  language: string
+): Promise<{ url: string }> {
+  return meGet(bearer, "/me/claims-link", { query: { language } })
+}

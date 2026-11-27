@@ -15,6 +15,7 @@ import {
   isV1ImpersonationSession,
   isV1OrderId,
   mapV1ManagedCustomer,
+  mapV1ManagedCustomerDetailed,
   mapV1MeToActingCustomer,
   mapV1MeToCustomer,
   mapV1OrderDetail,
@@ -112,6 +113,17 @@ async function main() {
       a.delivery_terms === "EXW" && a.additional_components?.length === 1 && a.files?.length === 1 && a.role === "agent")
   const m = mapV1ManagedCustomer({ id: 5, name: "N", surname: null, email: "e", accountCode: "C5", companyName: "Co", customerGroupName: "G", role: "customer" })
   assert("managed row -> selector fields", m.id === 5 && m.account_code === "C5" && m.b2b_company_name === "Co" && m.customer_group?.name === "G" && m.price_listId === null)
+  // ?ids=...&expand=detail: row + detail must hydrate exactly like GET /me + acting header
+  const detailed = mapV1ManagedCustomerDetailed({
+    id: me.id, name: me.name, surname: me.surname, email: me.email, phone: me.phone, accountCode: me.accountCode,
+    companyName: me.companyName, customerGroupName: me.customerGroup?.name ?? null, role: me.role,
+    detail: {
+      deliveryTerms: me.deliveryTerms, priceListId: me.priceListId, customerGroup: me.customerGroup, tags: me.tags,
+      fabricPalettes: me.fabricPalettes, files: me.files, additionalComponents: me.additionalComponents,
+    },
+  })
+  assert("managed row + detail == GET /me acting hydration", eq(detailed, a))
+  assert("managed row without detail -> slim row", eq(mapV1ManagedCustomerDetailed({ id: 5, name: "N", surname: null, email: "e", accountCode: "C5", companyName: "Co", customerGroupName: "G", role: "customer" }), m))
 
   console.log("Adapter: orders")
   const li: V1OrderListItem = {

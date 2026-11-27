@@ -149,6 +149,22 @@ export interface V1ManagedCustomer {
   companyName: N<string>
   customerGroupName: N<string>
   role: N<string>
+  /** `?ids=...&expand=detail` only (ManagedCustomerDetail). */
+  detail?: N<V1ManagedCustomerDetail>
+}
+
+/**
+ * ManagedCustomerDetail: what GET /me + X-Acting-Customer-Id serves for
+ * that customer (the acting-customer hydration fields; same sub-schemas).
+ */
+export interface V1ManagedCustomerDetail {
+  deliveryTerms: N<string>
+  priceListId: N<number>
+  customerGroup: V1Me["customerGroup"]
+  tags: V1Me["tags"]
+  fabricPalettes: V1Me["fabricPalettes"]
+  files: V1Me["files"]
+  additionalComponents: V1Me["additionalComponents"]
 }
 
 export interface V1OrderListItem {
@@ -482,6 +498,40 @@ export function mapV1ManagedCustomer(c: V1ManagedCustomer): SearchCustomerResult
     role: c.role ?? null,
     customer_group: c.customerGroupName != null ? { name: c.customerGroupName } : undefined,
   }
+}
+
+/**
+ * A hydrated selector row (`?ids=...&expand=detail`): row + detail, the same
+ * SearchCustomerResult mapV1MeToActingCustomer builds from GET /me with the
+ * acting header. A row without `detail` maps like a slim selector row.
+ */
+export function mapV1ManagedCustomerDetailed(
+  c: V1ManagedCustomer
+): SearchCustomerResult {
+  const d = c.detail
+  if (!d) return mapV1ManagedCustomer(c)
+  return mapV1MeToActingCustomer({
+    id: c.id,
+    name: c.name ?? null,
+    surname: c.surname ?? null,
+    email: c.email ?? null,
+    phone: c.phone ?? null,
+    role: c.role ?? null,
+    companyName: c.companyName ?? null,
+    accountCode: c.accountCode ?? null,
+    priceListId: d.priceListId ?? null,
+    discount: null,
+    deliveryTerms: d.deliveryTerms ?? null,
+    tags: d.tags,
+    fabricPalettes: d.fabricPalettes,
+    files: d.files,
+    customerGroup: d.customerGroup,
+    features: null,
+    account: null,
+    companyAddress: null,
+    managers: null,
+    additionalComponents: d.additionalComponents,
+  })
 }
 
 // ---- orders ----
