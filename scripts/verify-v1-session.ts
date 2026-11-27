@@ -50,6 +50,7 @@ import {
 } from "../src/lib/v1-session/magic-link"
 import { isTokenUrlPath, thirdPartyScriptsAllowed } from "../src/lib/util/token-url-paths"
 import { exchangeV1Impersonation, isHandoffCodeShape } from "../src/lib/v1-session/impersonation"
+import { resolveV1SessionOnDemand } from "../src/lib/v1-session/on-demand"
 
 // ---- fixtures ----------------------------------------------------------------------
 
@@ -1115,6 +1116,124 @@ async function main() {
   })
 
   globalThis.fetch = realFetch
+
+  // ---- refresh on demand (route handlers / server actions, slices 6/7) ----------------
+
+  const OD_COMPANION = "_furni_jwt"
+  const OD_LEGACY_JWT = "legacy.jwt.value"
+  const od = (extra: Record<string, unknown> = {}) => ({ secure: true, companionCookie: OD_COMPANION, nowMs: clock, ...extra })
+
+  await test("on-demand: usable access cookie -> ok, no backend call, no write, no probe", async () => {
+    const be = new FakeBackend(() => clock)
+    const a = jwt(NOW + 3600_000, "od-fresh")
+    const m = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_ACCESS_COOKIE]: a, [V1_REFRESH_COOKIE]: be.login() })
+    eq(await resolveV1SessionOnDemand(makeClient(be.fetch), m.jar, ctx, od()), { status: "ok", accessToken: a, refreshed: false }, "result")
+    eq([be.refreshCalls, m.writes.length, m.probes()], [0, 0, 0], "untouched")
+  })
+
+  await test("on-demand: orphan (v1 cookies, no _furni_jwt) -> anonymous; never refreshed, token never used", async () => {
+    const be = new FakeBackend(() => clock)
+    const m = memoryJar({ [V1_ACCESS_COOKIE]: jwt(NOW + 3600_000, "od-orphan"), [V1_REFRESH_COOKIE]: be.login() })
+    eq(await resolveV1SessionOnDemand(makeClient(be.fetch), m.jar, ctx, od()), { status: "anonymous", endedLegacy: false }, "result")
+    eq([be.refreshCalls, be.logoutCalls, m.writes.length], [0, 0, 0], "no refresh, no logout, no write (the middleware ends it)")
+  })
+
+  await test("on-demand: expired access token -> refreshed, both cookies rotated on this response", async () => {
+    const be = new FakeBackend(() => clock)
+    const t0 = be.login()
+    const m = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: t0 })
+    const r = await resolveV1SessionOnDemand(makeClient(be.fetch), m.jar, ctx, od())
+    ok(r.status === "ok" && r.refreshed, `result ${JSON.stringify(r)}`)
+    ok(m.store[V1_REFRESH_COOKIE].value !== t0, "refresh cookie rotated")
+    eq(r.status === "ok" ? r.accessToken : null, m.store[V1_ACCESS_COOKIE].value, "the returned bearer is the stored access token")
+    eq(m.store[OD_COMPANION].value, OD_LEGACY_JWT, "_furni_jwt untouched")
+    eq(be.refreshCalls, 1, "one backend call")
+  })
+
+  await test("on-demand: N concurrent route-handler calls (one process) -> ONE backend refresh, same pair everywhere", async () => {
+    const be = new FakeBackend(() => clock)
+    const t0 = be.login()
+    const client = makeClient(be.fetch)
+    const jars = Array.from({ length: 8 }, () => memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_REFRESH_COOKIE]: t0 }))
+    const all = await Promise.all(jars.map((j) => resolveV1SessionOnDemand(client, j.jar, ctx, od())))
+    eq(be.refreshCalls, 1, "backend calls")
+    const t1 = jars[0].store[V1_REFRESH_COOKIE].value
+    ok(all.every((r) => r.status === "ok"), "every caller ok")
+    ok(jars.every((j) => j.store[V1_REFRESH_COOKIE].value === t1), "every response carries the same rotated token")
+    eq(be.revocations, 0, "nothing revoked")
+  })
+
+  await test("on-demand vs middleware (separate client instances, same token, concurrent): grace pair, nothing revoked", async () => {
+    const be = new FakeBackend(() => clock)
+    const t0 = be.login()
+    const middlewareClient = makeClient(be.fetch)
+    const handlerClient = makeClient(be.fetch)
+    const mwJar = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_REFRESH_COOKIE]: t0 })
+    const rhJar = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_REFRESH_COOKIE]: t0 })
+    const [mw, rh] = await Promise.all([
+      ensureFreshV1Session(middlewareClient, mwJar.jar, ctx, opts({ waitMs: MIDDLEWARE_WAIT_MS })),
+      resolveV1SessionOnDemand(handlerClient, rhJar.jar, ctx, od()),
+    ])
+    ok(mw.kind === "ok" && rh.status === "ok", `results ${mw.kind} / ${rh.status}`)
+    eq(be.refreshCalls, 2, "each isolate presented once")
+    eq(mwJar.store[V1_REFRESH_COOKIE].value, rhJar.store[V1_REFRESH_COOKIE].value, "both hold the SAME pair (backend grace)")
+    eq([be.revocations, be.superseded409], [0, 0], "no revocation, no 409")
+    // A straggler on the handler side 40 s later (past the backend's 30 s
+    // grace) with the old token: answered from the handler's own memo,
+    // never re-presented (which would revoke the session).
+    clock += 40_000
+    const late = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_REFRESH_COOKIE]: t0 })
+    const r = await resolveV1SessionOnDemand(handlerClient, late.jar, ctx, od())
+    ok(r.status === "ok", `late straggler ${r.status}`)
+    eq([be.refreshCalls, be.revocations], [2, 0], "no backend call, nothing revoked")
+  })
+
+  await test("on-demand: a third concurrent presenter gets 409 -> needs-refresh/unavailable, cookies untouched", async () => {
+    const be = new FakeBackend(() => clock)
+    const t0 = be.login()
+    const jars = [0, 1, 2].map(() => memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_REFRESH_COOKIE]: t0 }))
+    const clients = [0, 1, 2].map(() => makeClient(be.fetch))
+    const rs = []
+    for (let i = 0; i < 3; i++) rs.push(await resolveV1SessionOnDemand(clients[i], jars[i].jar, ctx, od()))
+    eq(rs.map((r) => r.status), ["ok", "ok", "needs-refresh"], "statuses")
+    eq(rs[2], { status: "needs-refresh", reason: "unavailable" }, "third")
+    eq(jars[2].writes.length, 0, "third jar untouched")
+    eq(be.revocations, 0, "nothing revoked")
+  })
+
+  await test("on-demand: definitive refresh 401 -> both v1 cookies AND _furni_jwt cleared (D5)", async () => {
+    const be = new FakeBackend(() => clock)
+    const m = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: "unknown".padEnd(43, "u") })
+    eq(await resolveV1SessionOnDemand(makeClient(be.fetch), m.jar, ctx, od()), { status: "anonymous", endedLegacy: true }, "result")
+    ok(!m.jar.get(V1_ACCESS_COOKIE) && !m.jar.get(V1_REFRESH_COOKIE), "v1 cookies cleared")
+    ok(!m.jar.get(OD_COMPANION), "_furni_jwt cleared")
+    const del = m.writes.find((w) => w.name === OD_COMPANION)
+    eq(del && [del.value, del.options.maxAge, del.options.path, del.options.httpOnly, del.options.sameSite], ["", 0, "/", true, "lax"], "_furni_jwt deletion attributes")
+  })
+
+  await test("on-demand: refresh 503 -> needs-refresh/unavailable, nothing written", async () => {
+    const be = new FakeBackend(() => clock)
+    const t0 = be.login()
+    be.plan = [{ status: 503 }, { status: 503 }, { status: 503 }]
+    const m = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: t0 })
+    eq(await resolveV1SessionOnDemand(makeClient(be.fetch), m.jar, ctx, od()), { status: "needs-refresh", reason: "unavailable" }, "result")
+    eq(m.writes.length, 0, "no cookie write")
+    eq(m.store[V1_REFRESH_COOKIE].value, t0, "refresh token kept")
+  })
+
+  await test("on-demand: not writable (server-component render) -> needs-refresh/not-writable, backend never called", async () => {
+    const be = new FakeBackend(() => clock)
+    const m = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT, [V1_ACCESS_COOKIE]: A_OLD, [V1_REFRESH_COOKIE]: be.login() }, false)
+    eq(await resolveV1SessionOnDemand(makeClient(be.fetch), m.jar, ctx, od()), { status: "needs-refresh", reason: "not-writable" }, "result")
+    eq([be.refreshCalls, m.writes.length, m.probes()], [0, 0, 1], "probe only")
+  })
+
+  await test("on-demand: no v1 cookies (legacy-only login) -> anonymous, nothing touched", async () => {
+    const be = new FakeBackend(() => clock)
+    const m = memoryJar({ [OD_COMPANION]: OD_LEGACY_JWT })
+    eq(await resolveV1SessionOnDemand(makeClient(be.fetch), m.jar, ctx, od()), { status: "anonymous", endedLegacy: false }, "result")
+    eq([be.refreshCalls, m.writes.length], [0, 0], "untouched")
+  })
 
   await test("nothing sensitive reached any console method", () => {
     ok(logged.length > 0, "the failure paths did log something")

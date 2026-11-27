@@ -5,11 +5,18 @@ import "server-only"
  * handlers (stage 2c-2; live since 2c-3: magic-link request / verify, logout,
  * /api/clear-session and the GraphQL impersonation landing use it).
  *
- * 2c-3 rule: server actions and route handlers only STORE a pair
- * (storeV1TokensInAction, after verify) or LOG OUT (logoutV1SessionInAction).
- * None calls ensureV1SessionInAction: the middleware (./middleware-binding.ts)
- * is the single refresh site, and a route handler outside its matcher
- * (/api/*) would present the same refresh token a second time.
+ * Refresh sites (since portal REST slices 6/7): the middleware
+ * (./middleware-binding.ts) for page requests, and resolveV1SessionInHandler
+ * (./on-demand.ts) for route handlers under /api (outside the matcher) and
+ * for server actions whose middleware refresh did not succeed. Both go
+ * through ensureFreshV1Session; the middleware runs in a separate (edge)
+ * module instance, so the two do not share the in-flight / memo maps, and
+ * correctness rests on the backend's grace + 409 REFRESH_SUPERSEDED contract
+ * (./on-demand.ts header; covered by verify-v1-session.ts). Everything else
+ * only STORES a pair (storeV1TokensInAction, after verify / exchange) or
+ * LOGS OUT (logoutV1SessionInAction). Call ensureV1SessionInAction directly
+ * only where the orphan rule is already handled; prefer
+ * resolveV1SessionInHandler.
  *
  * Which function is safe where:
  *
@@ -45,6 +52,9 @@ import {
   type V1Tokens,
 } from "./refresh"
 import { v1CookiesSecure as secure, v1SessionClient as client } from "./instance"
+import { resolveV1SessionOnDemand, type V1OnDemandResult } from "./on-demand"
+
+export type { V1OnDemandResult }
 
 async function nextCookieJar(): Promise<WritableCookieJar> {
   const store = await cookies()
@@ -101,6 +111,23 @@ export async function logoutV1SessionInAction() {
     waitMs: ACTION_WAIT_MS,
   })
 }
+
+/**
+ * Route handlers and server actions: the v1 access token for this call,
+ * refreshing on demand (./on-demand.ts: orphan rule, D5, not-writable ->
+ * "needs-refresh" without any backend call, so it is also safe to call from a
+ * server-component render, where it never refreshes).
+ */
+export async function resolveV1SessionInHandler(): Promise<V1OnDemandResult> {
+  return resolveV1SessionOnDemand(client(), await nextCookieJar(), await requestContext(), {
+    secure: secure(),
+    companionCookie: LEGACY_SESSION_COOKIE,
+    waitMs: ACTION_WAIT_MS,
+  })
+}
+
+/** The GraphQL (legacy) session cookie, the companion of the v1 session. */
+export const LEGACY_SESSION_COOKIE = "_furni_jwt"
 
 /** Request context for postAuth callers (2c-3 verify, 2c-4 exchange). */
 export async function v1RequestContextInAction(): Promise<V1RequestContext> {

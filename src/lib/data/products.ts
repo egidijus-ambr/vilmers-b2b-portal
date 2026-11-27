@@ -9,7 +9,7 @@ import { getCustomerFilterData } from "./customer"
 import { getRegion, retrieveRegion } from "./regions"
 import { ContentBlock, ProductContainer } from "@lib/furnisystems-sdk"
 import { runCatalogListing, v1ContentBlockProducts } from "./catalog-v1"
-import { getCatalogRequestContext } from "./catalog-transport"
+import { getV1RequestContext } from "./v1-transport"
 
 export const listProducts = async ({
   pageParam = 1,
@@ -147,13 +147,13 @@ export async function enrichContentBlocksWithProducts(
     return blocks
   }
 
-  // v1 or GraphQL per request (see ./catalog-transport-rule.ts). On v1 the
+  // v1 or GraphQL per request (see ./v1-transport-rule.ts). On v1 the
   // server reads the block's own config (mode / max_products / tag_ids /
   // grid picks) by id and applies the caller's visibility; the block config
   // carried here (possibly from a cached CMS page) is not used.
   // GraphQL requests keep the original single pass (one customer filter for
   // all blocks); runCatalogListing below only re-routes a v1 401 per block.
-  if ((await getCatalogRequestContext()).transport === "graphql") {
+  if ((await getV1RequestContext()).transport === "graphql") {
     return enrichContentBlocksWithProductsGraphql(blocks, language)
   }
   return Promise.all(
@@ -176,7 +176,7 @@ export async function enrichContentBlocksWithProducts(
   )
 }
 
-/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
 async function enrichContentBlocksWithProductsGraphql(
   blocks: ContentBlock[],
   language: string

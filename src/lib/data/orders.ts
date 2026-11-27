@@ -7,6 +7,62 @@ import { HttpTypes } from "@medusajs/types"
 import { Order, OrderDetail } from "@lib/furnisystems-sdk/modules/customer/types"
 import { validateSession } from "@lib/util/session-validation"
 import { unstable_noStore } from "next/cache"
+import { withActingRetry } from "@lib/furnisystems-sdk/client/v1-data"
+import {
+  isV1OrderId,
+  mapV1OrderDetail,
+  mapV1OrderPage,
+  v1PageFromOffset,
+} from "@lib/furnisystems-sdk/modules/customer/v1-adapter"
+import { runIdentityCall, v1GetOrder, v1ListOrders } from "./me-v1"
+import {
+  actingCustomerIdForV1,
+  dropActingCookie,
+  dropActingCookieIfStale,
+} from "./v1-acting"
+
+/*
+ * Orders on REST v1 (portal REST slice 7 / 2c-7) when the request has a
+ * usable v1 access token (v1-transport-rule.ts); the GraphQL calls below are
+ * the unchanged path for legacy-only sessions and the target of a v1 401.
+ *
+ * Scope (backend, the same service as GraphQL getCustomerOrders): a customer
+ * login its company's orders, a sub-account login its sub-account's, an
+ * agent / manager its own company's AND its managed customers', a portal
+ * admin every order. D4: with X-Acting-Customer-Id (sent for agent / admin
+ * with a selected customer, v1-acting.ts) only that customer's orders. A
+ * refused / stale acting id (403 / 404) is retried once without it.
+ *
+ * Errors on v1 (403 / 429 / 5xx): the same empty answer a GraphQL error gives
+ * (the table shows "no orders"; the detail page "order not found"). 404 on
+ * the detail = not found / not yours (never someone else's order).
+ */
+const emptyOrdersPage = (limit: number) => ({
+  orders: [] as Order[],
+  totalCount: 0,
+  currentPage: 1,
+  totalPages: 1,
+  pageSize: limit,
+  hasNextPage: false,
+  hasPreviousPage: false,
+})
+
+async function v1OrdersPage(
+  bearer: string,
+  limit: number,
+  offset: number,
+  searchText?: string
+) {
+  const { page, pageSize } = v1PageFromOffset(limit, offset)
+  const search = searchText && searchText.trim() ? searchText.trim().slice(0, 200) : undefined
+  const acting = await actingCustomerIdForV1()
+  const body = await withActingRetry(
+    acting,
+    (actingId) => v1ListOrders(bearer, actingId, { page, pageSize, search }),
+    dropActingCookie
+  )
+  return mapV1OrderPage(body, pageSize)
+}
 
 export const retrieveOrder = async (
   id: string
@@ -21,7 +77,23 @@ export const retrieveOrder = async (
       return null
     }
 
-    const order = await sdk.customer.getCustomerOrderById(id)
+    const order = await runIdentityCall<OrderDetail | null>("retrieveOrder", {
+      v1: async (bearer) => {
+        if (!isV1OrderId(id)) return null
+        const acting = await actingCustomerIdForV1()
+        const body = await withActingRetry(
+          acting,
+          (actingId) => v1GetOrder(bearer, actingId, id),
+          // An order outside the acting customer's scope is not a stale
+          // acting id: drop the cookie only if /me confirms the 404.
+          dropActingCookieIfStale(bearer, acting)
+        )
+        return mapV1OrderDetail(body)
+      },
+      graphql: () => sdk.customer.getCustomerOrderById(id),
+      guest: () => null,
+      onError: () => null,
+    })
 
     if (!order) {
       console.log("[retrieveOrder] Order not found for ID:", id)
@@ -56,10 +128,15 @@ export const listOrders = async (
       return []
     }
 
-    // Use the furnisystems SDK to get customer orders via GraphQL
-    const result = await sdk.customer.getCustomerOrders({
-      take: limit,
-      skip: offset,
+    const result = await runIdentityCall("listOrders", {
+      v1: (bearer) => v1OrdersPage(bearer, limit, offset),
+      graphql: () =>
+        sdk.customer.getCustomerOrders({
+          take: limit,
+          skip: offset,
+        }),
+      guest: () => emptyOrdersPage(limit),
+      onError: () => emptyOrdersPage(limit),
     })
 
     // Extract orders array from the result
@@ -118,11 +195,16 @@ export const listOrdersWithPagination = async (
       }
     }
 
-    // Use the furnisystems SDK to get customer orders via GraphQL with pagination
-    const result = await sdk.customer.getCustomerOrders({
-      take: limit,
-      skip: offset,
-      searchText: searchText || undefined,
+    const result = await runIdentityCall("listOrdersWithPagination", {
+      v1: (bearer) => v1OrdersPage(bearer, limit, offset, searchText),
+      graphql: () =>
+        sdk.customer.getCustomerOrders({
+          take: limit,
+          skip: offset,
+          searchText: searchText || undefined,
+        }),
+      guest: () => emptyOrdersPage(limit),
+      onError: () => emptyOrdersPage(limit),
     })
 
     // set order display_id

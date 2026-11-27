@@ -11,7 +11,7 @@ export async function getCategoryFilterFacets(
   selectedCategoryIds: number[] = [],
   newOnly: boolean = false
 ) {
-  // v1 or GraphQL per request: see ./catalog-transport-rule.ts.
+  // v1 or GraphQL per request: see ./v1-transport-rule.ts.
   return runCatalogListing(
     "category facets",
     (bearer) =>
@@ -34,7 +34,7 @@ export async function getCategoryFilterFacets(
   )
 }
 
-/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
 async function getCategoryFilterFacetsGraphql(
   categoryPermalink: string,
   language: string,

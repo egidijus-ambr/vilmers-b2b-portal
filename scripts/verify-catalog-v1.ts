@@ -6,7 +6,7 @@
 //   (= node --conditions=react-server -r sucrase/register scripts/verify-catalog-v1.ts;
 //    the react-server condition resolves `server-only` to its empty module.)
 // Exits 0 when every case passes, 1 otherwise.
-import { selectCatalogTransport } from "../src/lib/data/catalog-transport-rule"
+import { selectV1Transport as selectCatalogTransport } from "../src/lib/data/v1-transport-rule"
 import {
   emptyFacets,
   emptyProductsPage,

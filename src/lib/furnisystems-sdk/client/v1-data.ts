@@ -141,39 +141,50 @@ async function problemFrom(
   })
 }
 
-/** GET a v1 JSON endpoint; throws V1ProblemError on any failure. */
-export async function v1DataGet<T>(
-  deps: V1DataClientDeps,
-  req: V1DataRequest
-): Promise<T> {
-  const doFetch = deps.fetch ?? globalThis.fetch
-  const bff = await (deps.bffHeaders ?? defaultBffHeaders)()
-  const acting =
-    typeof req.actingCustomerId === "number" &&
-    Number.isInteger(req.actingCustomerId) &&
-    req.actingCustomerId > 0
-      ? req.actingCustomerId
-      : null
+function actingIdOf(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0
+    ? value
+    : null
+}
 
+async function requestHeaders(
+  deps: V1DataClientDeps,
+  req: V1DataRequest,
+  accept: string
+): Promise<{ headers: Record<string, string>; acting: number | null }> {
+  const bff = await (deps.bffHeaders ?? defaultBffHeaders)()
+  const acting = actingIdOf(req.actingCustomerId)
   const headers: Record<string, string> = {
-    Accept: "application/json",
+    Accept: accept,
     "x-client": "portal",
     ...bff,
   }
   if (req.bearer) headers.Authorization = `Bearer ${req.bearer}`
   if (acting !== null) headers[ACTING_CUSTOMER_HEADER] = String(acting)
+  return { headers, acting }
+}
 
+/**
+ * One v1 request; resolves the 2xx Response (body unread), throws
+ * V1ProblemError for every non-2xx answer and for network failures.
+ */
+async function v1Send(
+  deps: V1DataClientDeps,
+  req: V1DataRequest,
+  method: "GET" | "POST",
+  accept: string
+): Promise<Response> {
+  const doFetch = deps.fetch ?? globalThis.fetch
+  const { headers, acting } = await requestHeaders(deps, req, accept)
   const url = `${v1Base(deps.restApiUrl)}${req.path}${buildV1QueryString(
     req.query
   )}`
 
   let response: Response
   try {
-    response = await doFetch(url, {
-      method: "GET",
-      headers,
-      cache: "no-store",
-    })
+    // POST without a body: the v1 routes used here declare none (a JSON
+    // body would be ignored; no Content-Type means no 415 either).
+    response = await doFetch(url, { method, headers, cache: "no-store" })
   } catch (error) {
     throw new V1ProblemError({
       status: 0,
@@ -183,17 +194,51 @@ export async function v1DataGet<T>(
       }`,
     })
   }
-
   if (!response.ok) throw await problemFrom(response, acting !== null)
+  return response
+}
+
+async function jsonOf<T>(response: Response, actingSent: boolean): Promise<T> {
   try {
     return (await response.json()) as T
   } catch {
     throw new V1ProblemError({
       status: response.status,
-      actingSent: acting !== null,
+      actingSent,
       message: "v1 request failed: invalid JSON body",
     })
   }
+}
+
+/** GET a v1 JSON endpoint; throws V1ProblemError on any failure. */
+export async function v1DataGet<T>(
+  deps: V1DataClientDeps,
+  req: V1DataRequest
+): Promise<T> {
+  const response = await v1Send(deps, req, "GET", "application/json")
+  return jsonOf<T>(response, actingIdOf(req.actingCustomerId) !== null)
+}
+
+/** POST (no request body) to a v1 JSON endpoint; throws V1ProblemError. */
+export async function v1DataPost<T>(
+  deps: V1DataClientDeps,
+  req: V1DataRequest
+): Promise<T> {
+  const response = await v1Send(deps, req, "POST", "application/json")
+  return jsonOf<T>(response, actingIdOf(req.actingCustomerId) !== null)
+}
+
+/**
+ * GET a v1 binary endpoint (PDF, document download). Resolves the 2xx
+ * Response with its body UNREAD, so the caller can stream it; throws
+ * V1ProblemError otherwise (problem+json bodies are parsed for the code).
+ */
+export async function v1DataGetBinary(
+  deps: V1DataClientDeps,
+  req: V1DataRequest,
+  accept = "*/*"
+): Promise<Response> {
+  return v1Send(deps, req, "GET", `${accept}, application/problem+json`)
 }
 
 /**
@@ -230,5 +275,27 @@ export async function withActingRetry<T>(
       }
     }
     return result
+  }
+}
+
+/**
+ * `onStaleActing` for resources the acting header NARROWS (an order, its
+ * invoice, a company file: D4). There a 404 with the header followed by a
+ * 200 without it only says "this resource is outside the acting customer's
+ * scope" (e.g. an agent acting for X opens an order of managed customer Y
+ * from an old tab), not that the acting id is stale. So the cookie is only
+ * dropped when `lookupActing` (GET /me with the header) also answers 404;
+ * any other answer, or an error, keeps it.
+ */
+export function dropActingIfConfirmedStale(
+  lookupActing: () => Promise<unknown>,
+  drop: () => Promise<void> | void
+): () => Promise<void> {
+  return async () => {
+    try {
+      await lookupActing()
+    } catch (error) {
+      if (isV1ProblemError(error) && error.status === 404) await drop()
+    }
   }
 }

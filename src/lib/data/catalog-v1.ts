@@ -12,7 +12,6 @@ import "server-only"
  * guests included: nothing here goes through unstable_cache or Next's data
  * cache, so a customer-specific answer can never be shared.
  */
-import { cookies } from "next/headers"
 import {
   isV1ProblemError,
   v1DataGet,
@@ -35,11 +34,8 @@ import type {
   CategoryProductsResponse,
   ProductContainer,
 } from "@lib/furnisystems-sdk/modules/products/types"
-import { ACTING_CUSTOMER_COOKIE } from "@lib/util/acting-customer-cookie"
-import { isAgentOrAdmin } from "@lib/util/roles"
-import { getActingCustomerId } from "./acting-customer"
-import { getCatalogRequestContext } from "./catalog-transport"
-import { getSessionCustomer } from "./session-customer"
+import { actingCustomerIdForV1, dropActingCookie } from "./v1-acting"
+import { getV1RequestContext } from "./v1-transport"
 import { getShowAllProductsCookie } from "./show-all-products"
 
 /** Portal listing page size (v1 default too); quick search uses 4. */
@@ -47,30 +43,6 @@ export const CATALOG_PAGE_SIZE = 28
 export const QUICK_SEARCH_PAGE_SIZE = 4
 const MAX_PAGE = 10_000
 const MAX_SEARCH_LENGTH = 100
-
-/**
- * X-Acting-Customer-Id: the acting cookie, sent only when the backend's
- * current role of the session customer is agent/admin (the same condition
- * getActingCustomer uses on the GraphQL path; managers do not act until
- * 2c-9). getMe is only called when the cookie is set.
- */
-async function actingCustomerIdForV1(): Promise<number | null> {
-  const id = await getActingCustomerId()
-  if (id == null || id <= 0) return null
-  try {
-    const me = await getSessionCustomer()
-    return isAgentOrAdmin(me) ? id : null
-  } catch {
-    return null
-  }
-}
-
-async function dropActingCookie(): Promise<void> {
-  // Throws inside a server-component render (read-only cookies); the caller
-  // (withActingRetry) ignores that, like getActingCustomer does.
-  const store = await cookies()
-  store.delete(ACTING_CUSTOMER_COOKIE)
-}
 
 /** One v1 catalogue GET with the session's bearer, acting id and showAll. */
 async function catalogGet<T>(
@@ -117,7 +89,7 @@ export async function runCatalogListing<T>(
   graphql: () => Promise<T>,
   empty: () => T
 ): Promise<T> {
-  const ctx = await getCatalogRequestContext()
+  const ctx = await getV1RequestContext()
   if (ctx.transport === "graphql") return graphql()
   try {
     return await v1(ctx.bearer)

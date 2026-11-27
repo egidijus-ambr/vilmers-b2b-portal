@@ -7,7 +7,7 @@ export async function getCollectionProducts(
   language: string,
   page: number = 1
 ) {
-  // v1 or GraphQL per request: see ./catalog-transport-rule.ts.
+  // v1 or GraphQL per request: see ./v1-transport-rule.ts.
   const result = await runCatalogListing(
     "collection products",
     (bearer) =>
@@ -28,7 +28,7 @@ export async function getCollectionProducts(
   }
 }
 
-/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
 async function getCollectionProductsGraphql(
   collectionPermalink: string,
   language: string,

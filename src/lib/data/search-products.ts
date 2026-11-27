@@ -16,7 +16,7 @@ const emptyPage = () => ({
   sortedProductContainers: [],
 })
 
-/** v1 or GraphQL per request: see ./catalog-transport-rule.ts. */
+/** v1 or GraphQL per request: see ./v1-transport-rule.ts. */
 async function searchListing(
   searchTerm: string,
   language: SupportedLanguage,
@@ -32,7 +32,7 @@ async function searchListing(
   )
 }
 
-/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
 async function searchProductsGraphql(
   searchTerm: string,
   language: SupportedLanguage,

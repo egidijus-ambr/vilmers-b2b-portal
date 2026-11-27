@@ -18,11 +18,15 @@ import "server-only"
  *   }
  *
  * Rules (2c-3, furnisystems-backend docs/briefs/stage-2c-3.md §2 / B3):
- *   - this is the ONLY place a refresh happens. Server actions and route
- *     handlers only store a pair (verify) or log out; a route handler outside
- *     the matcher calling ensureV1SessionInAction would present the same
- *     refresh token a second time. Parallel refreshes are de-duplicated by
- *     the client (in-flight map + memo, ./refresh.ts header);
+ *   - the refresh site for page requests. Since portal REST slices 6/7,
+ *     route handlers under /api (outside the matcher) and server actions
+ *     refresh on demand through ./on-demand.ts (same ensureFreshV1Session,
+ *     orphan rule and D5). This binding runs in the edge sandbox with its own
+ *     client instance, so its in-flight map / memo are not shared with them;
+ *     a concurrent double presentation is absorbed by the backend's grace
+ *     pair / 409 REFRESH_SUPERSEDED (./on-demand.ts header). Within one
+ *     instance parallel refreshes are de-duplicated (in-flight map + memo,
+ *     ./refresh.ts header);
  *   - never redirect to login on `deferred` (a prefetch; a redirect could be
  *     cached by the router for that link) or `unavailable` (503 / timeout /
  *     network / 429 / 409 REFRESH_SUPERSEDED: the session is alive, the

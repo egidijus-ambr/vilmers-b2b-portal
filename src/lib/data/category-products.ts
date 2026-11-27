@@ -18,7 +18,7 @@ export async function getCategoryProducts(
   catIds: number[] = [],
   newOnly: boolean = false
 ) {
-  // v1 or GraphQL per request: see ./catalog-transport-rule.ts.
+  // v1 or GraphQL per request: see ./v1-transport-rule.ts.
   const result = await runCatalogListing(
     "category products",
     (bearer) =>
@@ -52,7 +52,7 @@ export async function getCategoryProducts(
   }
 }
 
-/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
 async function getCategoryProductsGraphql(
   categoryPermalink: string,
   language: string,
@@ -111,7 +111,7 @@ export async function getAllCategoryProductNames(
   products: { id: number; name: string }[]
   totalCount: number
 }> {
-  // v1 or GraphQL per request: see ./catalog-transport-rule.ts.
+  // v1 or GraphQL per request: see ./v1-transport-rule.ts.
   const result = await runCatalogListing(
     "category product names",
     (bearer) =>
@@ -140,7 +140,7 @@ export async function getAllCategoryProductNames(
   }
 }
 
-/** GraphQL path (fallback until v1 impersonation; see catalog-transport-rule.ts). */
+/** GraphQL path (fallback until v1 impersonation; see v1-transport-rule.ts). */
 async function getCategoryProductNamesGraphql(
   categoryPermalink: string,
   language: string,

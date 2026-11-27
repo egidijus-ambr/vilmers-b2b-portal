@@ -6,6 +6,10 @@ import { revalidateTag } from "next/cache"
 import { removeAuthToken, removeCacheId, setCacheId } from "@lib/data/cookies"
 import { isTokenExpired, getCustomerAccountIdFromToken } from "./jwt-utils"
 import { AuthenticationError } from "@lib/furnisystems-sdk/client/errors"
+import { isV1ProblemError } from "@lib/furnisystems-sdk/client/v1-data"
+import { mapV1MeToCustomer } from "@lib/furnisystems-sdk/modules/customer/v1-adapter"
+import { getV1RequestContext } from "@lib/data/v1-transport"
+import { describeV1Error, v1GetMeSelf } from "@lib/data/me-v1"
 
 // Classification lives on the thrown error from sdk.customer.getMe() (see its
 // isAuthGraphQLError helper). We check both `instanceof` and the error's own `code` field:
@@ -56,6 +60,36 @@ export async function validateSession(): Promise<{
       }
     }
 
+    // REST v1 (portal REST slice 7 / 2c-10) when this request has a usable
+    // v1 access token (src/lib/data/v1-transport-rule.ts): GET /me WITHOUT
+    // X-Acting-Customer-Id is the caller itself, as GraphQL getMe was.
+    //   2xx  -> valid (memoised per request, never in a shared cache)
+    //   401  -> this one call takes the GraphQL getMe path below
+    //   else -> logged-out for this render, NO cookie is touched (a 403 /
+    //           404 / 429 / 5xx never ends the session; the middleware's
+    //           refresh decides that)
+    const transport = await getV1RequestContext()
+    if (transport.identity === "v1" && transport.bearer) {
+      try {
+        const me = await v1GetMeSelf(transport.bearer)
+        return { isValid: true, customer: mapV1MeToCustomer(me), customerId }
+      } catch (v1Error) {
+        if (!(isV1ProblemError(v1Error) && v1Error.status === 401)) {
+          console.warn(
+            `[validateSession] v1 /me failed, session preserved: ${describeV1Error(v1Error)}`
+          )
+          return {
+            isValid: false,
+            customer: null,
+            customerId,
+            error: "v1 /me failed",
+          }
+        }
+        console.warn("[validateSession] v1 /me answered 401, using GraphQL getMe")
+      }
+    }
+
+    // GraphQL path (legacy-only sessions; see v1-transport-rule.ts).
     // Attempt to fetch customer data to validate token with backend
     try {
       const customer = await sdk.customer.getMe()

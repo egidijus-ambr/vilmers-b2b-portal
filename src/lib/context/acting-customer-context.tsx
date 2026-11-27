@@ -77,6 +77,23 @@ export function ActingCustomerProvider({
         clearActingCustomerCookie()
       }
       setActing(c as ActingCustomer)
+      if (c) {
+        // Hydrate the picked row: on REST v1 the selector row is slim (no
+        // files, palettes, tags, price lists), so read the full acting
+        // customer back from the server (same resolver as the layout). Only
+        // applied while the same customer is still selected.
+        const pickedId = String(c.id)
+        void getActingCustomerForSelector()
+          .then((res) => {
+            if (!res.ok || !res.customer || String(res.customer.id) !== pickedId) return
+            setActing((prev) =>
+              prev && String(prev.id) === pickedId
+                ? (res.customer as ActingCustomer)
+                : prev
+            )
+          })
+          .catch(() => undefined)
+      }
 
       // Picking (not clearing) a customer lands on the first Store category,
       // unless the caller opts out (checkout must stay put).
