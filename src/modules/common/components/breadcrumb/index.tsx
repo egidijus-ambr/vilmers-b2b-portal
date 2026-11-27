@@ -12,17 +12,6 @@ export interface BreadcrumbItem {
 interface BreadcrumbProps {
   items: BreadcrumbItem[]
   variant?: "default" | "light"
-  /**
-   * Reduces the breadcrumb's bottom margin (`mb-8` -> `mb-2`).
-   *
-   * The default `mb-8` exists to separate the breadcrumb from a page title
-   * rendered directly below it. When a consumer has no title (e.g. a
-   * no-hero CMS `PageHeader` in `compact` mode), that full gap is dead
-   * space, so it's reduced to a small `mb-2` breathing gap instead of
-   * removed entirely. Defaults to `false` so every existing consumer keeps
-   * its current `mb-8` spacing untouched.
-   */
-  compact?: boolean
 }
 
 const ChevronRight = ({ className }: { className?: string }) => (
@@ -43,21 +32,33 @@ const ChevronRight = ({ className }: { className?: string }) => (
   </svg>
 )
 
-const Breadcrumb = ({
-  items,
-  variant = "default",
-  compact = false,
-}: BreadcrumbProps) => {
+/**
+ * The one breadcrumb trail. Sizing is responsive: `text-xs`, tight gaps and
+ * small chevrons below `xsmall` (512px), `text-sm` / `gap-3` / 16px chevrons
+ * from `xsmall` up.
+ *
+ * Vertical rhythm: the default variant owns `py-3 xsmall:py-5`, so callers
+ * must NOT add their own margin/padding around it. The `light` variant (over
+ * a hero image) has identical sizing and colours-only differences, but no
+ * padding, because the hero's own container already provides it.
+ */
+const Breadcrumb = ({ items, variant = "default" }: BreadcrumbProps) => {
   const { t } = useTranslations("common")
   const isLight = variant === "light"
 
   return (
-    <nav aria-label={t("breadcrumb")} className={isLight ? "" : compact ? "mb-2" : "mb-8"}>
-      <ol className="flex items-center flex-wrap gap-3 text-sm">
+    <nav
+      aria-label={t("breadcrumb")}
+      className={isLight ? "" : "py-3 xsmall:py-5"}
+    >
+      <ol className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-xs xsmall:gap-3 xsmall:text-sm">
         {items.map((item, index) => {
           const isLast = index === items.length - 1
           return (
-            <li key={index} className="flex items-center gap-3">
+            <li
+              key={index}
+              className="flex items-center gap-1.5 xsmall:gap-3"
+            >
               {item.href ? (
                 <LocalizedClientLink
                   href={item.href}
@@ -83,11 +84,9 @@ const Breadcrumb = ({
               {!isLast && (
                 <span aria-hidden="true">
                   <ChevronRight
-                    className={
-                      isLight
-                        ? "text-white/60 flex-shrink-0"
-                        : "text-gray-400 flex-shrink-0"
-                    }
+                    className={`w-3 h-3 xsmall:w-4 xsmall:h-4 flex-shrink-0 ${
+                      isLight ? "text-white/60" : "text-gray-400"
+                    }`}
                   />
                 </span>
               )}
@@ -98,5 +97,17 @@ const Breadcrumb = ({
     </nav>
   )
 }
+
+/**
+ * Full-width breadcrumb strip (page background + gutter + content container)
+ * for pages that have nothing else in their header, e.g. the configurator.
+ */
+export const BreadcrumbBar = ({ items }: { items: BreadcrumbItem[] }) => (
+  <div className="bg-page-background w-full page-gutter">
+    <div className="content-container">
+      <Breadcrumb items={items} />
+    </div>
+  </div>
+)
 
 export default Breadcrumb

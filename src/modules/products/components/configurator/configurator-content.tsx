@@ -523,6 +523,9 @@ const ConfiguratorContent = ({
 
   return (
     <div className={clx("flex flex-col", !embedded && "h-full overflow-y-auto md:overflow-hidden")}>
+      {/* Embedded (full-width page): content is constrained + guttered here so
+          the sticky price footer below can span edge to edge. */}
+      <div className={clx(embedded && "content-container page-gutter")}>
       {/* Main content area — 2 panel layout */}
       <div className={clx("flex flex-col md:flex-row md:flex-1 gap-6", !embedded && "md:overflow-hidden px-4 md:px-6")}>
         {/* Left panel: Shape selection + canvas */}
@@ -731,6 +734,7 @@ const ConfiguratorContent = ({
       {/* Mobile only — Selected Options summary at the bottom, below stepper/content */}
       <div className="md:hidden px-4">
         <ConfigurationSummary languageCode={languageCode} />
+      </div>
       </div>
 
       {toast && (

@@ -88,7 +88,11 @@ const PriceFooter = ({
     emptyMessage ?? missingMessage ?? (priceBlocks ? priceIssueMessage : null)
 
   return (
-    <div className="sticky bottom-0 mt-4 border-t bg-configurator-surface pt-4 pb-4 px-6 flex flex-col gap-2">
+    // Outer element is full-width (edge-to-edge surface + border); the inner
+    // container re-applies the page's max-width and gutter (px-6, none from
+    // `large`) so the content lines up with the rest of the page.
+    <div className="sticky bottom-0 mt-4 border-t bg-configurator-surface pt-0 pb-4">
+    <div className="content-container page-gutter flex flex-col gap-2">
       {emptyMessage && (
         <p
           className="text-xs text-red-700 text-right"
@@ -120,7 +124,7 @@ const PriceFooter = ({
           {missingMessage}
         </p>
       )}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       {/* Volume display — left side */}
       <div className="flex items-center">
         {displayVolume > 0 && (
@@ -131,7 +135,7 @@ const PriceFooter = ({
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 ml-auto">
         {/* Quantity selector */}
         <div className="flex items-center border rounded border-gold">
           <button
@@ -214,6 +218,7 @@ const PriceFooter = ({
         </Button>
       </div>
       </div>
+    </div>
     </div>
   )
 }

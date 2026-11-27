@@ -102,7 +102,7 @@ export default async function CollectionPageTemplate({
             ))}
           </div>
         )}
-        <PageContent className="pt-8">
+        <PageContent className={contentBlocks.length > 0 ? "pt-4" : "pt-2"}>
           <Suspense fallback={<CategoryProductGridSkeleton />}>
             <CollectionProductGrid
               collectionPermalink={collectionPermalink}

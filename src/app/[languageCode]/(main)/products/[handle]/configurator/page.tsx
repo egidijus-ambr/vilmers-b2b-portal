@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation"
 import { getProductByPermalink } from "@lib/data/furnisystems-products"
 import { listMenuCategories } from "@lib/data/categories"
 import { getShowAllProductsActive } from "@lib/data/show-all-products"
-import Breadcrumb, { BreadcrumbItem } from "@modules/common/components/breadcrumb"
+import { BreadcrumbBar, BreadcrumbItem } from "@modules/common/components/breadcrumb"
 import ConfiguratorPageClient from "./configurator-page-client"
 import { features } from "@lib/features"
 import { getServerT, type SupportedLanguage } from "@lib/i18n"
@@ -90,12 +90,8 @@ export default async function ConfiguratorPage({ params }: Props) {
 
   return (
     <>
-      <div className="bg-page-background w-full px-6 large:px-0">
-        <div className="content-container py-4">
-          <Breadcrumb items={breadcrumbs} />
-        </div>
-      </div>
-      <div className="content-container px-6 large:px-0">
+      <BreadcrumbBar items={breadcrumbs} />
+      <div className="w-full">
         <ConfiguratorPageClient
           productContainerId={product.id}
           languageCode={languageCode}

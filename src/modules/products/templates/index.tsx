@@ -47,7 +47,7 @@ type ProductTemplateProps = {
 const ProductTemplate: React.FC<ProductTemplateProps> = ({ product }) => {
   return (
     <>
-      <PageHeader breadcrumbItems={product.breadcrumbs} />
+      <PageHeader breadcrumbItems={product.breadcrumbs} spaceBelowBreadcrumb />
       <PageContent>
         <ProductSection>
           <div data-testid="product-container">

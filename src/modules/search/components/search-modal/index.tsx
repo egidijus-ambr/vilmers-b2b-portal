@@ -217,7 +217,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 </p>
 
                 <ul
-                  className="grid grid-cols-2 small:grid-cols-4 gap-x-6 gap-y-8"
+                  className="grid grid-cols-2 small:grid-cols-4 gap-x-4 gap-y-6 xsmall:gap-x-6 xsmall:gap-y-8"
                   onClick={onClose}
                 >
                   {results.map((product) => (

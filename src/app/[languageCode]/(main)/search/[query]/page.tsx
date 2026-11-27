@@ -72,7 +72,7 @@ export default async function SearchResultsPage(props: Props) {
             <p className="text-sm text-gray-600 mb-4">
               {t("search-products-count", "Products")}: {totalCount}
             </p>
-            <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+            <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-4 gap-y-6 xsmall:gap-x-6 xsmall:gap-y-8">
               {products.map((container) => (
                 <B2BProductCard
                   key={container.id}

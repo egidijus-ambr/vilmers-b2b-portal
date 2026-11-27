@@ -56,7 +56,7 @@ export default function ProductPhotosPage() {
           {!productsLoading && (
             <div>
               {productsWithPhotos.length > 0 ? (
-                <div className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+                <div className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-4 gap-y-6 xsmall:gap-x-6 xsmall:gap-y-8">
                   {productsWithPhotos.map((product) => (
                     <Link
                       key={product.name}

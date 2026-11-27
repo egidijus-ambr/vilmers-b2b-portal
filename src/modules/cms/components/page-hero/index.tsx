@@ -92,7 +92,7 @@ const PageHero = ({
         <div
           className={`relative z-10 w-full max-w-[1360px] mx-auto ${
             heroHeight ? "h-full" : "min-h-[350px] md:min-h-[500px]"
-          } flex flex-col py-8 px-6 large:px-0`}
+          } flex flex-col py-8 page-gutter`}
         >
           {!chromeless && breadcrumbItems && breadcrumbItems.length > 0 && (
             <Breadcrumb items={breadcrumbItems} variant="light" />
@@ -143,7 +143,6 @@ const PageHero = ({
       <PageHeader
         description={subtitle}
         breadcrumbItems={chromeless ? undefined : breadcrumbItems}
-        compact
       />
     )
   }
@@ -156,12 +155,18 @@ const PageHero = ({
     return null
   }
 
+  const showBreadcrumb =
+    !chromeless && !!breadcrumbItems && breadcrumbItems.length > 0
+
   return (
-    <div className="w-full bg-page-background py-8 sm:py-10 px-10 sm:px-12 lg:px-14">
+    <div
+      className={`w-full bg-page-background pb-8 sm:pb-10 px-10 sm:px-12 lg:px-14${
+        // The breadcrumb supplies its own top padding.
+        showBreadcrumb ? "" : " pt-8 sm:pt-10"
+      }`}
+    >
       <div className="max-w-[1360px] mx-auto">
-        {!chromeless && breadcrumbItems && breadcrumbItems.length > 0 && (
-          <Breadcrumb items={breadcrumbItems} />
-        )}
+        {showBreadcrumb && <Breadcrumb items={breadcrumbItems!} />}
         <div className="flex flex-col items-center text-center">
           {!chromeless && title && (
             <Heading

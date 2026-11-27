@@ -77,7 +77,7 @@ export default function ProductCarouselGrid({
 
   if (!maxRows) {
     return (
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-4 gap-y-6 xsmall:gap-x-6 xsmall:gap-y-8">
         {products.map((product) => (
           <B2BProductCard key={product.id} container={product} language={language} cardClassName={cardClassName} imageBackgroundClass={imageBackgroundClass} />
         ))}

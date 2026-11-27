@@ -8,7 +8,7 @@ interface PageContentProps {
 export default function PageContent({ children, className, noPaddingX }: PageContentProps) {
   return (
     <div
-      className={`content-container large:px-0 ${noPaddingX ? "" : "px-6"}${
+      className={`content-container ${noPaddingX ? "large:px-0" : "page-gutter"}${
         className ? ` ${className}` : ""
       }`}
     >

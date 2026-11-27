@@ -136,6 +136,13 @@ export default async function CategoryPageTemplate({
     .slice()
     .sort((a, b) => (a.arrangement ?? 0) - (b.arrangement ?? 0))
 
+  // Header already ends with pb-8; only keep the larger gap when blocks or the
+  // child-category carousel sit above the grid (they have no bottom padding).
+  const hasContentAboveGrid =
+    contentBlocks.length > 0 ||
+    (category.is_root_category && !!menuCategories) ||
+    (category.child_categories?.length ?? 0) > 0
+
   return (
     <div data-testid="category-container">
       <PageHeader
@@ -170,7 +177,7 @@ export default async function CategoryPageTemplate({
             languageCode={language}
           />
         ) : null}
-        <PageContent className="pt-8">
+        <PageContent className={hasContentAboveGrid ? "pt-4" : "pt-2"}>
           <Suspense fallback={<CategoryProductGridSkeleton />}>
             <CategoryProductGrid
               categoryPermalink={categoryPermalink}

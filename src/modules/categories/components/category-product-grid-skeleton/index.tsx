@@ -1,7 +1,7 @@
 export default function CategoryProductGridSkeleton() {
   return (
     <div data-testid="category-product-grid-skeleton">
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-4 gap-y-6 xsmall:gap-x-6 xsmall:gap-y-8">
         {Array.from({ length: 28 }).map((_, i) => (
           <li key={i} className="animate-pulse">
             <div className="flex flex-col gap-2">

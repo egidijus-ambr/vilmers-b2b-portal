@@ -71,7 +71,7 @@ export default function ChildCategoriesCarousel({
   if (visibleCategories.length === 0) return null
 
   return (
-    <div className="content-container px-6 large:px-0 ">
+    <div className="content-container page-gutter ">
       <div className="mx-auto max-w-screen-2xl">
         {/* Navigation Arrows - Top Right */}
         <div className="mb-4 flex justify-end gap-2">

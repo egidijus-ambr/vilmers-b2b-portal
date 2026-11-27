@@ -653,7 +653,7 @@ function TextAndImage({
   if (style === "image_left") {
     return (
       <div
-        className="content-container large:px-0 px-6"
+        className="content-container page-gutter"
         style={backgroundColor ? { backgroundColor } : undefined}
       >
         <div className="flex flex-col-reverse small:flex-row-reverse">
@@ -705,7 +705,7 @@ function TextAndImage({
   // Default: side_by_side style (text left, image right)
   return (
     <div
-      className="content-container large:px-0 px-6"
+      className="content-container page-gutter"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className="flex flex-col small:flex-row">
@@ -904,7 +904,7 @@ function OnlyText({
 
   return (
     <div
-      className="mx-auto max-w-screen-xl py-10 small:py-16 px-6 small:px-12"
+      className="mx-auto max-w-screen-xl py-10 small:py-16 page-gutter-x small:px-12"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div
@@ -971,7 +971,7 @@ function MultiColumnText({
 
   return (
     <div
-      className="py-10 small:py-12 content-container large:px-0 px-6"
+      className="py-10 small:py-12 content-container page-gutter"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       <div className={`grid grid-cols-1 gap-6 ${gridClass} small:gap-6`}>
@@ -1724,7 +1724,7 @@ function GalleryScrollRhythm({
   const indicatorPosition = scrollProgress * (100 - indicatorWidth)
 
   return (
-    <div className={`mx-auto ${widthClass} px-6 large:px-0`}>
+    <div className={`mx-auto ${widthClass} page-gutter`}>
       {/* Navigation arrows — top-right, hidden on mobile. Sits inside the
           display-width box, so it shares its gutter with the track/progress
           bar below instead of inset-ing to its own content-container. */}
@@ -1765,7 +1765,7 @@ function GalleryScrollRhythm({
           (`items-start`) so the full/short height rhythm creates whitespace
           below the shorter slots instead of stretching them.
           No horizontal padding here: the display-width box above already
-          supplies both gutters (`px-6 large:px-0`), and `overflow-x-auto`
+          supplies both gutters (`page-gutter`), and `overflow-x-auto`
           clips the track at that box's right edge — the trailing image is
           cut off there instead of bleeding to the viewport edge, which is
           the scroll affordance for this width.
@@ -1854,7 +1854,7 @@ function GallerySideBySide({
   const gridClass = SIDE_BY_SIDE_GRID_COLS[columns] ?? "small:grid-cols-4"
 
   return (
-    <div className={`mx-auto ${widthClass} px-6 large:px-0`}>
+    <div className={`mx-auto ${widthClass} page-gutter`}>
       <div className={`grid grid-cols-1 gap-6 ${gridClass}`}>
         {images.map((img) => (
           <div key={img.id} className="aspect-[3/4] w-full overflow-hidden">
@@ -1893,7 +1893,7 @@ function ProductGrid({
 
   return (
     <div
-      className="py-10 small:py-12 content-container large:px-0 px-6"
+      className="py-10 small:py-12 content-container page-gutter"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {!hideTitle && title && (
@@ -1980,7 +1980,7 @@ function EmailSignup({
 
   return (
     <div
-      className="content-container large:px-0 px-6 flex flex-col small:flex-row"
+      className="content-container page-gutter flex flex-col small:flex-row"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {/* Image half — skipped entirely (not collapsed to an empty column)
@@ -2166,7 +2166,7 @@ function PageGrid({
 
   return (
     <div
-      className="py-10 small:py-12 content-container large:px-0 px-6"
+      className="py-10 small:py-12 content-container page-gutter"
       style={backgroundColor ? { backgroundColor } : undefined}
     >
       {!hideTitle && title && (

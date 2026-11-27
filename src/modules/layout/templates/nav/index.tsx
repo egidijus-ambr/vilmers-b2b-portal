@@ -255,7 +255,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
         }`}
       >
         <nav
-          className={`w-full max-w-9xl mx-auto px-6 text-xs flex items-center justify-between h-full ${
+          className={`w-full max-w-9xl mx-auto page-gutter-x text-xs flex items-center justify-between h-full ${
             homepageHeader.transparent ? "transition-colors duration-200" : ""
           } ${isTransparent ? "text-white" : "text-ui-fg-subtle"}`}
         >
@@ -395,7 +395,7 @@ export default function Nav({ customer, categories, canShowAllProducts, showAllP
 
       {/* Agent / Admin sub-header: callout + customer selector, right-aligned */}
       {!isHomePage && (isAgentOrAdmin(customer) || isImpersonatedByManager) && (
-        <div className="flex h-10 items-center justify-end gap-4 border-b border-line bg-beige-20 px-6">
+        <div className="flex h-10 items-center justify-end gap-4 border-b border-line bg-beige-20 page-gutter-x">
           <ActingCustomerCallout />
           {canShowAllProducts && (
             <ShowAllProductsToggle initialChecked={showAllProductsActive} />

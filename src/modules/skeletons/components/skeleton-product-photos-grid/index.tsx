@@ -2,7 +2,7 @@ import repeat from "@lib/util/repeat"
 
 const SkeletonProductPhotosGrid = () => {
   return (
-    <div className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+    <div className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-4 gap-y-6 xsmall:gap-x-6 xsmall:gap-y-8">
       {repeat(8).map((i) => (
         <div key={i} className="animate-pulse">
           <div className="bg-white shadow-elevation-card-rest overflow-hidden">

@@ -28,7 +28,7 @@ export default function ProductPhotosLayoutClient({
   return (
     <ProductPhotosProvider>
       <div
-        className="content-container mt-4 px-6 large:px-0"
+        className="content-container mt-4 page-gutter"
         data-testid="product-photos-layout-wrapper"
       >
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">

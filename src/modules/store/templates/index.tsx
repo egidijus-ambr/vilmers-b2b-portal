@@ -19,7 +19,7 @@ const StoreTemplate = ({
   const sort = sortBy || "created_at"
 
   return (
-    <div className="px-6" data-testid="category-container">
+    <div className="page-gutter-x" data-testid="category-container">
       <RefinementList sortBy={sort} />
       <div className="w-full">
         <div className="mb-8 text-2xl-semi">
