@@ -5,7 +5,7 @@ import { sdk } from "@lib/config"
 import { ACTING_CUSTOMER_COOKIE } from "@lib/util/acting-customer-cookie"
 import { isAgentOrAdmin } from "@lib/util/roles"
 import { getManagerIdFromToken } from "@lib/util/jwt-utils"
-import { retrieveCustomer } from "./customer"
+import { getSessionCustomer } from "./session-customer"
 
 /**
  * Returns true when the current session was initiated by a sales manager
@@ -47,7 +47,7 @@ export async function getActingCustomerId(): Promise<number | null> {
  * `tags`, `role`).
  */
 export async function getActingCustomer(): Promise<any | null> {
-  const me = await retrieveCustomer()
+  const me = await getSessionCustomer()
   if (!me) return null
 
   // End-customers and any other non-elevated role just see themselves.

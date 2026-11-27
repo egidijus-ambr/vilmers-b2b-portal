@@ -24,6 +24,7 @@ import { getDefaultPriceListId } from "./default-pricelist"
 import { getAnonymousProductTagIds } from "./anonymous-product-tags"
 import { getActingCustomer } from "./acting-customer"
 import { getShowAllProductsActive } from "./show-all-products"
+import { getSessionCustomer } from "./session-customer"
 import { getPageByCode } from "./pages"
 import { Page } from "@lib/furnisystems-sdk"
 import { normalizeLanguage } from "@lib/i18n/config"
@@ -455,7 +456,7 @@ export async function getCustomerFilterData(): Promise<{
   // call — so this only costs an extra request on the agent/admin path.
   let loggedInUser = null
   try {
-    loggedInUser = await retrieveCustomer()
+    loggedInUser = await getSessionCustomer()
   } catch {
     // Not authenticated — no filtering
   }

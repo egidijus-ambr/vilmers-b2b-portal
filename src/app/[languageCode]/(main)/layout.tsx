@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { headers, cookies } from "next/headers"
 
-import { retrieveCustomer } from "@lib/data/customer"
+import { getSessionCustomer } from "@lib/data/session-customer"
 import { getShopSettings } from "@lib/data/shop-settings"
 import { getPageByPath, getPageByPathAuthed } from "@lib/data/pages"
 import { isPrivatePageResult } from "@lib/furnisystems-sdk"
@@ -49,7 +49,9 @@ export default async function PageLayout({
 }: PageLayoutProps) {
   console.log("[PageLayout] Starting main page layout...")
 
-  const customer = await retrieveCustomer()
+  // Request-scoped memo: shared with getActingCustomer and the
+  // show-all-products gate, so this render makes one getMe call.
+  const customer = await getSessionCustomer()
   console.log(
     "[PageLayout] Customer retrieval result:",
     customer ? "customer found" : "no customer"
